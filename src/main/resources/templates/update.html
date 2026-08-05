@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Update Property — NMU Housing</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Fraunces:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="update.css" />
+  <script src="update.js" defer></script>
+</head>
+<body>
+
+<!-- ══════════ SIDEBAR ══════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon"></div>
+    <span class="brand-text">ULEE<br>The Future Of Student Living</span>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-label">Main Menu</div>
+    <div class="nav-item" onclick="navClick(this)">
+      <span class="nav-icon">🏡</span><span class="nav-text">Home</span>
+    </div>
+    <div class="nav-item" onclick="navClick(this)">
+      <span class="nav-icon">👤</span><span class="nav-text">Profile</span>
+    </div>
+    <div class="nav-item" onclick="navClick(this)">
+      <span class="nav-icon">➕</span><span class="nav-text">List Property</span>
+    </div>
+    <div class="nav-item active" onclick="navClick(this)">
+      <span class="nav-icon">✏️</span><span class="nav-text">Update Property</span>
+    </div>
+    <div class="nav-item" onclick="navClick(this)">
+      <span class="nav-icon">📋</span><span class="nav-text">View Applications</span>
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="toggle-btn" onclick="toggleSidebar()">
+      <span class="toggle-icon">◀</span>
+      <span class="toggle-text">Collapse</span>
+    </button>
+  </div>
+</aside>
+
+<!-- ══════════ MAIN WRAP ══════════ -->
+<div class="main-wrap" id="mainWrap">
+
+  <!-- TOPBAR -->
+  <header class="topbar" id="topbar">
+    <div class="topbar-left">
+      <div class="greeting">Hi Landlord, John! 👋</div>
+      <div class="subtitle">Manage your properties</div>
+    </div>
+    <div class="topbar-right">
+      <!-- Notification bell -->
+      <div class="icon-btn" id="notifBtn" onclick="toggleNotif()">
+        🔔
+        <div class="notif-dot"></div>
+        <div class="notif-dropdown" id="notifDropdown">
+          <div class="notif-title">Notifications</div>
+          <div class="notif-item"><strong>New Application</strong>Student applied for Summerstrand Studio</div>
+          <div class="notif-item"><strong>Lease Expiring</strong>North End Apartment — 12 days left</div>
+          <div class="notif-item"><strong>Message Received</strong>Inquiry about Walmer Heights rooms</div>
+        </div>
+      </div>
+      <div class="icon-btn">🔍</div>
+      <button class="logout-btn">🚪 Logout</button>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <div class="breadcrumb">
+      <span>Dashboard</span><span>›</span>
+      <span class="bc-active">Update Property</span>
+    </div>
+    <div class="page-header">
+      <h1>Update Property</h1>
+      <p>Select a property to edit its details, amenities, and images</p>
+    </div>
+
+    <!-- PROPERTY CARDS -->
+    <div class="cards-grid" id="cardsGrid">
+
+      <!-- Card 1 -->
+      <div class="prop-card" onclick="selectCard(this, 0)">
+        <div class="prop-card-img">
+          <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&q=80" alt="Property"/>
+          <div class="status-badge badge-available">Available</div>
+          <div class="selected-check">✓</div>
+        </div>
+        <div class="prop-card-body">
+          <div class="prop-card-title">Summerstrand Studio</div>
+          <div class="prop-card-loc">📍 Summerstrand, Port Elizabeth</div>
+          <div class="prop-card-footer">
+            <div class="prop-price">R4,500 <span>/month</span></div>
+            <div class="edit-hint">✏️ Edit</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="prop-card" onclick="selectCard(this, 1)">
+        <div class="prop-card-img">
+          <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&q=80" alt="Property"/>
+          <div class="status-badge badge-rented">Rented</div>
+          <div class="selected-check">✓</div>
+        </div>
+        <div class="prop-card-body">
+          <div class="prop-card-title">North End 2-Bed Apartment</div>
+          <div class="prop-card-loc">📍 North End, Port Elizabeth</div>
+          <div class="prop-card-footer">
+            <div class="prop-price">R7,200 <span>/month</span></div>
+            <div class="edit-hint">✏️ Edit</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="prop-card" onclick="selectCard(this, 2)">
+        <div class="prop-card-img">
+          <img src="https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=400&q=80" alt="Property"/>
+          <div class="status-badge badge-available">Available</div>
+          <div class="selected-check">✓</div>
+        </div>
+        <div class="prop-card-body">
+          <div class="prop-card-title">Walmer Heights Room</div>
+          <div class="prop-card-loc">📍 Walmer, Port Elizabeth</div>
+          <div class="prop-card-footer">
+            <div class="prop-price">R3,100 <span>/month</span></div>
+            <div class="edit-hint">✏️ Edit</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4 -->
+      <div class="prop-card" onclick="selectCard(this, 3)">
+        <div class="prop-card-img">
+          <img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&q=80" alt="Property"/>
+          <div class="status-badge badge-available">Available</div>
+          <div class="selected-check">✓</div>
+        </div>
+        <div class="prop-card-body">
+          <div class="prop-card-title">Central Campus Flat</div>
+          <div class="prop-card-loc">📍 Central, Port Elizabeth</div>
+          <div class="prop-card-footer">
+            <div class="prop-price">R5,800 <span>/month</span></div>
+            <div class="edit-hint">✏️ Edit</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 5 -->
+      <div class="prop-card" onclick="selectCard(this, 4)">
+        <div class="prop-card-img">
+          <img src="https://images.unsplash.com/photo-1484154218962-a197022b5858?w=400&q=80" alt="Property"/>
+          <div class="status-badge badge-rented">Rented</div>
+          <div class="selected-check">✓</div>
+        </div>
+        <div class="prop-card-body">
+          <div class="prop-card-title">Newton Park Bachelor</div>
+          <div class="prop-card-loc">📍 Newton Park, Port Elizabeth</div>
+          <div class="prop-card-footer">
+            <div class="prop-price">R2,900 <span>/month</span></div>
+            <div class="edit-hint">✏️ Edit</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 6 -->
+      <div class="prop-card" onclick="selectCard(this, 5)">
+        <div class="prop-card-img">
+          <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=400&q=80" alt="Property"/>
+          <div class="status-badge badge-available">Available</div>
+          <div class="selected-check">✓</div>
+        </div>
+        <div class="prop-card-body">
+          <div class="prop-card-title">Greenacres Garden Unit</div>
+          <div class="prop-card-loc">📍 Greenacres, Port Elizabeth</div>
+          <div class="prop-card-footer">
+            <div class="prop-price">R6,400 <span>/month</span></div>
+            <div class="edit-hint">✏️ Edit</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ EDIT FORM ══════════ -->
+    <div class="edit-form-wrap" id="editFormWrap">
+      <div class="form-header">
+        <div class="form-header-left">
+          <div class="form-header-icon"></div>
+          <div>
+            <h2 id="formTitle">Edit Property</h2>
+            <p id="formSubtitle">Update the details below and save changes</p>
+          </div>
+        </div>
+        <button class="close-form-btn" onclick="closeForm()" title="Close">✕</button>
+      </div>
+
+      <div class="form-body">
+
+        <!-- SECTION 1: BASIC INFO -->
+        <div class="form-section">
+          <div class="section-label">Basic Information</div>
+          <div class="form-grid">
+            <div class="form-field">
+              <label for="propTitle">Property Title</label>
+              <input type="text" id="propTitle" value="Summerstrand Studio" placeholder="Enter property title"/>
+            </div>
+            <div class="form-field">
+              <label for="propType">Property Type</label>
+              <select id="propType">
+                <option>Studio Apartment</option>
+                <option>Bachelor Flat</option>
+                <option>1-Bedroom Apartment</option>
+                <option>2-Bedroom Apartment</option>
+                <option>3-Bedroom House</option>
+                <option>Room in Shared House</option>
+                <option>Cluster Home</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="propLoc">Location</label>
+              <input type="text" id="propLoc" value="Summerstrand, Port Elizabeth" placeholder="Enter location"/>
+            </div>
+            <div class="form-field">
+              <label for="propPrice">Monthly Price (R)</label>
+              <input type="number" id="propPrice" value="4500" min="0" placeholder="e.g. 4500"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 2: DETAILS -->
+        <div class="form-section">
+          <div class="section-label">Property Details</div>
+          <div class="form-grid form-grid-4">
+            <div class="form-field">
+              <label for="bedrooms">Bedrooms</label>
+              <input type="number" id="bedrooms" value="1" min="0" max="10"/>
+            </div>
+            <div class="form-field">
+              <label for="bathrooms">Bathrooms</label>
+              <input type="number" id="bathrooms" value="1" min="0" max="10"/>
+            </div>
+            <div class="form-field">
+              <label for="maxOcc">Max Occupants</label>
+              <input type="number" id="maxOcc" value="2" min="1" max="20"/>
+            </div>
+            <div class="form-field">
+              <label for="availDate">Available From</label>
+              <input type="date" id="availDate" value="2025-07-01"/>
+            </div>
+          </div>
+          <div style="margin-top:16px">
+            <label style="display:block;margin-bottom:8px">Availability Status</label>
+            <div class="toggle-wrap" style="max-width:240px">
+              <div class="toggle-opt active-available" id="toggleAvail" onclick="setStatus('available')">✅ Available</div>
+              <div class="toggle-opt" id="toggleRented" onclick="setStatus('rented')">🔴 Rented</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 3: AMENITIES -->
+        <div class="form-section">
+          <div class="section-label">Amenities</div>
+
+          <div class="amenity-group">
+            <div class="amenity-group-label">🔑 Core</div>
+            <div class="amenity-chips">
+              <div class="chip selected" onclick="toggleChip(this)">WiFi</div>
+              <div class="chip selected" onclick="toggleChip(this)">Parking</div>
+              <div class="chip" onclick="toggleChip(this)">Furnished</div>
+              <div class="chip selected" onclick="toggleChip(this)">Security</div>
+              <div class="chip" onclick="toggleChip(this)">Laundry</div>
+            </div>
+          </div>
+          <div class="amenity-group">
+            <div class="amenity-group-label">🛋️ Comfort</div>
+            <div class="amenity-chips">
+              <div class="chip" onclick="toggleChip(this)">Air Conditioning</div>
+              <div class="chip" onclick="toggleChip(this)">Heating</div>
+              <div class="chip" onclick="toggleChip(this)">Balcony</div>
+              <div class="chip selected" onclick="toggleChip(this)">Private Bathroom</div>
+              <div class="chip selected" onclick="toggleChip(this)">Study Desk</div>
+              <div class="chip" onclick="toggleChip(this)">Wardrobe</div>
+            </div>
+          </div>
+          <div class="amenity-group">
+            <div class="amenity-group-label">🍳 Kitchen</div>
+            <div class="amenity-chips">
+              <div class="chip selected" onclick="toggleChip(this)">Fridge</div>
+              <div class="chip selected" onclick="toggleChip(this)">Microwave</div>
+              <div class="chip selected" onclick="toggleChip(this)">Stove</div>
+              <div class="chip" onclick="toggleChip(this)">Dishwasher</div>
+              <div class="chip" onclick="toggleChip(this)">Full Kitchen</div>
+            </div>
+          </div>
+          <div class="amenity-group">
+            <div class="amenity-group-label">✨ Extras</div>
+            <div class="amenity-chips">
+              <div class="chip" onclick="toggleChip(this)">Gym</div>
+              <div class="chip" onclick="toggleChip(this)">Pool</div>
+              <div class="chip" onclick="toggleChip(this)">Elevator</div>
+              <div class="chip selected" onclick="toggleChip(this)">Backup Power</div>
+              <div class="chip" onclick="toggleChip(this)">Water Backup</div>
+            </div>
+          </div>
+          <div class="amenity-group">
+            <div class="amenity-group-label">🎓 Student-Focused</div>
+            <div class="amenity-chips">
+              <div class="chip selected" onclick="toggleChip(this)">Near Campus</div>
+              <div class="chip" onclick="toggleChip(this)">Shuttle Service</div>
+              <div class="chip selected" onclick="toggleChip(this)">Study Area</div>
+              <div class="chip selected" onclick="toggleChip(this)">Bills Included</div>
+              <div class="chip" onclick="toggleChip(this)">Cleaning Service</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 4: IMAGES -->
+        <div class="form-section">
+          <div class="section-label">Property Images</div>
+          <div class="images-grid" id="imagesGrid">
+            <div class="img-thumb" id="img0">
+              <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=200&q=70" alt="img"/>
+              <div class="img-remove" onclick="removeImg('img0')">✕</div>
+            </div>
+            <div class="img-thumb" id="img1">
+              <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=200&q=70" alt="img"/>
+              <div class="img-remove" onclick="removeImg('img1')">✕</div>
+            </div>
+            <div class="img-thumb" id="img2">
+              <img src="https://images.unsplash.com/photo-1484154218962-a197022b5858?w=200&q=70" alt="img"/>
+              <div class="img-remove" onclick="removeImg('img2')">✕</div>
+            </div>
+          </div>
+          <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+            ➕ Upload New Images
+          </button>
+          <input type="file" id="fileInput" accept="image/*" multiple style="display:none" onchange="previewImages(event)"/>
+        </div>
+
+        <!-- SECTION 5: DESCRIPTION -->
+        <div class="form-section">
+          <div class="section-label">Description</div>
+          <div class="form-field">
+            <label for="propDesc">Property Description</label>
+            <textarea id="propDesc" rows="5">Cozy studio apartment perfect for NMU students, located just 5 minutes from the main campus. Features high-speed WiFi, backup power, and a secure gate. The unit comes with a kitchenette, private bathroom, and study desk. Bills are included in the rent. Safe neighbourhood with 24/7 security cameras.</textarea>
+          </div>
+        </div>
+
+      </div><!-- /form-body -->
+
+      <!-- FORM ACTIONS -->
+      <div class="form-actions">
+        <button class="btn-primary" onclick="saveChanges()">💾 Save Changes</button>
+        <button class="btn-outline" onclick="closeForm()">Cancel</button>
+        <div class="save-status" id="saveStatus">Last saved: Never</div>
+      </div>
+    </div><!-- /edit-form-wrap -->
+
+  </main>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">✅ Property updated successfully!</div>
+
+
+</body>
+</html>

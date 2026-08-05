@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>ULEE — Edit User</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/admin-style.css">
+</head>
+<body>
+<div class="shell">
+    <div class="main">
+        <div class="content">
+            <div class="panel" style="max-width:480px;margin:40px auto;padding:30px">
+                <h2 style="margin-bottom:20px">Edit User</h2>
+                <form th:action="@{/admin/edit-user/{id}(id=${user.userID})}" method="post">
+                    <div class="field-group">
+                        <label class="field-label">First Name</label>
+                        <input class="field-input" type="text" name="firstName" th:value="${user.firstName}" required />
+                    </div>
+                    <div class="field-group" style="margin-top:12px">
+                        <label class="field-label">Last Name</label>
+                        <input class="field-input" type="text" name="lastName" th:value="${user.lastName}" required />
+                    </div>
+                    <div class="field-group" style="margin-top:12px">
+                        <label class="field-label">Email</label>
+                        <input class="field-input" type="email" name="email" th:value="${user.email}" required />
+                    </div>
+                    <div class="field-group" style="margin-top:12px">
+                        <label class="field-label">Phone</label>
+                        <input class="field-input" type="text" name="phone" th:value="${user.phone}" />
+                    </div>
+                    <div style="display:flex;gap:10px;margin-top:20px">
+                        <button type="submit" class="btn btn-primary" style="padding:9px 22px;border-radius:8px">Save Changes</button>
+                        <a href="/admin/manage-users" class="btn btn-view" style="padding:9px 22px;border-radius:8px;text-decoration:none">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

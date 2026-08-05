@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>My Applications – ULEE</title>
+</head>
+<body>
+<h1>My Applications</h1>
+<div th:each="app : ${applications}">
+    <p th:text="'Application #' + ${app.applicationID}">App ID</p>
+    <p th:text="'Property ID: ' + ${app.propertyID}">Property</p>
+    <p th:text="'Status: ' + ${app.status}">Status</p>
+    <p th:text="'Applied: ' + ${app.applicationDate}">Date</p>
+
+    <form th:action="@{/submit-documents/{id}(id=${app.applicationID})}" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" required />
+        <button type="submit">Submit Document</button>
+    </form>
+
+    <form th:action="@{/cancel-application/{id}(id=${app.applicationID})}" method="post">
+        <button type="submit">Cancel Application</button>
+    </form>
+    <hr/>
+</div>
+</body>
+</html>

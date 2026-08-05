@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>ULEE — Review Properties</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/admin-style.css">
+</head>
+<body>
+<div class="shell">
+    <div class="main">
+        <header class="topbar"><div class="topbar-title">Review Properties</div></header>
+        <div class="content">
+            <div class="section active">
+
+                <div th:if="${actionMessage}" style="background:#e8f5e9;border:1px solid #81c784;border-radius:8px;padding:12px 18px;margin-bottom:16px">
+                    <strong style="color:#2e7d32" th:text="${actionMessage}">Success</strong>
+                </div>
+                <div th:if="${actionError}" style="background:#ffebee;border:1px solid #ef5350;border-radius:8px;padding:12px 18px;margin-bottom:16px">
+                    <strong style="color:#c62828" th:text="${actionError}">Error</strong>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <span class="panel-title">Pending Listings</span>
+                        <span class="panel-sub" th:text="${#lists.size(pendingProperties)} + ' awaiting review'">0 pending</span>
+                    </div>
+                    <table>
+                        <thead>
+                        <tr><th>Property Name</th><th>Location</th><th>Date Submitted</th><th>Status</th><th>Actions</th></tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="property : ${pendingProperties}">
+                            <td><strong th:text="${property.title}">Name</strong></td>
+                            <td th:text="${property.city}">Location</td>
+                            <td th:text="${property.createdAt} ?: 'Date not recorded'">Date</td>
+                            <td><span class="badge badge-amber"><span class="badge-dot"></span>Pending</span></td>
+                            <td>
+                                <div class="btn-group">
+                                    <a th:href="@{/admin/listing/{id}(id=${property.propertyID})}" class="btn btn-view">Review</a>
+                                    <form th:action="@{/admin/approve-listing/{id}(id=${property.propertyID})}" method="post" style="display:inline">
+                                        <button type="submit" class="btn btn-primary">Approve</button>
+                                    </form>
+                                    <form th:action="@{/admin/reject-listing/{id}(id=${property.propertyID})}" method="post" style="display:inline"
+                                          onsubmit="return confirm('Reject this listing?');">
+                                        <button type="submit" class="btn btn-danger">Reject</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <p th:if="${#lists.isEmpty(pendingProperties)}" style="padding:22px;color:var(--muted)">No listings awaiting review.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

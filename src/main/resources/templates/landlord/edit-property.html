@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title th:text="'Edit ' + ${property.title} + ' – ULEE'">Edit Property</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+    <style>
+        :root {
+            --primary: hsl(180, 67%, 47%);
+            --primary-dark: hsl(180, 67%, 36%);
+            --bg: hsl(0, 0%, 99%);
+            --text: #1a1a1a;
+            --muted: #777;
+            --white: #ffffff;
+            --border: hsl(180, 20%, 88%);
+            --shadow-md: 0 6px 28px rgba(0,0,0,0.13);
+            --radius: 12px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Sora', sans-serif; background: var(--bg); color: var(--text); }
+
+        .wrap { max-width: 640px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+        h1 { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 24px; }
+
+        .form-card {
+            background: var(--white); border-radius: var(--radius);
+            box-shadow: var(--shadow-md); border: 1px solid var(--border);
+            padding: 28px; display: flex; flex-direction: column; gap: 16px;
+        }
+        .field { display: flex; flex-direction: column; gap: 6px; }
+        .field label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text); }
+        .field input, .field select, .field textarea {
+            font-family: 'Sora', sans-serif; font-size: 14px; padding: 10px 14px;
+            border: 1.5px solid var(--border); border-radius: 8px; color: var(--text);
+        }
+        .field input:focus, .field select:focus, .field textarea:focus {
+            outline: none; border-color: var(--primary);
+        }
+        .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+        .checkbox-row { display: flex; align-items: center; gap: 8px; }
+        .checkbox-row label { font-size: 13px; font-weight: 500; text-transform: none; }
+
+        .actions { display: flex; gap: 12px; margin-top: 8px; }
+        .btn { flex: 1; text-align: center; border: none; border-radius: 8px; padding: 12px 0; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; }
+        .btn-save { background: var(--primary); color: #fff; }
+        .btn-save:hover { background: var(--primary-dark); }
+        .btn-cancel { background: hsl(0,0%,94%); color: var(--text); }
+    </style>
+</head>
+<body>
+
+<div class="wrap">
+    <h1>Edit Property</h1>
+
+    <form class="form-card" th:action="@{/update-property/{id}(id=${property.propertyID})}" method="post">
+        <div class="field">
+            <label>Property Title</label>
+            <input type="text" name="title" th:value="${property.title}" required />
+        </div>
+
+        <div class="row-2">
+            <div class="field">
+                <label>Type</label>
+                <input type="text" name="type" th:value="${property.type}" />
+            </div>
+            <div class="field">
+                <label>City</label>
+                <input type="text" name="city" th:value="${property.city}" />
+            </div>
+        </div>
+
+        <div class="field">
+            <label>Address</label>
+            <input type="text" name="address" th:value="${property.address}" required />
+        </div>
+
+        <div class="row-2">
+            <div class="field">
+                <label>Bedrooms</label>
+                <input type="number" name="bedrooms" th:value="${property.bedrooms}" required />
+            </div>
+            <div class="field">
+                <label>Bathrooms</label>
+                <input type="number" name="bathrooms" th:value="${property.bathrooms}" required />
+            </div>
+        </div>
+
+        <div class="row-2">
+            <div class="field">
+                <label>Monthly Rent (R)</label>
+                <input type="number" step="0.01" name="rent" th:value="${property.rent}" required />
+            </div>
+            <div class="field">
+                <label>Deposit (R)</label>
+                <input type="number" step="0.01" name="deposit" th:value="${property.deposit}" />
+            </div>
+        </div>
+
+        <div class="field">
+            <label>Available From</label>
+            <input type="date" name="availableFrom" th:value="${property.availableFrom}" />
+        </div>
+
+        <div class="field">
+            <label>Description</label>
+            <textarea name="description" rows="5" th:text="${property.description}"></textarea>
+        </div>
+
+        <div class="checkbox-row">
+            <input type="checkbox" id="furnished" name="furnished" value="true" th:checked="${property.furnished}" />
+            <label for="furnished">Furnished</label>
+        </div>
+
+        <div class="actions">
+            <a class="btn btn-cancel" href="/manage-properties">Cancel</a>
+            <button type="submit" class="btn btn-save">Save Changes</button>
+        </div>
+    </form>
+</div>
+
+</body>
+</html>

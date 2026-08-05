@@ -1,0 +1,283 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* 🎨 Theme Colors */
+:root {
+  --bg: #121212;
+  --card: hsl(0 0% 99%);
+
+  --green: hsl(180 67% 47%);
+  --green-hover: hsl(180 67% 42%);
+
+  --white: #000000;
+  --text-muted: #444;
+  --border: #d9d9d9;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background-color: var(--bg);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.page-overlay {
+  position: fixed;
+  inset: 0;
+  background: url("image2.jpeg") center center / cover no-repeat;
+  filter: blur(10px);
+  transform: scale(1.08);
+}
+
+.page-overlay::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 10, 10, 0.45);
+}
+
+.page-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+/* CARD */
+.sa-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 2.5rem 2rem;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+
+/* LOGO */
+.sa-logo {
+  font-family: 'DM Serif Display', serif;
+  font-size: 22px;
+  color: var(--white);
+  margin-bottom: 0.25rem;
+}
+
+.sa-tagline {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 2rem;
+  font-weight: bold;
+}
+
+/* LABEL */
+.sa-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* INPUT */
+.sa-input {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: 'DM Sans', sans-serif;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--white);
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.sa-input:focus {
+  border-color: var(--green);
+  background: #ffffff;
+}
+
+.sa-password-wrap {
+  position: relative;
+}
+
+.sa-password-input {
+  padding-right: 44px;
+}
+
+.sa-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--text-muted);
+  padding: 2px;
+}
+
+.sa-password-toggle:hover {
+  color: var(--green-hover);
+}
+
+.sa-password-toggle:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.sa-password-toggle .sa-eye-closed {
+  display: none;
+}
+
+.sa-password-toggle.is-visible .sa-eye-open {
+  display: none;
+}
+
+.sa-password-toggle.is-visible .sa-eye-closed {
+  display: inline;
+}
+
+/* FORGOT */
+.sa-forgot {
+  display: block;
+  text-align: right;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+  margin-bottom: 1.25rem;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.sa-forgot:hover {
+  color: var(--green-hover);
+}
+
+/* PRIMARY BUTTON */
+.sa-btn-primary {
+  width: 100%;
+  padding: 11px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: 'DM Sans', sans-serif;
+  background: var(--green);
+  color: #141414;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.sa-btn-primary:hover {
+  background: var(--green-hover);
+}
+
+.sa-btn-primary:active {
+  transform: scale(0.98);
+}
+
+/* DIVIDER */
+.sa-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 1.25rem 0;
+}
+
+.sa-divider span {
+  font-size: 12px;
+  color: #777;
+}
+
+.sa-divider hr {
+  flex: 1;
+  border: none;
+  border-top: 1px solid var(--border);
+}
+
+/* SECONDARY BUTTON */
+.sa-btn-secondary {
+  width: 100%;
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: 'DM Sans', sans-serif;
+  background: transparent;
+  color: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.sa-btn-secondary:hover {
+  background: #8db0da;
+  border-color: var(--green-hover);
+}
+
+/* PANELS */
+.sa-panel {
+  display: none;
+}
+
+.sa-panel.active {
+  display: block;
+}
+
+/* TOASTS */
+.sa-toast {
+  display: none;
+  font-size: 13px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+/* INFO */
+.sa-toast.info {
+  display: block;
+  background: #839fbb;
+  color: #1368e0;
+}
+
+/* SUCCESS */
+.sa-toast.success {
+  display: block;
+  background: #12301f;
+  color: var(--green);
+}
+
+/* ROW */
+.sa-row {
+  display: flex;
+  gap: 10px;
+}
+
+.sa-row .sa-field {
+  flex: 1;
+}
+#panel-register .sa-field,
+#panel-register .sa-row {
+  margin-bottom: 1.25rem;
+}
+
+#panel-register .sa-btn-primary,
+#panel-register .sa-btn-secondary {
+  margin-top: 1rem;
+}

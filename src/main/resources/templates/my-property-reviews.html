@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reviews on My Properties – ULEE</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: hsl(180, 67%, 47%);
+      --primary-dark: hsl(180, 67%, 36%);
+      --bg: hsl(0, 0%, 99%);
+      --text: #1a1a1a;
+      --muted: #777;
+      --white: #ffffff;
+      --border: hsl(180, 20%, 88%);
+      --shadow-sm: 0 2px 12px rgba(0,0,0,0.08);
+      --shadow-md: 0 6px 28px rgba(0,0,0,0.13);
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Sora', sans-serif; background: var(--bg); color: var(--text); }
+
+    .topbar { display: flex; align-items: center; padding: 1.4rem 2.5rem; }
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 6px; height: 40px;
+      padding: 0 16px; border: 1px solid var(--border); border-radius: 999px;
+      background: var(--white); color: var(--text); text-decoration: none;
+      font-size: 13px; font-weight: 600; box-shadow: var(--shadow-sm);
+    }
+    h1 { font-family: 'Playfair Display', serif; font-size: 24px; padding: 0 2.5rem; margin-bottom: 24px; }
+
+    .wrap { max-width: 900px; margin: 0 auto; padding: 0 2.5rem 4rem; display: flex; flex-direction: column; gap: 24px; }
+
+    .property-block {
+      background: var(--white); border-radius: var(--radius);
+      box-shadow: var(--shadow-sm); border: 1px solid var(--border);
+      padding: 24px;
+    }
+    .property-header {
+      display: flex; align-items: baseline; justify-content: space-between;
+      margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--border);
+    }
+    .property-title { font-size: 17px; font-weight: 700; }
+    .review-count { font-size: 12.5px; color: var(--muted); }
+
+    .review-item { padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .review-item:last-child { border-bottom: none; }
+    .review-rating { font-size: 14px; font-weight: 700; color: var(--primary-dark); margin-bottom: 4px; }
+    .review-comment { font-size: 14px; color: var(--text); margin-bottom: 4px; }
+    .review-date { font-size: 12px; color: var(--muted); }
+
+    .no-reviews { font-size: 13.5px; color: var(--muted); font-style: italic; }
+    .empty { text-align: center; color: var(--muted); padding: 60px 0; font-size: 14px; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="back-btn" href="/landlord-index">← Back to Dashboard</a>
+</div>
+
+<h1>Reviews on My Properties</h1>
+
+<div class="wrap">
+  <div th:if="${#lists.isEmpty(properties)}" class="empty">
+    You don't have any listed properties yet.
+  </div>
+
+  <div class="property-block" th:each="property : ${properties}">
+    <div class="property-header">
+      <span class="property-title" th:text="${property.title}">Property Title</span>
+      <span class="review-count"
+            th:text="${reviewsByProperty.get(property.propertyID) != null ? #lists.size(reviewsByProperty.get(property.propertyID)) : 0} + ' review(s)'">
+          0 review(s)
+        </span>
+    </div>
+
+    <div th:if="${reviewsByProperty.get(property.propertyID) == null or #lists.isEmpty(reviewsByProperty.get(property.propertyID))}" class="no-reviews">
+      No reviews yet for this property.
+    </div>
+
+    <div class="review-item" th:each="review : ${reviewsByProperty.get(property.propertyID)}">
+      <div class="review-rating" th:text="'⭐ ' + ${review.rating} + '/5'">Rating</div>
+      <p class="review-comment" th:text="${review.comment}">Comment</p>
+      <p class="review-date" th:text="${review.reviewDate}">Date</p>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

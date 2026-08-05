@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ULEE | My Properties</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Hanken+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/landlord-style.css">
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-name">ULEE</span>
+      <span class="brand-sub">The Future of Student Living</span>
+    </div>
+
+    <nav class="nav-list">
+      <a th:href="@{/landlord-index}" class="nav-item active">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>
+        <span>My Properties</span>
+      </a>
+      <a th:href="@{/manage-applications}" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M8 3h8a2 2 0 0 1 2 2v14l-6-3-6 3V5a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        <span>Applications</span>
+      </a>
+      <a th:href="@{/my-property-reviews}" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M12 3.5 14.4 9l6 .6-4.5 4 1.4 5.9L12 16.6 6.7 19.5l1.4-5.9-4.5-4 6-.6L12 3.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        <span>Reviews</span>
+      </a>
+    </nav>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="main">
+
+    <header class="topbar">
+      <h1 class="topbar-title">My Properties</h1>
+      <img class="avatar" src="/static/uploads/landlord-avatar.jpg" alt="Landlord profile photo">
+    </header>
+
+    <div class="page-body">
+
+      <!-- Page intro + primary action -->
+      <div class="page-head">
+        <div>
+          <h2 class="page-title">Property Inventory</h2>
+          <p class="page-subtitle">Manage and track your Gqeberha student housing portfolio.</p>
+        </div>
+        <a class="btn btn-primary" th:href="@{/list-property}">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+          Add New Property
+        </a>
+      </div>
+
+      <!-- Metrics bar -->
+      <section class="metrics-bar" aria-label="Portfolio summary">
+        <div class="stat-card">
+          <div class="stat-icon stat-icon--teal">
+            <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="13" y="3" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="13" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="13" y="13" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>
+          </div>
+          <div class="stat-copy">
+            <span class="stat-value" id="statTotalProperties" th:text="${totalProperties}">12</span>
+            <span class="stat-label">Total Properties</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon stat-icon--purple">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M8 3h8a2 2 0 0 1 2 2v14l-6-3-6 3V5a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="stat-copy">
+            <span class="stat-value" id="statPendingApplications" th:text="${pendingApplications}">24</span>
+            <span class="stat-label">Awaiting Review</span>
+          </div>
+          <span class="stat-alert-dot" id="statAlertDot" th:hidden="${pendingApplications == 0}" aria-hidden="true"></span>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon stat-icon--tealdark">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 21V9l8-6 8 6v12h-5v-7h-6v7H4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="stat-copy">
+            <span class="stat-value" id="statVacantRooms" th:text="${vacantRooms}">15</span>
+            <span class="stat-label">Vacant Rooms</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon stat-icon--purple">
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 3a9 9 0 0 1 0 18" stroke="currentColor" stroke-width="1.8"/></svg>
+          </div>
+          <div class="stat-copy">
+            <span class="stat-value" id="statOccupancy" th:text="${occupancyRate} + '%'">92%</span>
+            <span class="stat-label">Avg. Occupancy</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Filter / sort row -->
+      <section class="toolbar" aria-label="Filter and sort properties">
+        <div class="filter-group" id="filterGroup" role="tablist" aria-label="Filter by status">
+          <button class="chip chip--active" data-filter="all" role="tab" aria-selected="true">All</button>
+          <button class="chip" data-filter="available" role="tab" aria-selected="false">Available</button>
+          <button class="chip" data-filter="inactive" role="tab" aria-selected="false">Inactive</button>
+        </div>
+
+        <label class="sort-select">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M6 8h12M8 12h8M10 16h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <select id="sortSelect" aria-label="Sort properties">
+            <option value="date-added">Sort by: Date Added</option>
+            <option value="name-asc">Sort by: Name (A–Z)</option>
+            <option value="rent-desc">Sort by: Rent (High–Low)</option>
+          </select>
+        </label>
+      </section>
+
+      <!-- Property grid — now server-rendered from real data -->
+      <section class="property-grid" id="propertyGrid" aria-label="Property listings">
+
+        <article th:each="property : ${properties}"
+                 class="property-card"
+                 th:attr="data-status=${property.isAvailable} ? 'available' : 'inactive',
+                          data-property-id=${property.propertyID},
+                          data-name=${property.title},
+                          data-rent=${property.rent}">
+          <div class="property-media">
+            <img th:if="${imageLookup.get(property.propertyID)} != null"
+                 th:src="${imageLookup.get(property.propertyID)}"
+                 th:alt="${property.title} + ' exterior'">
+            <div th:unless="${imageLookup.get(property.propertyID)} != null" class="property-media-placeholder">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="currentColor" stroke-width="1.5"/></svg>
+            </div>
+            <span class="status-badge"
+                  th:classappend="${property.isAvailable} ? 'status-badge--available' : 'status-badge--inactive'"
+                  th:text="${property.isAvailable} ? 'Available' : 'Inactive'">Available</span>
+          </div>
+          <div class="property-body">
+            <h3 class="property-name" th:text="${property.title}">Property Title</h3>
+            <p class="property-address">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="1.8"/></svg>
+              <span th:text="(${property.suburb} != null ? ${property.suburb} + ', ' : '') + ${property.city}">Suburb, City</span>
+            </p>
+            <div class="property-footer">
+              <div class="rooms-info">
+                <span class="rent-value" th:text="'R' + ${property.rent} + ' / month'">R0 / month</span>
+                <span class="rooms-updated" th:text="${property.bedrooms} + ' bed · ' + ${property.bathrooms} + ' bath'">— bed · — bath</span>
+              </div>
+              <a class="btn-manage" th:href="@{/edit-property/{id}(id=${property.propertyID})}">Manage</a>
+            </div>
+          </div>
+        </article>
+
+        <div th:if="${#lists.isEmpty(properties)}" class="empty-state">
+          <h3>No properties yet</h3>
+          <p>Add your first property to start renting to students.</p>
+          <a class="btn btn-primary" th:href="@{/list-property}">+ Add New Property</a>
+        </div>
+
+      </section>
+
+      <div id="filterEmptyState" class="filter-empty-state" style="display:none;">
+        No properties match this filter.
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="/landlord-script.js"></script>
+</body>
+</html>

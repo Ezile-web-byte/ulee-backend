@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Search Results – ULEE</title>
+</head>
+<body>
+<h1>Available Properties</h1>
+
+<form action="/search" method="get">
+    <input type="number" name="minBedrooms" placeholder="Min bedrooms" />
+    <input type="number" name="maxRent" placeholder="Max rent" step="0.01" />
+    <button type="submit">Filter</button>
+</form>
+
+<div th:each="property : ${properties}">
+    <h3 th:text="${property.title}">Property Title</h3>
+    <p th:text="${property.city}">City</p>
+    <p th:text="${property.bedrooms} + ' bed'">Bedrooms</p>
+    <p th:text="'R' + ${property.rent} + ' / month'">Rent</p>
+    <hr/>
+</div>
+</body>
+</html>

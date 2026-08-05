@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register – ULEE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+    <style>
+        :root {
+            --primary: hsl(180, 67%, 47%);
+            --primary-dark: hsl(180, 67%, 36%);
+            --text: #1a1a1a;
+            --muted: #777;
+            --white: #ffffff;
+            --border: hsl(180, 20%, 88%);
+            --shadow-lg: 0 20px 60px rgba(0,0,0,0.25);
+            --radius: 14px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Sora', sans-serif;
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background:
+                    linear-gradient(rgba(0,20,20,0.45), rgba(0,20,20,0.45)),
+                    url('https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1400&q=80') center/cover no-repeat;
+        }
+
+        .card {
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            padding: 36px 34px;
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .logo { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 700; margin-bottom: 2px; }
+        .tagline { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+
+        .role-toggle {
+            display: flex; background: hsl(180,20%,95%); border-radius: 999px;
+            padding: 4px; margin-bottom: 22px;
+        }
+        .role-btn {
+            flex: 1; text-align: center; padding: 9px 0; border: none; border-radius: 999px;
+            background: transparent; color: var(--muted); font-family: 'Sora', sans-serif;
+            font-size: 13px; font-weight: 600; cursor: pointer; transition: background .2s, color .2s;
+        }
+        .role-btn.active { background: var(--primary); color: #fff; }
+
+        .field { margin-bottom: 14px; }
+        .field label {
+            display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
+            text-transform: uppercase; color: var(--text); margin-bottom: 6px;
+        }
+        .field input {
+            width: 100%; font-family: 'Sora', sans-serif; font-size: 14px;
+            padding: 11px 14px; border: 1.5px solid var(--border); border-radius: 10px;
+            color: var(--text); outline: none; transition: border-color .2s;
+        }
+        .field input:focus { border-color: var(--primary); }
+        .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        .role-fields { display: none; }
+        .role-fields.visible { display: block; }
+
+        .error-msg {
+            background: hsl(0,60%,95%); color: hsl(0,60%,42%);
+            font-size: 12.5px; padding: 10px 14px; border-radius: 8px; margin-bottom: 16px;
+        }
+
+        .submit-btn {
+            width: 100%; background: var(--primary); color: #fff; border: none;
+            border-radius: 999px; padding: 13px; font-family: 'Sora', sans-serif;
+            font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 6px;
+            transition: background .2s;
+        }
+        .submit-btn:hover { background: var(--primary-dark); }
+
+        .login-link { text-align: center; font-size: 12.5px; color: var(--muted); margin-top: 18px; }
+        .login-link a { color: var(--primary-dark); font-weight: 600; text-decoration: none; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="logo">ULEE</div>
+    <div class="tagline">The Future Of Student Living</div>
+
+    <div th:if="${error}" class="error-msg" th:text="${error}">Error message</div>
+
+    <div class="role-toggle">
+        <button type="button" class="role-btn" id="studentToggle" onclick="setRole('student')">I'm a Student</button>
+        <button type="button" class="role-btn" id="landlordToggle" onclick="setRole('landlord')">I'm a Landlord</button>
+    </div>
+
+    <form action="/register" method="post">
+        <input type="hidden" name="role" id="roleInput" value="student" />
+
+        <div class="row-2">
+            <div class="field">
+                <label>First Name</label>
+                <input type="text" name="firstName" required />
+            </div>
+            <div class="field">
+                <label>Last Name</label>
+                <input type="text" name="lastName" required />
+            </div>
+        </div>
+
+        <div class="field">
+            <label>Email</label>
+            <input type="email" name="email" placeholder="e.g. s227676637@mandela.ac.za" required />
+        </div>
+
+        <div class="field">
+            <label>Password</label>
+            <input type="password" name="password" required />
+        </div>
+
+        <div class="row-2">
+            <div class="field">
+                <label>Date of Birth</label>
+                <input type="date" name="dateOfBirth" />
+            </div>
+            <div class="field">
+                <label>Phone</label>
+                <input type="text" name="phone" placeholder="e.g. 0821234567" />
+            </div>
+        </div>
+
+        <!-- Student-only fields -->
+        <div id="studentFields" class="role-fields visible">
+            <div class="field">
+                <label>Year of Study</label>
+                <input type="number" name="yearOfStudy" min="1" max="7" />
+            </div>
+            <div class="row-2">
+                <div class="field">
+                    <label>Budget Min (R)</label>
+                    <input type="number" name="budgetMin" step="0.01" />
+                </div>
+                <div class="field">
+                    <label>Budget Max (R)</label>
+                    <input type="number" name="budgetMax" step="0.01" />
+                </div>
+            </div>
+        </div>
+
+        <!-- Landlord-only fields -->
+        <div id="landlordFields" class="role-fields">
+            <div class="field">
+                <label>Company Name</label>
+                <input type="text" name="companyName" />
+            </div>
+        </div>
+
+        <button type="submit" class="submit-btn">Create Account</button>
+    </form>
+
+    <div class="login-link">
+        Already have an account? <a href="/login">Log in</a>
+    </div>
+</div>
+
+<script>
+    function setRole(role) {
+        document.getElementById('roleInput').value = role;
+
+        document.getElementById('studentToggle').classList.toggle('active', role === 'student');
+        document.getElementById('landlordToggle').classList.toggle('active', role === 'landlord');
+
+        document.getElementById('studentFields').classList.toggle('visible', role === 'student');
+        document.getElementById('landlordFields').classList.toggle('visible', role === 'landlord');
+    }
+    // default state on load
+    setRole('student');
+</script>
+
+</body>
+</html>

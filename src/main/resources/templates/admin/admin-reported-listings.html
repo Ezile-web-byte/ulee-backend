@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>ULEE — Reported Listings</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/admin-style.css">
+</head>
+<body>
+<div class="shell">
+    <div class="main">
+        <header class="topbar"><div class="topbar-title">Reported Listings</div></header>
+        <div class="content">
+            <div class="section active">
+                <div class="panel">
+                    <div class="panel-header">
+                        <span class="panel-title">Reported Listings</span>
+                        <span class="panel-sub" th:text="${#lists.size(reportedProperties)} + ' flagged'">0 flagged</span>
+                    </div>
+                    <table>
+                        <thead><tr><th>Property</th><th>Reason</th><th>Actions</th></tr></thead>
+                        <tbody>
+                        <tr th:each="property : ${reportedProperties}">
+                            <td th:text="${property.title}">Name</td>
+                            <td th:text="${property.reportReason} ?: 'No reason provided'">Reason</td>
+                            <td><a th:href="@{/admin/reported-listing/{id}(id=${property.propertyID})}" class="btn btn-view">Handle</a></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <p th:if="${#lists.isEmpty(reportedProperties)}" style="padding:22px;color:var(--muted)">No reported listings.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

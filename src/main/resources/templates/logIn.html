@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ULEE – Sign In</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/login-style.css">
+  <script src="/login-script.js" defer></script>
+</head>
+<body>
+  <div class="page-overlay"></div>
+  <div class="page-content">
+    <div class="sa-card">
+      <p class="sa-logo">ULEE</p>
+      <p class="sa-tagline">The Future Of Student Living.</p>
+
+      <div id="toast" class="sa-toast"></div>
+
+      <!-- Log In Panel -->
+      <div id="panel-login" class="sa-panel active">
+        <div class="sa-field">
+          <label class="sa-label">Username</label>
+          <input class="sa-input" type="text" placeholder="e.g. s227676637" id="login-user" />
+        </div>
+        <div class="sa-field">
+          <label class="sa-label">Password</label>
+          <div class="sa-password-wrap">
+            <input class="sa-input sa-password-input" type="password" placeholder="Enter your password" id="login-pass" />
+            <button
+              class="sa-password-toggle"
+              type="button"
+              aria-label="Show password"
+              aria-pressed="false"
+              aria-controls="login-pass"
+              onclick="togglePassword('login-pass', this)"
+            >
+              <span class="sa-eye-open" aria-hidden="true">👁</span>
+              <span class="sa-eye-closed" aria-hidden="true">🙈</span>
+            </button>
+          </div>
+        </div>
+        <a class="sa-forgot" onclick="showForgot()">Forgot password?</a>
+        <button class="sa-btn-primary" onclick="handleLogin()">Log in</button>
+        <div class="sa-divider"><hr><span>or</span><hr></div>
+        <button class="sa-btn-secondary" onclick="switchPanel('register')">Create a new account</button>
+        <p style="margin-top: 0.75rem; text-align: center; font-size: 12px; color: #444; line-height: 1.5;">
+          Are you a Landlord or Admin?
+          <a href="landlord.html#register" style="color: var(--green-hover); text-decoration: underline; text-underline-offset: 2px;">Sign up</a>
+          or
+          <a href="landlord.html#login" style="color: var(--green-hover); text-decoration: underline; text-underline-offset: 2px;">Log in</a>.
+        </p>
+      </div>
+
+      <!-- Register Panel -->
+      <div id="panel-register" class="sa-panel">
+        <div class="sa-row">
+          <div class="sa-field">
+            <label class="sa-label">First name</label>
+            <input class="sa-input" type="text" placeholder="Jane" id="reg-fname" />
+          </div>
+          <div class="sa-field">
+            <label class="sa-label">Last name</label>
+            <input class="sa-input" type="text" placeholder="Smith" id="reg-lname" />
+          </div>
+        </div>
+        <div class="sa-field">
+          <label class="sa-label"> Landlord<br> Email Address</label>
+          <input class="sa-input" type="text" placeholder="e.g john@gmail.com" id="reg-user" />
+        </div>
+        <div class="sa-field">
+          <label class="sa-label">Password</label>
+          <div class="sa-password-wrap">
+            <input class="sa-input sa-password-input" type="password" placeholder="At least 8 characters" id="reg-pass" />
+            <button
+              class="sa-password-toggle"
+              type="button"
+              aria-label="Show password"
+              aria-pressed="false"
+              aria-controls="reg-pass"
+              onclick="togglePassword('reg-pass', this)"
+            >
+              <span class="sa-eye-open" aria-hidden="true">👁</span>
+              <span class="sa-eye-closed" aria-hidden="true">🙈</span>
+            </button>
+          </div>
+        </div>
+        <button class="sa-btn-primary" onclick="handleRegister()">Create account</button>
+        <div class="sa-divider"><hr><span>or</span><hr></div>
+        <button class="sa-btn-secondary" onclick="switchPanel('login')">Already have an account? Log in</button>
+      </div>
+
+      <!-- Forgot Password Panel -->
+      <div id="panel-forgot" class="sa-panel">
+        <p style="font-size: 14px; color: #777; margin-bottom: 1.25rem; line-height: 1.6;">
+          Enter your username or email and we'll send you a reset link.
+        </p>
+        <div class="sa-field">
+          <label class="sa-label">Username or email</label>
+          <input class="sa-input" type="text" placeholder="your username or email" id="forgot-val" />
+        </div>
+        <button class="sa-btn-primary" onclick="handleForgot()">Send reset link</button>
+        <div class="sa-divider"><hr><span></span><hr></div>
+        <button class="sa-btn-secondary" onclick="switchPanel('login')">← Back to log in</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

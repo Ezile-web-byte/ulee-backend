@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>ULEE — User Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/admin-style.css">
+</head>
+<body>
+<div class="shell">
+    <div class="main">
+        <header class="topbar"><div class="topbar-title">User Management</div></header>
+        <div class="content">
+            <div class="section active">
+
+                <div th:if="${actionMessage}" style="background:#e8f5e9;border:1px solid #81c784;border-radius:8px;padding:12px 18px;margin-bottom:16px">
+                    <strong style="color:#2e7d32" th:text="${actionMessage}">Success</strong>
+                </div>
+                <div th:if="${actionError}" style="background:#ffebee;border:1px solid #ef5350;border-radius:8px;padding:12px 18px;margin-bottom:16px">
+                    <strong style="color:#c62828" th:text="${actionError}">Error</strong>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <span class="panel-title">All Users</span>
+                        <span class="panel-sub" th:text="${totalUsers} + ' total'">0 total</span>
+                    </div>
+
+                    <div style="padding:22px">
+                        <h3 style="margin-bottom:16px">Students</h3>
+                        <div class="user-row" th:each="user : ${studentUsers}"
+                             style="display:flex;justify-content:space-between;align-items:center;padding:16px;border:1px solid #eee;border-radius:10px;margin-bottom:10px">
+                            <div>
+                                <div style="font-weight:600" th:text="(${user.firstName} != null ? ${user.firstName} : 'User') + ' ' + (${user.lastName} != null ? ${user.lastName} : '#' + ${user.userID})">Name</div>
+                                <span class="badge badge-blue">Student</span>
+                                <span th:if="${user.isActive} == null or ${user.isActive}" class="badge badge-green">Active</span>
+                                <span th:if="${user.isActive} != null and !${user.isActive}" class="badge badge-amber">Inactive</span>
+                                <span th:if="${user.warningCount != null and user.warningCount > 0}" class="badge badge-red" th:text="${user.warningCount} + ' warning(s)'">0 warnings</span>
+                            </div>
+                            <div class="btn-group">
+                                <form th:action="@{/admin/warn-user/{id}(id=${user.userID})}" method="post" style="display:inline">
+                                    <button type="submit" class="btn btn-warn">Warn</button>
+                                </form>
+                                <a th:href="@{/admin/edit-user/{id}(id=${user.userID})}" class="btn btn-view">Edit</a>
+                                <form th:if="${user.isActive} == null or ${user.isActive}" th:action="@{/admin/deactivate-user/{id}(id=${user.userID})}" method="post" style="display:inline">
+                                    <button type="submit" class="btn btn-warn">Deactivate</button>
+                                </form>
+                                <form th:if="${user.isActive} != null and !${user.isActive}" th:action="@{/admin/reactivate-user/{id}(id=${user.userID})}" method="post" style="display:inline">
+                                    <button type="submit" class="btn btn-primary">Reactivate</button>
+                                </form>
+                                <form th:action="@{/admin/delete-user/{id}(id=${user.userID})}" method="post" style="display:inline"
+                                      onsubmit="return confirm('Permanently delete this account? This cannot be undone.');">
+                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                </form>
+                            </div>
+                        </div>
+                        <p th:if="${#lists.isEmpty(studentUsers)}" style="color:var(--muted)">No students found.</p>
+
+                        <h3 style="margin:24px 0 16px">Landlords</h3>
+                        <div class="user-row" th:each="user : ${landlordUsers}"
+                             style="display:flex;justify-content:space-between;align-items:center;padding:16px;border:1px solid #eee;border-radius:10px;margin-bottom:10px">
+                            <div>
+                                <div style="font-weight:600" th:text="(${user.firstName} != null ? ${user.firstName} : 'User') + ' ' + (${user.lastName} != null ? ${user.lastName} : '#' + ${user.userID})">Name</div>
+                                <span class="badge badge-purple">Landlord</span>
+                                <span th:if="${user.isActive} == null or ${user.isActive}" class="badge badge-green">Active</span>
+                                <span th:if="${user.isActive} != null and !${user.isActive}" class="badge badge-amber">Inactive</span>
+                                <span th:if="${user.warningCount != null and user.warningCount > 0}" class="badge badge-red" th:text="${user.warningCount} + ' warning(s)'">0 warnings</span>
+                            </div>
+                            <div class="btn-group">
+                                <form th:action="@{/admin/warn-user/{id}(id=${user.userID})}" method="post" style="display:inline">
+                                    <button type="submit" class="btn btn-warn">Warn</button>
+                                </form>
+                                <a th:href="@{/admin/edit-user/{id}(id=${user.userID})}" class="btn btn-view">Edit</a>
+                                <form th:if="${user.isActive} == null or ${user.isActive}" th:action="@{/admin/deactivate-user/{id}(id=${user.userID})}" method="post" style="display:inline">
+                                    <button type="submit" class="btn btn-warn">Deactivate</button>
+                                </form>
+                                <form th:if="${user.isActive} != null and !${user.isActive}" th:action="@{/admin/reactivate-user/{id}(id=${user.userID})}" method="post" style="display:inline">
+                                    <button type="submit" class="btn btn-primary">Reactivate</button>
+                                </form>
+                                <form th:action="@{/admin/delete-user/{id}(id=${user.userID})}" method="post" style="display:inline"
+                                      onsubmit="return confirm('Permanently delete this account? This cannot be undone.');">
+                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                </form>
+                            </div>
+                        </div>
+                        <p th:if="${#lists.isEmpty(landlordUsers)}" style="color:var(--muted)">No landlords found.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

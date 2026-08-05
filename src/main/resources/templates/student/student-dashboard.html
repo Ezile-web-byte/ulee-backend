@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>ULEE | The Future of Student Living in Gqeberha</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed": "#bbeaff",
+                        "tertiary": "#705d00",
+                        "on-tertiary-container": "#4c3f00",
+                        "on-primary-fixed-variant": "#004d62",
+                        "surface-container-highest": "#e1e3e4",
+                        "primary-container": "#147592",
+                        "inverse-primary": "#82d1f1",
+                        "surface": "#f8f9fa",
+                        "on-secondary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "primary": "#005b74",
+                        "surface-variant": "#e1e3e4",
+                        "surface-container-high": "#e7e8e9",
+                        "on-secondary-fixed-variant": "#572d9a",
+                        "secondary": "#6f47b4",
+                        "tertiary-fixed-dim": "#e5c542",
+                        "on-secondary-fixed": "#260058",
+                        "secondary-container": "#b78eff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#544600",
+                        "on-primary-container": "#d9f2ff",
+                        "on-tertiary-fixed": "#221b00",
+                        "surface-bright": "#f8f9fa",
+                        "tertiary-fixed": "#ffe170",
+                        "surface-dim": "#d9dadb",
+                        "secondary-fixed": "#ebdcff",
+                        "inverse-on-surface": "#f0f1f2",
+                        "on-background": "#191c1d",
+                        "primary-fixed-dim": "#82d1f1",
+                        "outline": "#6f787d",
+                        "on-primary-fixed": "#001f29",
+                        "on-primary": "#ffffff",
+                        "on-surface": "#191c1d",
+                        "inverse-surface": "#2e3132",
+                        "tertiary-container": "#c8a927",
+                        "outline-variant": "#bec8cd",
+                        "secondary-fixed-dim": "#d4bbff",
+                        "on-surface-variant": "#3f484d",
+                        "background": "#f8f9fa",
+                        "surface-container-low": "#f3f4f5",
+                        "error": "#ba1a1a",
+                        "on-secondary-container": "#491c8c",
+                        "on-tertiary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "surface-tint": "#006782",
+                        "surface-container": "#edeeef",
+                        "error-container": "#ffdad6"
+                    },
+                    "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                    "spacing": {
+                        "sm": "12px", "lg": "48px", "margin-mobile": "16px", "xl": "80px",
+                        "base": "8px", "gutter": "24px", "md": "24px", "margin-desktop": "64px", "xs": "4px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Plus Jakarta Sans"], "label-sm": ["Hanken Grotesk"],
+                        "body-md": ["Hanken Grotesk"], "headline-sm": ["Plus Jakarta Sans"],
+                        "body-lg": ["Hanken Grotesk"], "headline-md": ["Plus Jakarta Sans"], "label-bold": ["Hanken Grotesk"]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .u-shadow-card { box-shadow: 0px 4px 20px rgba(20, 117, 146, 0.08); }
+        .u-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+
+        /* Room-type tab filtering */
+        .room-card { display: none; }
+        .room-card.is-visible { display: block; }
+        .filter-tab { color: #3f484d; }
+        .filter-tab.active { background: #005b74; color: #ffffff; }
+
+        /* Save heart */
+        .save-btn { transition: transform 0.15s ease; }
+        .save-btn:hover { transform: scale(1.12); }
+        .save-btn.saved { filter: none; }
+
+        /* Login modal */
+        #loginModalOverlay { display: none; }
+        #loginModalOverlay.open { display: flex; }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md overflow-x-hidden">
+
+<!-- Top Navigation Bar -->
+<nav class="bg-surface/90 dark:bg-surface-dim/90 backdrop-blur-md docked full-width top-0 sticky z-50 shadow-[0px_4px_20px_rgba(20,117,146,0.08)]">
+    <div class="flex justify-between items-center w-full px-margin-desktop py-base max-w-7xl mx-auto">
+        <div class="flex items-center gap-md">
+            <span class="font-display-lg text-display-lg font-extrabold text-primary tracking-tight">ULEE</span>
+        </div>
+        <div class="hidden md:flex items-center gap-lg">
+            <a class="font-label-bold text-label-bold text-primary border-b-2 border-tertiary-fixed pb-1" href="/student-dashboard">Properties</a>
+            <a class="font-label-bold text-label-bold text-on-surface-variant hover:text-primary transition-colors" href="#life-at-ulee">Life at ULEE</a>
+            <a class="font-label-bold text-label-bold text-on-surface-variant hover:text-primary transition-colors" href="#">About Us</a>
+            <a class="font-label-bold text-label-bold text-on-surface-variant hover:text-primary transition-colors" href="#">Contact</a>
+        </div>
+        <div class="flex items-center gap-md">
+            <button type="button" id="openLoginBtn" class="hidden md:block text-on-surface-variant font-label-bold hover:text-primary transition-colors">Login</button>
+            <a href="#apply" class="bg-tertiary-fixed text-on-tertiary-fixed px-md py-sm rounded-full font-label-bold hover:bg-tertiary-container hover:text-on-tertiary-container active:scale-95 transition-all duration-200">
+                Apply Now
+            </a>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero Section -->
+<header class="relative w-full h-[85vh] flex items-center overflow-hidden">
+    <div class="absolute inset-0 z-0">
+        <div class="w-full h-full bg-cover bg-center scale-105" style="background-image: url('/uploads/student-background.png')"></div>
+        <div class="absolute inset-0 bg-gradient-to-r from-primary/80 to-transparent"></div>
+    </div>
+    <div class="relative z-10 w-full max-w-7xl mx-auto px-margin-desktop">
+        <div class="max-w-2xl space-y-md">
+            <h1 class="font-display-lg text-display-lg font-extrabold text-white leading-tight">
+                The Future of <span class="text-tertiary-fixed">Student Living</span> in Gqeberha
+            </h1>
+            <p class="text-body-lg font-body-lg text-white/90 max-w-lg">
+                Premium living designed for the ambitious. Search real, available rooms from landlords near your campus.
+            </p>
+
+            <!-- Hero Search Bar -->
+            <form class="bg-white/10 backdrop-blur-xl p-base rounded-2xl flex flex-col md:flex-row items-stretch md:items-center gap-xs mt-lg border border-white/20" action="/search" method="get">
+                <div class="flex-1 px-md py-sm flex items-center gap-sm">
+                    <span class="material-symbols-outlined text-tertiary-fixed">location_on</span>
+                    <div class="flex flex-col w-full">
+                        <span class="text-[10px] uppercase font-bold text-white/60 tracking-wider">Location</span>
+                        <select name="location" class="bg-transparent text-white font-label-bold border-none p-0 focus:ring-0 w-full">
+                            <option class="text-on-surface" value="">Any location</option>
+                            <option class="text-on-surface" value="Summerstrand">Summerstrand</option>
+                            <option class="text-on-surface" value="Humewood">Humewood</option>
+                            <option class="text-on-surface" value="Central">Central</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="w-px h-8 bg-white/20 hidden md:block"></div>
+                <div class="flex-1 px-md py-sm flex items-center gap-sm">
+                    <span class="material-symbols-outlined text-tertiary-fixed">bed</span>
+                    <div class="flex flex-col w-full">
+                        <span class="text-[10px] uppercase font-bold text-white/60 tracking-wider">Room Type</span>
+                        <select name="type" id="heroTypeSelect" class="bg-transparent text-white font-label-bold border-none p-0 focus:ring-0 w-full">
+                            <option class="text-on-surface" value="">Any type</option>
+                            <option class="text-on-surface" value="Studio Apartment">Studio Apartment</option>
+                            <option class="text-on-surface" value="Single Room">Single Room</option>
+                            <option class="text-on-surface" value="Shared Apartment">Shared Apartment</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex-1 px-md py-sm flex items-center gap-sm">
+                    <span class="material-symbols-outlined text-tertiary-fixed">search</span>
+                    <div class="flex flex-col w-full">
+                        <span class="text-[10px] uppercase font-bold text-white/60 tracking-wider">Or ask</span>
+                        <input id="aiSearchInput" type="text" placeholder="Ask AI to find a room..." class="bg-transparent text-white font-label-bold border-none p-0 focus:ring-0 w-full placeholder:text-white/50" />
+                    </div>
+                </div>
+                <button type="submit" class="bg-tertiary-fixed text-on-tertiary-fixed px-xl py-md rounded-xl font-label-bold flex items-center justify-center gap-sm hover:bg-tertiary-container transition-colors">
+                    <span class="material-symbols-outlined">search</span>
+                    Search
+                </button>
+            </form>
+        </div>
+    </div>
+</header>
+
+<!-- Our Rooms Section -->
+<section class="py-xl max-w-7xl mx-auto px-margin-desktop" id="properties">
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-md mb-lg">
+        <div class="space-y-xs">
+            <span class="text-primary font-label-bold tracking-widest uppercase">Explore Spaces</span>
+            <h2 class="font-headline-md text-headline-md text-on-surface">Find Your Perfect Fit</h2>
+        </div>
+        <!-- Filters/Tabs -->
+        <div class="flex items-center gap-base bg-surface-container-low p-xs rounded-full overflow-x-auto hide-scrollbar" id="typeTabs">
+            <button type="button" class="filter-tab active px-md py-sm rounded-full font-label-bold whitespace-nowrap u-transition" data-type="all">All Rooms</button>
+            <button type="button" class="filter-tab px-md py-sm rounded-full font-label-bold whitespace-nowrap u-transition" data-type="Single Room">Single Rooms</button>
+            <button type="button" class="filter-tab px-md py-sm rounded-full font-label-bold whitespace-nowrap u-transition" data-type="Studio Apartment">Studios</button>
+            <button type="button" class="filter-tab px-md py-sm rounded-full font-label-bold whitespace-nowrap u-transition" data-type="Shared Apartment">Shared</button>
+        </div>
+    </div>
+
+    <!-- Room Grid — real properties from the backend -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter" id="roomGrid">
+        <div class="room-card is-visible bg-white rounded-[24px] overflow-hidden border border-outline-variant/30 u-shadow-card u-transition hover:-translate-y-2 group"
+             th:each="property : ${properties}" th:attr="data-type=${property.type}">
+            <a th:href="@{/property/{id}(id=${property.propertyID})}" class="block">
+                <div class="relative aspect-[4/3]">
+                    <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="/student-image1.png" th:src="${property.mainImageUrl} ?: '/student-image1.png'" th:alt="${property.title}"/>
+                    <div class="absolute top-4 left-4">
+                        <span class="bg-secondary text-white px-md py-xs rounded-full text-[10px] font-bold uppercase tracking-wider" th:if="${property.isAvailable}">Available</span>
+                        <span class="bg-error text-white px-md py-xs rounded-full text-[10px] font-bold uppercase tracking-wider" th:unless="${property.isAvailable}">Unavailable</span>
+                    </div>
+                </div>
+            </a>
+            <div class="p-md space-y-md">
+                <div class="flex justify-between items-start">
+                    <a th:href="@{/property/{id}(id=${property.propertyID})}">
+                        <h3 class="font-headline-sm text-headline-sm text-on-surface" th:text="${property.title}">Room Title</h3>
+                        <p class="text-on-surface-variant font-label-bold flex items-center gap-xs">
+                            <span class="material-symbols-outlined text-[16px]">location_on</span> <span th:text="${property.city}">Location</span>
+                        </p>
+                    </a>
+                    <div class="text-right flex flex-col items-end gap-xs">
+                        <p class="text-primary font-bold text-headline-sm">R<span th:text="${property.rent}">0</span></p>
+                        <p class="text-[10px] text-on-surface-variant uppercase">per month</p>
+                    </div>
+                </div>
+                <div class="flex gap-sm flex-wrap">
+                    <span class="bg-primary-fixed/30 text-on-primary-fixed-variant px-sm py-xs rounded-lg text-label-sm flex items-center gap-xs" th:text="${property.bedrooms} + ' bed'">Beds</span>
+                    <span class="bg-primary-fixed/30 text-on-primary-fixed-variant px-sm py-xs rounded-lg text-label-sm flex items-center gap-xs" th:text="${property.bathrooms} + ' bath'">Baths</span>
+                    <span class="bg-primary-fixed/30 text-on-primary-fixed-variant px-sm py-xs rounded-lg text-label-sm flex items-center gap-xs" th:if="${property.furnished}">🛋️ Furnished</span>
+                    <span class="bg-primary-fixed/30 text-on-primary-fixed-variant px-sm py-xs rounded-lg text-label-sm flex items-center gap-xs" th:if="${property.studyFriendly}">📚 Study Friendly</span>
+                </div>
+                <div class="flex items-center gap-sm">
+                    <form th:action="@{/favorite/{id}(id=${property.propertyID})}" method="post" class="inline">
+                        <button type="submit" class="save-btn w-10 h-10 rounded-full border-2 border-primary text-primary flex items-center justify-center hover:bg-primary hover:text-white u-transition" title="Save">🤍</button>
+                    </form>
+                    <a th:href="@{/property/{id}(id=${property.propertyID})}" class="flex-1 text-center py-md border-2 border-primary text-primary rounded-xl font-label-bold hover:bg-primary hover:text-white u-transition">
+                        View room
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fallback shown only when the backend returns no properties -->
+        <p class="col-span-full text-center text-on-surface-variant py-xl" th:if="${#lists.isEmpty(properties)}">
+            No rooms match right now — check back soon or try a different search.
+        </p>
+    </div>
+</section>
+
+<!-- Explore Residences Section (Bento Style) -->
+<section class="bg-surface-container py-xl">
+    <div class="max-w-7xl mx-auto px-margin-desktop">
+        <div class="text-center space-y-xs mb-xl">
+            <span class="text-primary font-label-bold tracking-widest uppercase">Iconic Buildings</span>
+            <h2 class="font-headline-md text-headline-md text-on-surface">Explore our residences</h2>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-gutter h-auto md:h-[600px]">
+            <div class="md:col-span-8 group relative rounded-[32px] overflow-hidden cursor-pointer shadow-lg">
+                <div class="w-full h-full bg-cover bg-center u-transition group-hover:scale-105" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDvp9owNOuDrOqh3Wzhv-0b1gPGQIYBeY9uZZwhkHgcPJ9aIeAW-GEX_cG5FWknsbMyz2-5nU64qlO0HmxNmfTg745t2XMgi6HS4XOfGDexGPhSaX-HCzJ7dQ_GvkKx4u0ZxQvOY1pceA6KAybB_OujTZ9vNSqybDPHDHLvbo5fJljvgjSXGbANHh8-ESQ-omMaeO4RoaESk9957M4dpU17eveqsnjLtILWXYLRxwVhmVG7P7mt_AYG')"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                <div class="absolute bottom-8 left-8">
+                    <h3 class="text-white font-headline-md text-headline-md">Apex Studios</h3>
+                    <p class="text-white/80 font-body-lg">Luxury living in the heart of Summerstrand</p>
+                </div>
+            </div>
+            <div class="md:col-span-4 flex flex-col gap-gutter">
+                <div class="flex-1 group relative rounded-[32px] overflow-hidden cursor-pointer shadow-lg">
+                    <div class="w-full h-full bg-cover bg-center u-transition group-hover:scale-105" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD36loEQ2YIZohjzgrfcptCU3RpdxrJpZnxB9HeXjX8ri1lnicIcHcm1gUFt0_LFcpyZtFWGdCvk7NTU1zZtN6Wv-1RDZ1vJFkFle1ITd-0cJOMssfC4XAVJh7GR6tAaJ9eTiWO2Br7HprVGbOJ7D9aM3k8oLKPeJ1A71DCJgFvUxvE_SZM1DZ7xcYSynycIIFpgroysvyGMYg2AmI-VOHsNWrebpjaroqU3zp_t41rIL-1QljIDjb0')"></div>
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                    <div class="absolute bottom-6 left-6">
+                        <h3 class="text-white font-headline-sm text-headline-sm">Arteria</h3>
+                        <p class="text-white/80 text-sm">Community-first urban living</p>
+                    </div>
+                </div>
+                <div class="flex-1 group relative rounded-[32px] overflow-hidden cursor-pointer shadow-lg">
+                    <div class="w-full h-full bg-cover bg-center u-transition group-hover:scale-105" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDLzpNChbNkdYV0svVjg9gGO8sRpIKkuXimjJyRO-skF7wSzkYVwB9cLE5hLs2mG2xgTqrA88iiaaNPLxPGOiUDRkbzyHwIVy4a0Xs7WnZP8nOKGODZulTzEefBRqioHIc0gfvOWgonfVNzoC9ldhpnLIgg6qZF3x0_jWzg0BvElZL88qdqq6mZiRy3x5EWIrWOUdlixrAMssNqhDrNdYOF26uqLHM4OLmgRESr0kD8zjc7zerb86Zi')"></div>
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                    <div class="absolute bottom-6 left-6">
+                        <h3 class="text-white font-headline-sm text-headline-sm">Lumea</h3>
+                        <p class="text-white/80 text-sm">Balanced study-life focus</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials Section -->
+<section class="py-xl max-w-7xl mx-auto px-margin-desktop overflow-hidden">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-xl items-center">
+        <div class="space-y-md">
+            <span class="text-primary font-label-bold tracking-widest uppercase">Voices of ULEE</span>
+            <h2 class="font-headline-md text-headline-md text-on-surface leading-tight">What residents &amp; parents say</h2>
+            <p class="text-on-surface-variant font-body-lg">Peace of mind for parents, an unforgettable experience for students.</p>
+        </div>
+        <div class="lg:col-span-2 flex gap-gutter overflow-x-auto hide-scrollbar pb-lg snap-x">
+            <div class="min-w-[320px] md:min-w-[400px] bg-white p-lg rounded-[32px] snap-center u-shadow-card border-l-8 border-primary">
+                <span class="material-symbols-outlined text-primary text-display-lg opacity-20">format_quote</span>
+                <p class="font-body-lg text-on-surface mb-lg">"The security at Apex is world-class. As a parent living 600km away, I have complete peace of mind knowing my daughter is safe and in a productive environment."</p>
+                <div class="flex items-center gap-md border-t border-outline-variant pt-md">
+                    <div class="w-12 h-12 rounded-full bg-surface-variant"></div>
+                    <div><p class="font-bold text-on-surface">Lou Viljoen</p><p class="text-sm text-on-surface-variant">Parent</p></div>
+                </div>
+            </div>
+            <div class="min-w-[320px] md:min-w-[400px] bg-white p-lg rounded-[32px] snap-center u-shadow-card border-l-8 border-secondary">
+                <span class="material-symbols-outlined text-secondary text-display-lg opacity-20">format_quote</span>
+                <p class="font-body-lg text-on-surface mb-lg">"Living at Arteria has been a game-changer for my studies. The backup power means I never miss a deadline during load shedding."</p>
+                <div class="flex items-center gap-md border-t border-outline-variant pt-md">
+                    <div class="w-12 h-12 rounded-full bg-surface-variant"></div>
+                    <div><p class="font-bold text-on-surface">Sipho Nkosi</p><p class="text-sm text-on-surface-variant">Resident, 3rd Year Eng</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Life at ULEE (Photo Stacks) -->
+<section class="py-xl bg-white overflow-hidden" id="life-at-ulee">
+    <div class="max-w-7xl mx-auto px-margin-desktop">
+        <div class="text-center mb-xl">
+            <h2 class="font-headline-md text-headline-md text-on-surface">Life at ULEE</h2>
+            <p class="text-on-surface-variant">More than just a room. A community where you thrive.</p>
+        </div>
+        <div class="relative h-[400px] md:h-[600px] flex items-center justify-center">
+            <div class="absolute w-[300px] h-[300px] md:w-[600px] md:h-[600px] bg-primary-fixed/20 rounded-full blur-[100px]"></div>
+            <div class="absolute transform -rotate-6 translate-x-[-120px] translate-y-[-40px] md:translate-x-[-250px] w-48 md:w-80 h-64 md:h-96 rounded-2xl overflow-hidden shadow-xl border-4 border-white z-10 group hover:z-40 transition-all duration-300">
+                <div class="w-full h-full bg-cover bg-center" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAA2nnRcXYDJ123tgUT2Gd3PDUgeWXZ32brLnI2y6TvnXNGwEuv8FUV4-dk8C_qyoXp_FFPTZVM8ACGmP4h-jYJ07vF28kH6-ffrNoAY04guqPUToqDMOkAaE-crjseZAk6kX8AP-FAV-pp2swh7Z7blVZV4lnlOwVm2p-473suzHmq25_iPIH-2PcRHOJnPMMbMaVkUvUdY6A50Ui0AD8K0FQRMI1xsAN3kXCZezHuO6Bgo8pAj105')"></div>
+                <div class="absolute bottom-0 inset-x-0 bg-black/60 p-sm backdrop-blur-sm"><p class="text-white text-xs font-bold uppercase tracking-widest">Weekend Vibes</p></div>
+            </div>
+            <div class="absolute transform rotate-3 translate-x-[40px] translate-y-[-80px] md:translate-x-[100px] w-48 md:w-80 h-64 md:h-96 rounded-2xl overflow-hidden shadow-xl border-4 border-white z-20 group hover:z-40 transition-all duration-300">
+                <div class="w-full h-full bg-cover bg-center" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCXaz3uimQmsAMquboMW_37AzJcLgZxdxOmmP28Sp5BgrKL89GLfntGeMnQa_1n2SJFV1SOSOocWVWMmnKNi8wJU5uZadUM_JuFTGB2EQiOM6GL9UVoNADE3dqcYpxqyPlig2HU8s-1Tyg14R66RNyxR-Yv1F8lxTOE8ejtvfomLZmOlCbWphDJeHQdKhAWd6TjfLsZk5okAhKBrF6vglhJNADNIktlbWq7fC_TDtojKA7OjjigM8e6')"></div>
+                <div class="absolute bottom-0 inset-x-0 bg-black/60 p-sm backdrop-blur-sm"><p class="text-white text-xs font-bold uppercase tracking-widest">Late-night Study</p></div>
+            </div>
+            <div class="absolute transform -rotate-2 translate-x-[150px] translate-y-[60px] md:translate-x-[350px] w-40 md:w-64 h-56 md:h-80 rounded-2xl overflow-hidden shadow-xl border-4 border-white z-30 group hover:z-40 transition-all duration-300">
+                <div class="w-full h-full bg-cover bg-center" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBHWwXhH-xGuYn_6tDQLSDEM_CNKC2riuNKlSEogLXakaNb9cmghRSbZECIHw32Zke31l9wugtTVy6GALlnUZVBkCSHvoYgg0UeGR7tr4SkWNxv3KDF8GTLe6LnTnJMO5doxwEcsNNPR5UPPiVwQ4MMybKx7oeCbh_b8LWEScmasRshNKHDwa7Th5s0fpmKyisJahmuFyrIQGHCJLuqbwDsDfvvJfXa0JC4w-TtWzWUB9GwXPep_dJH')"></div>
+                <div class="absolute bottom-0 inset-x-0 bg-black/60 p-sm backdrop-blur-sm"><p class="text-white text-xs font-bold uppercase tracking-widest">Social Events</p></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Banner -->
+<section class="relative py-xl overflow-hidden" id="apply">
+    <div class="absolute inset-0 z-0">
+        <div class="w-full h-full bg-cover bg-center" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAleO-PUvb3OxTSPbRp2NEDIVd6ln3jHd_uVkTpAd4cBzi0SpFfh14VDbF3WLkiWb3w9isODifqI-YLuq_1hTkjjF-sB_5GDGmdz8z_iLqYL-m3pZh6zPJ9Jm0db5DssosozIZoulizYCfIHj0nwMIh7G9OWGmkDgm7TpCIg6LEbx4TOhTRFu2q1MGkk_GOkvtyZV6JgVAphhMZWOgrgecwPbpWcHLs4aYSlw6OCZL-xIda8qsShnpi')"></div>
+        <div class="absolute inset-0 bg-primary/60 backdrop-blur-[2px]"></div>
+    </div>
+    <div class="relative z-10 max-w-4xl mx-auto text-center px-margin-mobile space-y-lg py-lg">
+        <h2 class="font-display-lg text-display-lg font-extrabold text-white">Find your place at ULEE</h2>
+        <p class="text-body-lg text-white/90">Join hundreds of students who call ULEE home. Applications for the next semester are now open.</p>
+        <div class="flex flex-col md:flex-row items-center justify-center gap-md">
+            <a href="/student-dashboard#properties" class="w-full md:w-auto bg-tertiary-fixed text-on-tertiary-fixed px-xl py-lg rounded-2xl font-label-bold text-lg hover:bg-tertiary-container u-transition shadow-xl">Browse rooms</a>
+            <button type="button" id="openLoginBtnCta" class="w-full md:w-auto bg-white/10 backdrop-blur-md text-white border-2 border-white/40 px-xl py-lg rounded-2xl font-label-bold text-lg hover:bg-white/20 u-transition">Log in to apply</button>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="bg-inverse-surface w-full pt-xl pb-lg border-t border-outline-variant">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-gutter px-margin-desktop max-w-7xl mx-auto">
+        <div class="space-y-md">
+            <span class="font-headline-sm text-headline-sm font-bold text-surface-bright">ULEE</span>
+            <p class="text-surface-variant/80 font-body-md">Premium student living solutions in Gqeberha. Safety, community, and academic success.</p>
+        </div>
+        <div class="space-y-sm">
+            <p class="font-label-bold text-surface-bright uppercase tracking-widest text-xs">Resources</p>
+            <ul class="space-y-xs">
+                <li><a class="text-surface-variant/80 hover:text-surface-bright u-transition" href="#">Privacy Policy</a></li>
+                <li><a class="text-surface-variant/80 hover:text-surface-bright u-transition" href="#">Terms of Service</a></li>
+                <li><a class="text-surface-variant/80 hover:text-surface-bright u-transition" href="#">FAQs</a></li>
+            </ul>
+        </div>
+        <div class="space-y-sm">
+            <p class="font-label-bold text-surface-bright uppercase tracking-widest text-xs">Quick Links</p>
+            <ul class="space-y-xs">
+                <li><a class="text-surface-variant/80 hover:text-surface-bright u-transition" href="/student-dashboard">All Residences</a></li>
+                <li><a class="text-surface-variant/80 hover:text-surface-bright u-transition" href="/my-applications">My Applications</a></li>
+            </ul>
+        </div>
+        <div class="space-y-md">
+            <p class="font-label-bold text-surface-bright uppercase tracking-widest text-xs">Contact Support</p>
+            <a class="text-tertiary-fixed font-bold block hover:underline" href="mailto:hello@ulee.co.za">hello@ulee.co.za</a>
+            <p class="text-surface-variant/80 text-sm">041 500 1234</p>
+        </div>
+    </div>
+    <div class="mt-xl border-t border-outline-variant/30 pt-lg max-w-7xl mx-auto px-margin-desktop text-center">
+        <p class="text-surface-variant/60 text-xs">© 2026 ULEE Student Living. Built for the modern Gqeberha student.</p>
+    </div>
+</footer>
+
+<!-- ── LOGIN MODAL — only ever shown when "Login" is clicked, never a separately-linked page ── -->
+<div id="loginModalOverlay" class="fixed inset-0 z-[999] items-center justify-center bg-black/50 backdrop-blur-sm px-margin-mobile">
+    <div class="bg-white w-full max-w-md rounded-[24px] p-xl relative">
+        <button type="button" id="closeLoginBtn" aria-label="Close" class="absolute top-md right-md text-on-surface-variant hover:text-primary">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+        <h2 class="font-headline-sm text-headline-sm text-on-surface mb-md">Log in to ULEE</h2>
+        <form th:action="@{/login}" method="post" class="space-y-md">
+            <div>
+                <label class="text-[11px] uppercase font-bold text-on-surface-variant tracking-wider">Username</label>
+                <input type="text" name="username" class="w-full mt-xs border border-outline-variant rounded-lg px-md py-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="e.g. s227676637" required/>
+            </div>
+            <div>
+                <label class="text-[11px] uppercase font-bold text-on-surface-variant tracking-wider">Password</label>
+                <input type="password" name="password" class="w-full mt-xs border border-outline-variant rounded-lg px-md py-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="Enter your password" required/>
+            </div>
+            <button type="submit" class="w-full bg-primary text-white py-sm rounded-full font-label-bold hover:bg-primary-container transition-colors">Log in</button>
+        </form>
+        <p class="text-center text-sm text-on-surface-variant mt-md">
+            No account? <a href="/register" class="text-primary font-bold hover:underline">Register</a>
+        </p>
+    </div>
+</div>
+
+<script>
+    // ── Login modal ──
+    const loginOverlay = document.getElementById('loginModalOverlay');
+    document.getElementById('openLoginBtn')?.addEventListener('click', () => loginOverlay.classList.add('open'));
+    document.getElementById('openLoginBtnCta')?.addEventListener('click', () => loginOverlay.classList.add('open'));
+    document.getElementById('closeLoginBtn')?.addEventListener('click', () => loginOverlay.classList.remove('open'));
+    loginOverlay.addEventListener('click', (e) => { if (e.target === loginOverlay) loginOverlay.classList.remove('open'); });
+
+    // ── Room type tab filtering ──
+    const tabs = document.querySelectorAll('.filter-tab');
+    const cards = document.querySelectorAll('.room-card');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            const type = tab.dataset.type;
+            cards.forEach(card => {
+                const match = type === 'all' || card.dataset.type === type;
+                card.classList.toggle('is-visible', match);
+            });
+            document.getElementById('heroTypeSelect').value = type === 'all' ? '' : type;
+        });
+    });
+
+    // ── AI search shortcut in hero ──
+    document.getElementById('aiSearchInput')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const q = e.target.value.trim();
+            alert('🤖 AI Assistant: Searching for "' + (q || 'accommodation') + '"...');
+        }
+    });
+
+    // ── Save toggle (visual only; the form submit still hits /favorite/{id}) ──
+    document.querySelectorAll('.save-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            btn.textContent = btn.textContent.trim() === '🤍' ? '❤️' : '🤍';
+            btn.closest('form').submit();
+        });
+    });
+</script>
+
+</body>
+</html>

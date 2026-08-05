@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title th:text="'ULEE — ' + ${property.title}">ULEE — Listing Detail</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/admin-style.css">
+</head>
+<body>
+<div class="shell">
+    <div class="main">
+        <header class="topbar">
+            <div class="topbar-title">Listing Detail <span th:text="'— ' + ${property.title}">— Property Name</span></div>
+        </header>
+
+        <div class="content">
+            <div class="section active">
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <div>
+                            <span class="panel-title" th:text="${property.title}">Listing Name</span>
+                            <span class="panel-sub" th:text="${property.address} + ', ' + ${property.city}">Address</span>
+                        </div>
+                        <span th:if="${property.status == 'Approved'}" class="badge badge-green"><span class="badge-dot"></span>Approved</span>
+                        <span th:if="${property.status == 'Pending' or property.status == null}" class="badge badge-amber"><span class="badge-dot"></span>Pending</span>
+                        <span th:if="${property.status == 'Rejected'}" class="badge badge-red"><span class="badge-dot"></span>Rejected</span>
+                    </div>
+
+                    <div style="padding:22px;display:flex;flex-direction:column;gap:18px">
+
+                        <!-- Auto-validation result (Basic Flow step 2) -->
+                        <div th:unless="${isValid}" style="background:#fff3e0;border:1px solid #ffb74d;border-radius:8px;padding:14px 18px">
+                            <strong style="color:#e65100">⚠ This listing has missing information:</strong>
+                            <ul style="margin:8px 0 0 20px;color:#e65100">
+                                <li th:each="issue : ${validationIssues}" th:text="${issue}">Issue</li>
+                            </ul>
+                        </div>
+                        <div th:if="${isValid}" style="background:#e8f5e9;border:1px solid #81c784;border-radius:8px;padding:10px 18px">
+                            <strong style="color:#2e7d32">✓ All required information present</strong>
+                        </div>
+
+                        <div class="stats">
+                            <div class="stat-card">
+                                <div class="stat-num" th:text="${property.rent} ?: 'N/A'">Rent</div>
+                                <div class="stat-label">Rent / month (R)</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-num" th:text="${property.bedrooms} ?: 'N/A'">0</div>
+                                <div class="stat-label">Bedrooms</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-num" th:text="${property.bathrooms} ?: 'N/A'">0</div>
+                                <div class="stat-label">Bathrooms</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-num" th:text="${property.rating} ?: 'N/A'">Rating</div>
+                                <div class="stat-label">Avg Rating</div>
+                            </div>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Description</label>
+                            <p th:text="${property.description} ?: 'No description provided'">Description text</p>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Landlord ID</label>
+                            <p th:text="${property.landlordID} ?: 'Not linked to a landlord'">Landlord ID</p>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Type / Furnished / Study Friendly</label>
+                            <p th:text="(${property.type} ?: 'Unspecified type') + (${property.furnished} ? ' · Furnished' : ' · Unfurnished') + (${property.studyFriendly} ? ' · Study-friendly' : '')">
+                                Type
+                            </p>
+                        </div>
+
+                        <!-- B100 — Approve/Reject actions directly from the detail page -->
+                        <div style="display:flex;gap:10px">
+                            <form th:action="@{/admin/approve-listing/{id}(id=${property.propertyID})}" method="post">
+                                <button type="submit" class="btn btn-primary" style="padding:9px 22px;font-size:13px;border-radius:8px">Approve</button>
+                            </form>
+                            <form th:action="@{/admin/reject-listing/{id}(id=${property.propertyID})}" method="post"
+                                  onsubmit="return confirm('Reject this listing?');">
+                                <button type="submit" class="btn btn-danger" style="padding:9px 22px;font-size:13px;border-radius:8px">Reject</button>
+                            </form>
+                            <a href="/admin-index" class="btn btn-view" style="padding:9px 22px;font-size:13px;border-radius:8px;text-decoration:none">Back</a>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- B101 — reviews scoped to this listing -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <div>
+                            <span class="panel-title">Reviews for this Listing</span>
+                            <span class="panel-sub" th:text="${#lists.size(reviews)} + ' review(s)'">0 reviews</span>
+                        </div>
+                    </div>
+                    <div class="review-grid">
+                        <div class="review-card" th:each="review : ${reviews}">
+                            <div class="review-top">
+                                <div class="r-avatar" th:text="'S' + ${review.studentID}">S#</div>
+                                <div>
+                                    <div class="review-name" th:text="'Student ID: ' + ${review.studentID}">Student</div>
+                                </div>
+                            </div>
+                            <div class="review-text" th:text="${review.comment} ?: 'No comment provided'">Review text</div>
+                            <div class="review-footer">
+                                <span class="review-date" th:text="${review.reviewDate} ?: 'Date not recorded'">Date</span>
+                            </div>
+                        </div>
+                        <p th:if="${#lists.isEmpty(reviews)}" style="padding:22px;color:var(--muted)">No reviews yet for this listing.</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

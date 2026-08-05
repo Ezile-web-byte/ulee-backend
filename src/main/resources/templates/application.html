@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Applications — StudentNest NMU</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="application.css" />
+  <script src="application.js" defer></script>
+</head>
+<body>
+
+<!-- Topbar -->
+<nav class="topbar">
+  <a class="logo" href="#">
+    <div class="logo-mark">
+      <svg viewBox="0 0 16 16"><path d="M8 1L2 5v9h4V9h4v5h4V5z"/></svg>
+    </div>
+    ULEE<br> The Future Of Student Living
+  </a>
+  <div class="topbar-right">
+    <div class="nmu-badge">NMU</div>
+    <div class="avatar">JD</div>
+  </div>
+</nav>
+
+<!-- Page -->
+<div class="page">
+
+  <!-- Header -->
+  <div class="page-head">
+    <div>
+      <div class="page-title">Applications</div>
+      <div class="page-sub">Review student applications for your properties</div>
+    </div>
+    <div class="stats-row" id="statsRow">
+      <div class="stat-chip"><span class="dot dot-pending"></span> <span id="countPending">0</span> Pending</div>
+      <div class="stat-chip"><span class="dot dot-accepted"></span> <span id="countAccepted">0</span> Accepted</div>
+      <div class="stat-chip"><span class="dot dot-rejected"></span> <span id="countRejected">0</span> Rejected</div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters">
+    <div class="filter-input" style="max-width:260px;">
+      <svg viewBox="0 0 16 16" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="4"/><path d="M11 11l3 3"/></svg>
+      <input type="text" placeholder="Search by student name…" id="searchInput" oninput="applyFilters()">
+    </div>
+    <select class="filter-select" id="propertyFilter" onchange="applyFilters()">
+      <option value="">All properties</option>
+      <option>Greenfields Residence</option>
+      <option>Vista Student Flats</option>
+      <option>Summerstrand Suites</option>
+    </select>
+    <select class="filter-select" id="statusFilter" onchange="applyFilters()">
+      <option value="">All statuses</option>
+      <option value="pending">Pending</option>
+      <option value="accepted">Accepted</option>
+      <option value="rejected">Rejected</option>
+    </select>
+  </div>
+
+  <!-- Cards -->
+  <div class="cards-list" id="cardsList"></div>
+  <div class="empty-state" id="emptyState">
+    <svg viewBox="0 0 48 48" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="6" width="32" height="36" rx="3"/><path d="M16 16h16M16 24h16M16 32h8"/></svg>
+    <p>No applications match your filters.</p>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">Application Details</div>
+      <button class="modal-close" onclick="closeModalDirect()">&#x2715;</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-reject btn-lg" id="modalRejectBtn" onclick="modalAction('reject')">Reject</button>
+      <button class="btn btn-accept btn-lg" id="modalAcceptBtn" onclick="modalAction('accept')">Accept</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+
+</script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <title>ULEE — Approved Properties</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/admin-style.css">
+</head>
+<body>
+<div class="shell">
+  <div class="main">
+    <header class="topbar"><div class="topbar-title">Approved Properties</div></header>
+    <div class="content">
+      <div class="section active">
+        <div class="stats">
+          <div class="stat-card">
+            <div class="stat-num" th:text="${totalApproved}">0</div>
+            <div class="stat-label">Total Approved</div>
+          </div>
+        </div>
+        <div class="review-grid">
+          <div class="review-card" th:each="property : ${approvedProperties}">
+            <div class="review-name" th:text="${property.title}">Name</div>
+            <div class="review-listing" th:text="${property.city} + ' · R' + ${property.rent} + '/mo'">Details</div>
+            <a th:href="@{/admin/listing/{id}(id=${property.propertyID})}" class="btn btn-primary" style="display:inline-block;margin-top:10px">View Details</a>
+          </div>
+        </div>
+        <p th:if="${#lists.isEmpty(approvedProperties)}" style="padding:22px;color:var(--muted)">No approved properties yet.</p>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
