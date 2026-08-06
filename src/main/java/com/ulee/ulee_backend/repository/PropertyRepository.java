@@ -17,6 +17,8 @@ public interface PropertyRepository extends JpaRepository<Property, Integer> {
     List<Property> findByIsAvailableTrueAndBedroomsGreaterThanEqualAndRentLessThanEqual(
             Integer minBedrooms, BigDecimal maxRent);
 
+    List<Property> findByIsAvailableTrueAndRentLessThanEqual(java.math.BigDecimal rent);
+
     List<Property> findByLandlordID(Integer landlordID);
 
 }

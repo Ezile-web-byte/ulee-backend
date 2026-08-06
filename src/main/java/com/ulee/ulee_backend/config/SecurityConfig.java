@@ -20,6 +20,8 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
@@ -31,8 +33,10 @@ public class SecurityConfig {
                                 "/student-style.css", "/student-script.js",
                                 "/static/**", "/uploads/**"
                         ).permitAll()
-                        .requestMatchers("/landlord-index", "/manage-properties", "/list-property",
-                                "/edit-property/**", "/manage-applications", "/my-property-reviews")
+                        .requestMatchers("/landlord-index", "/list-property",
+                                "/edit-property/**", "/update-property/**", "/delete-property-image/**",
+                                "/add-property-feature/**", "/delete-property-feature/**",
+                                "/toggle-property-status/**", "/manage-applications", "/my-property-reviews")
                         .hasRole("LANDLORD")
                         .requestMatchers("/admin-dashboard").hasRole("ADMIN")
                         .anyRequest().authenticated()
@@ -51,6 +55,8 @@ public class SecurityConfig {
 
         return http.build();
     }
+
+
 
     // Redirects each role to its own dashboard after successful login
     private AuthenticationSuccessHandler roleBasedSuccessHandler() {

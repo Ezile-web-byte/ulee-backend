@@ -48,6 +48,20 @@ public class Property {
     @JoinColumn(name = "propertyID", referencedColumnName = "propertyID", insertable = false, updatable = false)
     private List<PropertyImage> images;
 
+    // ── Amenities: fixed checklist (Furnished, Private Kitchen, Gym, etc.) via property_amenity join table
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "property_amenity",
+            joinColumns = @JoinColumn(name = "propertyID"),
+            inverseJoinColumns = @JoinColumn(name = "amenityID")
+    )
+    private List<Amenity> amenities;
+
+    // ── Special features: landlord-authored extras (Study Hub, Braai Area) each with their own photos
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinColumn(name = "propertyID", referencedColumnName = "propertyID", insertable = false, updatable = false)
+    private List<PropertyFeature> features;
+
     @Transient
     public String getMainImageUrl() {
         if (images == null || images.isEmpty()) return null;
@@ -142,4 +156,13 @@ public class Property {
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public List<PropertyImage> getImages() { return images; }
+    public void setImages(List<PropertyImage> images) { this.images = images; }
+
+    public List<Amenity> getAmenities() { return amenities; }
+    public void setAmenities(List<Amenity> amenities) { this.amenities = amenities; }
+
+    public List<PropertyFeature> getFeatures() { return features; }
+    public void setFeatures(List<PropertyFeature> features) { this.features = features; }
 }
