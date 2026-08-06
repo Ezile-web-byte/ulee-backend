@@ -67,6 +67,7 @@ public class RegisterController {
         user.setPassword(passwordEncoder.encode(password));
         //user.setPassword(password); // plain text for now, matching the rest of this project's current approach
         user.setPhone(phone);
+        user.setRole(role.toUpperCase());
 
 
         if (dateOfBirth != null && !dateOfBirth.isBlank()) {
