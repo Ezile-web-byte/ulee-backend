@@ -1,229 +1,202 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ULEE — Admin Dashboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/admin-style.css">
-  <script src="/admin-script.js" defer></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ULEE — Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/admin-style.css">
+    <script src="/admin-script.js" defer></script>
 </head>
 <body>
 
 <div class="shell">
 
-  <aside class="sidebar" id="sidebar">
-    <div class="logo">
-      <div class="logo-mark">
-        <div class="logo-icon">
-          <svg viewBox="0 0 20 20"><path d="M10 2L3 7v11h14V7L10 2zm0 2.6 5 3.5V16H5V8.1l5-3.5zM8 10h4v6H8z"/></svg>
-        </div>
-        <div class="logo-text">
-          <div class="logo-name">ULEE</div>
-          <div class="logo-tag">The future of Student Living</div>
-        </div>
-      </div>
-      <button class="sidebar-toggle" id="sidebar-toggle" title="Toggle sidebar">
-        <svg viewBox="0 0 20 20"><path d="M12 4l-6 6 6 6"/></svg>
-      </button>
-    </div>
-
-    <nav class="nav">
-      <div class="nav-label">Main</div>
-
-      <div class="nav-item active" data-section="dashboard" data-label="Dashboard">
-        <svg class="nav-icon" viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="11" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="11" width="6" height="6" rx="1.5"/><rect x="11" y="11" width="6" height="6" rx="1.5"/></svg>
-        <span class="nav-item-label">Dashboard</span>
-      </div>
-
-      <div class="nav-item" data-section="listings" data-label="Listings">
-        <svg class="nav-icon" viewBox="0 0 20 20"><path d="M3 5h14M3 10h14M3 15h10"/></svg>
-        <span class="nav-item-label">Listings</span>
-        <span class="nav-badge" th:text="${totalListings}">12</span>
-      </div>
-
-      <div class="nav-item" data-section="users" data-label="Users" onclick="window.location.href='/admin/manage-users'">
-        <svg class="nav-icon" viewBox="0 0 20 20"><circle cx="8" cy="7" r="3"/><path d="M2 17c0-3.3 2.7-6 6-6"/><circle cx="15" cy="9" r="2.5"/><path d="M11 17c0-2.2 1.8-4 4-4s4 1.8 4 4"/></svg>
-        <span class="nav-item-label">Users</span>
-      </div>
-
-      <div class="nav-label">Moderation</div>
-
-      <div class="nav-item" data-section="reviews" data-label="Reviews">
-        <svg class="nav-icon" viewBox="0 0 20 20"><path d="M10 2l2.3 4.7 5.2.8-3.8 3.7.9 5.2L10 14l-4.6 2.4.9-5.2L2.5 7.5l5.2-.8z"/></svg>
-        <span class="nav-item-label">Reviews</span>
-        <span class="nav-badge" th:text="${totalReviews}">4</span>
-      </div>
-
-      <div class="nav-label">System</div>
-
-      <div class="nav-item" data-section="settings" data-label="Settings">
-        <svg class="nav-icon" viewBox="0 0 20 20"><circle cx="10" cy="10" r="2.5"/><path d="M10 3v2M10 15v2M3 10h2M15 10h2M5.1 5.1l1.4 1.4M13.5 13.5l1.4 1.4M5.1 14.9l1.4-1.4M13.5 6.5l1.4-1.4"/></svg>
-        <span class="nav-item-label">Settings</span>
-      </div>
-    </nav>
-
-    <div class="sidebar-footer">
-      <div class="admin-chip">
-        <div class="avatar">SA</div>
-        <div class="admin-info">
-          <div class="admin-name">Sarah Admin</div>
-          <div class="admin-role">Admin</div>
-        </div>
-      </div>
-    </div>
-  </aside>
-
-  <div class="main">
-
-    <header class="topbar">
-      <div class="topbar-title" id="topbar-title">Review Properties <span>— Pending Approval</span></div>
-      <div class="notif-wrap">
-        <button class="icon-btn" title="Notifications">
-          <svg viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3l-1.5 2.5h15L16 11V8a6 6 0 00-6-6zM8 16a2 2 0 004 0"/></svg>
-        </button>
-        <div class="notif-dot"></div>
-      </div>
-      <button class="logout-btn" onclick="alert('Logging out…')">
-        <svg viewBox="0 0 20 20"><path d="M13 3h4v14h-4M9 14l4-4-4-4M13 10H5"/></svg>
-        <span>Log out</span>
-      </button>
-    </header>
-
-    <div class="content">
-
-      <!-- ═══ DASHBOARD / REVIEW PROPERTIES ══════════════════════════ -->
-      <div class="section active" id="sec-dashboard">
-
-        <!-- Feedback from Approve/Reject actions -->
-        <div th:if="${actionMessage}" style="background:#e8f5e9;border:1px solid #81c784;border-radius:8px;padding:12px 18px;margin-bottom:16px">
-          <strong style="color:#2e7d32" th:text="${actionMessage}">Success</strong>
-        </div>
-        <div th:if="${actionError}" style="background:#ffebee;border:1px solid #ef5350;border-radius:8px;padding:12px 18px;margin-bottom:16px">
-          <strong style="color:#c62828" th:text="${actionError}">Error</strong>
-        </div>
-
-        <!-- Stat cards — only real, computable data. "Accredited" and "NSFAS %"
-             from the original mockup are omitted: no such fields exist anywhere
-             in the Property schema or domain diagram. -->
-        <div class="stats">
-          <div class="stat-card">
-            <div class="stat-top">
-              <div class="stat-icon warn">
-                <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"/><path d="M10 7v4M10 14h.01"/></svg>
-              </div>
-            </div>
-            <div class="stat-num" th:text="${pendingCount}">0</div>
-            <div class="stat-label">Pending Review</div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-top">
-              <div class="stat-icon red">
-                <svg viewBox="0 0 20 20"><path d="M10 3l7 14H3L10 3z"/><path d="M10 9v4M10 15h.01"/></svg>
-              </div>
-            </div>
-            <div class="stat-num" th:text="${flaggedCount}">0</div>
-            <div class="stat-label">Flagged</div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-top">
-              <div class="stat-icon">
-                <svg viewBox="0 0 20 20"><path d="M3 7l7-4 7 4v9H3V7z"/><path d="M8 11h4v5H8z"/></svg>
-              </div>
-            </div>
-            <div class="stat-num" th:text="${totalListings}">0</div>
-            <div class="stat-label">Total Listings</div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-top">
-              <div class="stat-icon blue">
-                <svg viewBox="0 0 20 20"><path d="M10 2l2.3 4.7 5.2.8-3.8 3.7.9 5.2L10 14l-4.6 2.4.9-5.2L2.5 7.5l5.2-.8z"/></svg>
-              </div>
-            </div>
-            <div class="stat-num" th:text="${totalReviews}">0</div>
-            <div class="stat-label">Total Reviews</div>
-          </div>
-        </div>
-
-        <!-- Review Properties table — matches the B100 spec exactly:
-             shows PENDING listings only, with Review/Approve/Reject actions. -->
-        <div class="panel">
-          <div class="panel-header">
-            <div>
-              <span class="panel-title">Review Properties</span>
-              <span class="panel-sub" th:text="${pendingCount} + ' pending listings'">0 pending listings</span>
-            </div>
-          </div>
-          <table>
-            <thead>
-            <tr>
-              <th style="width:26%">Property Name</th>
-              <th style="width:16%">Landlord</th>
-              <th style="width:16%">Location</th>
-              <th style="width:14%">Date Submitted</th>
-              <th style="width:12%">Status</th>
-              <th style="width:16%">Actions</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr th:each="property : ${pendingProperties}">
-              <td><strong th:text="${property.title}">Property Name</strong></td>
-              <td th:text="${landlordNameLookup.get(property.landlordID)}">Landlord</td>
-              <td th:text="${property.city}">Location</td>
-              <td th:text="${property.createdAt} ?: 'Date not recorded'">Date</td>
-              <td><span class="badge badge-amber"><span class="badge-dot"></span>Pending</span></td>
-              <td>
-                <div class="btn-group">
-                  <a th:href="@{/admin/listing/{id}(id=${property.propertyID})}" class="btn btn-view">Review</a>
-                  <form th:action="@{/admin/approve-listing/{id}(id=${property.propertyID})}" method="post" style="display:inline">
-                    <button type="submit" class="btn btn-primary">Approve</button>
-                  </form>
-                  <form th:action="@{/admin/reject-listing/{id}(id=${property.propertyID})}" method="post" style="display:inline"
-                        onsubmit="return confirm('Reject this listing?');">
-                    <button type="submit" class="btn btn-danger">Reject</button>
-                  </form>
+    <aside class="sidebar" id="sidebar">
+        <div class="logo">
+            <div class="logo-mark">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 20 20"><path d="M10 2L3 7v11h14V7L10 2zm0 2.6 5 3.5V16H5V8.1l5-3.5zM8 10h4v6H8z"/></svg>
                 </div>
-              </td>
-            </tr>
-            </tbody>
-          </table>
-          <p th:if="${#lists.isEmpty(pendingProperties)}" style="padding:22px;color:var(--muted)">
-            No listings are currently awaiting review.
-          </p>
+                <div class="logo-text">
+                    <div class="logo-name">ULEE</div>
+                    <div class="logo-tag">The future of Student Living</div>
+                </div>
+            </div>
+            <button class="sidebar-toggle" id="sidebar-toggle" title="Toggle sidebar">
+                <svg viewBox="0 0 20 20"><path d="M12 4l-6 6 6 6"/></svg>
+            </button>
         </div>
 
-      </div><!-- /dashboard -->
+        <nav class="nav">
+            <div class="nav-label">Main</div>
 
-      <!-- ═══ LISTINGS (all, any status) ═══════════════════════════ -->
-      <div class="section" id="sec-listings">
-        <div class="panel">
-          <div class="panel-header">
-            <div>
-              <span class="panel-title">All Listings</span>
-              <span class="panel-sub" th:text="${totalListings} + ' total'">0 total</span>
+            <div class="nav-item active" data-section="dashboard" data-label="Dashboard">
+                <svg class="nav-icon" viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="11" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="11" width="6" height="6" rx="1.5"/><rect x="11" y="11" width="6" height="6" rx="1.5"/></svg>
+                <span class="nav-item-label">Dashboard</span>
             </div>
-            <div style="display:flex;gap:8px;align-items:center">
-              <input class="search-input" type="text" placeholder="Search listings…" />
+
+            <div class="nav-item" data-section="listings" data-label="Listings" onclick="window.location.href='/admin/listings'">
+                <svg class="nav-icon" viewBox="0 0 20 20"><path d="M3 5h14M3 10h14M3 15h10"/></svg>
+                <span class="nav-item-label">Listings</span>
+                <span class="nav-badge" th:text="${totalListings}">0</span>
             </div>
-          </div>
-          <table>
-            <thead>
-            <tr>
-              <th style="width:28%">Listing Name</th>
-              <th style="width:20%">Location</th>
-              <th style="width:12%">Price/mo</th>
-              <th style="width:12%">Status</th>
-              <th style="width:28%">Actions</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr th:each="property : ${properties}">
-              <td>
-                <strong th:text="${property.title}">Listing Name</strong><br>
-                <span style="color:var(--muted);font-size:11px"
-                      th:text="${property.bedrooms} + '-bed · Landlord ID: ' + ${property.landlordID}">details</span>
-              </td>
-              <td th:text="${property.city}">Location<
+
+            <div class="nav-item" data-section="users" data-label="Users" onclick="window.location.href='/admin/manage-users'">
+                <svg class="nav-icon" viewBox="0 0 20 20"><circle cx="8" cy="7" r="3"/><path d="M2 17c0-3.3 2.7-6 6-6"/><circle cx="15" cy="9" r="2.5"/><path d="M11 17c0-2.2 1.8-4 4-4s4 1.8 4 4"/></svg>
+                <span class="nav-item-label">Users</span>
+            </div>
+
+            <div class="nav-label">Moderation</div>
+
+            <div class="nav-item" data-section="reviews" data-label="Reviews" onclick="window.location.href='/admin/reviews'">
+                <svg class="nav-icon" viewBox="0 0 20 20"><path d="M10 2l2.3 4.7 5.2.8-3.8 3.7.9 5.2L10 14l-4.6 2.4.9-5.2L2.5 7.5l5.2-.8z"/></svg>
+                <span class="nav-item-label">Reviews</span>
+                <span class="nav-badge" th:text="${totalReviews}">4</span>
+            </div>
+
+            <div class="nav-item" data-section="reported" data-label="Reported" onclick="window.location.href='/admin/reported-listings'">
+                <svg class="nav-icon" viewBox="0 0 20 20"><path d="M10 3l7 14H3L10 3z"/><path d="M10 9v4M10 15h.01"/></svg>
+                <span class="nav-item-label">Reported</span>
+                <span class="nav-badge" th:text="${totalReported}">0</span>
+            </div>
+
+            <div class="nav-label">System</div>
+
+            <div class="nav-item" data-section="settings" data-label="Settings">
+                <svg class="nav-icon" viewBox="0 0 20 20"><circle cx="10" cy="10" r="2.5"/><path d="M10 3v2M10 15v2M3 10h2M15 10h2M5.1 5.1l1.4 1.4M13.5 13.5l1.4 1.4M5.1 14.9l1.4-1.4M13.5 6.5l1.4-1.4"/></svg>
+                <span class="nav-item-label">Settings</span>
+            </div>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="admin-chip">
+                <div class="avatar">SA</div>
+                <div class="admin-info">
+                    <div class="admin-name">Sarah Admin</div>
+                    <div class="admin-role">Admin</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <div class="main">
+
+        <header class="topbar">
+            <div class="topbar-title" id="topbar-title">Dashboard <span>— Overview</span></div>
+            <div class="notif-wrap">
+                <button class="icon-btn" title="Notifications">
+                    <svg viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3l-1.5 2.5h15L16 11V8a6 6 0 00-6-6zM8 16a2 2 0 004 0"/></svg>
+                </button>
+                <div class="notif-dot" th:if="${totalPending > 0 or totalReported > 0}"></div>
+            </div>
+            <button class="logout-btn" onclick="alert('Logging out…')">
+                <svg viewBox="0 0 20 20"><path d="M13 3h4v14h-4M9 14l4-4-4-4M13 10H5"/></svg>
+                <span>Log out</span>
+            </button>
+        </header>
+
+        <div class="content">
+
+            <!-- Flash messages from redirect actions (approve/reject/etc.) -->
+            <div th:if="${actionMessage}" style="margin:16px 0;padding:12px 16px;border-radius:8px;background:#e6f6ec;color:#1a7a3c;" th:text="${actionMessage}"></div>
+            <div th:if="${actionError}" style="margin:16px 0;padding:12px 16px;border-radius:8px;background:#fdecec;color:#b3261e;" th:text="${actionError}"></div>
+
+            <div class="section active" id="sec-dashboard">
+
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-top">
+                            <div class="stat-icon warn">
+                                <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"/><path d="M10 7v4M10 14h.01"/></svg>
+                            </div>
+                        </div>
+                        <div class="stat-num" th:text="${totalPending}">0</div>
+                        <div class="stat-label">Pending Review</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-top">
+                            <div class="stat-icon red">
+                                <svg viewBox="0 0 20 20"><path d="M10 3l7 14H3L10 3z"/><path d="M10 9v4M10 15h.01"/></svg>
+                            </div>
+                        </div>
+                        <div class="stat-num" th:text="${totalReported}">0</div>
+                        <div class="stat-label">Flagged</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-top">
+                            <div class="stat-icon">
+                                <svg viewBox="0 0 20 20"><path d="M3 7l7-4 7 4v9H3V7z"/><path d="M8 11h4v5H8z"/></svg>
+                            </div>
+                        </div>
+                        <div class="stat-num" th:text="${totalListings}">0</div>
+                        <div class="stat-label">Total Listings</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-top">
+                            <div class="stat-icon blue">
+                                <svg viewBox="0 0 20 20"><path d="M10 2l2.3 4.7 5.2.8-3.8 3.7.9 5.2L10 14l-4.6 2.4.9-5.2L2.5 7.5l5.2-.8z"/></svg>
+                            </div>
+                        </div>
+                        <div class="stat-num" th:text="${totalReviews}">0</div>
+                        <div class="stat-label">Total Reviews</div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <div>
+                            <span class="panel-title">Review Properties</span>
+                            <span class="panel-sub" th:text="${totalPending} + ' pending listings'">0 pending listings</span>
+                        </div>
+                    </div>
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>PROPERTY NAME</th>
+                            <th>LANDLORD</th>
+                            <th>LOCATION</th>
+                            <th>DATE SUBMITTED</th>
+                            <th>STATUS</th>
+                            <th>ACTIONS</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="prop : ${pendingProperties}">
+                            <td>
+                                <a th:href="@{/admin/listing/{id}(id=${prop.propertyID})}" th:text="${prop.title}">Property Name</a>
+                            </td>
+                            <td th:text="${landlordLookup.get(prop.landlordID) != null
+                                            ? (landlordLookup.get(prop.landlordID).firstName + ' ' + landlordLookup.get(prop.landlordID).lastName)
+                                            : ('Landlord #' + prop.landlordID)}">Landlord</td>
+                            <td th:text="${prop.city}">City</td>
+                            <td th:text="${prop.createdAt}">Date</td>
+                            <td th:text="${prop.status}">Status</td>
+                            <td>
+                                <form th:action="@{/admin/approve-listing/{id}(id=${prop.propertyID})}" method="post" style="display:inline">
+                                    <button type="submit" style="background-color:#2e7d32;border:1px solid #2e7d32;color:#fff;border-radius:6px;padding:6px 12px;cursor:pointer">Approve</button>
+                                </form>
+                                <form th:action="@{/admin/reject-listing/{id}(id=${prop.propertyID})}" method="post" style="display:inline"
+                                      onsubmit="return confirm('Reject this listing?');">
+                                    <button type="submit" style="background-color:#c62828;border:1px solid #c62828;color:#fff;border-radius:6px;padding:6px 12px;cursor:pointer;margin-left:6px">Reject</button>
+                                </form>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <p th:if="${#lists.isEmpty(pendingProperties)}" style="padding:22px;color:var(--muted)">
+                        No listings are currently awaiting review.
+                    </p>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
