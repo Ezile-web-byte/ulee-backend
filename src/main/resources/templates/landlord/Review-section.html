@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<section th:fragment="reviewsSection" class="review-group" aria-label="Student reviews">
+    <div class="review-group-header">
+        <h3 class="review-group-title">Student Reviews</h3>
+        <div class="review-group-meta" th:if="${reviewCount > 0}">
+        <span class="stars"
+              th:text="${'★'.repeat(#numbers.formatDecimal(averageRating,1,0))}">★★★★</span>
+            <span th:text="${#numbers.formatDecimal(averageRating,1,1)} + ' · ' + ${reviewCount} + ' review' + (${reviewCount} != 1 ? 's' : '')">4.8 · 12 reviews</span>
+        </div>
+    </div>
+
+    <div class="review-list" th:if="${reviewCount > 0}">
+        <div th:each="review : ${reviews}"
+             th:replace="~{fragments/review-card :: reviewCard(${review})}"></div>
+    </div>
+
+    <p class="review-empty" th:unless="${reviewCount > 0}">
+        No reviews yet for this property.
+    </p>
+</section>
+
+</body>
+</html>
