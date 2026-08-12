@@ -219,7 +219,7 @@ public class PropertyController {
 
                     PropertyImage propImage = new PropertyImage();
                     propImage.setPropertyID(id);
-                    propImage.setUrl("/" + uniqueFileName);
+                    propImage.setUrl("/uploads/" + uniqueFileName);
                     propImage.setCategory("exterior");
                     propImage.setIsMain(existingCount == 0 && order == existingCount + 1);
                     propImage.setDisplayOrder(order);
@@ -279,7 +279,7 @@ public class PropertyController {
 
                     PropertyFeatureImage featureImage = new PropertyFeatureImage();
                     featureImage.setFeatureID(savedFeature.getFeatureID());
-                    featureImage.setUrl("/" + uniqueFileName);
+                    featureImage.setUrl("/uploads/" + uniqueFileName);
                     featureImage.setDisplayOrder(order);
                     propertyFeatureImageRepository.save(featureImage);
                     order++;
@@ -321,10 +321,77 @@ public class PropertyController {
     public String viewPropertyDetail(@PathVariable Integer id, Model model) {
         Property property = propertyRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Property not found with id: " + id));
+        List<PropertyImage> images = propertyImageRepository.findByPropertyID(id);
+        List<Review> reviews = reviewRepository.findByPropertyID(id);
+        double avgRating = reviews.stream().mapToInt(Review::getRating).average().orElse(0);
+
         model.addAttribute("property", property);
-        model.addAttribute("reviews", reviewRepository.findByPropertyID(id));
+        model.addAttribute("images", images);
+        model.addAttribute("reviewCount", reviews.size());
+        model.addAttribute("avgRating", avgRating);
         model.addAttribute("vrImages", propertyImageRepository.findByPropertyIDAndIsVRTrue(id));
         return "property-detail";
+    }
+
+    // A401 — View Reviews (dedicated page: summary, distribution, sortable list)
+    @GetMapping("/property/{id}/reviews")
+    public String viewSinglePropertyReviews(
+            @PathVariable Integer id,
+            @RequestParam(required = false, defaultValue = "recent") String sort,
+            Model model, Principal principal) {
+
+        Property property = propertyRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Property not found with id: " + id));
+
+        List<Review> reviews = new ArrayList<>(reviewRepository.findByPropertyID(id));
+        switch (sort) {
+            case "highest" -> reviews.sort((a, b) -> b.getRating().compareTo(a.getRating()));
+            case "lowest" -> reviews.sort((a, b) -> a.getRating().compareTo(b.getRating()));
+            default -> reviews.sort((a, b) -> b.getReviewDate().compareTo(a.getReviewDate()));
+        }
+
+        Map<Integer, User> reviewers = userRepository.findAllById(
+                reviews.stream().map(Review::getStudentID).collect(Collectors.toList())
+        ).stream().collect(Collectors.toMap(User::getUserID, u -> u, (existing, replacement) -> existing));
+
+        int totalReviews = reviews.size();
+        double avgRating = reviews.stream().mapToInt(Review::getRating).average().orElse(0);
+
+        Map<Integer, Long> distribution = new LinkedHashMap<>();
+        for (int star = 5; star >= 1; star--) {
+            final int s = star;
+            distribution.put(star, reviews.stream().filter(r -> r.getRating() == s).count());
+        }
+
+        boolean canWriteReview = false;
+        boolean alreadyReviewed = false;
+        boolean isStudent = false;
+        boolean isLoggedIn = principal != null;
+        if (principal != null) {
+            User currentUser = getCurrentUser(principal);
+            isStudent = "STUDENT".equalsIgnoreCase(currentUser.getRole());
+            if (isStudent) {
+                boolean hasAcceptedApplication = applicationRepository.findByStudentID(currentUser.getUserID())
+                        .stream()
+                        .anyMatch(a -> a.getPropertyID().equals(id) && "Accepted".equals(a.getStatus()));
+                alreadyReviewed = reviewRepository
+                        .findByStudentIDAndPropertyID(currentUser.getUserID(), id).isPresent();
+                canWriteReview = hasAcceptedApplication && !alreadyReviewed;
+            }
+        }
+
+        model.addAttribute("property", property);
+        model.addAttribute("reviews", reviews);
+        model.addAttribute("reviewers", reviewers);
+        model.addAttribute("totalReviews", totalReviews);
+        model.addAttribute("avgRating", avgRating);
+        model.addAttribute("distribution", distribution);
+        model.addAttribute("canWriteReview", canWriteReview);
+        model.addAttribute("alreadyReviewed", alreadyReviewed);
+        model.addAttribute("isStudent", isStudent);
+        model.addAttribute("isLoggedIn", isLoggedIn);
+        model.addAttribute("sort", sort);
+        return "property-reviews";
     }
 
     @GetMapping("/search")
@@ -499,11 +566,26 @@ public class PropertyController {
         return "redirect:/student-dashboard";
     }
 
-    // A500 — Write Review and Rating
+    // A500 — Write Review and Rating (students only, and only once their application has been accepted)
     @PostMapping("/review/{propertyId}")
     public String submitReview(@PathVariable Integer propertyId, @RequestParam Integer rating,
                                @RequestParam String comment, Principal principal) {
-        Integer studentID = getCurrentUser(principal).getUserID();
+        User currentUser = getCurrentUser(principal);
+        Integer studentID = currentUser.getUserID();
+
+        if (!"STUDENT".equalsIgnoreCase(currentUser.getRole())) {
+            throw new RuntimeException("Only students can write reviews");
+        }
+
+        boolean hasAcceptedApplication = applicationRepository.findByStudentID(studentID).stream()
+                .anyMatch(a -> a.getPropertyID().equals(propertyId) && "Accepted".equals(a.getStatus()));
+        if (!hasAcceptedApplication) {
+            throw new RuntimeException("You can only review a property once your application has been accepted");
+        }
+
+        if (reviewRepository.findByStudentIDAndPropertyID(studentID, propertyId).isPresent()) {
+            throw new RuntimeException("You have already reviewed this property");
+        }
 
         Review review = new Review();
         review.setStudentID(studentID);
@@ -512,7 +594,7 @@ public class PropertyController {
         review.setComment(comment);
         review.setReviewDate(java.time.LocalDateTime.now());
         reviewRepository.save(review);
-        return "redirect:/property/" + propertyId;
+        return "redirect:/property/" + propertyId + "/reviews";
     }
 
     // A201 — Submit Documents
@@ -584,7 +666,7 @@ public class PropertyController {
 
                     PropertyImage propImage = new PropertyImage();
                     propImage.setPropertyID(savedProperty.getPropertyID());
-                    propImage.setUrl("/" + uniqueFileName);
+                    propImage.setUrl("/uploads/" + uniqueFileName);
                     propImage.setCategory("exterior");
                     propImage.setIsMain(order == 1);
                     propImage.setDisplayOrder(order);

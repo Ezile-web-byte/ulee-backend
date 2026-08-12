@@ -100,6 +100,34 @@
             letter-spacing: 0.03em;
         }
 
+        /* ── THUMBNAIL GALLERY ── */
+        .thumb-strip {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+
+        .thumb-strip img {
+            width: 84px;
+            height: 64px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+            flex-shrink: 0;
+            border: 2px solid transparent;
+            opacity: 0.75;
+            transition: opacity var(--transition), border-color var(--transition);
+        }
+
+        .thumb-strip img:hover { opacity: 1; }
+
+        .thumb-strip img.active {
+            opacity: 1;
+            border-color: var(--primary);
+        }
+
         /* ── INFO CARD (sidebar) ── */
         .detail-info-card {
             background: var(--white);
@@ -253,63 +281,41 @@
             margin-bottom: 20px;
         }
 
-        .review-item {
-            border-bottom: 1px solid var(--border);
-            padding: 14px 0;
+        .review-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            margin-bottom: 18px;
         }
 
-        .review-rating {
-            font-size: 14px;
+        .review-summary-score {
+            font-family: 'Playfair Display', serif;
+            font-size: 22px;
             font-weight: 700;
             color: var(--primary-dark);
-            margin-bottom: 4px;
         }
 
-        .review-comment {
-            font-size: 14px;
-            color: var(--text);
-            margin-bottom: 4px;
-        }
-
-        .review-date {
-            font-size: 12px;
+        .review-summary-count {
+            font-size: 13px;
             color: var(--muted);
         }
 
-        .review-form {
-            margin-top: 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .review-form h3 {
-            font-family: 'Playfair Display', serif;
-            font-size: 16px;
-            margin-bottom: 6px;
-        }
-
-        .review-form label {
+        .view-reviews-btn {
+            display: inline-block;
+            padding: 11px 20px;
+            border: 1px solid var(--primary);
+            border-radius: 999px;
+            background: var(--white);
+            color: var(--primary-dark);
+            text-decoration: none;
             font-size: 13px;
             font-weight: 600;
-            color: var(--text);
+            transition: background var(--transition), transform 0.15s;
         }
 
-        .review-form select,
-        .review-form textarea {
-            font-family: 'Sora', sans-serif;
-            font-size: 14px;
-            padding: 10px 14px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text);
-            resize: vertical;
-        }
-
-        .review-form select:focus,
-        .review-form textarea:focus {
-            outline: none;
-            border-color: var(--primary);
+        .view-reviews-btn:hover {
+            background: var(--primary-pale);
+            transform: translateX(2px);
         }
 
         /* ── RESPONSIVE ── */
@@ -333,9 +339,28 @@
 
 <div class="detail-wrap">
 
-    <div class="detail-img-wrap">
-        <img class="detail-img" src="/student-image1.png" th:alt="${property.title}" />
-        <span class="detail-badge" th:text="${property.isAvailable} ? 'Available' : 'Unavailable'">Available</span>
+    <div class="detail-img-wrap-outer">
+        <div class="detail-img-wrap">
+            <img class="detail-img" id="mainDetailImg"
+                 th:if="${not #lists.isEmpty(images)}"
+                 th:src="@{${images[0].url}}"
+                 th:alt="${property.title}" />
+            <img class="detail-img" id="mainDetailImg"
+                 th:unless="${not #lists.isEmpty(images)}"
+                 src="/no-image-placeholder.png"
+                 th:alt="${property.title}" />
+            <span class="detail-badge" th:text="${property.isAvailable} ? 'Available' : 'Unavailable'">Available</span>
+        </div>
+
+        <div class="thumb-strip" th:if="${images != null and images.size() > 1}">
+            <img th:each="img, iter : ${images}"
+                 th:src="@{${img.url}}"
+                 th:alt="${img.caption} ?: ${property.title}"
+                 th:classappend="${iter.index == 0} ? 'active' : ''"
+                 onclick="document.getElementById('mainDetailImg').src = this.src;
+                          document.querySelectorAll('.thumb-strip img').forEach(t => t.classList.remove('active'));
+                          this.classList.add('active');" />
+        </div>
     </div>
 
     <div class="detail-info-card">
@@ -396,32 +421,17 @@
     <div class="detail-reviews">
         <h2>Reviews & Ratings</h2>
 
-        <div th:if="${#lists.isEmpty(reviews)}" class="no-reviews">
+        <div th:if="${reviewCount == 0}" class="no-reviews">
             No reviews yet. Be the first to review this property!
         </div>
 
-        <div class="review-item" th:each="review : ${reviews}">
-            <div class="review-rating" th:text="'⭐ ' + ${review.rating} + '/5'">Rating</div>
-            <p class="review-comment" th:text="${review.comment}">Comment</p>
-            <p class="review-date" th:text="${review.reviewDate}">Date</p>
+        <div th:if="${reviewCount > 0}" class="review-summary">
+            <span class="review-summary-score" th:text="${#numbers.formatDecimal(avgRating, 1, 1)} + ' / 5'">4.8 / 5</span>
+            <span class="review-summary-count"
+                  th:text="'Based on ' + ${reviewCount} + (${reviewCount} == 1 ? ' review' : ' reviews')">Based on 12 reviews</span>
         </div>
 
-        <form th:action="@{/review/{id}(id=${property.propertyID})}" method="post" class="review-form">
-            <h3>Write a Review</h3>
-            <label for="rating">Rating (1-5)</label>
-            <select name="rating" id="rating" required>
-                <option value="5">5 - Excellent</option>
-                <option value="4">4 - Good</option>
-                <option value="3">3 - Average</option>
-                <option value="2">2 - Poor</option>
-                <option value="1">1 - Terrible</option>
-            </select>
-
-            <label for="comment">Comment</label>
-            <textarea name="comment" id="comment" rows="4" required placeholder="Share your experience..."></textarea>
-
-            <button type="submit" class="apply-btn">Submit Review</button>
-        </form>
+        <a class="view-reviews-btn" th:href="@{/property/{id}/reviews(id=${property.propertyID})}">View All Reviews</a>
     </div>
 
 </div>

@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title th:text="${property.title} + ' – Reviews – ULEE'">Reviews</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary:        hsl(180, 67%, 47%);
+      --primary-dark:   hsl(180, 67%, 36%);
+      --primary-deeper: hsl(180, 67%, 28%);
+      --primary-light:  hsl(180, 67%, 90%);
+      --primary-pale:   hsl(180, 67%, 96%);
+      --bg:             hsl(0, 0%, 99%);
+      --text:           #1a1a1a;
+      --muted:          #777;
+      --white:          #ffffff;
+      --border:         hsl(180, 20%, 88%);
+      --shadow-sm:      0 2px 12px rgba(0,0,0,0.08);
+      --shadow-md:      0 6px 28px rgba(0,0,0,0.13);
+      --radius:         12px;
+      --transition:     0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Sora', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      padding: 1.4rem 2.5rem;
+    }
+
+    .back-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      height: 42px;
+      padding: 0 16px 0 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--white);
+      color: var(--text);
+      cursor: pointer;
+      text-decoration: none;
+      transition: background var(--transition), transform 0.15s ease;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .back-btn:hover { background: var(--primary-pale); transform: translateX(-2px); }
+    .back-btn svg { width: 16px; height: 16px; }
+
+    .reviews-wrap {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 0 2.5rem 4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+
+    .reviews-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    /* ── SUMMARY CARD ── */
+    .summary-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-md);
+      padding: 28px;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 32px;
+      align-items: center;
+    }
+
+    .summary-score {
+      text-align: center;
+    }
+
+    .summary-score .num {
+      font-family: 'Playfair Display', serif;
+      font-size: 42px;
+      font-weight: 700;
+      color: var(--primary-dark);
+      line-height: 1;
+    }
+
+    .summary-score .out-of {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .summary-score .stars {
+      color: #f5a623;
+      font-size: 16px;
+      margin: 6px 0 4px;
+    }
+
+    .summary-score .count {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .dist-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .dist-row .star-num { width: 10px; }
+
+    .dist-bar-track {
+      flex: 1;
+      height: 6px;
+      border-radius: 4px;
+      background: var(--primary-pale);
+      overflow: hidden;
+    }
+
+    .dist-bar-fill {
+      height: 100%;
+      background: var(--primary);
+      border-radius: 4px;
+    }
+
+    .dist-row .pct { width: 34px; text-align: right; }
+
+    /* ── FILTER TABS ── */
+    .filter-tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .filter-tab {
+      padding: 9px 18px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--white);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background var(--transition), color var(--transition);
+    }
+
+    .filter-tab:hover { background: var(--primary-pale); }
+
+    .filter-tab.active {
+      background: var(--primary-deeper);
+      color: var(--white);
+      border-color: var(--primary-deeper);
+    }
+
+    /* ── REVIEW CARDS ── */
+    .review-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .review-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      padding: 20px;
+    }
+
+    .review-card.hidden-review { display: none; }
+
+    .review-card-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .reviewer {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--primary-light);
+      color: var(--primary-deeper);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .reviewer-name { font-size: 14px; font-weight: 700; }
+    .reviewer-role { font-size: 11px; color: var(--muted); }
+
+    .review-meta { text-align: right; flex-shrink: 0; }
+    .review-stars { color: #f5a623; font-size: 13px; }
+    .review-date { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    .review-comment {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text);
+    }
+
+    .load-more-wrap { text-align: center; }
+
+    .load-more-btn {
+      padding: 12px 28px;
+      border-radius: 999px;
+      border: 1px solid var(--primary);
+      background: var(--white);
+      color: var(--primary-dark);
+      font-family: 'Sora', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background var(--transition);
+    }
+
+    .load-more-btn:hover { background: var(--primary-pale); }
+
+    .no-reviews {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      padding: 28px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    /* ── WRITE REVIEW ── */
+    .write-review-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      padding: 28px;
+    }
+
+    .write-review-card h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 17px;
+      margin-bottom: 14px;
+    }
+
+    .write-review-card form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .write-review-card label {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .write-review-card select,
+    .write-review-card textarea {
+      font-family: 'Sora', sans-serif;
+      font-size: 14px;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      resize: vertical;
+    }
+
+    .write-review-card select:focus,
+    .write-review-card textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .submit-review-btn {
+      margin-top: 4px;
+      background: var(--primary);
+      color: var(--white);
+      border: none;
+      border-radius: 999px;
+      padding: 13px;
+      font-family: 'Sora', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background var(--transition), transform 0.15s;
+    }
+
+    .submit-review-btn:hover { background: var(--primary-dark); transform: scale(1.02); }
+
+    .review-gate-note {
+      background: var(--primary-pale);
+      border-radius: var(--radius);
+      padding: 18px 22px;
+      font-size: 13px;
+      color: var(--primary-deeper);
+    }
+
+    @media (max-width: 700px) {
+      .reviews-wrap { padding: 0 1.25rem 3rem; }
+      .topbar { padding: 1rem 1.25rem; }
+      .summary-card { grid-template-columns: 1fr; }
+      .review-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="back-btn" th:href="@{/property/{id}(id=${property.propertyID})}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M15 18l-6-6 6-6"/>
+    </svg>
+    <span>Back to Property</span>
+  </a>
+</div>
+
+<div class="reviews-wrap">
+
+  <div class="reviews-title" th:text="'Reviews for ' + ${property.title}">Reviews</div>
+
+  <!-- Summary + distribution -->
+  <div class="summary-card" th:if="${totalReviews > 0}">
+    <div class="summary-score">
+      <div class="num" th:text="${#numbers.formatDecimal(avgRating, 1, 1)}">4.8</div>
+      <div class="out-of">/ 5</div>
+      <div class="stars">★★★★★</div>
+      <div class="count" th:text="'Based on ' + ${totalReviews} + (${totalReviews} == 1 ? ' review' : ' reviews')">Based on 124 Reviews</div>
+    </div>
+    <div class="dist-rows">
+      <div class="dist-row" th:each="entry : ${distribution}">
+        <span class="star-num" th:text="${entry.key}">5</span>
+        <div class="dist-bar-track">
+          <div class="dist-bar-fill"
+               th:style="'width:' + (${totalReviews} == 0 ? 0 : (${entry.value} * 100 / ${totalReviews})) + '%'"></div>
+        </div>
+        <span class="pct"
+              th:text="(${totalReviews} == 0 ? 0 : (${entry.value} * 100 / ${totalReviews})) + '%'">0%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter tabs -->
+  <div class="filter-tabs" th:if="${totalReviews > 0}">
+    <a class="filter-tab" th:classappend="${sort == 'recent'} ? ' active' : ''"
+       th:href="@{/property/{id}/reviews(id=${property.propertyID}, sort='recent')}">Most Recent</a>
+    <a class="filter-tab" th:classappend="${sort == 'highest'} ? ' active' : ''"
+       th:href="@{/property/{id}/reviews(id=${property.propertyID}, sort='highest')}">Highest Rated</a>
+    <a class="filter-tab" th:classappend="${sort == 'lowest'} ? ' active' : ''"
+       th:href="@{/property/{id}/reviews(id=${property.propertyID}, sort='lowest')}">Lowest Rated</a>
+  </div>
+
+  <div class="no-reviews" th:if="${totalReviews == 0}">
+    No reviews yet for this property.
+  </div>
+
+  <!-- Review cards -->
+  <div class="review-list" id="reviewList" th:if="${totalReviews > 0}">
+    <div class="review-card" th:each="review, iter : ${reviews}"
+         th:classappend="${iter.index >= 4} ? ' hidden-review' : ''">
+      <div class="review-card-head">
+        <div class="reviewer">
+          <div class="avatar"
+               th:with="reviewer=${reviewers.get(review.studentID)}"
+               th:text="${reviewer != null} ? (${#strings.substring(reviewer.firstName,0,1)} + ${#strings.substring(reviewer.lastName,0,1)}) : '?'">SM</div>
+          <div>
+            <div class="reviewer-name"
+                 th:with="reviewer=${reviewers.get(review.studentID)}"
+                 th:text="${reviewer != null} ? (${reviewer.firstName} + ' ' + ${reviewer.lastName}) : 'Former Resident'">Sarah M.</div>
+            <div class="reviewer-role">Resident</div>
+          </div>
+        </div>
+        <div class="review-meta">
+          <div class="review-stars" th:text="${'★'.repeat(review.rating)} + ${'☆'.repeat(5 - review.rating)}">★★★★★</div>
+          <div class="review-date" th:text="${#temporals.format(review.reviewDate, 'dd MMM yyyy')}">Date</div>
+        </div>
+      </div>
+      <p class="review-comment" th:text="${review.comment}">Comment goes here.</p>
+    </div>
+  </div>
+
+  <div class="load-more-wrap" th:if="${totalReviews > 4}">
+    <button type="button" class="load-more-btn" id="loadMoreBtn" onclick="loadMoreReviews()">Load More Reviews</button>
+  </div>
+
+  <!-- Write a review: only for students whose application was accepted, and who haven't reviewed yet -->
+  <div class="write-review-card" th:if="${canWriteReview}">
+    <h3>Write a Review</h3>
+    <form th:action="@{/review/{id}(id=${property.propertyID})}" method="post">
+      <label for="rating">Rating (1-5)</label>
+      <select name="rating" id="rating" required>
+        <option value="5">5 - Excellent</option>
+        <option value="4">4 - Good</option>
+        <option value="3">3 - Average</option>
+        <option value="2">2 - Poor</option>
+        <option value="1">1 - Terrible</option>
+      </select>
+
+      <label for="comment">Comment</label>
+      <textarea name="comment" id="comment" rows="4" required placeholder="Share your experience..."></textarea>
+
+      <button type="submit" class="submit-review-btn">Submit Review</button>
+    </form>
+  </div>
+
+  <div class="review-gate-note" th:if="${isStudent and !canWriteReview and !alreadyReviewed}">
+    You can write a review for this property once your application here has been accepted by the landlord.
+  </div>
+
+  <div class="review-gate-note" th:if="${alreadyReviewed}">
+    You've already reviewed this property. Thanks for sharing your experience!
+  </div>
+
+  <div class="review-gate-note" th:if="${!isLoggedIn}">
+    <a th:href="@{/login}" style="color: var(--primary-deeper); font-weight: 700;">Log in</a> as a student to write a review once your application has been accepted.
+  </div>
+
+</div>
+
+<script>
+  function loadMoreReviews() {
+    document.querySelectorAll('.hidden-review').forEach(el => el.classList.remove('hidden-review'));
+    document.getElementById('loadMoreBtn').style.display = 'none';
+  }
+</script>
+
+</body>
+</html>

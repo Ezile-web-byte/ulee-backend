@@ -10,5 +10,6 @@ public interface ApplicationRepository extends JpaRepository<Application, Intege
     List<Application> findByStudentID(Integer studentID);
 
     List<Application> findByPropertyIDIn(List<Integer> propertyIDs);
+    List<Application> findByStudentIDAndPropertyID(Integer studentID, Integer propertyID);
 
 }
