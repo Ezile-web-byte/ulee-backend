@@ -28,11 +28,6 @@ public class PageController {
         return "application";
     }
 
-    @GetMapping("/list-property")
-    public String showListPropertyPage() {
-        return "landlord/listProperty";
-    }
-
     @GetMapping("/update-property")
     public String showUpdatePage() {
         return "landlord/update";

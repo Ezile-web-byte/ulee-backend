@@ -51,6 +51,11 @@
         .btn-cancel { flex: 1; background: hsl(0,0%,94%); color: var(--text); }
         .btn-add { background: var(--primary); color: #fff; padding: 10px 18px; align-self: flex-start; }
         .btn-add:hover { background: var(--primary-dark); }
+        .btn-delete {
+            width: 100%; background: var(--white); color: var(--danger);
+            border: 1.5px solid var(--danger);
+        }
+        .btn-delete:hover { background: hsl(0, 65%, 96%); }
 
         /* Amenities */
         .amenity-group { display: flex; flex-direction: column; gap: 8px; }
@@ -69,8 +74,8 @@
             color: #fff; font-size: 10px; font-weight: 600; text-transform: uppercase;
             letter-spacing: 0.03em; padding: 3px 7px; border-radius: 5px;
         }
-        .gallery-item .delete-form { position: absolute; top: 6px; right: 6px; }
         .gallery-item .delete-btn {
+            position: absolute; top: 6px; right: 6px;
             width: 24px; height: 24px; border-radius: 50%; border: none;
             background: rgba(0,0,0,0.55); color: #fff; font-size: 14px; line-height: 1;
             cursor: pointer; display: flex; align-items: center; justify-content: center;
@@ -101,6 +106,12 @@
         .no-features { font-size: 13px; color: var(--muted); }
 
         .add-feature-form { border-top: 1px dashed var(--border); padding-top: 16px; display: flex; flex-direction: column; gap: 12px; }
+
+        .status-note {
+            font-size: 12.5px; color: var(--primary-dark); background: hsl(180, 20%, 97%);
+            border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px;
+            margin-bottom: -4px;
+        }
     </style>
 </head>
 <body>
@@ -108,8 +119,12 @@
 <div class="wrap">
     <h1>Edit Property</h1>
 
+    <p class="status-note" th:if="${property.status == 'Draft'}">
+        This listing is still a <strong>Draft</strong>. It won't be visible to students until you fill in the required fields and hit "Save Changes" to submit it for approval.
+    </p>
+
     <!-- Core property details -->
-    <form class="form-card" th:action="@{/update-property/{id}(id=${property.propertyID})}" method="post" enctype="multipart/form-data">
+    <form id="editPropertyForm" class="form-card" th:action="@{/update-property/{id}(id=${property.propertyID})}" method="post" enctype="multipart/form-data">
         <div class="field">
             <label>Property Title</label>
             <input type="text" name="title" th:value="${property.title}" required />
@@ -179,7 +194,15 @@
             </div>
         </div>
 
-        <!-- Photo gallery: existing images, each with its own delete form -->
+        <!--
+            Photo gallery: existing images.
+            IMPORTANT: each delete button is bound to THIS form via form="editPropertyForm"
+            plus formaction/formmethod — it is NOT its own nested <form>. Nested <form>
+            elements are invalid HTML; the browser silently closes the outer form at the
+            first nested </form> it hits, which orphans everything after it in the markup
+            (including the Save Draft / Save Changes buttons below) so they stop submitting
+            entirely once a property has at least one photo. This pattern avoids that.
+        -->
         <div class="gallery-section">
             <label style="font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.03em;">Photos</label>
 
@@ -188,12 +211,14 @@
                     <img th:src="${img.url}" alt="Property photo" />
                     <span class="main-badge" th:if="${img.isMain}">Main</span>
 
-                    <form class="delete-form"
-                          th:action="@{/delete-property-image/{imageId}(imageId=${img.imageID})}"
-                          method="post"
-                          onsubmit="return confirm('Remove this photo?');">
-                        <button type="submit" class="delete-btn" title="Delete photo">&times;</button>
-                    </form>
+                    <button type="submit"
+                            class="delete-btn"
+                            title="Delete photo"
+                            form="editPropertyForm"
+                            th:formaction="@{/delete-property-image/{imageId}(imageId=${img.imageID})}"
+                            formmethod="post"
+                            formnovalidate
+                            onclick="return confirm('Remove this photo?');">&times;</button>
                 </div>
             </div>
 
@@ -205,14 +230,27 @@
             </div>
         </div>
 
+        <input type="hidden" name="action" id="formAction" value="update" />
+
         <div class="actions">
-            <a class="btn btn-cancel" href="/landlord-index">Cancel</a>
-            <button type="submit" class="btn btn-save">Save Changes</button>
+            <button type="submit" formnovalidate class="btn btn-cancel"
+                    onclick="document.getElementById('formAction').value='draft';">Save Draft</button>
+            <button type="submit" class="btn btn-save"
+                    onclick="document.getElementById('formAction').value='update';">Save Changes</button>
         </div>
     </form>
 
+    <!-- Deactivate: separate form so it isn't nested inside the edit form above -->
+    <form th:action="@{/toggle-property-status/{id}(id=${property.propertyID})}"
+          method="post"
+          th:attr="onsubmit=|return confirm('Deactivate &quot;${#strings.escapeJavaScript(property.title)}&quot;? It will stop showing to students until you reactivate it.');|"
+          style="margin-bottom: 20px;">
+        <input type="hidden" name="isAvailable" value="false" />
+        <button type="submit" class="btn btn-delete">Deactivate Property</button>
+    </form>
+
     <!-- Special features -->
-    <div class="form-card">
+    <div class="form-card">```````
         <h2>Special Features</h2>
         <p class="section-hint">Highlight anything extra this place offers — a study hub, a braai area, a game room — each with its own photos.</p>
 
@@ -257,3 +295,4 @@
 
 </body>
 </html>
+
