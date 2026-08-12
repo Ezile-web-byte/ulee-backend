@@ -411,18 +411,46 @@ public class PropertyController {
     }
 
     @GetMapping("/property/{id}")
-    public String viewPropertyDetail(@PathVariable Integer id, Model model) {
+    public String viewPropertyDetail(@PathVariable Integer id, Model model, Principal principal) {
         Property property = propertyRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Property not found with id: " + id));
         List<PropertyImage> images = propertyImageRepository.findByPropertyID(id);
         List<Review> reviews = reviewRepository.findByPropertyID(id);
         double avgRating = reviews.stream().mapToInt(Review::getRating).average().orElse(0);
 
+        // Same eligibility rule as the dedicated reviews page: only a logged-in
+        // student whose application for this property has been accepted (and who
+        // hasn't already reviewed it) may write a review. Everyone else can only
+        // read what's already there.
+        boolean isLoggedIn = principal != null;
+        boolean isStudent = false;
+        boolean alreadyReviewed = false;
+        boolean canWriteReview = false;
+        if (principal != null) {
+            User currentUser = getCurrentUser(principal);
+            isStudent = "STUDENT".equalsIgnoreCase(currentUser.getRole());
+            if (isStudent) {
+                boolean hasAcceptedApplication = applicationRepository.findByStudentID(currentUser.getUserID())
+                        .stream()
+                        .anyMatch(a -> a.getPropertyID().equals(id) && "Accepted".equals(a.getStatus()));
+                alreadyReviewed = reviewRepository
+                        .findByStudentIDAndPropertyID(currentUser.getUserID(), id).isPresent();
+                canWriteReview = hasAcceptedApplication && !alreadyReviewed;
+            }
+        }
+
         model.addAttribute("property", property);
         model.addAttribute("images", images);
+        model.addAttribute("reviews", reviews);
         model.addAttribute("reviewCount", reviews.size());
         model.addAttribute("avgRating", avgRating);
         model.addAttribute("vrImages", propertyImageRepository.findByPropertyIDAndIsVRTrue(id));
+        model.addAttribute("amenities", property.getAmenities());
+        model.addAttribute("features", propertyFeatureRepository.findByPropertyID(id));
+        model.addAttribute("isLoggedIn", isLoggedIn);
+        model.addAttribute("isStudent", isStudent);
+        model.addAttribute("alreadyReviewed", alreadyReviewed);
+        model.addAttribute("canWriteReview", canWriteReview);
         return "property-detail";
     }
 
@@ -790,10 +818,45 @@ public class PropertyController {
         return "redirect:/student-dashboard";
     }
 
+    // A500 — show the dedicated "Write a Review" page.
+    // Eligibility is enforced here too (not just hidden in the UI) — anyone who
+    // isn't a logged-in student with an accepted application, or who has already
+    // reviewed this property, is bounced back to the property page.
+    @GetMapping("/property/{id}/write-review")
+    public String writeReviewForm(@PathVariable Integer id, Model model, Principal principal) {
+        if (principal == null) {
+            return "redirect:/property/" + id;
+        }
+        User currentUser = getCurrentUser(principal);
+        if (!"STUDENT".equalsIgnoreCase(currentUser.getRole())) {
+            return "redirect:/property/" + id;
+        }
+        boolean hasAcceptedApplication = applicationRepository.findByStudentID(currentUser.getUserID())
+                .stream()
+                .anyMatch(a -> a.getPropertyID().equals(id) && "Accepted".equals(a.getStatus()));
+        boolean alreadyReviewed = reviewRepository
+                .findByStudentIDAndPropertyID(currentUser.getUserID(), id).isPresent();
+        if (!hasAcceptedApplication || alreadyReviewed) {
+            return "redirect:/property/" + id;
+        }
+
+        Property property = propertyRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Property not found with id: " + id));
+        model.addAttribute("property", property);
+        return "student/write-review";
+    }
+
     // A500 — Write Review and Rating (students only, and only once their application has been accepted)
     @PostMapping("/review/{propertyId}")
-    public String submitReview(@PathVariable Integer propertyId, @RequestParam Integer rating,
-                               @RequestParam String comment, Principal principal) {
+    public String submitReview(@PathVariable Integer propertyId,
+                               @RequestParam Integer cleanlinessRating,
+                               @RequestParam Integer safetyRating,
+                               @RequestParam Integer wifiRating,
+                               @RequestParam Integer studyAreaRating,
+                               @RequestParam Integer yearOfStudy,
+                               @RequestParam String residencyStatus,
+                               @RequestParam String comment,
+                               Principal principal) {
         User currentUser = getCurrentUser(principal);
         Integer studentID = currentUser.getUserID();
 
@@ -811,10 +874,21 @@ public class PropertyController {
             throw new RuntimeException("You have already reviewed this property");
         }
 
+        // Overall star rating shown on the property card is the average of the
+        // four category ratings, rounded to the nearest whole star.
+        int overallRating = Math.round(
+                (cleanlinessRating + safetyRating + wifiRating + studyAreaRating) / 4.0f);
+
         Review review = new Review();
         review.setStudentID(studentID);
         review.setPropertyID(propertyId);
-        review.setRating(rating);
+        review.setRating(overallRating);
+        review.setCleanlinessRating(cleanlinessRating);
+        review.setSafetyRating(safetyRating);
+        review.setWifiRating(wifiRating);
+        review.setStudyAreaRating(studyAreaRating);
+        review.setYearOfStudy(yearOfStudy);
+        review.setResidencyStatus(residencyStatus);
         review.setComment(comment);
         review.setReviewDate(java.time.LocalDateTime.now());
         reviewRepository.save(review);

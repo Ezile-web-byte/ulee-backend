@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -101,6 +100,37 @@
             letter-spacing: 0.03em;
         }
 
+        /* ── THUMBNAIL GALLERY ── */
+        .detail-thumbs {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+
+        .detail-thumb {
+            width: 78px;
+            height: 60px;
+            flex: 0 0 auto;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: border-color var(--transition), opacity var(--transition);
+            opacity: 0.75;
+        }
+
+        .detail-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .detail-thumb:hover { opacity: 1; }
+        .detail-thumb.active { border-color: var(--primary); opacity: 1; }
+
         /* ── INFO CARD (sidebar) ── */
         .detail-info-card {
             background: var(--white);
@@ -186,6 +216,67 @@
             font-size: 14px;
             line-height: 1.7;
             color: var(--text);
+        }
+
+        /* ── SPECIAL FEATURES / AMENITIES ── */
+        .detail-features {
+            grid-column: 1 / -1;
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            padding: 28px;
+        }
+
+        .detail-features h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 18px;
+            margin-bottom: 16px;
+        }
+
+        .feature-chip-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .feature-chip {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--primary-pale);
+            color: var(--primary-deeper);
+            font-size: 13px;
+            font-weight: 600;
+            padding: 8px 14px;
+            border-radius: 999px;
+        }
+
+        .custom-feature-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin-top: 18px;
+        }
+
+        .custom-feature-item {
+            border-top: 1px solid var(--border);
+            padding-top: 14px;
+        }
+
+        .custom-feature-item h3 {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .custom-feature-item p {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .no-features {
+            font-size: 14px;
+            color: var(--muted);
         }
         .detail-vr {
             grid-column: 1 / -1;
@@ -354,9 +445,22 @@
 
 <div class="detail-wrap">
 
-    <div class="detail-img-wrap">
-        <img class="detail-img" src="/student-image1.png" th:alt="${property.title}" />
-        <span class="detail-badge" th:text="${property.isAvailable} ? 'Available' : 'Unavailable'">Available</span>
+    <div>
+        <div class="detail-img-wrap">
+            <img id="mainDetailImg" class="detail-img"
+                 th:if="${not #lists.isEmpty(images)}"
+                 th:src="${images[0].url}"
+                 th:alt="${property.title}" />
+            <span class="detail-badge" th:text="${property.isAvailable} ? 'Available' : 'Unavailable'">Available</span>
+        </div>
+
+        <div class="detail-thumbs" th:if="${images != null and images.size() > 1}">
+            <div class="detail-thumb" th:each="img, iter : ${images}"
+                 th:classappend="${iter.index == 0} ? ' active' : ''"
+                 th:attr="data-url=${img.url}">
+                <img th:src="${img.url}" th:alt="${property.title}" />
+            </div>
+        </div>
     </div>
 
     <div class="detail-info-card">
@@ -405,6 +509,27 @@
         <p th:text="${property.description}">Description goes here.</p>
     </div>
 
+    <div class="detail-features">
+        <h2>Special Features & Amenities</h2>
+
+        <div th:if="${(amenities == null or amenities.isEmpty()) and (features == null or features.isEmpty())}" class="no-features">
+            No special features listed for this property yet.
+        </div>
+
+        <div class="feature-chip-grid" th:if="${amenities != null and not amenities.isEmpty()}">
+            <span class="feature-chip" th:each="amenity : ${amenities}">
+                ✓ <span th:text="${amenity.name}">Amenity</span>
+            </span>
+        </div>
+
+        <div class="custom-feature-list" th:if="${features != null and not features.isEmpty()}">
+            <div class="custom-feature-item" th:each="feature : ${features}">
+                <h3 th:text="${feature.name}">Feature name</h3>
+                <p th:if="${feature.description != null}" th:text="${feature.description}">Feature description</p>
+            </div>
+        </div>
+    </div>
+
     <div class="detail-vr" th:if="${not #lists.isEmpty(vrImages)}">
         <h2>360° Virtual Tour</h2>
         <div class="vr-viewer">
@@ -432,26 +557,31 @@
             <p class="review-date" th:text="${review.reviewDate}">Date</p>
         </div>
 
-        <form th:action="@{/review/{id}(id=${property.propertyID})}" method="post" class="review-form">
-            <h3>Write a Review</h3>
-            <label for="rating">Rating (1-5)</label>
-            <select name="rating" id="rating" required>
-                <option value="5">5 - Excellent</option>
-                <option value="4">4 - Good</option>
-                <option value="3">3 - Average</option>
-                <option value="2">2 - Poor</option>
-                <option value="1">1 - Terrible</option>
-            </select>
+        <a th:if="${canWriteReview}" th:href="@{/property/{id}/write-review(id=${property.propertyID})}" class="apply-btn" style="display:block; text-decoration:none; margin-top: 20px;">
+            Write a Review
+        </a>
 
-            <label for="comment">Comment</label>
-            <textarea name="comment" id="comment" rows="4" required placeholder="Share your experience..."></textarea>
-
-            <button type="submit" class="apply-btn">Submit Review</button>
-        </form>
+        <p th:if="${not canWriteReview and isLoggedIn and isStudent and alreadyReviewed}" class="no-reviews">
+            You've already reviewed this property.
+        </p>
+        <p th:if="${not canWriteReview and isLoggedIn and isStudent and not alreadyReviewed}" class="no-reviews">
+            You can write a review once your application for this property has been accepted.
+        </p>
     </div>
 
 </div>
 
+<script>
+    document.querySelectorAll('.detail-thumb').forEach(function (thumb) {
+        thumb.addEventListener('click', function () {
+            document.getElementById('mainDetailImg').src = thumb.getAttribute('data-url');
+            document.querySelectorAll('.detail-thumb').forEach(function (t) {
+                t.classList.remove('active');
+            });
+            thumb.classList.add('active');
+        });
+    });
+</script>
+
 </body>
 </html>
-

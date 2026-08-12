@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title th:text="'Write a Review – ' + ${property.title}">Write a Review</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+    <style>
+        :root {
+            --primary:        hsl(180, 67%, 47%);
+            --primary-dark:   hsl(180, 67%, 36%);
+            --primary-deeper: hsl(180, 67%, 28%);
+            --primary-pale:   hsl(180, 67%, 96%);
+            --bg:             hsl(0, 0%, 99%);
+            --text:           #1a1a1a;
+            --muted:          #777;
+            --white:          #ffffff;
+            --border:         hsl(180, 20%, 88%);
+            --shadow-sm:      0 2px 12px rgba(0,0,0,0.08);
+            --shadow-md:      0 6px 28px rgba(0,0,0,0.13);
+            --radius:         12px;
+            --transition:     0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Sora', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            padding: 1.4rem 2.5rem;
+        }
+
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            height: 42px;
+            padding: 0 16px 0 12px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            background: var(--white);
+            color: var(--text);
+            cursor: pointer;
+            text-decoration: none;
+            transition: background var(--transition), transform 0.15s ease;
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .back-btn:hover { background: var(--primary-pale); transform: translateX(-2px); }
+        .back-btn svg { width: 16px; height: 16px; }
+
+        .wrap {
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 0 1.5rem 4rem;
+        }
+
+        .wrap h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+
+        .wrap .subtitle {
+            font-size: 14px;
+            color: var(--muted);
+            margin-bottom: 24px;
+        }
+
+        .card {
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            padding: 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+        }
+
+        .field-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+
+        .field label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--primary-deeper);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 8px;
+        }
+
+        .field select {
+            width: 100%;
+            font-family: 'Sora', sans-serif;
+            font-size: 14px;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            background: var(--white);
+        }
+
+        /* ── RESIDENCY TOGGLE ── */
+        .residency-toggle {
+            display: flex;
+            background: var(--primary-pale);
+            border-radius: 999px;
+            padding: 4px;
+            gap: 4px;
+        }
+
+        .residency-toggle input { display: none; }
+
+        .residency-toggle label {
+            flex: 1;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 8px 0;
+            border-radius: 999px;
+            cursor: pointer;
+            color: var(--primary-deeper);
+            text-transform: none;
+            letter-spacing: normal;
+            margin: 0;
+            transition: background var(--transition), color var(--transition);
+        }
+
+        .residency-toggle input:checked + label {
+            background: var(--primary-dark);
+            color: var(--white);
+        }
+
+        /* ── CATEGORY STAR RATINGS ── */
+        .category-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .category-box {
+            background: var(--primary-pale);
+            border-radius: 10px;
+            padding: 14px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .category-box .cat-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--primary-deeper);
+        }
+
+        .star-picker {
+            display: flex;
+            gap: 4px;
+        }
+
+        .star-picker input { display: none; }
+
+        .star-picker label {
+            font-size: 22px;
+            line-height: 1;
+            cursor: pointer;
+            color: var(--border);
+            margin: 0;
+            text-transform: none;
+            letter-spacing: normal;
+        }
+
+        .star-picker label.filled { color: var(--primary-dark); }
+
+        .field textarea {
+            width: 100%;
+            font-family: 'Sora', sans-serif;
+            font-size: 14px;
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            resize: vertical;
+            min-height: 110px;
+        }
+
+        .field textarea:focus,
+        .field select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .field-tip {
+            font-size: 12px;
+            color: var(--muted);
+            font-style: italic;
+            margin-top: 6px;
+        }
+
+        .submit-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            background: var(--primary-dark);
+            color: var(--white);
+            border: none;
+            border-radius: 999px;
+            padding: 14px;
+            font-family: 'Sora', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background var(--transition), transform 0.15s;
+        }
+
+        .submit-btn:hover { background: var(--primary-deeper); transform: scale(1.01); }
+
+        @media (max-width: 560px) {
+            .field-row, .category-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <a class="back-btn" th:href="@{/property/{id}(id=${property.propertyID})}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 18l-6-6 6-6"/>
+        </svg>
+        <span>Back to Property</span>
+    </a>
+</div>
+
+<div class="wrap">
+    <h1 th:text="${property.title}">Property Title</h1>
+    <p class="subtitle">Share your experience to help future students</p>
+
+    <form class="card" th:action="@{/review/{id}(id=${property.propertyID})}" method="post">
+
+        <div class="field-row">
+            <div class="field">
+                <label for="yearOfStudy">Year of Study</label>
+                <select name="yearOfStudy" id="yearOfStudy" required>
+                    <option value="1">1st Year</option>
+                    <option value="2">2nd Year</option>
+                    <option value="3">3rd Year</option>
+                    <option value="4">4th Year</option>
+                    <option value="5">Postgraduate</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label>Residency Status</label>
+                <div class="residency-toggle">
+                    <input type="radio" name="residencyStatus" id="resCurrent" value="Current" checked />
+                    <label for="resCurrent">Current Resident</label>
+                    <input type="radio" name="residencyStatus" id="resPast" value="Past" />
+                    <label for="resPast">Past Resident</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="category-grid">
+            <div class="category-box">
+                <span class="cat-label">Cleanliness</span>
+                <div class="star-picker" data-field="cleanlinessRating">
+                    <input type="radio" name="cleanlinessRating" id="clean5" value="5" /><label for="clean5">★</label>
+                    <input type="radio" name="cleanlinessRating" id="clean4" value="4" /><label for="clean4">★</label>
+                    <input type="radio" name="cleanlinessRating" id="clean3" value="3" /><label for="clean3">★</label>
+                    <input type="radio" name="cleanlinessRating" id="clean2" value="2" /><label for="clean2">★</label>
+                    <input type="radio" name="cleanlinessRating" id="clean1" value="1" /><label for="clean1">★</label>
+                </div>
+            </div>
+
+            <div class="category-box">
+                <span class="cat-label">Safety</span>
+                <div class="star-picker" data-field="safetyRating">
+                    <input type="radio" name="safetyRating" id="safe5" value="5" /><label for="safe5">★</label>
+                    <input type="radio" name="safetyRating" id="safe4" value="4" /><label for="safe4">★</label>
+                    <input type="radio" name="safetyRating" id="safe3" value="3" /><label for="safe3">★</label>
+                    <input type="radio" name="safetyRating" id="safe2" value="2" /><label for="safe2">★</label>
+                    <input type="radio" name="safetyRating" id="safe1" value="1" /><label for="safe1">★</label>
+                </div>
+            </div>
+
+            <div class="category-box">
+                <span class="cat-label">WiFi Quality</span>
+                <div class="star-picker" data-field="wifiRating">
+                    <input type="radio" name="wifiRating" id="wifi5" value="5" /><label for="wifi5">★</label>
+                    <input type="radio" name="wifiRating" id="wifi4" value="4" /><label for="wifi4">★</label>
+                    <input type="radio" name="wifiRating" id="wifi3" value="3" /><label for="wifi3">★</label>
+                    <input type="radio" name="wifiRating" id="wifi2" value="2" /><label for="wifi2">★</label>
+                    <input type="radio" name="wifiRating" id="wifi1" value="1" /><label for="wifi1">★</label>
+                </div>
+            </div>
+
+            <div class="category-box">
+                <span class="cat-label">Study Area</span>
+                <div class="star-picker" data-field="studyAreaRating">
+                    <input type="radio" name="studyAreaRating" id="study5" value="5" /><label for="study5">★</label>
+                    <input type="radio" name="studyAreaRating" id="study4" value="4" /><label for="study4">★</label>
+                    <input type="radio" name="studyAreaRating" id="study3" value="3" /><label for="study3">★</label>
+                    <input type="radio" name="studyAreaRating" id="study2" value="2" /><label for="study2">★</label>
+                    <input type="radio" name="studyAreaRating" id="study1" value="1" /><label for="study1">★</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="field">
+            <label for="comment">Detailed Review</label>
+            <textarea name="comment" id="comment" required placeholder="Share your thoughts on the management, room quality, and common facilities..."></textarea>
+            <p class="field-tip">Tip: Be specific about things like noise levels and maintenance response times.</p>
+        </div>
+
+        <button type="submit" class="submit-btn">▷ Submit Review</button>
+    </form>
+</div>
+
+<script>
+    // Visually fill stars up to the selected one
+    document.querySelectorAll('.star-picker').forEach(function (picker) {
+        const inputs = Array.from(picker.querySelectorAll('input'));
+        function refresh() {
+            const checked = inputs.find(i => i.checked);
+            const checkedValue = checked ? parseInt(checked.value, 10) : 0;
+            inputs.forEach(function (input) {
+                const label = picker.querySelector('label[for="' + input.id + '"]');
+                if (parseInt(input.value, 10) <= checkedValue) {
+                    label.classList.add('filled');
+                } else {
+                    label.classList.remove('filled');
+                }
+            });
+        }
+        inputs.forEach(i => i.addEventListener('change', refresh));
+        refresh();
+    });
+</script>
+
+</body>
+</html>
