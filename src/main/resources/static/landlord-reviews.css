@@ -1,0 +1,165 @@
+/* ============================================================
+   Review feature styles
+   Append to landlord-style.css, or link this file after it on
+   my-property-reviews.html and edit-property.html.
+   Reuses the Plus Jakarta Sans / Hanken Grotesk fonts and the
+   teal/purple palette already used across the app.
+   ============================================================ */
+
+.review-group {
+    margin-bottom: 32px;
+}
+
+.review-group-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.review-group-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    color: #1a1a2e;
+}
+
+.review-group-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Hanken Grotesk', sans-serif;
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.review-group-meta .stars {
+    color: hsl(38, 92%, 50%);
+    letter-spacing: 1px;
+}
+
+.review-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.review-card {
+    background: #fff;
+    border: 1px solid #e8e8ee;
+    border-radius: 14px;
+    padding: 18px 20px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+}
+
+.review-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.review-avatar {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Hanken Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: hsl(180, 67%, 30%);
+    background: hsl(180, 60%, 92%);
+}
+
+.review-avatar--alt {
+    color: hsl(280, 45%, 40%);
+    background: hsl(280, 45%, 94%);
+}
+
+.review-identity {
+    flex: 1;
+    min-width: 0;
+}
+
+.review-name {
+    font-family: 'Hanken Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    color: #1a1a2e;
+}
+
+.review-role {
+    font-family: 'Hanken Grotesk', sans-serif;
+    font-size: 12.5px;
+    color: #8b8b96;
+    margin-top: 1px;
+}
+
+.review-rating-date {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+    flex-shrink: 0;
+}
+
+.review-stars {
+    color: hsl(38, 92%, 50%);
+    font-size: 13px;
+    letter-spacing: 1px;
+}
+
+.review-date {
+    font-family: 'Hanken Grotesk', sans-serif;
+    font-size: 11.5px;
+    color: #9a9aa5;
+}
+
+.review-comment {
+    font-family: 'Hanken Grotesk', sans-serif;
+    font-size: 14px;
+    line-height: 1.55;
+    color: #3a3a45;
+    margin: 12px 0 12px 48px;
+}
+
+.review-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-left: 48px;
+    padding-top: 10px;
+    border-top: 1px solid #f0f0f4;
+}
+
+.review-helpful {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Hanken Grotesk', sans-serif;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: hsl(180, 67%, 32%);
+}
+
+.review-flag {
+    color: #c4c4cc;
+    cursor: pointer;
+}
+
+.review-empty {
+    font-family: 'Hanken Grotesk', sans-serif;
+    font-size: 13.5px;
+    color: #9a9aa5;
+    font-style: italic;
+    padding: 8px 0 0 2px;
+}
+
+.reviews-empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    font-family: 'Hanken Grotesk', sans-serif;
+    color: #8b8b96;
+}
