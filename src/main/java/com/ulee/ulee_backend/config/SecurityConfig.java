@@ -28,11 +28,11 @@ public class SecurityConfig {
                                 "/", "/student-dashboard", "/property/**", "/search",
                                 "/register", "/login", "/login-style.css", "/login-script.js",
                                 "/student-style.css", "/student-script.js",
-                                "/static/**", "/uploads/**"
+                                "/static/**", "/uploads/**", "/vendor/**"
                         ).permitAll()
                         .requestMatchers("/landlord-index", "/list-property",
                                 "/edit-property/**", "/update-property/**", "/delete-property-image/**",
-                                "/add-property-feature/**", "/delete-property-feature/**",
+                                "/add-property-feature/**", "/delete-property-feature/**", "/submit-property/**",
                                 "/toggle-property-status/**", "/manage-applications", "/my-property-reviews")
                         .hasRole("LANDLORD")
                         .requestMatchers("/admin-dashboard", "/admin-index", "/admin/**")

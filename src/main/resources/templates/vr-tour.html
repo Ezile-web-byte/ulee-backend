@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${property.title} + ' - VR Tour'">VR Tour</title>
+    <link rel="stylesheet" th:href="@{/vendor/pannellum/pannellum.css}">
+    <style>
+        body { margin: 0; font-family: sans-serif; }
+        #panorama { width: 100%; height: 90vh; background: #111; }
+        .tour-header { padding: 10px 20px; background: #1a1a1a; color: white; }
+        .tour-header a { color: #4db8ff; text-decoration: none; }
+
+        #tour-loading {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 14px;
+            text-align: center;
+            z-index: 10;
+        }
+
+        .spinner {
+            width: 32px; height: 32px;
+            border: 3px solid rgba(255,255,255,0.2);
+            border-top-color: #4db8ff;
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .pnlm-hotspot-base {
+            filter: drop-shadow(0 0 4px rgba(0,0,0,0.6));
+        }
+    </style>
+</head>
+<body>
+
+<div class="tour-header">
+    <a th:href="@{/property/{id}(id=${property.propertyID})}">&larr; Back to listing</a>
+    <h2 th:text="${property.title} + ' — Virtual Tour'">Property VR Tour</h2>
+</div>
+
+<div style="position:relative;">
+    <div id="panorama"></div>
+    <div id="tour-loading">
+        <div class="spinner"></div>
+        Loading tour…
+    </div>
+</div>
+
+<script th:src="@{/vendor/pannellum/pannellum.js}"></script>
+
+<script th:inline="javascript">
+    const panoramas = /*[[${panoramas}]]*/ [];
+    const imageUrls = /*[[${imageUrls}]]*/ [];
+    const hotspots = /*[[${hotspots}]]*/ [];
+
+    const imageUrlMap = {};
+    imageUrls.forEach(img => { imageUrlMap[img.imageID] = img.url; });
+
+    const scenes = {};
+    panoramas.forEach(pano => {
+        const sceneHotspots = hotspots
+            .filter(h => h.sourcePanoramaID === pano.panoramaID)
+            .map(h => ({
+                pitch: h.pitch,
+                yaw: h.yaw,
+                type: "scene",
+                text: h.label,
+                sceneId: "scene_" + h.targetPanoramaID
+            }));
+
+        scenes["scene_" + pano.panoramaID] = {
+            title: pano.roomName,
+            type: "equirectangular",
+            panorama: imageUrlMap[pano.imageID],
+            hotSpots: sceneHotspots
+        };
+    });
+
+    const entryPanorama = panoramas.find(p => p.isEntryPoint) || panoramas[0];
+
+    if (entryPanorama) {
+        const viewer = pannellum.viewer("panorama", {
+            default: {
+                firstScene: "scene_" + entryPanorama.panoramaID,
+                autoLoad: true
+            },
+            scenes: scenes
+        });
+        viewer.on("load", () => {
+            document.getElementById("tour-loading").style.display = "none";
+        });
+    } else {
+        document.getElementById("panorama").innerHTML =
+            "<p style='padding:20px;'>No VR tour available for this property yet.</p>";
+        document.getElementById("tour-loading").style.display = "none";
+    }
+</script>
+
+</body>
+</html>

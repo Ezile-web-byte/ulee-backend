@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div th:fragment="reviewCard(review)" class="review-card">
+    <div class="review-card-header">
+        <div class="review-avatar" th:text="${review.initials}">SM</div>
+
+        <div class="review-identity">
+            <div class="review-name" th:text="${review.reviewerName}">Sarah M.</div>
+            <div class="review-role" th:text="${review.reviewerRole}">Resident • 2nd Year Student</div>
+        </div>
+
+        <div class="review-rating-date">
+        <span class="review-stars"
+              th:text="${'★'.repeat(review.rating)} + ${'☆'.repeat(5 - review.rating)}">★★★★★</span>
+            <span class="review-date"
+                  th:text="${#temporals.format(review.reviewDate, 'MMM d, yyyy')}">Oct 12, 2023</span>
+        </div>
+    </div>
+
+    <p class="review-comment" th:text="${review.comment}">
+        Great place to stay, very close to campus.
+    </p>
+</div>
+
+</body>
+</html>

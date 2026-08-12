@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -98,34 +99,6 @@
             padding: 5px 14px;
             border-radius: 20px;
             letter-spacing: 0.03em;
-        }
-
-        /* ── THUMBNAIL GALLERY ── */
-        .thumb-strip {
-            display: flex;
-            gap: 10px;
-            margin-top: 12px;
-            overflow-x: auto;
-            padding-bottom: 4px;
-        }
-
-        .thumb-strip img {
-            width: 84px;
-            height: 64px;
-            object-fit: cover;
-            border-radius: 8px;
-            cursor: pointer;
-            flex-shrink: 0;
-            border: 2px solid transparent;
-            opacity: 0.75;
-            transition: opacity var(--transition), border-color var(--transition);
-        }
-
-        .thumb-strip img:hover { opacity: 1; }
-
-        .thumb-strip img.active {
-            opacity: 1;
-            border-color: var(--primary);
         }
 
         /* ── INFO CARD (sidebar) ── */
@@ -260,6 +233,26 @@
             text-align: center;
         }
 
+        .vr-tour-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 14px;
+            background: var(--primary);
+            color: var(--white);
+            font-size: 13px;
+            font-weight: 600;
+            padding: 10px 20px;
+            border-radius: 999px;
+            text-decoration: none;
+            transition: background var(--transition), transform 0.15s ease;
+        }
+
+        .vr-tour-btn:hover {
+            background: var(--primary-dark);
+            transform: translateX(2px);
+        }
+
         /* ── REVIEWS ── */
         .detail-reviews {
             grid-column: 1 / -1;
@@ -281,41 +274,63 @@
             margin-bottom: 20px;
         }
 
-        .review-summary {
-            display: flex;
-            align-items: baseline;
-            gap: 10px;
-            margin-bottom: 18px;
+        .review-item {
+            border-bottom: 1px solid var(--border);
+            padding: 14px 0;
         }
 
-        .review-summary-score {
-            font-family: 'Playfair Display', serif;
-            font-size: 22px;
+        .review-rating {
+            font-size: 14px;
             font-weight: 700;
             color: var(--primary-dark);
+            margin-bottom: 4px;
         }
 
-        .review-summary-count {
-            font-size: 13px;
+        .review-comment {
+            font-size: 14px;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+
+        .review-date {
+            font-size: 12px;
             color: var(--muted);
         }
 
-        .view-reviews-btn {
-            display: inline-block;
-            padding: 11px 20px;
-            border: 1px solid var(--primary);
-            border-radius: 999px;
-            background: var(--white);
-            color: var(--primary-dark);
-            text-decoration: none;
-            font-size: 13px;
-            font-weight: 600;
-            transition: background var(--transition), transform 0.15s;
+        .review-form {
+            margin-top: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
-        .view-reviews-btn:hover {
-            background: var(--primary-pale);
-            transform: translateX(2px);
+        .review-form h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 16px;
+            margin-bottom: 6px;
+        }
+
+        .review-form label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .review-form select,
+        .review-form textarea {
+            font-family: 'Sora', sans-serif;
+            font-size: 14px;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            resize: vertical;
+        }
+
+        .review-form select:focus,
+        .review-form textarea:focus {
+            outline: none;
+            border-color: var(--primary);
         }
 
         /* ── RESPONSIVE ── */
@@ -339,28 +354,9 @@
 
 <div class="detail-wrap">
 
-    <div class="detail-img-wrap-outer">
-        <div class="detail-img-wrap">
-            <img class="detail-img" id="mainDetailImg"
-                 th:if="${not #lists.isEmpty(images)}"
-                 th:src="@{${images[0].url}}"
-                 th:alt="${property.title}" />
-            <img class="detail-img" id="mainDetailImg"
-                 th:unless="${not #lists.isEmpty(images)}"
-                 src="/no-image-placeholder.png"
-                 th:alt="${property.title}" />
-            <span class="detail-badge" th:text="${property.isAvailable} ? 'Available' : 'Unavailable'">Available</span>
-        </div>
-
-        <div class="thumb-strip" th:if="${images != null and images.size() > 1}">
-            <img th:each="img, iter : ${images}"
-                 th:src="@{${img.url}}"
-                 th:alt="${img.caption} ?: ${property.title}"
-                 th:classappend="${iter.index == 0} ? 'active' : ''"
-                 onclick="document.getElementById('mainDetailImg').src = this.src;
-                          document.querySelectorAll('.thumb-strip img').forEach(t => t.classList.remove('active'));
-                          this.classList.add('active');" />
-        </div>
+    <div class="detail-img-wrap">
+        <img class="detail-img" src="/student-image1.png" th:alt="${property.title}" />
+        <span class="detail-badge" th:text="${property.isAvailable} ? 'Available' : 'Unavailable'">Available</span>
     </div>
 
     <div class="detail-info-card">
@@ -415,26 +411,47 @@
             <img th:src="${vrImages[0].url}" alt="360 tour view" class="vr-image" />
             <span class="vr-badge">🌐 360° View</span>
         </div>
-        <p class="vr-hint">Drag to look around (full VR navigation coming soon)</p>
+        <a th:href="@{/property/{id}/vr-tour(id=${property.propertyID})}" class="vr-tour-btn">
+            🌐 Launch Full 360° Tour
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                <path d="M9 18l6-6-6-6"/>
+            </svg>
+        </a>
     </div>
 
     <div class="detail-reviews">
         <h2>Reviews & Ratings</h2>
 
-        <div th:if="${reviewCount == 0}" class="no-reviews">
+        <div th:if="${#lists.isEmpty(reviews)}" class="no-reviews">
             No reviews yet. Be the first to review this property!
         </div>
 
-        <div th:if="${reviewCount > 0}" class="review-summary">
-            <span class="review-summary-score" th:text="${#numbers.formatDecimal(avgRating, 1, 1)} + ' / 5'">4.8 / 5</span>
-            <span class="review-summary-count"
-                  th:text="'Based on ' + ${reviewCount} + (${reviewCount} == 1 ? ' review' : ' reviews')">Based on 12 reviews</span>
+        <div class="review-item" th:each="review : ${reviews}">
+            <div class="review-rating" th:text="'⭐ ' + ${review.rating} + '/5'">Rating</div>
+            <p class="review-comment" th:text="${review.comment}">Comment</p>
+            <p class="review-date" th:text="${review.reviewDate}">Date</p>
         </div>
 
-        <a class="view-reviews-btn" th:href="@{/property/{id}/reviews(id=${property.propertyID})}">View All Reviews</a>
+        <form th:action="@{/review/{id}(id=${property.propertyID})}" method="post" class="review-form">
+            <h3>Write a Review</h3>
+            <label for="rating">Rating (1-5)</label>
+            <select name="rating" id="rating" required>
+                <option value="5">5 - Excellent</option>
+                <option value="4">4 - Good</option>
+                <option value="3">3 - Average</option>
+                <option value="2">2 - Poor</option>
+                <option value="1">1 - Terrible</option>
+            </select>
+
+            <label for="comment">Comment</label>
+            <textarea name="comment" id="comment" rows="4" required placeholder="Share your experience..."></textarea>
+
+            <button type="submit" class="apply-btn">Submit Review</button>
+        </form>
     </div>
 
 </div>
 
 </body>
 </html>
+

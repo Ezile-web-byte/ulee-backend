@@ -1,200 +1,268 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NestIQ — Landlord Dashboard</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
- <link rel="stylesheet" href="listProperty.css" />
-  <script src="listProperty.js" defer></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>List a New Property – ULEE</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: hsl(180, 67%, 47%);
+      --primary-dark: hsl(180, 67%, 36%);
+      --bg: hsl(0, 0%, 99%);
+      --text: #1a1a1a;
+      --muted: #777;
+      --white: #ffffff;
+      --border: hsl(180, 20%, 88%);
+      --shadow-md: 0 6px 28px rgba(0,0,0,0.13);
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Sora', sans-serif; background: var(--bg); color: var(--text); }
+
+    .wrap { max-width: 640px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+    h1 { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 6px; }
+    .page-sub { font-size: 13.5px; color: var(--muted); margin-bottom: 24px; }
+
+    .form-card {
+      background: var(--white); border-radius: var(--radius);
+      box-shadow: var(--shadow-md); border: 1px solid var(--border);
+      padding: 28px; display: flex; flex-direction: column; gap: 16px;
+    }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text); }
+    .field input, .field select, .field textarea {
+      font-family: 'Sora', sans-serif; font-size: 14px; padding: 10px 14px;
+      border: 1.5px solid var(--border); border-radius: 8px; color: var(--text);
+      background: var(--white);
+    }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      outline: none; border-color: var(--primary);
+    }
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .section-hint { font-size: 12px; color: var(--muted); margin-top: -8px; }
+
+    .actions { display: flex; gap: 12px; margin-top: 8px; }
+    .btn { flex: 1; text-align: center; border: none; border-radius: 8px; padding: 12px 0; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; }
+    .btn-save { background: var(--primary); color: #fff; }
+    .btn-save:hover { background: var(--primary-dark); }
+    .btn-cancel { background: hsl(0,0%,94%); color: var(--text); }
+
+    /* Amenities */
+    .amenity-group { display: flex; flex-direction: column; gap: 8px; }
+    .amenity-group-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--primary-dark); margin-top: 6px; }
+    .amenity-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; }
+    .amenity-item { display: flex; align-items: center; gap: 8px; font-size: 13.5px; }
+    .amenity-item label { text-transform: none; font-weight: 500; }
+
+    .upload-field input[type="file"] {
+      font-size: 13px; padding: 8px 10px; border: 1.5px dashed var(--border);
+      border-radius: 8px; background: hsl(180, 20%, 98%);
+    }
+
+    .feature-note {
+      font-size: 12.5px; color: var(--muted); background: hsl(180, 20%, 97%);
+      border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px;
+    }
+
+    .photo-preview-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+    }
+    .photo-preview-item {
+      position: relative; aspect-ratio: 1/1; border-radius: 8px; overflow: hidden;
+      border: 1.5px solid var(--border);
+    }
+    .photo-preview-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .photo-preview-item .remove-btn {
+      position: absolute; top: 4px; right: 4px; width: 20px; height: 20px;
+      border-radius: 50%; border: none; background: rgba(0,0,0,0.6); color: #fff;
+      font-size: 13px; line-height: 1; cursor: pointer; display: flex;
+      align-items: center; justify-content: center;
+    }
+    .photo-preview-item .remove-btn:hover { background: hsl(0, 65%, 52%); }
+    .btn-add-photos {
+      align-self: flex-start; background: hsl(180, 20%, 96%); color: var(--primary-dark);
+      border: 1.5px dashed var(--border); border-radius: 8px; padding: 10px 16px;
+      font-size: 13.5px; font-weight: 600; cursor: pointer; font-family: 'Sora', sans-serif;
+    }
+    .btn-add-photos:hover { background: hsl(180, 20%, 92%); }
+  </style>
 </head>
 <body>
 
-<!-- ══ HERO ══ -->
-<header class="hero">
-  <div class="hero-top">
-    <button class="back-btn" onclick="history.back()">
-      <svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-      Overview
-    </button>
+<div class="wrap">
+  <h1>List a New Property</h1>
+  <p class="page-sub">Fill in the details below — you can always come back and edit this listing afterward.</p>
 
-    <div class="profile-area" id="profileArea">
-      <div class="profile-trigger" id="profileTrigger">
-        <div class="avatar">AM</div>
-        <span>Amelia Thornton</span>
-        <svg class="chevron-icon" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+  <form id="listPropertyForm" class="form-card" th:action="@{/list-property}" method="post" enctype="multipart/form-data">
+    <div class="field">
+      <label>Property Title</label>
+      <input type="text" name="title" placeholder="e.g. The Dunes" required />
+    </div>
+
+    <div class="row-2">
+      <div class="field">
+        <label>Room Type</label>
+        <select name="type">
+          <option value="" selected>Select a type</option>
+          <option value="Single Room">Single Room</option>
+          <option value="Sharing">Sharing</option>
+        </select>
       </div>
-      <div class="dropdown" id="dropdown">
-        <div class="dd-item">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-          My Profile
-        </div>
-        <div class="dd-item">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-          Settings
-        </div>
-        <div class="dd-item">
-          <svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8zM6 1v3M10 1v3M14 1v3"/></svg>
-          Messages
-          <span style="margin-left:auto;background:var(--p);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:50px;">3</span>
-        </div>
-        <div class="dd-sep"></div>
-        <div class="dd-item danger">
-          <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
-          Sign out
+      <div class="field">
+        <label>Suburb</label>
+        <input type="text" name="city" placeholder="e.g. Summerstrand" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Address</label>
+      <input type="text" name="address" placeholder="Full street address" />
+    </div>
+
+    <div class="field">
+      <label>Getting to Campus</label>
+      <select name="commuteType">
+        <option value="" selected>Select an option</option>
+        <option value="Walking distance">Walking distance</option>
+        <option value="Shuttle required">Shuttle required</option>
+      </select>
+    </div>
+
+    <div class="row-2">
+      <div class="field">
+        <label>Monthly Rent (R)</label>
+        <input type="number" step="0.01" name="rent" placeholder="0.00" />
+      </div>
+      <div class="field">
+        <label>Deposit (R)</label>
+        <input type="number" step="0.01" name="deposit" placeholder="0.00" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Available From</label>
+      <select name="availableFrom">
+        <option value="" selected>Select a semester</option>
+        <option th:each="option : ${availableFromOptions}"
+                th:value="${#temporals.format(option, 'yyyy-MM-dd')}"
+                th:text="${#temporals.format(option, 'MMMM yyyy')}">
+        </option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Description</label>
+      <textarea name="description" rows="5" placeholder="Tell students what makes this place worth renting."></textarea>
+    </div>
+
+    <!-- Amenities, grouped by category -->
+    <div class="field">
+      <label>Amenities</label>
+      <p class="section-hint">Tick everything included with this room.</p>
+    </div>
+    <div class="amenity-group" th:each="entry : ${amenityCategories}">
+      <div class="amenity-group-title" th:text="${entry.key}">Category</div>
+      <div class="amenity-grid">
+        <div class="amenity-item" th:each="amenity : ${entry.value}">
+          <input type="checkbox" th:id="'amenity-' + ${amenity.amenityID}"
+                 name="amenityIds" th:value="${amenity.amenityID}" />
+          <label th:for="'amenity-' + ${amenity.amenityID}" th:text="${amenity.name}">Amenity</label>
         </div>
       </div>
     </div>
-  </div>
 
-  <div class="hero-greeting">
-    <div class="hero-eyebrow">Student Housing Platform — NestIQ</div>
-    <h1 class="hero-title">Welcome back, <em>Amelia.</em></h1>
-    <p class="hero-sub">Thursday, 30 April 2026 &nbsp;·&nbsp; 12 active listings &nbsp;·&nbsp; 4 available now</p>
-  </div>
-</header>
+    <!-- Cover photo + additional photos -->
+    <div class="field upload-field">
+      <label for="coverImage">Cover Photo</label>
+      <input type="file" id="coverImage" name="coverImage" accept="image/*" />
+      <p class="section-hint">This is the main photo students see first on your listing.</p>
+    </div>
 
-<!-- ══ STATS ══ -->
-<div class="stats-strip">
-  <div class="stat-cell">
-    <div class="stat-num">12</div>
-    <div class="stat-lbl">Properties</div>
-  </div>
-  <div class="stat-cell">
-    <div class="stat-num">8</div>
-    <div class="stat-lbl">Currently Rented</div>
-  </div>
-  <div class="stat-cell">
-    <div class="stat-num">£9,600</div>
-    <div class="stat-lbl">Monthly Revenue</div>
-  </div>
-  <div class="stat-cell">
-    <div class="stat-num">96%</div>
-    <div class="stat-lbl">Occupancy Rate</div>
-  </div>
+    <div class="field upload-field">
+      <label>Additional Photos</label>
+      <div id="additionalPhotosPreview" class="photo-preview-grid"></div>
+      <button type="button" id="addPhotosBtn" class="btn-add-photos">+ Add Photos</button>
+      <input type="file" id="additionalPhotosInput" accept="image/*" multiple style="display:none;" />
+      <p class="section-hint">Add photos in as many rounds as you like — nothing already added gets replaced.</p>
+    </div>
+
+    <p class="feature-note">
+      Study hubs, braai areas, game rooms and other special features can be added once the listing is created — head to "Manage" on this property afterward.
+    </p>
+
+    <input type="hidden" name="action" id="formAction" value="submit" />
+
+    <div class="actions">
+      <a class="btn btn-cancel" href="/landlord-index">Cancel</a>
+      <button type="submit" class="btn btn-cancel" onclick="document.getElementById('formAction').value='draft';">Save as Draft</button>
+      <button type="submit" class="btn btn-save" onclick="document.getElementById('formAction').value='submit';">List Property</button>
+    </div>
+  </form>
 </div>
 
-<!-- ══ MAIN ══ -->
-<main class="main">
+<script>
+  (function () {
+    const addBtn = document.getElementById('addPhotosBtn');
+    const fileInput = document.getElementById('additionalPhotosInput');
+    const preview = document.getElementById('additionalPhotosPreview');
+    const form = document.querySelector('form[action*="list-property"]');
+    let accumulatedFiles = [];
 
-  <!-- My Properties -->
-  <div class="sec-header">
-    <div class="sec-title">
-      <span class="sec-title-dot"></span>
-      My Properties
-    </div>
-    <button class="pill-btn" id="addBtn">
-      <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-      Add Property
-    </button>
-  </div>
+    addBtn.addEventListener('click', () => fileInput.click());
 
-  <div class="prop-grid" id="propGrid">
+    fileInput.addEventListener('change', () => {
+      for (const file of fileInput.files) {
+        accumulatedFiles.push(file);
+      }
+      fileInput.value = ''; // reset so picking again fires 'change' even for the same file
+      renderPreviews();
+    });
 
-    <!-- Card 1 -->
-    <div class="prop-card">
-      <div class="prop-img-wrap">
-        <img class="prop-img"
-          src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&q=80"
-          alt="Riverside Studio">
-        <span class="prop-badge">Available</span>
-        <button class="fav-btn" onclick="toggleFav(this)">
-          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-        </button>
-      </div>
-      <div class="prop-body">
-        <div class="prop-name">Riverside Student Studio</div>
-        <div class="prop-loc">
-          <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          Bermondsey, London SE1
-        </div>
-        <div class="prop-foot">
-          <div class="prop-price">£850 <sub>/mo</sub></div>
-          <button class="card-cta">Edit Listing</button>
-        </div>
-      </div>
-    </div>
+    function renderPreviews() {
+      preview.innerHTML = '';
+      accumulatedFiles.forEach((file, index) => {
+        const item = document.createElement('div');
+        item.className = 'photo-preview-item';
 
-    <!-- Card 2 -->
-    <div class="prop-card">
-      <div class="prop-img-wrap">
-        <img class="prop-img"
-          src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&q=80"
-          alt="Scholar's Apartment">
-        <span class="prop-badge rented">Rented</span>
-        <button class="fav-btn liked" onclick="toggleFav(this)">
-          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-        </button>
-      </div>
-      <div class="prop-body">
-        <div class="prop-name">The Scholar's Apartment</div>
-        <div class="prop-loc">
-          <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          Shoreditch, London E1
-        </div>
-        <div class="prop-foot">
-          <div class="prop-price">£1,100 <sub>/mo</sub></div>
-          <button class="card-cta">Manage</button>
-        </div>
-      </div>
-    </div>
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        item.appendChild(img);
 
-    <!-- Card 3 -->
-    <div class="prop-card">
-      <div class="prop-img-wrap">
-        <img class="prop-img"
-          src="https://images.unsplash.com/photo-1484154218962-a197022b5858?w=600&q=80"
-          alt="Campus Edge Rooms">
-        <span class="prop-badge">Available</span>
-        <button class="fav-btn" onclick="toggleFav(this)">
-          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-        </button>
-      </div>
-      <div class="prop-body">
-        <div class="prop-name">Campus Edge Rooms</div>
-        <div class="prop-loc">
-          <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          Hackney, London E8
-        </div>
-        <div class="prop-foot">
-          <div class="prop-price">£720 <sub>/mo</sub></div>
-          <button class="card-cta">Edit Listing</button>
-        </div>
-      </div>
-    </div>
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'remove-btn';
+        removeBtn.innerHTML = '&times;';
+        removeBtn.title = 'Remove photo';
+        removeBtn.addEventListener('click', () => {
+          accumulatedFiles.splice(index, 1);
+          renderPreviews();
+        });
+        item.appendChild(removeBtn);
 
-  </div>
+        preview.appendChild(item);
+      });
+    }
 
-  <!-- ══ MULTI-STEP FORM ══ -->
-  <div class="form-box" id="formBox">
+    // Before the form submits, build the real "images" file list from everything accumulated
+    form.addEventListener('submit', () => {
+      const dataTransfer = new DataTransfer();
+      accumulatedFiles.forEach(file => dataTransfer.items.add(file));
 
-    <div class="form-head">
-      <div class="form-head-left">
-        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        <h2>List a New Property</h2>
-      </div>
-      <button class="close-form" id="closeForm">✕</button>
-    </div>
-
-    <div class="form-inner">
-
-      <!-- Step tracker -->
-      <div class="step-track" id="stepTrack"></div>
-
-      <!-- Panels -->
-      <div id="panelWrap"></div>
-
-      <!-- Actions -->
-      <div class="form-actions">
-        <button class="btn-outline" id="prevBtn" onclick="goStep(-1)">← Back</button>
-        <button class="btn-primary" id="nextBtn" onclick="goStep(1)">Continue →</button>
-      </div>
-
-    </div>
-  </div>
-
-</main>
+      let hiddenImagesInput = document.getElementById('imagesSubmitInput');
+      if (!hiddenImagesInput) {
+        hiddenImagesInput = document.createElement('input');
+        hiddenImagesInput.type = 'file';
+        hiddenImagesInput.id = 'imagesSubmitInput';
+        hiddenImagesInput.name = 'images';
+        hiddenImagesInput.multiple = true;
+        hiddenImagesInput.style.display = 'none';
+        form.appendChild(hiddenImagesInput);
+      }
+      hiddenImagesInput.files = dataTransfer.files;
+    });
+  })();
+</script>
 
 </body>
 </html>

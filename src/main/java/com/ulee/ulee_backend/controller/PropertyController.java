@@ -58,6 +58,8 @@ public class PropertyController {
     private SavedPropertyRepository savedPropertyRepository;
     @Autowired
     private com.ulee.ulee_backend.repository.UserRepository userRepository;
+    @Autowired
+    private com.ulee.ulee_backend.repository.StudentRepository studentRepository;
 
     // Small helper so every method resolves the logged-in user the same way
     private User getCurrentUser(Principal principal) {
@@ -89,6 +91,43 @@ public class PropertyController {
         return options;
     }
 
+    // Builds a display-ready view of a Review, resolving the student's
+    // name/year the same way manageApplications() resolves applicant names.
+    // Used by both viewPropertyReviews() (Reviews page, all properties) and
+    // editPropertyForm() (Manage Property page, single property) so the two
+    // pages render identical review cards.
+    private ReviewRowView toReviewRowView(Review review) {
+        User user = userRepository.findById(review.getStudentID()).orElse(null);
+        Student studentProfile = studentRepository.findById(review.getStudentID()).orElse(null);
+
+        ReviewRowView view = new ReviewRowView();
+        view.setReviewID(review.getReviewID());
+        view.setPropertyID(review.getPropertyID());
+        view.setRating(review.getRating());
+        view.setComment(review.getComment());
+        view.setReviewDate(review.getReviewDate());
+
+        if (user != null) {
+            String lastInitial = (user.getLastName() != null && !user.getLastName().isBlank())
+                    ? user.getLastName().charAt(0) + "." : "";
+            view.setReviewerName((user.getFirstName() + " " + lastInitial).trim());
+            view.setInitials(("" + user.getFirstName().charAt(0)
+                    + (user.getLastName() != null && !user.getLastName().isBlank() ? user.getLastName().charAt(0) : ""))
+                    .toUpperCase());
+        } else {
+            view.setReviewerName("Former student");
+            view.setInitials("?");
+        }
+
+        if (studentProfile != null && studentProfile.getYearOfStudy() != null) {
+            view.setReviewerRole("Resident • " + studentProfile.getYearOfStudy() + " Year Student");
+        } else {
+            view.setReviewerRole("Resident");
+        }
+
+        return view;
+    }
+
     // Homepage — browse-first entry point, no login wall
     @GetMapping("/")
     public String home() {
@@ -106,7 +145,15 @@ public class PropertyController {
     public String viewLandlordDashboard(Model model, Principal principal) {
         Integer landlordID = getCurrentUser(principal).getUserID();
 
-        List<Property> myProperties = propertyRepository.findByLandlordID(landlordID);
+        // Deactivated (soft-deleted) properties stay in the database but are
+        // filtered out here so they never appear on the dashboard, in the
+        // stat cards, or in the filter tabs — regardless of what status they
+        // were in before being deactivated (Draft, Pending, or Available).
+        // togglePropertyStatus is what sets status to "Inactive".
+        List<Property> myProperties = propertyRepository.findByLandlordID(landlordID).stream()
+                .filter(p -> !"Inactive".equals(p.getStatus()))
+                .collect(Collectors.toList());
+
         List<Integer> propertyIds = myProperties.stream()
                 .map(Property::getPropertyID)
                 .collect(Collectors.toList());
@@ -153,41 +200,60 @@ public class PropertyController {
                 ? Set.of()
                 : property.getAmenities().stream().map(Amenity::getAmenityID).collect(Collectors.toSet());
 
+        // Reviews for this one property, so the same comments shown on the
+        // Reviews page also appear here on Manage Property.
+        List<ReviewRowView> propertyReviews = reviewRepository.findByPropertyID(id).stream()
+                .map(this::toReviewRowView)
+                .collect(Collectors.toList());
+
         model.addAttribute("property", property);
         model.addAttribute("images", propertyImageRepository.findByPropertyID(id));
         model.addAttribute("amenityCategories", amenityCategories);
         model.addAttribute("selectedAmenityIds", selectedAmenityIds);
         model.addAttribute("features", propertyFeatureRepository.findByPropertyID(id));
         model.addAttribute("availableFromOptions", generateSemesterOptions());
+        model.addAttribute("reviews", propertyReviews);
+        model.addAttribute("reviewCount", propertyReviews.size());
+        model.addAttribute("averageRating", propertyReviews.isEmpty() ? 0.0 :
+                propertyReviews.stream().mapToInt(ReviewRowView::getRating).average().orElse(0.0));
         return "landlord/edit-property";
     }
 
-    // C101 — save the edited fields, amenity selections, and optionally append new photos
+    // C101 — save the edited fields, amenity selections, and optionally append new photos.
+    // Also doubles as the "Save Draft" handler: when action=draft, required-field
+    // validation is skipped client-side (formnovalidate) and whatever was filled
+    // in gets saved with status="Draft" so the landlord can finish it later.
     @PostMapping("/update-property/{id}")
     public String updateProperty(
             @PathVariable Integer id,
-            @RequestParam String title,
-            @RequestParam String type,
-            @RequestParam String address,
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String address,
             @RequestParam(required = false) String city,
-            @RequestParam java.math.BigDecimal rent,
-            @RequestParam(required = false) java.math.BigDecimal deposit,
+            @RequestParam(required = false) String rent,
+            @RequestParam(required = false) String deposit,
             @RequestParam(required = false) String availableFrom,
             @RequestParam(required = false) String description,
+            @RequestParam(required = false) String commuteType,
+            @RequestParam(required = false) Integer capacity,
             @RequestParam(value = "amenityIds", required = false) List<Integer> amenityIds,
             @RequestParam(value = "images", required = false) MultipartFile[] images,
+            @RequestParam(value = "action", defaultValue = "update") String action,
             Principal principal) throws IOException {
 
         Integer landlordID = getCurrentUser(principal).getUserID();
         Property property = getOwnedProperty(id, landlordID);
+        boolean isDraft = "draft".equals(action);
 
-        property.setTitle(title);
-        property.setType(type);
-        property.setAddress(address);
+        if (title != null) property.setTitle(title);
+        if (type != null) property.setType(type);
+        if (address != null) property.setAddress(address);
         property.setCity(city);
-        property.setRent(rent);
-        property.setDeposit(deposit);
+        property.setRent((rent != null && !rent.isBlank()) ? new java.math.BigDecimal(rent) : property.getRent());
+        property.setDeposit((deposit != null && !deposit.isBlank()) ? new java.math.BigDecimal(deposit) : null);
         property.setDescription(description);
+        property.setCommuteType(commuteType);
+        if (capacity != null) property.setCapacity(capacity);
         // Note: bedrooms/bathrooms/furnished are no longer edited from this form.
         // They stay untouched on the existing record (furnished is deprecated in
         // favour of the "Furnished" amenity checkbox below).
@@ -199,6 +265,14 @@ public class PropertyController {
         property.setAmenities(amenityIds != null
                 ? amenityRepository.findAllById(amenityIds)
                 : new ArrayList<>());
+
+        if (isDraft) {
+            property.setStatus("Draft");
+        } else if ("Draft".equals(property.getStatus())) {
+            // Finishing up a draft via "Save Changes" submits it for approval,
+            // mirroring the existing /submit-property/{id} flow.
+            property.setStatus("Pending");
+        }
 
         propertyRepository.save(property);
 
@@ -229,7 +303,13 @@ public class PropertyController {
             }
         }
 
-        return "redirect:/edit-property/" + id;
+        // Both branches now return to the dashboard rather than back to the
+        // edit form, per the landlord workflow: drafts go back with a
+        // "draftSaved" flag, real saves go back with an "updated" flag so the
+        // dashboard can show the right confirmation toast.
+        return isDraft
+                ? "redirect:/landlord-index?draftSaved=true"
+                : "redirect:/landlord-index?updated=true";
     }
 
     // C101 — remove a single photo from a property
@@ -306,12 +386,25 @@ public class PropertyController {
         return "redirect:/edit-property/" + property.getPropertyID();
     }
 
-    // C101 — deactivate or reactivate a listing
+    // C101 — deactivate or reactivate a listing.
+    // This is a soft delete: the row itself is never removed from the
+    // database. Deactivating sets status to "Inactive" regardless of what
+    // the property's prior status was (Draft, Pending, or already-approved
+    // and Available) — that's what lets the dashboard query in
+    // viewLandlordDashboard hide it no matter which state it was deactivated
+    // from. Reactivating restores it to "Approved" so it falls back into the
+    // normal Available/Inactive badge logic used for non-Draft/Pending
+    // listings.
     @PostMapping("/toggle-property-status/{id}")
     public String togglePropertyStatus(@PathVariable Integer id, @RequestParam Boolean isAvailable, Principal principal) {
         Integer landlordID = getCurrentUser(principal).getUserID();
         Property property = getOwnedProperty(id, landlordID);
 
+        if (Boolean.FALSE.equals(isAvailable)) {
+            property.setStatus("Inactive");
+        } else if ("Inactive".equals(property.getStatus())) {
+            property.setStatus("Approved");
+        }
         property.setIsAvailable(isAvailable);
         propertyRepository.save(property);
         return "redirect:/landlord-index";
@@ -424,8 +517,9 @@ public class PropertyController {
 
         List<Review> allReviews = reviewRepository.findByPropertyIDIn(propertyIds);
 
-        Map<Integer, List<Review>> reviewsByProperty = allReviews.stream()
-                .collect(Collectors.groupingBy(Review::getPropertyID));
+        Map<Integer, List<ReviewRowView>> reviewsByProperty = allReviews.stream()
+                .map(this::toReviewRowView)
+                .collect(Collectors.groupingBy(ReviewRowView::getPropertyID));
 
         model.addAttribute("properties", myProperties);
         model.addAttribute("reviewsByProperty", reviewsByProperty);
@@ -434,7 +528,10 @@ public class PropertyController {
 
     // C200 — View Applications (landlord side, across all their properties)
     @GetMapping("/manage-applications")
-    public String manageApplications(Model model, Principal principal) {
+    public String manageApplications(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            Model model, Principal principal) {
         Integer landlordID = getCurrentUser(principal).getUserID();
 
         List<Property> myProperties = propertyRepository.findByLandlordID(landlordID);
@@ -447,13 +544,16 @@ public class PropertyController {
         Map<Integer, Property> propertyLookup = myProperties.stream()
                 .collect(Collectors.toMap(Property::getPropertyID, p -> p));
 
-        List<ApplicationRowView> rows = new ArrayList<>();
+        List<ApplicationRowView> allRows = new ArrayList<>();
         for (Application app : applications) {
             User student = userRepository.findById(app.getStudentID()).orElse(null);
+            Student studentProfile = studentRepository.findById(app.getStudentID()).orElse(null);
             Property property = propertyLookup.get(app.getPropertyID());
 
             ApplicationRowView row = new ApplicationRowView();
             row.setApplicationID(app.getApplicationID());
+            row.setStudentID(app.getStudentID());
+            row.setPropertyID(app.getPropertyID());
             row.setStatus(app.getStatus());
             row.setApplicationDate(app.getApplicationDate());
 
@@ -466,6 +566,14 @@ public class PropertyController {
                 row.setStudentInitials("?");
             }
 
+            if (studentProfile != null) {
+                row.setYearOfStudy(studentProfile.getYearOfStudy());
+                row.setBudgetMin(studentProfile.getBudgetMin());
+                row.setBudgetMax(studentProfile.getBudgetMax());
+                row.setFundingStatus(studentProfile.getFundingStatus());
+                row.setHousingPreferences(studentProfile.getHousingPreferences());
+            }
+
             if (property != null) {
                 row.setPropertyName(property.getTitle());
                 row.setPropertyAddress(buildApplicationAddress(property));
@@ -476,21 +584,49 @@ public class PropertyController {
                 row.setRoomType("");
             }
 
-            rows.add(row);
+            allRows.add(row);
         }
 
-        long pendingCount = rows.stream().filter(r -> "Pending".equalsIgnoreCase(r.getStatus())).count();
-        long acceptedTodayCount = rows.stream()
+        // Most recent applications first — matches the "Recent Student Applications" panel title
+        allRows.sort((a, b) -> {
+            if (a.getApplicationDate() == null) return 1;
+            if (b.getApplicationDate() == null) return -1;
+            return b.getApplicationDate().compareTo(a.getApplicationDate());
+        });
+
+        long pendingCount = allRows.stream().filter(r -> "Pending".equalsIgnoreCase(r.getStatus())).count();
+        long acceptedTodayCount = allRows.stream()
                 .filter(r -> "Accepted".equalsIgnoreCase(r.getStatus())
                         && r.getApplicationDate() != null
                         && r.getApplicationDate().toLocalDate().isEqual(java.time.LocalDate.now()))
                 .count();
 
-        model.addAttribute("applications", rows);
+        // Pagination — sliced in memory since applications are already loaded as a List
+        int totalItems = allRows.size();
+        int totalPages = totalItems == 0 ? 1 : (int) Math.ceil(totalItems / (double) size);
+        int currentPage = Math.max(0, Math.min(page, totalPages - 1));
+
+        int fromIndex = currentPage * size;
+        int toIndex = Math.min(fromIndex + size, totalItems);
+        List<ApplicationRowView> pageRows = totalItems == 0
+                ? new ArrayList<>()
+                : allRows.subList(fromIndex, toIndex);
+
+        List<Integer> pageNumbers = new ArrayList<>();
+        for (int i = 0; i < totalPages; i++) {
+            pageNumbers.add(i);
+        }
+
+        model.addAttribute("applications", pageRows);
         model.addAttribute("propertyLookup", propertyLookup);
         model.addAttribute("pendingCount", pendingCount);
         model.addAttribute("acceptedTodayCount", acceptedTodayCount);
-        model.addAttribute("avgResponseTime", "—");
+        model.addAttribute("currentPage", currentPage);
+        model.addAttribute("totalPages", totalPages);
+        model.addAttribute("pageNumbers", pageNumbers);
+        model.addAttribute("totalItems", totalItems);
+        model.addAttribute("fromIndex", totalItems == 0 ? 0 : fromIndex + 1);
+        model.addAttribute("toIndex", toIndex);
         return "landlord/manage-applications";
     }
 
@@ -522,6 +658,94 @@ public class PropertyController {
                 .orElseThrow(() -> new RuntimeException("Application not found with id: " + applicationId));
         application.setStatus(status);
         applicationRepository.save(application);
+        return "redirect:/manage-applications";
+    }
+
+    // Accept All — across every property this landlord owns, accept the
+    // oldest Pending applications first, up to that property's own
+    // remaining capacity (capacity - already-Accepted count). Properties
+    // that are already full are simply skipped.
+    @PostMapping("/accept-all-applications")
+    public String acceptAllApplications(Principal principal) {
+        Integer landlordID = getCurrentUser(principal).getUserID();
+        List<Property> myProperties = propertyRepository.findByLandlordID(landlordID);
+        List<Integer> propertyIds = myProperties.stream()
+                .map(Property::getPropertyID)
+                .collect(Collectors.toList());
+
+        List<Application> allApplications = applicationRepository.findByPropertyIDIn(propertyIds);
+        Map<Integer, List<Application>> byProperty = allApplications.stream()
+                .collect(Collectors.groupingBy(Application::getPropertyID));
+        Map<Integer, Property> propertyLookup = myProperties.stream()
+                .collect(Collectors.toMap(Property::getPropertyID, p -> p));
+
+        for (Map.Entry<Integer, List<Application>> entry : byProperty.entrySet()) {
+            Property property = propertyLookup.get(entry.getKey());
+            if (property == null || property.getCapacity() == null) continue;
+
+            List<Application> propApps = entry.getValue();
+            long acceptedCount = propApps.stream()
+                    .filter(a -> "Accepted".equalsIgnoreCase(a.getStatus()))
+                    .count();
+            long remaining = property.getCapacity() - acceptedCount;
+            if (remaining <= 0) continue;
+
+            List<Application> pending = propApps.stream()
+                    .filter(a -> "Pending".equalsIgnoreCase(a.getStatus()))
+                    .sorted((a, b) -> {
+                        if (a.getApplicationDate() == null) return 1;
+                        if (b.getApplicationDate() == null) return -1;
+                        return a.getApplicationDate().compareTo(b.getApplicationDate());
+                    })
+                    .collect(Collectors.toList());
+
+            for (int i = 0; i < pending.size() && i < remaining; i++) {
+                Application app = pending.get(i);
+                app.setStatus("Accepted");
+                applicationRepository.save(app);
+            }
+        }
+
+        return "redirect:/manage-applications";
+    }
+
+    // Reject All — for every property this landlord owns that is already
+    // at full capacity, reject its remaining Pending applications. Properties
+    // that still have space are left untouched, so this never rejects an
+    // application that could still be accepted.
+    @PostMapping("/reject-all-applications")
+    public String rejectAllApplications(Principal principal) {
+        Integer landlordID = getCurrentUser(principal).getUserID();
+        List<Property> myProperties = propertyRepository.findByLandlordID(landlordID);
+        List<Integer> propertyIds = myProperties.stream()
+                .map(Property::getPropertyID)
+                .collect(Collectors.toList());
+
+        List<Application> allApplications = applicationRepository.findByPropertyIDIn(propertyIds);
+        Map<Integer, List<Application>> byProperty = allApplications.stream()
+                .collect(Collectors.groupingBy(Application::getPropertyID));
+        Map<Integer, Property> propertyLookup = myProperties.stream()
+                .collect(Collectors.toMap(Property::getPropertyID, p -> p));
+
+        for (Map.Entry<Integer, List<Application>> entry : byProperty.entrySet()) {
+            Property property = propertyLookup.get(entry.getKey());
+            if (property == null || property.getCapacity() == null) continue;
+
+            List<Application> propApps = entry.getValue();
+            long acceptedCount = propApps.stream()
+                    .filter(a -> "Accepted".equalsIgnoreCase(a.getStatus()))
+                    .count();
+            long remaining = property.getCapacity() - acceptedCount;
+            if (remaining > 0) continue; // still has space — don't reject, leave for Accept All / manual review
+
+            for (Application app : propApps) {
+                if ("Pending".equalsIgnoreCase(app.getStatus())) {
+                    app.setStatus("Rejected");
+                    applicationRepository.save(app);
+                }
+            }
+        }
+
         return "redirect:/manage-applications";
     }
 
@@ -621,20 +845,39 @@ public class PropertyController {
         return "redirect:/my-applications";
     }
 
-    // C100 — List Property
+    // C100 — show the blank "List a New Property" form
+    @GetMapping("/list-property")
+    public String listPropertyForm(Model model) {
+        List<Amenity> allAmenities = amenityRepository.findAllByOrderByCategoryAscNameAsc();
+        Map<String, List<Amenity>> amenityCategories = allAmenities.stream()
+                .collect(Collectors.groupingBy(Amenity::getCategory, LinkedHashMap::new, Collectors.toList()));
+
+        model.addAttribute("amenityCategories", amenityCategories);
+        model.addAttribute("availableFromOptions", generateSemesterOptions());
+        return "landlord/listProperty";
+    }
+
+    // C100 — List Property (also handles "Save as Draft")
     @PostMapping("/list-property")
     public String listProperty(
             @RequestParam String title,
-            @RequestParam String type,
-            @RequestParam String address,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String address,
             @RequestParam(required = false) String city,
-            @RequestParam java.math.BigDecimal rent,
+            @RequestParam(required = false) java.math.BigDecimal rent,
+            @RequestParam(required = false) java.math.BigDecimal deposit,
             @RequestParam(required = false) String availableFrom,
             @RequestParam(required = false) String description,
+            @RequestParam(required = false) String commuteType,
+            @RequestParam(required = false) Integer capacity,
+            @RequestParam(value = "amenityIds", required = false) List<Integer> amenityIds,
+            @RequestParam(value = "coverImage", required = false) MultipartFile coverImage,
             @RequestParam(value = "images", required = false) MultipartFile[] images,
+            @RequestParam(value = "action", defaultValue = "submit") String action,
             Principal principal) throws IOException {
 
         Integer landlordID = getCurrentUser(principal).getUserID();
+        boolean isDraft = "draft".equals(action);
 
         Property property = new Property();
         property.setLandlordID(landlordID);
@@ -643,21 +886,45 @@ public class PropertyController {
         property.setAddress(address);
         property.setCity(city);
         property.setRent(rent);
+        property.setDeposit(deposit);
         property.setDescription(description);
-        property.setIsAvailable(true);
+        property.setCommuteType(commuteType);
+        property.setCapacity(capacity != null ? capacity : 1);
+        property.setIsAvailable(false);
+        property.setStatus(isDraft ? "Draft" : "Pending");
 
         if (availableFrom != null && !availableFrom.isBlank()) {
             property.setAvailableFrom(java.time.LocalDate.parse(availableFrom));
         }
 
+        property.setAmenities(amenityIds != null
+                ? amenityRepository.findAllById(amenityIds)
+                : new ArrayList<>());
+
         Property savedProperty = propertyRepository.save(property);
 
+        Path uploadPath = Paths.get(uploadDir);
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
+        int order = 1;
+
+        if (coverImage != null && !coverImage.isEmpty()) {
+            String uniqueFileName = savedProperty.getPropertyID() + "_" + System.currentTimeMillis() + "_" + coverImage.getOriginalFilename();
+            Path filePath = uploadPath.resolve(uniqueFileName);
+            Files.copy(coverImage.getInputStream(), filePath);
+
+            PropertyImage coverPropImage = new PropertyImage();
+            coverPropImage.setPropertyID(savedProperty.getPropertyID());
+            coverPropImage.setUrl("/uploads/" + uniqueFileName);
+            coverPropImage.setCategory("exterior");
+            coverPropImage.setIsMain(true);
+            coverPropImage.setDisplayOrder(order);
+            propertyImageRepository.save(coverPropImage);
+            order++;
+        }
+
         if (images != null) {
-            Path uploadPath = Paths.get(uploadDir);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
-            int order = 1;
             for (MultipartFile image : images) {
                 if (!image.isEmpty()) {
                     String uniqueFileName = savedProperty.getPropertyID() + "_" + System.currentTimeMillis() + "_" + image.getOriginalFilename();
@@ -668,7 +935,7 @@ public class PropertyController {
                     propImage.setPropertyID(savedProperty.getPropertyID());
                     propImage.setUrl("/uploads/" + uniqueFileName);
                     propImage.setCategory("exterior");
-                    propImage.setIsMain(order == 1);
+                    propImage.setIsMain(false);
                     propImage.setDisplayOrder(order);
                     propertyImageRepository.save(propImage);
                     order++;
@@ -676,7 +943,21 @@ public class PropertyController {
             }
         }
 
-        return "redirect:/landlord-index";
+        return isDraft
+                ? "redirect:/landlord-index?draftSaved=true"
+                : "redirect:/landlord-index?added=true";
+    }
+
+    // Drafts — resume editing, then submit for real once ready
+    @PostMapping("/submit-property/{id}")
+    public String submitProperty(@PathVariable Integer id, Principal principal) {
+        Integer landlordID = getCurrentUser(principal).getUserID();
+        Property property = getOwnedProperty(id, landlordID);
+
+        property.setStatus("Pending");
+        propertyRepository.save(property);
+
+        return "redirect:/landlord-index?added=true";
     }
 
 }
