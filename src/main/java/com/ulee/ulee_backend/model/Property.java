@@ -15,6 +15,7 @@ public class Property {
 
     private Integer landlordID;
     private String title;
+    @jakarta.persistence.Column(columnDefinition = "TEXT")
     private String description;
     private java.math.BigDecimal rent;
     private java.math.BigDecimal deposit;
@@ -40,6 +41,13 @@ public class Property {
     private String status;
     private Boolean isReported;
     private String reportReason;
+    private String commuteType;
+
+    // How many students this listing can hold. Landlord sets this when
+    // creating the property (defaults to 1 for pre-existing rows via the
+    // migration). Drives the Accept All / Reject All logic on the
+    // Applications page — a property is "full" once acceptedCount == capacity.
+    private Integer capacity;
 
     // ── Images: read-only link to propertyimage.propertyID.
     //    Uses the existing plain "propertyID" column on PropertyImage directly,
@@ -80,6 +88,9 @@ public class Property {
 
     public String getReportReason() { return reportReason; }
     public void setReportReason(String reportReason) { this.reportReason = reportReason; }
+
+    public String getCommuteType() { return commuteType; }
+    public void setCommuteType(String commuteType) { this.commuteType = commuteType; }
     // Getters and setters (Spring needs these to read/write each field)
 
     public Integer getPropertyID() { return propertyID; }
@@ -156,6 +167,9 @@ public class Property {
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public Integer getCapacity() { return capacity; }
+    public void setCapacity(Integer capacity) { this.capacity = capacity; }
 
     public List<PropertyImage> getImages() { return images; }
     public void setImages(List<PropertyImage> images) { this.images = images; }

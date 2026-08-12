@@ -7,6 +7,34 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Hanken+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/landlord-style.css">
+  <style>
+    .status-badge--pending {
+      background: hsl(38, 92%, 50%);
+      color: #fff;
+    }
+    #addedToast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: hsl(180, 67%, 36%);
+      color: #fff;
+      padding: 14px 22px;
+      border-radius: 10px;
+      font-family: 'Hanken Grotesk', sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      z-index: 1000;
+    }
+    #addedToast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
 </head>
 <body>
 
@@ -106,7 +134,8 @@
         <div class="filter-group" id="filterGroup" role="tablist" aria-label="Filter by status">
           <button class="chip chip--active" data-filter="all" role="tab" aria-selected="true">All</button>
           <button class="chip" data-filter="available" role="tab" aria-selected="false">Available</button>
-          <button class="chip" data-filter="inactive" role="tab" aria-selected="false">Inactive</button>
+          <button class="chip" data-filter="pending" role="tab" aria-selected="false">Pending Approval</button>
+          <button class="chip" data-filter="draft" role="tab" aria-selected="false">Drafts</button>
         </div>
 
         <label class="sort-select">
@@ -119,12 +148,16 @@
         </label>
       </section>
 
-      <!-- Property grid — now server-rendered from real data -->
+      <!-- Property grid — now server-rendered from real data.
+           Deactivated properties are filtered out server-side in the
+           controller, so only Draft / Pending / Available listings ever
+           reach this loop; the "inactive" status case below is unreachable
+           but kept harmless in case that ever changes. -->
       <section class="property-grid" id="propertyGrid" aria-label="Property listings">
 
         <article th:each="property : ${properties}"
                  class="property-card"
-                 th:attr="data-status=${property.isAvailable} ? 'available' : 'inactive',
+                 th:attr="data-status=${property.status == 'Draft'} ? 'draft' : (${property.status == 'Pending'} ? 'pending' : (${property.isAvailable} ? 'available' : 'inactive')),
                           data-property-id=${property.propertyID},
                           data-name=${property.title},
                           data-rent=${property.rent}">
@@ -135,7 +168,10 @@
             <div th:unless="${imageLookup.get(property.propertyID)} != null" class="property-media-placeholder">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="currentColor" stroke-width="1.5"/></svg>
             </div>
-            <span class="status-badge"
+            <span th:if="${property.status == 'Draft'}" class="status-badge status-badge--draft">Draft</span>
+            <span th:if="${property.status == 'Pending'}" class="status-badge status-badge--pending">Pending Approval</span>
+            <span th:if="${property.status != 'Draft' and property.status != 'Pending'}"
+                  class="status-badge"
                   th:classappend="${property.isAvailable} ? 'status-badge--available' : 'status-badge--inactive'"
                   th:text="${property.isAvailable} ? 'Available' : 'Inactive'">Available</span>
           </div>
@@ -145,10 +181,18 @@
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="1.8"/></svg>
               <span th:text="(${property.suburb} != null ? ${property.suburb} + ', ' : '') + ${property.city}">Suburb, City</span>
             </p>
+            <p class="property-commute" th:if="${property.commuteType != null}" th:text="${property.commuteType}">Walking distance</p>
+            <p class="property-commute" th:if="${property.distanceFromUniversity != null}" th:text="${property.distanceFromUniversity} + ' min from campus'">5 min from campus</p>
+
+            <div class="amenity-badges" th:if="${property.amenities != null and !property.amenities.isEmpty()}">
+              <span class="amenity-badge" th:each="amenity, iterStat : ${property.amenities}"
+                    th:if="${iterStat.index < 3}" th:text="${amenity.name}">Amenity</span>
+            </div>
+
             <div class="property-footer">
               <div class="rooms-info">
                 <span class="rent-value" th:text="'R' + ${property.rent} + ' / month'">R0 / month</span>
-                <span class="rooms-updated" th:text="${property.bedrooms} + ' bed · ' + ${property.bathrooms} + ' bath'">— bed · — bath</span>
+                <span class="rooms-updated" th:text="${property.type}">Room type</span>
               </div>
               <a class="btn-manage" th:href="@{/edit-property/{id}(id=${property.propertyID})}">Manage</a>
             </div>
@@ -171,6 +215,32 @@
   </main>
 </div>
 
+<div id="addedToast"></div>
+
 <script src="/landlord-script.js"></script>
+<script>
+  (function () {
+    const params = new URLSearchParams(window.location.search);
+    const toast = document.getElementById('addedToast');
+
+    let message = null;
+    if (params.get('added') === 'true') {
+      message = 'New property submitted — pending admin approval.';
+    } else if (params.get('updated') === 'true') {
+      message = 'Changes saved.';
+    } else if (params.get('draftSaved') === 'true') {
+      message = 'Draft saved.';
+    }
+
+    if (message) {
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 4000);
+      // Clean the query param out of the URL so refreshing doesn't re-show it
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, cleanUrl);
+    }
+  })();
+</script>
 </body>
 </html>

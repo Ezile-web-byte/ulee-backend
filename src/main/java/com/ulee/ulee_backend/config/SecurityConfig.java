@@ -35,7 +35,7 @@ public class SecurityConfig {
                         ).permitAll()
                         .requestMatchers("/landlord-index", "/list-property",
                                 "/edit-property/**", "/update-property/**", "/delete-property-image/**",
-                                "/add-property-feature/**", "/delete-property-feature/**",
+                                "/add-property-feature/**", "/delete-property-feature/**", "/submit-property/**",
                                 "/toggle-property-status/**", "/manage-applications", "/my-property-reviews")
                         .hasRole("LANDLORD")
                         .requestMatchers("/admin-dashboard").hasRole("ADMIN")
