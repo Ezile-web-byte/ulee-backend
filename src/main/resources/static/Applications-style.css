@@ -239,6 +239,7 @@
 }
 
 .status-pill--pending   { background: var(--secondary-tint); color: var(--secondary); }
+.status-pill--accepted  { background: var(--primary-tint); color: var(--primary-dark); }
 .status-pill--verifying { background: #fdf6de; color: #a9780a; }
 .status-pill--rejected  { background: #fbe9ea; color: var(--alert); }
 
@@ -315,7 +316,6 @@
     align-items: center;
     gap: 6px;
 }
-
 .page-btn {
     width: 30px;
     height: 30px;
@@ -329,6 +329,7 @@
     font-weight: 600;
     border-radius: var(--radius-sm);
     cursor: pointer;
+    text-decoration: none;
 }
 
 .page-btn:hover { background: var(--surface-container-low); }

@@ -144,7 +144,7 @@
                         </td>
                         <td>
                 <span class="status-pill"
-                      th:classappend="${row.status == 'Pending'} ? 'status-pill--pending' : (${row.status == 'Rejected'} ? 'status-pill--rejected' : 'status-pill--verifying')"
+                      th:classappend="${row.status == 'Pending'} ? 'status-pill--pending' : (${row.status == 'Rejected'} ? 'status-pill--rejected' : (${row.status == 'Accepted'} ? 'status-pill--accepted' : 'status-pill--verifying'))"
                       th:text="${row.status}">Pending</span>
                         </td>
                         <td>
