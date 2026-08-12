@@ -16,7 +16,7 @@
 
   body {
     background: var(--bg);
-    font-family: 'DM Sans', system-ui, sans-serif;
+    font-family: 'Sora', sans-serif;
     color: var(--text);
     font-size: 14px;
     min-height: 100vh;
@@ -91,7 +91,7 @@
     flex-wrap: wrap;
     gap: 1rem;
   }
-  .page-title { font-size: 22px; font-weight: 600; color: var(--text); }
+  .page-title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 600; color: var(--text); }
   .page-sub { font-size: 13px; color: var(--muted); margin-top: 3px; }
   .stats-row { display: flex; gap: 10px; flex-wrap: wrap; }
   .stat-chip {

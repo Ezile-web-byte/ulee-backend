@@ -20,7 +20,7 @@
   }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Sora', sans-serif;
     background: var(--bg);
     color: var(--text);
     display: flex;
@@ -56,7 +56,7 @@
     font-size: 16px; color: #fff;
   }
   .brand-text {
-    font-family: 'Fraunces',serif; font-size: 15px; font-weight: 600;
+    font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 600;
     color: var(--primary-deeper);
     white-space: nowrap; overflow: hidden;
     transition: opacity var(--trans), max-width var(--trans);
@@ -127,7 +127,7 @@
   .sidebar.collapsed ~ .topbar,
   .sidebar.collapsed ~ .main-wrap .topbar { left: var(--sidebar-w-col); }
   .topbar-left .greeting {
-    font-family: 'Fraunces',serif; font-size: 18px; font-weight: 600; color: var(--text);
+    font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 600; color: var(--text);
   }
   .topbar-left .subtitle { font-size: 12px; color: var(--muted); margin-top: 1px; }
   .topbar-right { display: flex; align-items: center; gap: 10px; }
@@ -183,7 +183,7 @@
   /* ══════════ PAGE HEADER ══════════ */
   .page-header { margin-bottom: 28px; }
   .page-header h1 {
-    font-family: 'Fraunces',serif; font-size: 26px; font-weight: 600;
+    font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 600;
     color: var(--text);
   }
   .page-header p { font-size: 14px; color: var(--muted); margin-top: 4px; }
@@ -289,7 +289,7 @@
     flex-shrink: 0;
   }
   .form-header h2 {
-    font-family: 'Fraunces',serif; font-size: 19px; font-weight: 600;
+    font-family: 'Playfair Display', serif; font-size: 19px; font-weight: 600;
   }
   .form-header p { font-size: 12px; color: var(--muted); margin-top: 2px; }
   .close-form-btn {

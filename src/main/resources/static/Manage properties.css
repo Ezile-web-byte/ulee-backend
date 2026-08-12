@@ -12,12 +12,14 @@
     --outline: #6f787d;
     --outline-variant: #bec8cd;
 
-    --primary: #147592;
-    --primary-dark: #005b74;
-    --primary-tint: #e8f2f5;
+    --primary: hsl(180, 67%, 47%);
+    --primary-dark: hsl(180, 67%, 36%);
+    --primary-deeper: hsl(180, 67%, 28%);
+    --primary-tint: hsl(180, 67%, 92%);
 
-    --secondary: #441587;
-    --secondary-tint: #f2ebfc;
+    /* Secondary neutralized onto the teal scale (no purple) */
+    --secondary: hsl(180, 67%, 36%);
+    --secondary-tint: hsl(180, 67%, 96%);
 
     --accent-yellow: #f5d450;
     --on-accent-yellow: #191c1d;
@@ -26,15 +28,16 @@
     --success-tint: #e3f6ec;
     --success: #147a4a;
 
-    --font-display: 'Plus Jakarta Sans', sans-serif;
-    --font-body: 'Hanken Grotesk', sans-serif;
+    --font-display: 'Playfair Display', serif;
+    --font-body: 'Sora', sans-serif;
 
-    --radius-sm: 8px;
-    --radius-lg: 24px;
+    --radius-sm: 12px;
+    --radius-lg: 12px;
     --radius-full: 9999px;
+    --pill: 50px;
 
-    --shadow-surface: 0px 4px 20px rgba(20, 117, 146, 0.08);
-    --shadow-floating: 0px 8px 28px rgba(20, 117, 146, 0.14);
+    --shadow-surface: 0 2px 12px rgba(0, 120, 110, 0.06);
+    --shadow-floating: 0 8px 28px rgba(0, 120, 110, 0.10);
 }
 
 * { box-sizing: border-box; }
@@ -166,7 +169,7 @@ button, select { font-family: inherit; }
     align-items: center;
     gap: 8px;
     border: none;
-    border-radius: var(--radius-sm);
+    border-radius: var(--pill);
     padding: 13px 20px;
     font-size: 14px;
     font-weight: 700;
@@ -393,7 +396,7 @@ a.stat-card { cursor: pointer; }
     font-size: 13px;
     font-weight: 700;
     padding: 8px 18px;
-    border-radius: var(--radius-sm);
+    border-radius: var(--pill);
     cursor: pointer;
     white-space: nowrap;
     text-align: center;
@@ -410,7 +413,7 @@ a.stat-card { cursor: pointer; }
     font-size: 12px;
     font-weight: 700;
     padding: 8px 14px;
-    border-radius: var(--radius-sm);
+    border-radius: var(--pill);
     cursor: pointer;
     transition: opacity 0.15s ease;
 }

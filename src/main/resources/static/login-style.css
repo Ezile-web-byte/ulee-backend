@@ -6,11 +6,11 @@
 
 /* 🎨 Theme Colors */
 :root {
-  --bg: #121212;
+  --bg: hsl(0, 0%, 99%);
   --card: hsl(0 0% 99%);
 
-  --green: hsl(180 67% 47%);
-  --green-hover: hsl(180 67% 42%);
+  --green: hsl(180, 67%, 47%);
+  --green-hover: hsl(180, 67%, 42%);
 
   --white: #000000;
   --text-muted: #444;
@@ -18,7 +18,7 @@
 }
 
 body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Sora', sans-serif;
   background-color: var(--bg);
   min-height: 100vh;
   display: flex;

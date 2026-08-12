@@ -1,0 +1,247 @@
+{
+  "pbtResults": {
+    "1. Write bug condition exploration test (design-system deviation)": {
+      "status": "passed",
+      "failingExample": "18 design-system deviations detected on UNFIXED code (bug confirmed):\n- landlord-style.css: --font-body='Hanken Grotesk' (expected Sora); --font-display='Plus Jakarta Sans' (expected Playfair Display); --primary=#147592 (expected hsl(180,67%,47%)); --primary-dark=#005b74 (expected hsl(180,67%,36%)); purple secondary #441587 present; --radius-sm=8px (expected 12px card); no 50px pill button present\n- Manage properties.css: --font-body='Hanken Grotesk'; --font-display='Plus Jakarta Sans'; --primary=#147592\n- landlord-reviews.css: .review-group-title font-family='Plus Jakarta Sans' (expected Playfair Display); 'Hanken Grotesk' still present\n- application.css: body font-family='DM Sans, system-ui, sans-serif' (expected Sora)\n- update.css: body font-family='DM Sans' (expected Sora); 'Fraunces' still present\n- listProperty.css: --font-body='Plus Jakarta Sans' (expected Sora)\n- admin-style.css: .btn border-radius=7px and .tab border-radius=7px (expected 50px pill)\nConfirming (already-correct) checks PASSED: admin-style.css already uses font-family:'Sora' and --p: hsl(180,67%,47%), matching the design's admin edge-case note.",
+      "lastRunTimestamp": 1786499902092
+    },
+    "2. Write bug condition exploration test (broken login background asset)": {
+      "status": "passed",
+      "failingExample": ".page-overlay referenced asset: image2.jpeg | resolved static path: src\\main\\resources\\static\\image2.jpeg | asset exists: false => .page-overlay requests 'image2.jpeg' which does not exist at the served static path; the blurred backdrop never renders. The real asset is 'login-image2.jpeg'.",
+      "lastRunTimestamp": 1786500457281
+    }
+  },
+  "executionHistory": {
+    "1. Write bug condition exploration test (design-system deviation)": [
+      {
+        "executionId": "03f1ac62-4ca9-4f99-a5ff-59e6ca138bcd",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786498946965
+      },
+      {
+        "executionId": "03f1ac62-4ca9-4f99-a5ff-59e6ca138bcd",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786499003931
+      },
+      {
+        "executionId": "03f1ac62-4ca9-4f99-a5ff-59e6ca138bcd",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786499933087
+      }
+    ],
+    "2. Write bug condition exploration test (broken login background asset)": [
+      {
+        "executionId": "03f1ac62-4ca9-4f99-a5ff-59e6ca138bcd",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786498959197
+      },
+      {
+        "executionId": "03f1ac62-4ca9-4f99-a5ff-59e6ca138bcd",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786499949378
+      },
+      {
+        "executionId": "e308f5ea-cb94-420d-ab9d-44c47e2e5ef8",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786499988463
+      },
+      {
+        "executionId": "e308f5ea-cb94-420d-ab9d-44c47e2e5ef8",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786500011052
+      },
+      {
+        "executionId": "e308f5ea-cb94-420d-ab9d-44c47e2e5ef8",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786500492224
+      }
+    ],
+    "3. Write preservation property tests (BEFORE implementing fix)": [
+      {
+        "executionId": "03f1ac62-4ca9-4f99-a5ff-59e6ca138bcd",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786498961081
+      },
+      {
+        "executionId": "e308f5ea-cb94-420d-ab9d-44c47e2e5ef8",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786499988857
+      },
+      {
+        "executionId": "e308f5ea-cb94-420d-ab9d-44c47e2e5ef8",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786500502987
+      },
+      {
+        "executionId": "4077c634-8271-40b8-aa9f-18c90aeffafe",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786515124028
+      }
+    ],
+    "4.1 Add shared design-token stylesheet (recommended source of truth)": [
+      {
+        "executionId": "03f1ac62-4ca9-4f99-a5ff-59e6ca138bcd",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786498961644
+      },
+      {
+        "executionId": "e308f5ea-cb94-420d-ab9d-44c47e2e5ef8",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786499989604
+      },
+      {
+        "executionId": "4077c634-8271-40b8-aa9f-18c90aeffafe",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786515135120
+      },
+      {
+        "executionId": "4077c634-8271-40b8-aa9f-18c90aeffafe",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786516049022
+      }
+    ],
+    "4.2 Group A — Remap \"Academic Vitality\" tokens onto the design system": [
+      {
+        "executionId": "03f1ac62-4ca9-4f99-a5ff-59e6ca138bcd",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786498963247
+      },
+      {
+        "executionId": "e308f5ea-cb94-420d-ab9d-44c47e2e5ef8",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786499990053
+      },
+      {
+        "executionId": "4077c634-8271-40b8-aa9f-18c90aeffafe",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786516067623
+      },
+      {
+        "executionId": "4077c634-8271-40b8-aa9f-18c90aeffafe",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786516376907
+      }
+    ],
+    "4.3 Group B — Font-only corrections (tokens already correct)": [
+      {
+        "executionId": "03f1ac62-4ca9-4f99-a5ff-59e6ca138bcd",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786498964582
+      },
+      {
+        "executionId": "e308f5ea-cb94-420d-ab9d-44c47e2e5ef8",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786499990532
+      },
+      {
+        "executionId": "4077c634-8271-40b8-aa9f-18c90aeffafe",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786516387654
+      },
+      {
+        "executionId": "2f6a1596-3d22-400d-ae74-70671268f67a",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786524682819
+      }
+    ],
+    "4.4 Group C — Admin button radius correction": [
+      {
+        "executionId": "03f1ac62-4ca9-4f99-a5ff-59e6ca138bcd",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786498965506
+      },
+      {
+        "executionId": "e308f5ea-cb94-420d-ab9d-44c47e2e5ef8",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786499991891
+      },
+      {
+        "executionId": "2f6a1596-3d22-400d-ae74-70671268f67a",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786524699251
+      },
+      {
+        "executionId": "2f6a1596-3d22-400d-ae74-70671268f67a",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786524863408
+      }
+    ],
+    "4.5 Group D — Login theme + broken asset fix": [
+      {
+        "executionId": "03f1ac62-4ca9-4f99-a5ff-59e6ca138bcd",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786498966829
+      },
+      {
+        "executionId": "e308f5ea-cb94-420d-ab9d-44c47e2e5ef8",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786499992617
+      },
+      {
+        "executionId": "2f6a1596-3d22-400d-ae74-70671268f67a",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786524871248
+      }
+    ],
+    "4.6 Group E — Template `<head>` font-link updates (design-only)": [
+      {
+        "executionId": "03f1ac62-4ca9-4f99-a5ff-59e6ca138bcd",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786498967448
+      },
+      {
+        "executionId": "e308f5ea-cb94-420d-ab9d-44c47e2e5ef8",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786499993434
+      }
+    ],
+    "4.7 Resolve pre-existing stylesheet path risks (verify during implementation)": [
+      {
+        "executionId": "03f1ac62-4ca9-4f99-a5ff-59e6ca138bcd",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786498968426
+      },
+      {
+        "executionId": "e308f5ea-cb94-420d-ab9d-44c47e2e5ef8",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786499994050
+      }
+    ],
+    "4.8 Verify bug condition exploration tests now pass": [
+      {
+        "executionId": "03f1ac62-4ca9-4f99-a5ff-59e6ca138bcd",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786498970392
+      },
+      {
+        "executionId": "e308f5ea-cb94-420d-ab9d-44c47e2e5ef8",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786499994520
+      }
+    ],
+    "4.9 Verify preservation tests still pass": [
+      {
+        "executionId": "03f1ac62-4ca9-4f99-a5ff-59e6ca138bcd",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786498971591
+      },
+      {
+        "executionId": "e308f5ea-cb94-420d-ab9d-44c47e2e5ef8",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786499995235
+      }
+    ],
+    "5. Checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "03f1ac62-4ca9-4f99-a5ff-59e6ca138bcd",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786498972514
+      },
+      {
+        "executionId": "e308f5ea-cb94-420d-ab9d-44c47e2e5ef8",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786499995619
+      }
+    ]
+  }
+}
