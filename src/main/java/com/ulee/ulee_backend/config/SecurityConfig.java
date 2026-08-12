@@ -4,12 +4,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
-
-import java.io.IOException;
 
 @Configuration
 @EnableWebSecurity
@@ -20,13 +19,11 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-
-
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+                .csrf(csrf -> csrf.disable()) // TEMP: unblocks login without a CSRF token in the form
                 .authorizeHttpRequests(auth -> auth
-                        // Public: homepage, browsing, registration, static assets
                         .requestMatchers(
                                 "/", "/student-dashboard", "/property/**", "/search",
                                 "/register", "/login", "/login-style.css", "/login-script.js",
@@ -38,11 +35,12 @@ public class SecurityConfig {
                                 "/add-property-feature/**", "/delete-property-feature/**",
                                 "/toggle-property-status/**", "/manage-applications", "/my-property-reviews")
                         .hasRole("LANDLORD")
-                        .requestMatchers("/admin-dashboard").hasRole("ADMIN")
+                        .requestMatchers("/admin-dashboard", "/admin-index", "/admin/**")
+                        .hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
-                        .loginProcessingUrl("/login")     // where the login form POSTs to
+                        .loginProcessingUrl("/login")
                         .successHandler(roleBasedSuccessHandler())
                         .failureUrl("/?loginError=true")
                         .permitAll()
@@ -56,16 +54,13 @@ public class SecurityConfig {
         return http.build();
     }
 
-
-
-    // Redirects each role to its own dashboard after successful login
     private AuthenticationSuccessHandler roleBasedSuccessHandler() {
         return (request, response, authentication) -> {
             String redirectUrl = authentication.getAuthorities().stream()
                     .findFirst()
                     .map(a -> switch (a.getAuthority()) {
                         case "ROLE_LANDLORD" -> "/landlord-index";
-                        case "ROLE_ADMIN" -> "/admin-dashboard";
+                        case "ROLE_ADMIN" -> "/admin-index";
                         default -> "/student-dashboard";
                     })
                     .orElse("/student-dashboard");

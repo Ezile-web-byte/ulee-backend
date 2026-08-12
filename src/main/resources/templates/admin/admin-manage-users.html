@@ -35,23 +35,6 @@
                                 <span class="badge badge-blue">Student</span>
                                 <span th:if="${user.isActive} == null or ${user.isActive}" class="badge badge-green">Active</span>
                                 <span th:if="${user.isActive} != null and !${user.isActive}" class="badge badge-amber">Inactive</span>
-                                <span th:if="${user.warningCount != null and user.warningCount > 0}" class="badge badge-red" th:text="${user.warningCount} + ' warning(s)'">0 warnings</span>
-                            </div>
-                            <div class="btn-group">
-                                <form th:action="@{/admin/warn-user/{id}(id=${user.userID})}" method="post" style="display:inline">
-                                    <button type="submit" class="btn btn-warn">Warn</button>
-                                </form>
-                                <a th:href="@{/admin/edit-user/{id}(id=${user.userID})}" class="btn btn-view">Edit</a>
-                                <form th:if="${user.isActive} == null or ${user.isActive}" th:action="@{/admin/deactivate-user/{id}(id=${user.userID})}" method="post" style="display:inline">
-                                    <button type="submit" class="btn btn-warn">Deactivate</button>
-                                </form>
-                                <form th:if="${user.isActive} != null and !${user.isActive}" th:action="@{/admin/reactivate-user/{id}(id=${user.userID})}" method="post" style="display:inline">
-                                    <button type="submit" class="btn btn-primary">Reactivate</button>
-                                </form>
-                                <form th:action="@{/admin/delete-user/{id}(id=${user.userID})}" method="post" style="display:inline"
-                                      onsubmit="return confirm('Permanently delete this account? This cannot be undone.');">
-                                    <button type="submit" class="btn btn-danger">Delete</button>
-                                </form>
                             </div>
                         </div>
                         <p th:if="${#lists.isEmpty(studentUsers)}" style="color:var(--muted)">No students found.</p>

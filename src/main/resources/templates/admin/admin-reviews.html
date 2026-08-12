@@ -3,11 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ULEE — Handle Reported Property</title>
+  <title>ULEE — Reviews</title>
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/admin-style.css">
+  <script src="/admin-script.js" defer></script>
 </head>
 <body>
+
 <div class="shell">
 
   <aside class="sidebar" id="sidebar">
@@ -21,6 +23,9 @@
           <div class="logo-tag">The future of Student Living</div>
         </div>
       </div>
+      <button class="sidebar-toggle" id="sidebar-toggle" title="Toggle sidebar">
+        <svg viewBox="0 0 20 20"><path d="M12 4l-6 6 6 6"/></svg>
+      </button>
     </div>
 
     <nav class="nav">
@@ -43,12 +48,13 @@
 
       <div class="nav-label">Moderation</div>
 
-      <div class="nav-item" data-section="reviews" data-label="Reviews" onclick="window.location.href='/admin/reviews'">
+      <div class="nav-item active" data-section="reviews" data-label="Reviews">
         <svg class="nav-icon" viewBox="0 0 20 20"><path d="M10 2l2.3 4.7 5.2.8-3.8 3.7.9 5.2L10 14l-4.6 2.4.9-5.2L2.5 7.5l5.2-.8z"/></svg>
         <span class="nav-item-label">Reviews</span>
+        <span class="nav-badge" th:text="${totalReviews}">0</span>
       </div>
 
-      <div class="nav-item active" data-section="reported" data-label="Reported" onclick="window.location.href='/admin/reported-listings'">
+      <div class="nav-item" data-section="reported" data-label="Reported" onclick="window.location.href='/admin/reported-listings'">
         <svg class="nav-icon" viewBox="0 0 20 20"><path d="M10 3l7 14H3L10 3z"/><path d="M10 9v4M10 15h.01"/></svg>
         <span class="nav-item-label">Reported</span>
       </div>
@@ -73,53 +79,57 @@
   </aside>
 
   <div class="main">
-    <header class="topbar"><div class="topbar-title">Handle Reported Property</div></header>
-    <div class="content">
-      <div class="section active">
 
-        <div th:if="${actionMessage}" style="background:#e8f5e9;border:1px solid #81c784;border-radius:8px;padding:12px 18px;margin-bottom:16px">
-          <strong style="color:#2e7d32" th:text="${actionMessage}">Success</strong>
-        </div>
-        <div th:if="${actionError}" style="background:#ffebee;border:1px solid #ef5350;border-radius:8px;padding:12px 18px;margin-bottom:16px">
-          <strong style="color:#c62828" th:text="${actionError}">Error</strong>
-        </div>
-
-        <div class="panel">
-          <div class="panel-header">
-            <div>
-              <span class="panel-title" th:text="${property.title}">Property Name</span>
-              <span class="panel-sub" th:text="${property.address} + ', ' + ${property.city}">Address</span>
-            </div>
-            <span class="badge badge-red"><span class="badge-dot"></span>Reported</span>
-          </div>
-
-          <div style="padding:22px">
-            <div class="field-group">
-              <label class="field-label">Landlord</label>
-              <p th:if="${landlord != null}" th:text="${landlord.firstName} + ' ' + ${landlord.lastName} + ' (' + ${landlord.email} + ')'">Landlord</p>
-              <p th:if="${landlord == null}" style="color:var(--muted)">Landlord record not found.</p>
-            </div>
-
-            <div class="field-group">
-              <label class="field-label">Report Reason</label>
-              <p th:text="${property.reportReason} ?: 'No reason provided'">Reason</p>
-            </div>
-
-            <div style="display:flex;gap:10px;margin-top:20px">
-              <form th:action="@{/admin/warn-landlord-for-listing/{id}(id=${property.propertyID})}" method="post">
-                <button type="submit" class="btn btn-primary" style="padding:9px 22px;border-radius:8px">Send Official Warning</button>
-              </form>
-              <form th:action="@{/admin/remove-listing/{id}(id=${property.propertyID})}" method="post"
-                    onsubmit="return confirm('Permanently remove this listing? This cannot be undone.');">
-                <button type="submit" class="btn btn-danger" style="padding:9px 22px;border-radius:8px">Remove Listing</button>
-              </form>
-              <a href="/admin/reported-listings" class="btn btn-view" style="padding:9px 22px;border-radius:8px;text-decoration:none">Back</a>
-            </div>
-          </div>
-        </div>
+    <header class="topbar">
+      <div class="topbar-title" id="topbar-title">Reviews <span>— Moderation</span></div>
+      <div class="notif-wrap">
+        <button class="icon-btn" title="Notifications">
+          <svg viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3l-1.5 2.5h15L16 11V8a6 6 0 00-6-6zM8 16a2 2 0 004 0"/></svg>
+        </button>
       </div>
+      <button class="logout-btn" onclick="alert('Logging out…')">
+        <svg viewBox="0 0 20 20"><path d="M13 3h4v14h-4M9 14l4-4-4-4M13 10H5"/></svg>
+        <span>Log out</span>
+      </button>
+    </header>
+
+    <div class="content">
+
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <span class="panel-title">All Reviews</span>
+            <span class="panel-sub" th:text="${totalReviews} + ' reviews'">0 reviews</span>
+          </div>
+        </div>
+        <table>
+          <thead>
+          <tr>
+            <th>PROPERTY</th>
+            <th>RATING</th>
+            <th>COMMENT</th>
+            <th>DATE</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="review : ${reviews}">
+            <td th:text="${propertyLookup.get(review.propertyID) != null
+                                        ? propertyLookup.get(review.propertyID).title
+                                        : ('Property #' + review.propertyID)}">Property Name</td>
+            <td th:text="${review.rating}">5</td>
+            <td th:text="${review.comment}">Comment text</td>
+            <td th:text="${review.reviewDate}">Date</td>
+          </tr>
+          </tbody>
+        </table>
+        <p th:if="${#lists.isEmpty(reviews)}" style="padding:22px;color:var(--muted)">
+          No reviews yet.
+        </p>
+      </div>
+
     </div>
   </div>
 </div>
+
 </body>
 </html>
