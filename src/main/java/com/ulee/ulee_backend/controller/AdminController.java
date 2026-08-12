@@ -7,6 +7,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import com.ulee.ulee_backend.repository.PropertyRepository;
+import com.ulee.ulee_backend.repository.PropertyImageRepository;
 import com.ulee.ulee_backend.repository.ReviewRepository;
 import java.util.List;
 import java.util.Optional;
@@ -27,6 +28,9 @@ public class AdminController {
 
     @Autowired
     private PropertyRepository propertyRepository;
+
+    @Autowired
+    private PropertyImageRepository propertyImageRepository;
 
     @Autowired
     private ReviewRepository reviewRepository;
@@ -203,8 +207,11 @@ public class AdminController {
 
         Property property = propertyOpt.get();
         List<String> validationIssues = validateListing(property);
+        Optional<User> landlordUserOpt = userRepository.findById(property.getLandlordID());
 
         model.addAttribute("property", property);
+        model.addAttribute("images", propertyImageRepository.findByPropertyID(id));
+        model.addAttribute("landlord", landlordUserOpt.orElse(null));
         model.addAttribute("reviews", reviewRepository.findByPropertyID(id));
         model.addAttribute("validationIssues", validationIssues);
         model.addAttribute("isValid", validationIssues.isEmpty());
@@ -221,6 +228,7 @@ public class AdminController {
         if (property.getBedrooms() == null) issues.add("Missing bedroom count");
         if (property.getBathrooms() == null) issues.add("Missing bathroom count");
         if (property.getDescription() == null || property.getDescription().isBlank()) issues.add("Missing description");
+        if (propertyImageRepository.findByPropertyID(property.getPropertyID()).isEmpty()) issues.add("No property images uploaded");
 
         return issues;
     }

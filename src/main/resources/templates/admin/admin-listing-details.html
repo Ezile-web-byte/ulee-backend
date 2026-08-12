@@ -40,6 +40,23 @@
                             <strong style="color:#2e7d32">✓ All required information present</strong>
                         </div>
 
+                        <!-- Photo gallery, same as the images the landlord uploaded when listing -->
+                        <div th:if="${not #lists.isEmpty(images)}">
+                            <img id="mainListingImg" th:src="@{${images[0].url}}" alt="Property photo"
+                                 style="width:100%;max-height:360px;object-fit:cover;border-radius:10px;display:block" />
+                            <div th:if="${images.size() > 1}" style="display:flex;gap:8px;margin-top:8px;overflow-x:auto">
+                                <img th:each="img, iter : ${images}" th:src="@{${img.url}}" alt="Thumbnail"
+                                     th:classappend="${iter.index == 0} ? 'active-thumb' : ''"
+                                     style="width:76px;height:58px;object-fit:cover;border-radius:6px;cursor:pointer;flex-shrink:0;border:2px solid transparent;opacity:0.75"
+                                     onclick="document.getElementById('mainListingImg').src=this.src;
+                                              document.querySelectorAll('.thumb-row img').forEach(t=>{t.style.opacity='0.75';t.style.borderColor='transparent'});
+                                              this.style.opacity='1';this.style.borderColor='#14b8a6';" />
+                            </div>
+                        </div>
+                        <div th:if="${#lists.isEmpty(images)}" style="background:#f5f5f5;border-radius:10px;padding:40px;text-align:center;color:var(--muted)">
+                            No photos were uploaded with this listing.
+                        </div>
+
                         <div class="stats">
                             <div class="stat-card">
                                 <div class="stat-num" th:text="${property.rent} ?: 'N/A'">Rent</div>
@@ -65,8 +82,12 @@
                         </div>
 
                         <div class="field-group">
-                            <label class="field-label">Landlord ID</label>
-                            <p th:text="${property.landlordID} ?: 'Not linked to a landlord'">Landlord ID</p>
+                            <label class="field-label">Landlord</label>
+                            <p th:if="${landlord != null}"
+                               th:text="${landlord.firstName} + ' ' + ${landlord.lastName} + ' — ' + (${landlord.email} ?: 'no email on file') + (${landlord.phone} != null ? ' — ' + ${landlord.phone} : '')">
+                                Landlord Name
+                            </p>
+                            <p th:if="${landlord == null}">Not linked to a registered landlord (ID: <span th:text="${property.landlordID}">?</span>)</p>
                         </div>
 
                         <div class="field-group">
@@ -74,6 +95,28 @@
                             <p th:text="(${property.type} ?: 'Unspecified type') + (${property.furnished} ? ' · Furnished' : ' · Unfurnished') + (${property.studyFriendly} ? ' · Study-friendly' : '')">
                                 Type
                             </p>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Deposit / Area</label>
+                            <p th:text="'R' + (${property.deposit} ?: 'N/A') + ' deposit · ' + (${property.area} ?: 'N/A') + ' m²'">Deposit / Area</p>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Suburb / Municipality</label>
+                            <p th:text="(${property.suburb} ?: 'Not specified') + ', ' + (${property.municipality} ?: 'Not specified')">Suburb</p>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Available From / Distance from University</label>
+                            <p th:text="(${property.availableFrom} ?: 'Not specified') + ' · ' + (${property.distanceFromUniversity} ?: 'N/A') + ' km from campus'">Availability</p>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Amenities</label>
+                            <p th:if="${property.amenities != null and not #lists.isEmpty(property.amenities)}"
+                               th:text="${#strings.listJoin(property.amenities.![name], ', ')}">Amenities list</p>
+                            <p th:if="${property.amenities == null or #lists.isEmpty(property.amenities)}">No amenities specified</p>
                         </div>
 
                         <!-- B100 — Approve/Reject actions directly from the detail page -->
