@@ -1,0 +1,91 @@
+/* ==========================================================================
+   ULEE Design Tokens — single source of truth for the design system
+   --------------------------------------------------------------------------
+   The canonical "student page" design language: Sora + Playfair Display,
+   a teal scale anchored on hsl(180,67%,47%), pill-shaped action buttons,
+   12px cards, and soft teal-tinted shadows.
+
+   Non-student pages may link this file BEFORE their page-specific stylesheet
+   so tokens have one source of truth. Existing page CSS still normalizes
+   tokens in-place for a low-risk fix; those pages can progressively delegate
+   to these tokens over time.
+   ========================================================================== */
+
+:root {
+  /* ── Teal color scale ── */
+  --primary:        hsl(180, 67%, 47%);
+  --primary-dark:   hsl(180, 67%, 36%);
+  --primary-deeper: hsl(180, 67%, 28%);
+  --primary-light:  hsl(180, 67%, 90%);
+  --primary-pale:   hsl(180, 67%, 96%);
+
+  /* ── Surface & text ── */
+  --bg:     hsl(0, 0%, 99%);
+  --text:   #1a1a1a;
+  --muted:  #777;
+  --white:  #ffffff;
+  --border: hsl(180, 20%, 88%);
+
+  /* ── Shape ── */
+  --radius: 12px;  /* cards / containers */
+  --pill:   50px;  /* action buttons */
+
+  /* ── Typography ── */
+  --font-body:    'Sora', sans-serif;
+  --font-display: 'Playfair Display', serif;
+
+  /* ── Soft teal-tinted shadows ── */
+  --shadow-soft:     0 2px 12px rgba(0, 120, 110, .06);
+  --shadow-floating: 0 8px 28px rgba(0, 120, 110, .10);
+}
+
+/* ── Base primitives ── */
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  color: var(--text);
+}
+
+/* Pill-shaped action button */
+.pill-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 22px;
+  border: none;
+  border-radius: var(--pill);
+  background: var(--primary);
+  color: var(--white);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background .15s ease, transform .15s ease, box-shadow .15s ease;
+}
+
+.pill-btn:hover {
+  background: var(--primary-dark);
+  box-shadow: var(--shadow-soft);
+}
+
+.pill-btn:active {
+  background: var(--primary-deeper);
+  transform: translateY(1px);
+}
+
+/* Card base */
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+}

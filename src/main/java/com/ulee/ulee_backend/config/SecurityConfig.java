@@ -40,6 +40,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
+                        .loginPage("/")
                         .loginProcessingUrl("/login")
                         .successHandler(roleBasedSuccessHandler())
                         .failureUrl("/?loginError=true")
