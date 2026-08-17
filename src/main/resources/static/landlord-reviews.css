@@ -2,8 +2,9 @@
    Review feature styles
    Append to landlord-style.css, or link this file after it on
    my-property-reviews.html and edit-property.html.
-   Uses the canonical Sora / Playfair Display fonts and the teal
-   design system (no purple) shared across the app.
+   Uses the hero design system fonts (Plus Jakarta Sans / Hanken
+   Grotesk) and the dark teal accent (no purple) shared across
+   the app.
    ============================================================ */
 
 .review-group {
@@ -18,7 +19,7 @@
 }
 
 .review-group-title {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Plus Jakarta Sans', sans-serif;
     font-weight: 700;
     font-size: 20px;
     color: #1a1a1a;
@@ -28,7 +29,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-family: 'Sora', sans-serif;
+    font-family: 'Hanken Grotesk', sans-serif;
     font-size: 13px;
     color: #6b7280;
 }
@@ -66,7 +67,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'Sora', sans-serif;
+    font-family: 'Hanken Grotesk', sans-serif;
     font-weight: 700;
     font-size: 13px;
     color: hsl(180, 67%, 28%);
@@ -84,14 +85,14 @@
 }
 
 .review-name {
-    font-family: 'Sora', sans-serif;
+    font-family: 'Hanken Grotesk', sans-serif;
     font-weight: 700;
     font-size: 14px;
     color: #1a1a2e;
 }
 
 .review-role {
-    font-family: 'Sora', sans-serif;
+    font-family: 'Hanken Grotesk', sans-serif;
     font-size: 12.5px;
     color: #8b8b96;
     margin-top: 1px;
@@ -112,13 +113,13 @@
 }
 
 .review-date {
-    font-family: 'Sora', sans-serif;
+    font-family: 'Hanken Grotesk', sans-serif;
     font-size: 11.5px;
     color: #9a9aa5;
 }
 
 .review-comment {
-    font-family: 'Sora', sans-serif;
+    font-family: 'Hanken Grotesk', sans-serif;
     font-size: 14px;
     line-height: 1.55;
     color: #3a3a45;
@@ -138,7 +139,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    font-family: 'Sora', sans-serif;
+    font-family: 'Hanken Grotesk', sans-serif;
     font-size: 12.5px;
     font-weight: 600;
     color: hsl(180, 67%, 36%);
@@ -150,7 +151,7 @@
 }
 
 .review-empty {
-    font-family: 'Sora', sans-serif;
+    font-family: 'Hanken Grotesk', sans-serif;
     font-size: 13.5px;
     color: #9a9aa5;
     font-style: italic;
@@ -160,6 +161,6 @@
 .reviews-empty-state {
     text-align: center;
     padding: 60px 20px;
-    font-family: 'Sora', sans-serif;
+    font-family: 'Hanken Grotesk', sans-serif;
     color: #8b8b96;
 }

@@ -2,23 +2,142 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Search Results – ULEE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        :root {
+            --hero-yellow: #ffe170;
+            --hero-on-yellow: #221b00;
+            --hero-radius-glass: 16px;
+            --hero-radius-pill: 999px;
+        }
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Hanken Grotesk', sans-serif;
+            background: hsl(0, 0%, 97%);
+            color: #1a1a1a;
+            margin: 0;
+            padding: 32px 24px 64px;
+        }
+
+        .page-wrap {
+            max-width: 960px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 800;
+            font-size: 28px;
+            margin: 0 0 20px;
+        }
+
+        .filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+            background: #ffffff;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: var(--hero-radius-glass);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+            padding: 14px 16px;
+            margin-bottom: 28px;
+        }
+
+        .filter-input {
+            font-family: 'Hanken Grotesk', sans-serif;
+            font-size: 14px;
+            border: 1px solid rgba(0, 0, 0, 0.12);
+            border-radius: var(--hero-radius-pill);
+            padding: 10px 16px;
+            outline: none;
+            flex: 1;
+            min-width: 140px;
+        }
+        .filter-input:focus { border-color: var(--hero-yellow); }
+
+        .filter-btn {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 700;
+            font-size: 14px;
+            background: var(--hero-yellow);
+            color: var(--hero-on-yellow);
+            border: none;
+            border-radius: var(--hero-radius-pill);
+            padding: 10px 24px;
+            cursor: pointer;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 20px;
+        }
+
+        .property-card {
+            background: #ffffff;
+            border-radius: var(--hero-radius-glass);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            padding: 20px;
+        }
+
+        .property-title {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 700;
+            font-size: 18px;
+            margin: 0 0 6px;
+        }
+
+        .property-city {
+            font-family: 'Hanken Grotesk', sans-serif;
+            color: #666;
+            margin: 0 0 4px;
+        }
+
+        .property-beds {
+            font-family: 'Hanken Grotesk', sans-serif;
+            color: #666;
+            margin: 0 0 10px;
+        }
+
+        .property-rent {
+            display: inline-block;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 700;
+            font-size: 13px;
+            background: var(--hero-yellow);
+            color: var(--hero-on-yellow);
+            border-radius: var(--hero-radius-pill);
+            padding: 4px 12px;
+            margin: 0;
+        }
+    </style>
+    <link rel="stylesheet" href="/speak-with-ai.css">
+    <script src="/speak-with-ai-logic.js" defer></script>
+    <script src="/speak-with-ai.js" defer></script>
 </head>
 <body>
-<h1>Available Properties</h1>
+<div class="page-wrap">
+    <h1>Available Properties</h1>
 
-<form action="/search" method="get">
-    <input type="number" name="minBedrooms" placeholder="Min bedrooms" />
-    <input type="number" name="maxRent" placeholder="Max rent" step="0.01" />
-    <button type="submit">Filter</button>
-</form>
+    <form class="filter-bar" action="/search" method="get">
+        <input class="filter-input" type="number" name="minBedrooms" placeholder="Min bedrooms" />
+        <input class="filter-input" type="number" name="maxRent" placeholder="Max rent" step="0.01" />
+        <button class="filter-btn" type="submit">Filter</button>
+    </form>
 
-<div th:each="property : ${properties}">
-    <h3 th:text="${property.title}">Property Title</h3>
-    <p th:text="${property.city}">City</p>
-    <p th:text="${property.bedrooms} + ' bed'">Bedrooms</p>
-    <p th:text="'R' + ${property.rent} + ' / month'">Rent</p>
-    <hr/>
+    <div class="results-grid">
+        <div class="property-card" th:each="property : ${properties}">
+            <h3 class="property-title" th:text="${property.title}">Property Title</h3>
+            <p class="property-city" th:text="${property.city}">City</p>
+            <p class="property-beds" th:text="${property.bedrooms} + ' bed'">Bedrooms</p>
+            <p class="property-rent" th:text="'R' + ${property.rent} + ' / month'">Rent</p>
+        </div>
+    </div>
 </div>
+<div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null)}"></div>
 </body>
 </html>

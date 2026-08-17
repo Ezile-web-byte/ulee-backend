@@ -9,6 +9,11 @@
       "status": "passed",
       "failingExample": ".page-overlay referenced asset: image2.jpeg | resolved static path: src\\main\\resources\\static\\image2.jpeg | asset exists: false => .page-overlay requests 'image2.jpeg' which does not exist at the served static path; the blurred backdrop never renders. The real asset is 'login-image2.jpeg'.",
       "lastRunTimestamp": 1786500457281
+    },
+    "3.5. Write bug condition exploration test (Landing/Marketing Hero style deviation)": {
+      "status": "passed",
+      "failingExample": "All 7 test methods in LandingMarketingHeroStyleTest FAILED on unfixed code, confirming the bug (exploration-test success case):\n1. propertiesHtmlHasHeroStyling: properties.html has zero <link>/<style> and no Hero font reference (expected: true, was: false) x2\n2. registerHtmlFonts: register.html body font-family was 'Sora', sans-serif instead of Hanken Grotesk/Plus Jakarta Sans; inline style still declares 'Sora' and 'Playfair Display'\n3. registerHtmlYellowAccent: register.html --primary resolved to hsl(180, 67%, 47%) (teal) instead of not-teal; .role-btn.active and .submit-btn backgrounds resolved to var(--primary)=hsl(180,67%,47%) instead of #ffe170; no #221b00 dark-on-yellow text found\n4. loginBodyFont: login-style.css body font-family was 'Sora', sans-serif instead of 'Hanken Grotesk'\n5. loginLogoFont: .sa-logo font-family was 'DM Serif Display', serif instead of 'Plus Jakarta Sans'\n6. loginHeadFontLink: logIn.html <head> still links DM Sans/DM Serif Display Google Fonts, not Plus Jakarta Sans/Hanken Grotesk\n7. loginBackgroundIsNotFlatDark: login .page-overlay uses only a flat rgba(...) scrim via ::after with no linear-gradient/photo hero treatment\nTotal: 7 tests, 0 passed, 7 failed (all failures expected).",
+      "lastRunTimestamp": 1786795871935
     }
   },
   "executionHistory": {
@@ -241,6 +246,94 @@
         "executionId": "e308f5ea-cb94-420d-ab9d-44c47e2e5ef8",
         "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
         "timestamp": 1786499995619
+      },
+      {
+        "executionId": "fd49e542-8361-4b17-9c11-e7401aba428b",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786811468236
+      }
+    ],
+    "3.1 Revise preservation baseline for re-scoped landing pages (test-only)": [
+      {
+        "executionId": "fd49e542-8361-4b17-9c11-e7401aba428b",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786811017793
+      }
+    ],
+    "3.5. Write bug condition exploration test (Landing/Marketing Hero style deviation)": [
+      {
+        "executionId": "fd49e542-8361-4b17-9c11-e7401aba428b",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786811029578
+      }
+    ],
+    "4.5 Group D — Login theme (Landing/Marketing Hero) + broken asset fix + font link": [
+      {
+        "executionId": "fd49e542-8361-4b17-9c11-e7401aba428b",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786811060189
+      },
+      {
+        "executionId": "fd49e542-8361-4b17-9c11-e7401aba428b",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786811117946
+      }
+    ],
+    "4.6 Group E — Template `<head>` font-link updates, Dashboard/Functional track only (design-only)": [
+      {
+        "executionId": "fd49e542-8361-4b17-9c11-e7401aba428b",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786811162200
+      },
+      {
+        "executionId": "fd49e542-8361-4b17-9c11-e7401aba428b",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786811321389
+      }
+    ],
+    "4.7 Group F — Build Landing/Marketing Hero styling for properties.html and register.html": [
+      {
+        "executionId": "fd49e542-8361-4b17-9c11-e7401aba428b",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786811335277
+      },
+      {
+        "executionId": "fd49e542-8361-4b17-9c11-e7401aba428b",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786811351607
+      }
+    ],
+    "4.8 Group G — Fix stylesheet path mismatches": [
+      {
+        "executionId": "fd49e542-8361-4b17-9c11-e7401aba428b",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786811385397
+      },
+      {
+        "executionId": "fd49e542-8361-4b17-9c11-e7401aba428b",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786811419547
+      }
+    ],
+    "4.9 Verify bug condition exploration tests now pass": [
+      {
+        "executionId": "fd49e542-8361-4b17-9c11-e7401aba428b",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786811440258
+      }
+    ],
+    "4.10 Verify preservation tests still pass": [
+      {
+        "executionId": "fd49e542-8361-4b17-9c11-e7401aba428b",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786811451007
+      }
+    ],
+    "4. Fix for UI design-system inconsistency across non-student pages": [
+      {
+        "executionId": "fd49e542-8361-4b17-9c11-e7401aba428b",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786811453809
       }
     ]
   }

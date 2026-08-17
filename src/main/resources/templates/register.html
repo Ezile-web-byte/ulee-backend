@@ -4,22 +4,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Register – ULEE</title>
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <style>
         :root {
-            --primary: hsl(180, 67%, 47%);
-            --primary-dark: hsl(180, 67%, 36%);
-            --text: #1a1a1a;
-            --muted: #777;
+            --yellow: #ffe170;
+            --yellow-hover: #e6c95a;
+            --on-yellow: #221b00;
+            --text: #ffffff;
+            --muted: rgba(255, 255, 255, 0.75);
             --white: #ffffff;
-            --border: hsl(180, 20%, 88%);
+            --border: rgba(255, 255, 255, 0.2);
             --shadow-lg: 0 20px 60px rgba(0,0,0,0.25);
-            --radius: 14px;
+            --radius: 16px;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: 'Sora', sans-serif;
+            font-family: 'Hanken Grotesk', sans-serif;
             color: var(--text);
             min-height: 100vh;
             display: flex;
@@ -32,7 +33,9 @@
         }
 
         .card {
-            background: var(--white);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: var(--radius);
             box-shadow: var(--shadow-lg);
             padding: 36px 34px;
@@ -40,19 +43,19 @@
             max-width: 420px;
         }
 
-        .logo { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 700; margin-bottom: 2px; }
+        .logo { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 26px; font-weight: 800; margin-bottom: 2px; }
         .tagline { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
 
         .role-toggle {
-            display: flex; background: hsl(180,20%,95%); border-radius: 999px;
+            display: flex; background: rgba(255, 255, 255, 0.08); border-radius: 999px;
             padding: 4px; margin-bottom: 22px;
         }
         .role-btn {
             flex: 1; text-align: center; padding: 9px 0; border: none; border-radius: 999px;
-            background: transparent; color: var(--muted); font-family: 'Sora', sans-serif;
+            background: transparent; color: var(--muted); font-family: 'Hanken Grotesk', sans-serif;
             font-size: 13px; font-weight: 600; cursor: pointer; transition: background .2s, color .2s;
         }
-        .role-btn.active { background: var(--primary); color: #fff; }
+        .role-btn.active { background: #ffe170; color: var(--on-yellow); }
 
         .field { margin-bottom: 14px; }
         .field label {
@@ -60,32 +63,36 @@
             text-transform: uppercase; color: var(--text); margin-bottom: 6px;
         }
         .field input {
-            width: 100%; font-family: 'Sora', sans-serif; font-size: 14px;
-            padding: 11px 14px; border: 1.5px solid var(--border); border-radius: 10px;
-            color: var(--text); outline: none; transition: border-color .2s;
+            width: 100%; font-family: 'Hanken Grotesk', sans-serif; font-size: 14px;
+            padding: 11px 14px; border: 1px solid var(--border); border-radius: 10px;
+            background: rgba(255, 255, 255, 0.08); color: var(--white); outline: none;
+            transition: border-color .2s, background .2s;
         }
-        .field input:focus { border-color: var(--primary); }
+        .field input:focus { border-color: var(--yellow); background: rgba(255, 255, 255, 0.14); }
         .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
         .role-fields { display: none; }
         .role-fields.visible { display: block; }
 
         .error-msg {
-            background: hsl(0,60%,95%); color: hsl(0,60%,42%);
+            background: rgba(200, 40, 40, 0.35); color: #ffffff;
             font-size: 12.5px; padding: 10px 14px; border-radius: 8px; margin-bottom: 16px;
         }
 
         .submit-btn {
-            width: 100%; background: var(--primary); color: #fff; border: none;
-            border-radius: 999px; padding: 13px; font-family: 'Sora', sans-serif;
+            width: 100%; background: #ffe170; color: var(--on-yellow); border: none;
+            border-radius: 999px; padding: 13px; font-family: 'Hanken Grotesk', sans-serif;
             font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 6px;
             transition: background .2s;
         }
-        .submit-btn:hover { background: var(--primary-dark); }
+        .submit-btn:hover { background: var(--yellow-hover); }
 
         .login-link { text-align: center; font-size: 12.5px; color: var(--muted); margin-top: 18px; }
-        .login-link a { color: var(--primary-dark); font-weight: 600; text-decoration: none; }
+        .login-link a { color: #ffe170; font-weight: 600; text-decoration: none; }
     </style>
+    <link rel="stylesheet" href="/speak-with-ai.css">
+    <script src="/speak-with-ai-logic.js" defer></script>
+    <script src="/speak-with-ai.js" defer></script>
 </head>
 <body>
 
@@ -183,5 +190,6 @@
     setRole('student');
 </script>
 
+<div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null)}"></div>
 </body>
 </html>

@@ -1,0 +1,282 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Implement `isBlank`, `appendMessage`, and `toggleOpen` in `src/main/resources/static/speak-with-ai-logic.js`, exposing the module via `window.SwaiLogic` and `module.exports`": [
+      {
+        "executionId": "4cb43746-8114-42b6-bf31-fc6cc5e7ec5e",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786875856012
+      },
+      {
+        "executionId": "4cb43746-8114-42b6-bf31-fc6cc5e7ec5e",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786875883417
+      },
+      {
+        "executionId": "4cb43746-8114-42b6-bf31-fc6cc5e7ec5e",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786875971459
+      }
+    ],
+    "2.1 Implement `resolveContext` in `speak-with-ai-logic.js` per the Property_Context/General_Context rules (requires truthy `propertyId` AND non-blank `propertyTitle` AND `isPropertyPage`)": [
+      {
+        "executionId": "4cb43746-8114-42b6-bf31-fc6cc5e7ec5e",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786875857063
+      },
+      {
+        "executionId": "4cb43746-8114-42b6-bf31-fc6cc5e7ec5e",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786875990509
+      },
+      {
+        "executionId": "0107a3ae-4aa3-485b-91bf-37c5b0819df5",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786884038783
+      }
+    ],
+    "2.2 Implement `buildPlaceholderResponse` in `speak-with-ai-logic.js`, embedding the property title verbatim in Property_Context and never referencing a specific property in General_Context": [
+      {
+        "executionId": "4cb43746-8114-42b6-bf31-fc6cc5e7ec5e",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786875857471
+      },
+      {
+        "executionId": "0107a3ae-4aa3-485b-91bf-37c5b0819df5",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786884048912
+      },
+      {
+        "executionId": "0107a3ae-4aa3-485b-91bf-37c5b0819df5",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786884186026
+      }
+    ],
+    "3. Checkpoint - manually review the logic module": [
+      {
+        "executionId": "4cb43746-8114-42b6-bf31-fc6cc5e7ec5e",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786875858382
+      }
+    ],
+    "4.1 Implement icon click/close-button/Escape handling and the property-title-in-header behavior, reading `data-property-id`/`data-property-title` off `#swai-root` and calling `SwaiLogic.resolveContext`/`toggleOpen`": [
+      {
+        "executionId": "4cb43746-8114-42b6-bf31-fc6cc5e7ec5e",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786875860354
+      },
+      {
+        "executionId": "0107a3ae-4aa3-485b-91bf-37c5b0819df5",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786884049774
+      },
+      {
+        "executionId": "0107a3ae-4aa3-485b-91bf-37c5b0819df5",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786884188434
+      }
+    ],
+    "4.2 Implement message submit handling (blank-guard, clear input, refocus), first-open greeting insertion, the `setTimeout`-based placeholder reply, and rendering of messages into `#swai-history` with sender-specific classes": [
+      {
+        "executionId": "4cb43746-8114-42b6-bf31-fc6cc5e7ec5e",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786875861251
+      },
+      {
+        "executionId": "0107a3ae-4aa3-485b-91bf-37c5b0819df5",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786884230945
+      },
+      {
+        "executionId": "0107a3ae-4aa3-485b-91bf-37c5b0819df5",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786884377915
+      }
+    ],
+    "5.1 Implement scoped `.swai-root`/`#swai-icon`/`#swai-panel` styles in `src/main/resources/static/speak-with-ai.css` using the `--swai-*` variable chain that falls back through `--hero-*` tokens to the hard-coded hero-yellow defaults": [
+      {
+        "executionId": "4cb43746-8114-42b6-bf31-fc6cc5e7ec5e",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786875861661
+      },
+      {
+        "executionId": "4cb43746-8114-42b6-bf31-fc6cc5e7ec5e",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786875991416
+      },
+      {
+        "executionId": "0107a3ae-4aa3-485b-91bf-37c5b0819df5",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786884039322
+      }
+    ],
+    "6. Checkpoint - manually review the DOM wiring and CSS": [
+      {
+        "executionId": "4cb43746-8114-42b6-bf31-fc6cc5e7ec5e",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786875863469
+      }
+    ],
+    "7.1 Implement `templates/fragments/speak-with-ai.html` with `th:fragment=\"speakWithAiWidget(propertyId, propertyTitle)\"`, the icon/panel/history/form markup, and the `data-property-id`/`data-property-title` attributes, plus the usage/include comment block": [
+      {
+        "executionId": "4cb43746-8114-42b6-bf31-fc6cc5e7ec5e",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786875866489
+      },
+      {
+        "executionId": "4cb43746-8114-42b6-bf31-fc6cc5e7ec5e",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786875992893
+      },
+      {
+        "executionId": "0107a3ae-4aa3-485b-91bf-37c5b0819df5",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786884040424
+      }
+    ],
+    "8.1 Add the fragment include (passing `${property.propertyID}`, `${property.title}`) plus the `speak-with-ai.css`/`speak-with-ai-logic.js`/`speak-with-ai.js` `<link>`/`<script>` tags to `templates/property-detail.html`": [
+      {
+        "executionId": "4cb43746-8114-42b6-bf31-fc6cc5e7ec5e",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786875868105
+      },
+      {
+        "executionId": "0107a3ae-4aa3-485b-91bf-37c5b0819df5",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786884422870
+      },
+      {
+        "executionId": "0107a3ae-4aa3-485b-91bf-37c5b0819df5",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786885008150
+      }
+    ],
+    "8.2 Add the fragment include (passing `${property.propertyID}`, `${property.title}`) plus the same `<link>`/`<script>` tags to `templates/vr-tour.html`": [
+      {
+        "executionId": "4cb43746-8114-42b6-bf31-fc6cc5e7ec5e",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786875869185
+      },
+      {
+        "executionId": "0107a3ae-4aa3-485b-91bf-37c5b0819df5",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786884427220
+      },
+      {
+        "executionId": "0107a3ae-4aa3-485b-91bf-37c5b0819df5",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786885010997
+      }
+    ],
+    "9.1 Add the fragment include (`null, null`) plus the CSS/JS `<link>`/`<script>` tags to the root-level page templates: `templates/application.html`, `templates/logIn.html`, `templates/manage-properties.html`, `templates/my-applications.html`, `templates/my-property-reviews.html`, `templates/properties.html`, `templates/property-reviews.html`, `templates/register.html`, `templates/update.html`": [
+      {
+        "executionId": "4cb43746-8114-42b6-bf31-fc6cc5e7ec5e",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786875869536
+      },
+      {
+        "executionId": "0107a3ae-4aa3-485b-91bf-37c5b0819df5",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786884428314
+      },
+      {
+        "executionId": "0107a3ae-4aa3-485b-91bf-37c5b0819df5",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786885013915
+      }
+    ],
+    "9.2 Add the fragment include (`null, null`) plus the CSS/JS tags to the landlord page templates: `templates/landlord/edit-property.html`, `templates/landlord/landlord-index.html`, `templates/landlord/listProperty.html`, `templates/landlord/manage-applications.html`, `templates/landlord/my-property-reviews.html` — excluding `templates/landlord/Review-section.html` and `templates/landlord/ReviewCard.html`, which are `th:fragment` includes rendered inside other pages, never as standalone pages, so adding the widget there would double-render it": [
+      {
+        "executionId": "4cb43746-8114-42b6-bf31-fc6cc5e7ec5e",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786875872775
+      },
+      {
+        "executionId": "0107a3ae-4aa3-485b-91bf-37c5b0819df5",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786884433367
+      },
+      {
+        "executionId": "0107a3ae-4aa3-485b-91bf-37c5b0819df5",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786885016205
+      }
+    ],
+    "9.3 Add the fragment include (`null, null`) plus the CSS/JS tags to every admin page template: `templates/admin/admin-approved-properties.html`, `templates/admin/admin-edit-user.html`, `templates/admin/admin-index.html`, `templates/admin/admin-listing-details.html`, `templates/admin/admin-listing-not-found.html`, `templates/admin/admin-listings.html`, `templates/admin/admin-manage-users.html`, `templates/admin/admin-pending-listings.html`, `templates/admin/admin-reported-listing-detail.html`, `templates/admin/admin-reported-listings.html`, `templates/admin/admin-reviews.html`": [
+      {
+        "executionId": "4cb43746-8114-42b6-bf31-fc6cc5e7ec5e",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786875873573
+      },
+      {
+        "executionId": "0107a3ae-4aa3-485b-91bf-37c5b0819df5",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786884437536
+      },
+      {
+        "executionId": "0107a3ae-4aa3-485b-91bf-37c5b0819df5",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786885017436
+      }
+    ],
+    "9.4 Add the fragment include (`null, null`) plus the CSS/JS tags to the remaining student page templates (other than the two Property_Context ones): `templates/student/student-dashboard.html`, `templates/student/write-review.html`": [
+      {
+        "executionId": "4cb43746-8114-42b6-bf31-fc6cc5e7ec5e",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786875874669
+      },
+      {
+        "executionId": "0107a3ae-4aa3-485b-91bf-37c5b0819df5",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786884436086
+      },
+      {
+        "executionId": "0107a3ae-4aa3-485b-91bf-37c5b0819df5",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786885018453
+      }
+    ],
+    "10. Final checkpoint - manually verify in browser that the widget opens/closes and messages send": [
+      {
+        "executionId": "4cb43746-8114-42b6-bf31-fc6cc5e7ec5e",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786875875455
+      }
+    ],
+    "1. Implement core state-transition pure functions in `speak-with-ai-logic.js`": [
+      {
+        "executionId": "4cb43746-8114-42b6-bf31-fc6cc5e7ec5e",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786875971723
+      }
+    ],
+    "5. Implement `speak-with-ai.css` with the hero design-token fallback chain": [
+      {
+        "executionId": "0107a3ae-4aa3-485b-91bf-37c5b0819df5",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786884040837
+      }
+    ],
+    "7. Create the reusable Thymeleaf widget fragment": [
+      {
+        "executionId": "0107a3ae-4aa3-485b-91bf-37c5b0819df5",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786884041201
+      }
+    ],
+    "2. Implement context-aware logic: `resolveContext` and `buildPlaceholderResponse`": [
+      {
+        "executionId": "0107a3ae-4aa3-485b-91bf-37c5b0819df5",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786884187804
+      }
+    ],
+    "4. Implement DOM wiring in `speak-with-ai.js`": [
+      {
+        "executionId": "0107a3ae-4aa3-485b-91bf-37c5b0819df5",
+        "chatSessionId": "sess_6e95fc35-d4ec-4358-a91e-c716cb9832be",
+        "timestamp": 1786884378564
+      }
+    ]
+  }
+}

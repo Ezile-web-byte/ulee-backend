@@ -1,9 +1,9 @@
  :root {
-    --p:       hsl(180,67%,47%);
-    --pd:      hsl(180,67%,36%);
-    --pdd:     hsl(180,67%,28%);
-    --pl:      hsl(180,67%,90%);
-    --pl2:     hsl(180,40%,95%);
+    --p:       #005b74;
+    --pd:      #004a5e;
+    --pdd:     #003a4a;
+    --pl:      #b8dbe1;
+    --pl2:     #e0eef1;
     --bg:      hsl(0,0%,99%);
     --txt:     #1a1a1a;
     --muted:   #777;
@@ -13,8 +13,8 @@
     --shadow-md: 0 4px 20px rgba(0,120,110,.10), 0 2px 8px rgba(0,0,0,.06);
     --shadow-lg: 0 12px 40px rgba(0,120,110,.15), 0 4px 16px rgba(0,0,0,.08);
     --r: 12px;
-    --font-body: 'Sora', sans-serif;
-    --font-display: 'Playfair Display', serif;
+    --font-body: 'Hanken Grotesk', sans-serif;
+    --font-display: 'Plus Jakarta Sans', sans-serif;
   }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -228,8 +228,8 @@
 
   .pill-btn {
     display: inline-flex; align-items: center; gap: 6px;
-    background: var(--p);
-    color: #fff;
+    background: #ffe170;
+    color: #221b00;
     border: none; border-radius: 50px;
     padding: 9px 20px;
     font-family: var(--font-body);
@@ -237,9 +237,9 @@
     cursor: pointer;
     transition: background .25s, transform .15s, box-shadow .25s;
     letter-spacing: .01em;
-    box-shadow: 0 2px 12px hsl(180,67%,47%,.30);
+    box-shadow: 0 2px 12px rgba(255,225,112,.40);
   }
-  .pill-btn:hover { background: var(--pd); box-shadow: 0 4px 18px hsl(180,67%,36%,.35); }
+  .pill-btn:hover { background: #ffd93d; box-shadow: 0 4px 18px rgba(255,225,112,.45); }
   .pill-btn:active { transform: scale(.96); }
   .pill-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.5; }
 
@@ -417,7 +417,7 @@
   }
   .step-node.active {
     background: var(--p); color: #fff; border-color: var(--p);
-    box-shadow: 0 2px 12px hsl(180,67%,47%,.35);
+    box-shadow: 0 2px 12px rgba(0,91,116,.35);
   }
   .step-node.done {
     background: var(--pd); color: #fff; border-color: var(--pd);
@@ -465,7 +465,7 @@
   .field input:focus, .field select:focus, .field textarea:focus {
     border-color: var(--p);
     background: var(--white);
-    box-shadow: 0 0 0 3.5px hsl(180,67%,47%,.12);
+    box-shadow: 0 0 0 3.5px rgba(0,91,116,.12);
   }
   .field select {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23777' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
@@ -558,14 +558,14 @@
   .btn-outline:active { transform: scale(.97); }
 
   .btn-primary {
-    background: var(--p); color: #fff;
+    background: #ffe170; color: #221b00;
     border: none; border-radius: 8px; padding: 10px 26px;
     font-family: var(--font-body); font-size: 14px; font-weight: 500;
     cursor: pointer;
     transition: background .2s, transform .15s, box-shadow .2s;
-    box-shadow: 0 2px 12px hsl(180,67%,47%,.28);
+    box-shadow: 0 2px 12px rgba(255,225,112,.35);
   }
-  .btn-primary:hover { background: var(--pd); box-shadow: 0 4px 18px hsl(180,67%,36%,.32); }
+  .btn-primary:hover { background: #ffd93d; box-shadow: 0 4px 18px rgba(255,225,112,.40); }
   .btn-primary:active { transform: scale(.97); }
 
   /* ─────────────────────────────────────────

@@ -9,16 +9,17 @@
   --bg: hsl(0, 0%, 99%);
   --card: hsl(0 0% 99%);
 
-  --green: hsl(180, 67%, 47%);
-  --green-hover: hsl(180, 67%, 42%);
+  --yellow: #ffe170;
+  --yellow-hover: #e6c95a;
+  --on-yellow: #221b00;
 
-  --white: #000000;
-  --text-muted: #444;
-  --border: #d9d9d9;
+  --white: #ffffff;
+  --text-muted: rgba(255, 255, 255, 0.75);
+  --border: rgba(255, 255, 255, 0.2);
 }
 
 body {
-  font-family: 'Sora', sans-serif;
+  font-family: 'Hanken Grotesk', sans-serif;
   background-color: var(--bg);
   min-height: 100vh;
   display: flex;
@@ -32,7 +33,7 @@ body {
 .page-overlay {
   position: fixed;
   inset: 0;
-  background: url("image2.jpeg") center center / cover no-repeat;
+  background: url("login-image2.jpeg") center center / cover no-repeat;
   filter: blur(10px);
   transform: scale(1.08);
 }
@@ -41,7 +42,7 @@ body {
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(10, 10, 10, 0.45);
+  background: linear-gradient(135deg, rgba(0, 20, 20, 0.55), rgba(0, 20, 20, 0.25));
 }
 
 .page-content {
@@ -54,18 +55,20 @@ body {
 
 /* CARD */
 .sa-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
   padding: 2.5rem 2rem;
   width: 100%;
   max-width: 400px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
 }
 
 /* LOGO */
 .sa-logo {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 800;
   font-size: 22px;
   color: var(--white);
   margin-bottom: 0.25rem;
@@ -94,18 +97,18 @@ body {
   width: 100%;
   padding: 10px 12px;
   font-size: 14px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Hanken Grotesk', sans-serif;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
   color: var(--white);
   outline: none;
   transition: border-color 0.2s, background 0.2s;
 }
 
 .sa-input:focus {
-  border-color: var(--green);
-  background: #ffffff;
+  border-color: var(--yellow);
+  background: rgba(255, 255, 255, 0.14);
 }
 
 .sa-password-wrap {
@@ -131,11 +134,11 @@ body {
 }
 
 .sa-password-toggle:hover {
-  color: var(--green-hover);
+  color: var(--yellow-hover);
 }
 
 .sa-password-toggle:focus-visible {
-  outline: 2px solid var(--green);
+  outline: 2px solid var(--yellow);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -166,7 +169,7 @@ body {
 }
 
 .sa-forgot:hover {
-  color: var(--green-hover);
+  color: var(--yellow-hover);
 }
 
 /* PRIMARY BUTTON */
@@ -174,18 +177,18 @@ body {
   width: 100%;
   padding: 11px;
   font-size: 14px;
-  font-weight: 500;
-  font-family: 'DM Sans', sans-serif;
-  background: var(--green);
-  color: #141414;
+  font-weight: 600;
+  font-family: 'Hanken Grotesk', sans-serif;
+  background: var(--yellow);
+  color: var(--on-yellow);
   border: none;
-  border-radius: 8px;
+  border-radius: 999px;
   cursor: pointer;
   transition: background 0.2s, transform 0.1s;
 }
 
 .sa-btn-primary:hover {
-  background: var(--green-hover);
+  background: var(--yellow-hover);
 }
 
 .sa-btn-primary:active {
@@ -202,7 +205,7 @@ body {
 
 .sa-divider span {
   font-size: 12px;
-  color: #777;
+  color: var(--text-muted);
 }
 
 .sa-divider hr {
@@ -217,18 +220,18 @@ body {
   padding: 10px;
   font-size: 13px;
   font-weight: 500;
-  font-family: 'DM Sans', sans-serif;
-  background: transparent;
+  font-family: 'Hanken Grotesk', sans-serif;
+  background: rgba(255, 255, 255, 0.08);
   color: var(--white);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 999px;
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s;
 }
 
 .sa-btn-secondary:hover {
-  background: #8db0da;
-  border-color: var(--green-hover);
+  background: rgba(255, 255, 255, 0.16);
+  border-color: var(--yellow-hover);
 }
 
 /* PANELS */
@@ -259,8 +262,8 @@ body {
 /* SUCCESS */
 .sa-toast.success {
   display: block;
-  background: #12301f;
-  color: var(--green);
+  background: rgba(255, 225, 112, 0.15);
+  color: var(--yellow);
 }
 
 /* ROW */

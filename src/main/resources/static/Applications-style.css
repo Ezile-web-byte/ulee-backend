@@ -254,8 +254,8 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: var(--primary-dark);
-    color: #fff;
+    background: #ffe170;
+    color: #221b00;
     border: none;
     font-size: 12.5px;
     font-weight: 700;
@@ -266,7 +266,7 @@
     transition: background 0.15s ease;
 }
 
-.btn-accept:hover { background: var(--primary); }
+.btn-accept:hover { background: #e6c95a; }
 .btn-accept svg { width: 13px; height: 13px; }
 
 .btn-reject {

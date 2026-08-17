@@ -69,7 +69,26 @@ function handleLogin() {
     return;
   }
 
-  showToast('Welcome back, ' + email + '!', 'success');
+  // Build and submit a real form POST to Spring Security's /login endpoint,
+  // since this page has no native <form> wrapper around these inputs.
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = '/login';
+
+  const userInput = document.createElement('input');
+  userInput.type = 'hidden';
+  userInput.name = 'username';
+  userInput.value = email;
+  form.appendChild(userInput);
+
+  const passInput = document.createElement('input');
+  passInput.type = 'hidden';
+  passInput.name = 'password';
+  passInput.value = p;
+  form.appendChild(passInput);
+
+  document.body.appendChild(form);
+  form.submit();
 }
 
 function handleRegister() {

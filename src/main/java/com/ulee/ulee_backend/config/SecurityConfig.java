@@ -28,7 +28,8 @@ public class SecurityConfig {
                                 "/", "/student-dashboard", "/property/**", "/search",
                                 "/register", "/login", "/login-style.css", "/login-script.js",
                                 "/student-style.css", "/student-script.js",
-                                "/static/**", "/uploads/**", "/vendor/**"
+                                "/static/**", "/uploads/**", "/vendor/**",
+                                "/*.jpeg", "/*.jpg", "/*.png", "/*.svg", "/*.css", "/*.js"
                         ).permitAll()
                         .requestMatchers("/landlord-index", "/list-property",
                                 "/edit-property/**", "/update-property/**", "/delete-property-image/**",

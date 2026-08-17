@@ -5,6 +5,9 @@
     <title>ULEE — User Management</title>
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/admin-style.css">
+    <link rel="stylesheet" href="/speak-with-ai.css">
+    <script src="/speak-with-ai-logic.js" defer></script>
+    <script src="/speak-with-ai.js" defer></script>
 </head>
 <body>
 <div class="shell">
@@ -73,5 +76,6 @@
         </div>
     </div>
 </div>
+<div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null)}"></div>
 </body>
 </html>

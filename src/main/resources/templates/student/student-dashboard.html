@@ -94,7 +94,23 @@
         /* Login modal */
         #loginModalOverlay { display: none; }
         #loginModalOverlay.open { display: flex; }
+
+        /* Hero background Ken Burns effect */
+        @keyframes heroKenBurns {
+            0% { transform: scale(1.05) translate(0, 0); }
+            100% { transform: scale(1.15) translate(-1.5%, -1%); }
+        }
+        .hero-ken-burns {
+            animation: heroKenBurns 28s ease-in-out infinite alternate;
+            will-change: transform;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .hero-ken-burns { animation: none; }
+        }
     </style>
+    <link rel="stylesheet" href="/speak-with-ai.css">
+    <script src="/speak-with-ai-logic.js" defer></script>
+    <script src="/speak-with-ai.js" defer></script>
 </head>
 <body class="bg-background text-on-surface font-body-md overflow-x-hidden">
 
@@ -122,7 +138,7 @@
 <!-- Hero Section -->
 <header class="relative w-full h-[85vh] flex items-center overflow-hidden">
     <div class="absolute inset-0 z-0">
-        <div class="w-full h-full bg-cover bg-center scale-105" style="background-image: url('/uploads/student-background.png')"></div>
+        <div class="w-full h-full bg-cover bg-center scale-105 hero-ken-burns" style="background-image: url('/uploads/student-background.png')"></div>
         <div class="absolute inset-0 bg-gradient-to-r from-primary/80 to-transparent"></div>
     </div>
     <div class="relative z-10 w-full max-w-7xl mx-auto px-margin-desktop">
@@ -450,6 +466,8 @@
         });
     });
 </script>
+
+<div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null)}"></div>
 
 </body>
 </html>

@@ -1,0 +1,112 @@
+/*
+ * hero-theme.css
+ * Shared "bold hero" design tokens + utility classes.
+ * Extracted from the existing hero implementation found in:
+ *   - templates/student/student-dashboard.html
+ *   - templates/register.html
+ *   - static/login-style.css
+ *
+ * Link this stylesheet from any non-student page that wants to adopt the
+ * same look and feel:
+ *   <link rel="stylesheet" href="/hero-theme.css">
+ *
+ * Class/variable names below are considered part of the public contract for
+ * other templates and must not be renamed without updating all consumers.
+ */
+
+:root {
+  --hero-font-display: 'Plus Jakarta Sans', sans-serif;
+  --hero-font-body: 'Hanken Grotesk', sans-serif;
+  --hero-yellow: #ffe170;
+  --hero-yellow-hover: #e6c95a;
+  --hero-on-yellow: #221b00;
+  --hero-primary: #005b74;       /* dark teal accent used for nav/active states on light surfaces */
+  --hero-primary-dark: #004a5e;
+  --hero-white: #ffffff;
+  --hero-glass-bg: rgba(255, 255, 255, 0.1);
+  --hero-glass-border: 1px solid rgba(255, 255, 255, 0.2);
+  --hero-glass-blur: blur(24px);
+  --hero-radius-glass: 16px;
+  --hero-radius-pill: 999px;
+  --hero-shadow-card: 0 4px 20px rgba(0, 91, 116, 0.10);
+  --hero-shadow-hover: 0 10px 30px rgba(0, 91, 116, 0.16);
+  --hero-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Fade-in on page load — apply this class to <body> or a top-level wrapper */
+.hero-fade-in {
+  animation: heroFadeIn 0.45s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+@keyframes heroFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Pill button (yellow CTA) */
+.hero-pill-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px 22px;
+  background: var(--hero-yellow);
+  color: var(--hero-on-yellow);
+  border: none;
+  border-radius: var(--hero-radius-pill);
+  font-family: var(--hero-font-body);
+  font-weight: 600; font-size: 14px;
+  cursor: pointer; text-decoration: none;
+  transition: var(--hero-transition);
+}
+.hero-pill-btn:hover { background: var(--hero-yellow-hover); transform: translateY(-1px); box-shadow: var(--hero-shadow-hover); }
+.hero-pill-btn:active { transform: scale(0.97); }
+
+/* Glass card (for use over photo/dark backgrounds) */
+.hero-glass-card {
+  background: var(--hero-glass-bg);
+  backdrop-filter: var(--hero-glass-blur);
+  -webkit-backdrop-filter: var(--hero-glass-blur);
+  border: var(--hero-glass-border);
+  border-radius: var(--hero-radius-glass);
+}
+
+/* Light-surface card (for use on white/light dashboard backgrounds) */
+.hero-card {
+  background: var(--hero-white);
+  border-radius: var(--hero-radius-glass);
+  box-shadow: var(--hero-shadow-card);
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+.hero-card:hover { box-shadow: var(--hero-shadow-hover); transform: translateY(-2px); }
+
+/* Generic smooth hover for any interactive element that opts in */
+.hero-transition { transition: var(--hero-transition); }
+
+/* Persistent top hero nav bar (for pages with no existing sidebar) */
+.hero-navbar {
+  position: sticky; top: 0; z-index: 500;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 32px;
+  background: rgba(0, 20, 20, 0.55);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+.hero-navbar-brand {
+  font-family: var(--hero-font-display);
+  font-weight: 800; font-size: 18px; color: #ffffff;
+  text-decoration: none; letter-spacing: -0.01em;
+}
+.hero-navbar-links { display: flex; align-items: center; gap: 22px; }
+.hero-navbar-links a {
+  font-family: var(--hero-font-body); font-weight: 600; font-size: 13.5px;
+  color: rgba(255,255,255,0.78); text-decoration: none;
+  transition: color 0.2s ease;
+}
+.hero-navbar-links a:hover, .hero-navbar-links a.active { color: var(--hero-yellow); }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-fade-in, .hero-pill-btn, .hero-card, .hero-transition, .hero-navbar-links a { animation: none !important; transition: none !important; }
+}
+
+@media (max-width: 720px) {
+  .hero-navbar { padding: 12px 18px; }
+  .hero-navbar-links { gap: 14px; }
+}

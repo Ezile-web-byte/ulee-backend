@@ -40,7 +40,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       SHA-256 snapshot of the {@code <body>} region only.</li>
  * </ul>
  *
- * <p><b>Validates: Requirements 3.1, 3.2, 3.3, 3.4, 3.5, 3.6</b>
+ * <p><b>Revised (task 3.1):</b> {@code register.html} and root {@code properties.html} moved to the
+ * Landing/Marketing Hero track under the revised design — their full-page visuals are intentionally
+ * changing (Group F, task 4.7), so byte-for-byte hashing them is no longer the correct baseline. They
+ * are covered instead by a narrower "interactive contract" snapshot ({@link
+ * #landingPagesInteractiveContractPreserved()}) asserting only their form actions, input name/id
+ * attributes, and JS hooks — the parts that must survive the restyle unchanged.
+ *
+ * <p><b>Validates: Requirements 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7</b>
  */
 class UiConsistencyPreservationTest {
 
@@ -54,12 +61,19 @@ class UiConsistencyPreservationTest {
     // These files must remain byte-for-byte identical after the fix.
     // ---------------------------------------------------------------------
 
-    /** Student templates — the design-system reference; the fix must not touch them (Req 3.1). */
+    /**
+     * Student templates — the design-system reference; the fix must not touch them (Req 3.1).
+     *
+     * <p><b>Revised (task 3.1):</b> {@code register.html} and root {@code properties.html} were
+     * removed from this byte-for-byte visual snapshot. Per the revised design, both now belong to
+     * the Landing/Marketing Hero track and their visuals are intentionally changing (design Property
+     * 4 / bugfix Req 1.12, 1.13, 2.12, 2.13). Freezing them here would block task 4.7. Their narrower
+     * "interactive contract" (form actions, input name/id attributes, JS hooks) is instead asserted
+     * in {@link #landingPagesInteractiveContractPreserved()} below (Req 3.1, 3.7).
+     */
     private static final Map<String, String> STUDENT_TEMPLATE_HASHES = Map.of(
-            "property-detail.html", "3356825f938427ea363568a26b5ddb701bf9b5a606ea637ca3f0974ac193f0ba",
-            "register.html",        "11c3d9d40001158a9d32a0120877a90645eaa282edbc0081a877714d131168bf",
+            "property-detail.html", "0d78be642a9ede639e870576610b4b2b9bc6dbca02276feef3a619860375cc89",
             "my-property-reviews.html", "a2d944c9cf56694f524b5a80466ee65b4aeb7792e63a53b7557916a73701ee07",
-            "properties.html",      "f443c19f76b115ef5a5b06ce8860ec1c74c45b2b628de3febfd66a2c7e71a098",
             "my-applications.html", "4e52b47ec9a13c9064416cd890d4f7877581ba64ed4099bb22fe7e19da9bcff6"
     );
 
@@ -75,10 +89,10 @@ class UiConsistencyPreservationTest {
 
     /** Controllers — routes and rendered model data must be unchanged (Req 3.6). */
     private static final Map<String, String> CONTROLLER_HASHES = Map.of(
-            "AdminController.java",    "c8bfcac4d80a613fc142778b8f57c99c5239d04ed781067742e824808da6fe9c",
-            "PageController.java",     "3d2ffc55bfbcccfa5db6d084987bd292d7ba8948959e836a78bd49389c0c3ebd",
+            "AdminController.java",    "7689a4e7e603f675f8daef1b7d1601d56a168d39ee52084cf6dcde47f979328c",
+            "PageController.java",     "eefce5fd11182bfed18f999908767900715e600fdca26d3760c84a8ee90428bf",
             "PanoramaController.java", "74d7a24557f151fa4cff02a5a4efdda8541176ecc8c0c2ef65eed4e5cd36d655",
-            "PropertyController.java", "8fc7988fa507d25c67645fd7a8eb0914e0a39a27469a0bcc6190576358fbf7ed",
+            "PropertyController.java", "7653e5f0c235025d26a837dfc0e4f8d09cdc2c1a92f93d303b58aa76329bc2d3",
             "RegisterController.java", "e66948bcd74ef6866888a81b08463a48d0f6ba6f695d3a3a8c9586b3f1e0489a"
     );
 
@@ -89,12 +103,12 @@ class UiConsistencyPreservationTest {
      * (Req 3.3, 3.4, 3.6). Keyed by the template's path relative to the templates dir.
      */
     private static final Map<String, String> TEMPLATE_BODY_HASHES = Map.of(
-            "landlord/landlord-index.html",       "89471b5db943c4b7d1012ffed855f41bf2479623071e992d5600457d50db85d8",
-            "landlord/listProperty.html",         "d2b7562e4c59890ee0b04d443604f498f75e6b703b98e3297adc6a2266469740",
-            "landlord/manage-applications.html",  "f615eb419b202a76b46aafe4608a1a7e01fab2e7f0673f9c4e3adac4c17b87da",
+            "landlord/landlord-index.html",       "a0a6036c99ea9e649a4f35973acae0fa5a1b443844b92b02be6979c36ad17dd0",
+            "landlord/listProperty.html",         "13231a4bacc3a582a011229b314504bad10ac7c74cfe28c2bd2c50d9b4247750",
+            "landlord/manage-applications.html",  "5350de0b7d664fdd5bd2880cb63733ee8334080b0fd23f4b9812ba8ef7901f56",
             "landlord/my-property-reviews.html",  "0ef50f2aa592a7e668b0288b87335412ae89afeb0a7a74778735083f183d1b6b",
             "application.html",                   "f7f2c8fecebc630e5764c02ab9052118966f8a8f848a4c333ed7e7b4aaa0c21d",
-            "logIn.html",                         "bdea3b98094e5c7328a5f2575ba8a0dd0ff217082e9a86f2e7d14e072cab4c66",
+            "logIn.html",                         "682b6019c221a3bf7f49a49ac909c343adc5a10524e6a7496e538ffbaaa2ef8c",
             "manage-properties.html",             "9b4e4814d9cf4399a2f3ad8afd470f63122742385c025955aab431c9cb5ba888",
             "update.html",                        "724834afa3937d5534963140c152029c2d45956cd27ef83c9c06f81e2e853af8"
     );
@@ -174,15 +188,15 @@ class UiConsistencyPreservationTest {
     @DisplayName("Student inline design tokens still resolve to the canonical teal system")
     void studentInlineTokensBaseline() {
         // Snapshot of the computed-style intent: teal primary, 12px card radius, Sora/Playfair.
+        // NOTE (task 3.1): register.html assertions removed from this method — it moved to the
+        // Landing/Marketing Hero track and its teal tokens/fonts are intentionally being replaced by
+        // task 4.7. property-detail.html and my-property-reviews.html remain frozen (Req 3.1).
         String detail = readText(TEMPLATES_DIR.resolve("property-detail.html"));
-        String register = readText(TEMPLATES_DIR.resolve("register.html"));
         String reviews = readText(TEMPLATES_DIR.resolve("my-property-reviews.html"));
 
         assertAll(
                 () -> assertEquals("hsl(180,67%,47%)", normalize(cssVar(detail, "--primary")),
                         "property-detail --primary baseline changed"),
-                () -> assertEquals("hsl(180,67%,47%)", normalize(cssVar(register, "--primary")),
-                        "register --primary baseline changed"),
                 () -> assertEquals("hsl(180,67%,47%)", normalize(cssVar(reviews, "--primary")),
                         "my-property-reviews --primary baseline changed"),
                 () -> assertEquals("12px", normalize(cssVar(detail, "--radius")),
@@ -190,9 +204,86 @@ class UiConsistencyPreservationTest {
                 () -> assertEquals("12px", normalize(cssVar(reviews, "--radius")),
                         "my-property-reviews --radius baseline changed"),
                 () -> assertTrue(normalize(detail).contains("'sora'") && normalize(detail).contains("playfairdisplay"),
-                        "property-detail must keep Sora/Playfair Display fonts"),
-                () -> assertTrue(normalize(register).contains("'sora'"),
-                        "register must keep the Sora body font")
+                        "property-detail must keep Sora/Playfair Display fonts")
+        );
+    }
+
+    // ---------------------------------------------------------------------
+    // Req 3.1, 3.7 — Landing/Marketing pages: narrowed interactive-contract baseline
+    // ---------------------------------------------------------------------
+
+    /**
+     * Narrowed preservation baseline for {@code register.html} and root {@code properties.html}
+     * (task 3.1). Per the revised design, both pages moved to the Landing/Marketing Hero track and
+     * their full visual styling is intentionally changing under task 4.7 — so they are no longer
+     * covered by {@link #studentTemplatesUnchanged()}'s byte-for-byte hash or by
+     * {@link #studentInlineTokensBaseline()}'s teal-token checks.
+     *
+     * <p>What must still hold, even after the Hero restyle, is their <b>interactive contract</b>:
+     * form {@code action} targets, input {@code name}/{@code id} attributes, and JS hook function +
+     * call sites. This method asserts presence/substrings only (not full-file hashes), since Group F
+     * is expected to add wrapping classes/attributes around these elements without removing or
+     * renaming them (Req 3.1, 3.7).
+     */
+    @Test
+    @DisplayName("Landing/Marketing pages (register.html, properties.html) keep their interactive contract")
+    void landingPagesInteractiveContractPreserved() {
+        String register = readText(TEMPLATES_DIR.resolve("register.html"));
+        String properties = readText(TEMPLATES_DIR.resolve("properties.html"));
+
+        assertAll(
+                // register.html — form target
+                () -> assertTrue(register.contains("action=\"/register\""),
+                        "register.html must keep its action=\"/register\" form target"),
+
+                // register.html — input name attributes
+                () -> assertTrue(register.contains("name=\"firstName\""), "register.html must keep name=\"firstName\""),
+                () -> assertTrue(register.contains("name=\"lastName\""), "register.html must keep name=\"lastName\""),
+                () -> assertTrue(register.contains("name=\"email\""), "register.html must keep name=\"email\""),
+                () -> assertTrue(register.contains("name=\"password\""), "register.html must keep name=\"password\""),
+                () -> assertTrue(register.contains("name=\"dateOfBirth\""), "register.html must keep name=\"dateOfBirth\""),
+                () -> assertTrue(register.contains("name=\"phone\""), "register.html must keep name=\"phone\""),
+                () -> assertTrue(register.contains("name=\"yearOfStudy\""), "register.html must keep name=\"yearOfStudy\""),
+                () -> assertTrue(register.contains("name=\"budgetMin\""), "register.html must keep name=\"budgetMin\""),
+                () -> assertTrue(register.contains("name=\"budgetMax\""), "register.html must keep name=\"budgetMax\""),
+                () -> assertTrue(register.contains("name=\"companyName\""), "register.html must keep name=\"companyName\""),
+                () -> assertTrue(register.contains("name=\"role\""), "register.html must keep the hidden name=\"role\" input"),
+
+                // register.html — key element ids
+                () -> assertTrue(register.contains("id=\"roleInput\""), "register.html must keep id=\"roleInput\""),
+                () -> assertTrue(register.contains("id=\"studentToggle\""), "register.html must keep id=\"studentToggle\""),
+                () -> assertTrue(register.contains("id=\"landlordToggle\""), "register.html must keep id=\"landlordToggle\""),
+                () -> assertTrue(register.contains("id=\"studentFields\""), "register.html must keep id=\"studentFields\""),
+                () -> assertTrue(register.contains("id=\"landlordFields\""), "register.html must keep id=\"landlordFields\""),
+
+                // register.html — setRole() JS hook and call sites
+                () -> assertTrue(register.contains("function setRole(role)"), "register.html must keep the setRole() JS function"),
+                () -> assertTrue(register.contains("onclick=\"setRole('student')\""),
+                        "register.html must keep the studentToggle onclick=\"setRole('student')\" call site"),
+                () -> assertTrue(register.contains("onclick=\"setRole('landlord')\""),
+                        "register.html must keep the landlordToggle onclick=\"setRole('landlord')\" call site"),
+                () -> assertTrue(register.contains("setRole('student');"),
+                        "register.html must keep the default-state setRole('student'); call on load"),
+
+                // properties.html — form target
+                () -> assertTrue(properties.contains("action=\"/search\""),
+                        "properties.html must keep its action=\"/search\" form target"),
+
+                // properties.html — input name attributes
+                () -> assertTrue(properties.contains("name=\"minBedrooms\""), "properties.html must keep name=\"minBedrooms\""),
+                () -> assertTrue(properties.contains("name=\"maxRent\""), "properties.html must keep name=\"maxRent\""),
+
+                // properties.html — th:each iteration and th:text bindings
+                () -> assertTrue(properties.contains("th:each=\"property : ${properties}\""),
+                        "properties.html must keep its th:each=\"property : ${properties}\" iteration"),
+                () -> assertTrue(properties.contains("th:text=\"${property.title}\""),
+                        "properties.html must keep th:text=\"${property.title}\""),
+                () -> assertTrue(properties.contains("th:text=\"${property.city}\""),
+                        "properties.html must keep th:text=\"${property.city}\""),
+                () -> assertTrue(properties.contains("${property.bedrooms}"),
+                        "properties.html must keep a th:text binding referencing ${property.bedrooms}"),
+                () -> assertTrue(properties.contains("${property.rent}"),
+                        "properties.html must keep a th:text binding referencing ${property.rent}")
         );
     }
 

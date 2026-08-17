@@ -14,26 +14,26 @@
   --outline: #6f787d;
   --outline-variant: #bec8cd;
 
-  --primary: hsl(180, 67%, 47%);          /* Canonical Teal */
-  --primary-dark: hsl(180, 67%, 36%);
-  --primary-deeper: hsl(180, 67%, 28%);
+  --primary: #005b74;                     /* Hero dark teal */
+  --primary-dark: #004a5e;
+  --primary-deeper: #003a4a;
   --on-primary: #ffffff;
-  --primary-tint: hsl(180, 67%, 92%);
+  --primary-tint: #e0eef1;
 
-  /* Secondary neutralized onto the teal scale (no purple) */
-  --secondary: hsl(180, 67%, 36%);
-  --secondary-container: hsl(180, 67%, 47%);
-  --on-secondary-container: hsl(180, 67%, 28%);
-  --secondary-tint: hsl(180, 67%, 96%);
+  /* Secondary shares the dark teal accent (no purple) */
+  --secondary: #005b74;
+  --secondary-container: #005b74;
+  --on-secondary-container: #003a4a;
+  --secondary-tint: #e6f2f0;
 
-  --accent-yellow: #f5d450;
-  --on-accent-yellow: #191c1d;
+  --accent-yellow: #ffe170;
+  --on-accent-yellow: #221b00;
 
   --alert: #ba1a1a;
 
   /* Type */
-  --font-display: 'Playfair Display', serif;
-  --font-body: 'Sora', sans-serif;
+  --font-display: 'Plus Jakarta Sans', sans-serif;
+  --font-body: 'Hanken Grotesk', sans-serif;
 
   /* Radius */
   --radius-sm: 12px;
@@ -42,8 +42,8 @@
   --pill: 50px;
 
   /* Shadow — soft teal-tinted */
-  --shadow-surface: 0 2px 12px rgba(0, 120, 110, 0.06);
-  --shadow-floating: 0 8px 28px rgba(0, 120, 110, 0.10);
+  --shadow-surface: 0 2px 12px rgba(0, 91, 116, 0.06);
+  --shadow-floating: 0 8px 28px rgba(0, 91, 116, 0.10);
 }
 
 * { box-sizing: border-box; }
@@ -124,8 +124,8 @@ button, select { font-family: inherit; }
 }
 
 .nav-item.active {
-  background: var(--secondary);
-  color: #ffffff;
+  background: var(--accent-yellow);
+  color: var(--on-accent-yellow);
   font-weight: 700;
 }
 
@@ -249,7 +249,7 @@ button, select { font-family: inherit; }
 
 .stat-card:hover {
   box-shadow: var(--shadow-floating);
-  border-color: rgba(20, 117, 146, 0.35);
+  border-color: rgba(0, 91, 116, 0.35);
   transform: translateY(-1px);
 }
 
@@ -375,7 +375,7 @@ button, select { font-family: inherit; }
 
 .property-card:hover {
   box-shadow: var(--shadow-floating);
-  border-color: rgba(20, 117, 146, 0.35);
+  border-color: rgba(0, 91, 116, 0.35);
   transform: translateY(-2px);
 }
 

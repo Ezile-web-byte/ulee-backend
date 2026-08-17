@@ -12,32 +12,32 @@
     --outline: #6f787d;
     --outline-variant: #bec8cd;
 
-    --primary: hsl(180, 67%, 47%);
-    --primary-dark: hsl(180, 67%, 36%);
-    --primary-deeper: hsl(180, 67%, 28%);
-    --primary-tint: hsl(180, 67%, 92%);
+    --primary: #005b74;
+    --primary-dark: #004a5e;
+    --primary-deeper: #003a4a;
+    --primary-tint: #e0eef1;
 
-    /* Secondary neutralized onto the teal scale (no purple) */
-    --secondary: hsl(180, 67%, 36%);
-    --secondary-tint: hsl(180, 67%, 96%);
+    /* Secondary shares the dark teal accent (no purple) */
+    --secondary: #005b74;
+    --secondary-tint: #e6f2f0;
 
-    --accent-yellow: #f5d450;
-    --on-accent-yellow: #191c1d;
+    --accent-yellow: #ffe170;
+    --on-accent-yellow: #221b00;
 
     --alert: #ba1a1a;
     --success-tint: #e3f6ec;
     --success: #147a4a;
 
-    --font-display: 'Playfair Display', serif;
-    --font-body: 'Sora', sans-serif;
+    --font-display: 'Plus Jakarta Sans', sans-serif;
+    --font-body: 'Hanken Grotesk', sans-serif;
 
     --radius-sm: 12px;
     --radius-lg: 12px;
     --radius-full: 9999px;
     --pill: 50px;
 
-    --shadow-surface: 0 2px 12px rgba(0, 120, 110, 0.06);
-    --shadow-floating: 0 8px 28px rgba(0, 120, 110, 0.10);
+    --shadow-surface: 0 2px 12px rgba(0, 91, 116, 0.06);
+    --shadow-floating: 0 8px 28px rgba(0, 91, 116, 0.10);
 }
 
 * { box-sizing: border-box; }
@@ -104,7 +104,7 @@ button, select { font-family: inherit; }
 
 .nav-item:hover { background: var(--surface-container-low); color: var(--on-surface); }
 
-.nav-item.active { background: var(--secondary); color: #ffffff; font-weight: 700; }
+.nav-item.active { background: var(--accent-yellow); color: var(--on-accent-yellow); font-weight: 700; }
 
 /* ==================== MAIN / TOPBAR ==================== */
 
@@ -207,7 +207,7 @@ a.stat-card { cursor: pointer; }
 
 .stat-card:hover {
     box-shadow: var(--shadow-floating);
-    border-color: rgba(20, 117, 146, 0.35);
+    border-color: rgba(0, 91, 116, 0.35);
     transform: translateY(-1px);
 }
 
@@ -309,7 +309,7 @@ a.stat-card { cursor: pointer; }
 
 .property-card:hover {
     box-shadow: var(--shadow-floating);
-    border-color: rgba(20, 117, 146, 0.35);
+    border-color: rgba(0, 91, 116, 0.35);
     transform: translateY(-2px);
 }
 

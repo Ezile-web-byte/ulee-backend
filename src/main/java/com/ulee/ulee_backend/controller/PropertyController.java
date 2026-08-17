@@ -794,8 +794,9 @@ public class PropertyController {
     // A200 — View Applications
     @GetMapping("/my-applications")
     public String viewApplications(Model model, Principal principal) {
-        Integer studentID = getCurrentUser(principal).getUserID();
-        model.addAttribute("applications", applicationRepository.findByStudentID(studentID));
+        var currentUser = getCurrentUser(principal);
+        model.addAttribute("applications", applicationRepository.findByStudentID(currentUser.getUserID()));
+        model.addAttribute("currentUserName", currentUser.getFirstName());
         return "my-applications";
     }
 

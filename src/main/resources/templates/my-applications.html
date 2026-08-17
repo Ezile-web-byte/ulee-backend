@@ -1,26 +1,431 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Applications – ULEE</title>
+
+    <link rel="stylesheet" href="/speak-with-ai.css">
+    <script src="/speak-with-ai-logic.js" defer></script>
+    <script src="/speak-with-ai.js" defer></script>
+
+    <style>
+        :root {
+            --ulee-teal: #006078;
+            --ulee-yellow: #FFDC68;
+            --ulee-yellow-hover: #F8CF4F;
+            --ulee-dark-teal: #004A5E;
+            --ulee-text: #17313A;
+            --ulee-muted: #6E7D83;
+            --ulee-background: #F7F9FA;
+            --ulee-border: #DCE5E8;
+            --ulee-white: #FFFFFF;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: var(--ulee-background);
+            color: var(--ulee-text);
+        }
+
+        .topbar {
+            height: 76px;
+            background: var(--ulee-white);
+            border-bottom: 1px solid var(--ulee-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 68px;
+        }
+
+        .brand {
+            color: var(--ulee-teal);
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            text-decoration: none;
+        }
+
+        .back-link {
+            color: var(--ulee-teal);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .page {
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 52px 28px 90px;
+        }
+
+        .page-header {
+            margin-bottom: 32px;
+        }
+
+        .eyebrow {
+            margin: 0 0 9px;
+            color: var(--ulee-teal);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 1.4px;
+            text-transform: uppercase;
+        }
+
+        .page-header h1 {
+            margin: 0;
+            color: var(--ulee-dark-teal);
+            font-size: 36px;
+            line-height: 1.15;
+            letter-spacing: -0.8px;
+        }
+
+        .welcome {
+            margin: 10px 0 0;
+            color: var(--ulee-muted);
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .welcome strong {
+            color: var(--ulee-teal);
+        }
+
+        .applications {
+            display: grid;
+            gap: 20px;
+        }
+
+        .application-card {
+            background: var(--ulee-white);
+            border: 1px solid var(--ulee-border);
+            border-radius: 18px;
+            padding: 26px;
+            box-shadow: 0 8px 25px rgba(0, 73, 94, 0.07);
+        }
+
+        .application-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 24px;
+            margin-bottom: 22px;
+        }
+
+        .application-number {
+            margin: 0 0 7px;
+            color: var(--ulee-muted);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .property-id {
+            margin: 0;
+            color: var(--ulee-dark-teal);
+            font-size: 22px;
+            font-weight: 750;
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 15px;
+            border-radius: 999px;
+            background: #E8F2F4;
+            color: var(--ulee-teal);
+            font-size: 13px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .status.pending {
+            background: #FFF3C7;
+            color: #806300;
+        }
+
+        .status.accepted {
+            background: #E6F4EE;
+            color: #17704D;
+        }
+
+        .status.rejected {
+            background: #FBEAEA;
+            color: #A83232;
+        }
+
+        .details {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .detail {
+            padding: 15px 17px;
+            background: #F7FAFB;
+            border: 1px solid #EDF2F3;
+            border-radius: 12px;
+        }
+
+        .detail-label {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--ulee-muted);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: .7px;
+            text-transform: uppercase;
+        }
+
+        .detail-value {
+            color: var(--ulee-text);
+            font-size: 15px;
+            font-weight: 650;
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            padding-top: 21px;
+            border-top: 1px solid #EDF2F3;
+        }
+
+        .document-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        input[type="file"] {
+            max-width: 280px;
+            padding: 9px;
+            border: 1px solid var(--ulee-border);
+            border-radius: 9px;
+            background: var(--ulee-white);
+            color: var(--ulee-text);
+            font-size: 13px;
+        }
+
+        button {
+            border-radius: 999px;
+            padding: 11px 19px;
+            font-size: 14px;
+            font-weight: 750;
+            cursor: pointer;
+            transition: transform .15s ease, background .15s ease, box-shadow .15s ease;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+        }
+
+        .primary-button {
+            border: 1px solid var(--ulee-yellow);
+            background: var(--ulee-yellow);
+            color: #172000;
+            box-shadow: 0 4px 12px rgba(255, 220, 104, 0.28);
+        }
+
+        .primary-button:hover {
+            background: var(--ulee-yellow-hover);
+            box-shadow: 0 6px 16px rgba(255, 220, 104, 0.35);
+        }
+
+        .danger-button {
+            border: 1px solid #C9D9DD;
+            background: var(--ulee-white);
+            color: var(--ulee-teal);
+        }
+
+        .danger-button:hover {
+            border-color: var(--ulee-teal);
+            background: #F3F8F9;
+        }
+
+        .empty-state {
+            background: var(--ulee-white);
+            border: 1px solid var(--ulee-border);
+            border-radius: 18px;
+            padding: 65px 28px;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(0, 73, 94, 0.05);
+        }
+
+        .empty-icon {
+            width: 52px;
+            height: 52px;
+            margin: 0 auto 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: var(--ulee-yellow);
+            color: var(--ulee-dark-teal);
+            font-size: 24px;
+            font-weight: 800;
+        }
+
+        .empty-state h2 {
+            margin: 0 0 9px;
+            color: var(--ulee-dark-teal);
+            font-size: 22px;
+        }
+
+        .empty-state p {
+            margin: 0;
+            color: var(--ulee-muted);
+            line-height: 1.6;
+        }
+
+        @media (max-width: 760px) {
+            .topbar {
+                padding: 0 20px;
+            }
+
+            .page {
+                padding: 34px 16px 70px;
+            }
+
+            .page-header h1 {
+                font-size: 30px;
+            }
+
+            .application-top {
+                flex-direction: column;
+            }
+
+            .details {
+                grid-template-columns: 1fr;
+            }
+
+            .actions,
+            .document-form {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            input[type="file"],
+            button {
+                width: 100%;
+                max-width: none;
+            }
+        }
+    </style>
 </head>
+
 <body>
-<h1>My Applications</h1>
-<div th:each="app : ${applications}">
-    <p th:text="'Application #' + ${app.applicationID}">App ID</p>
-    <p th:text="'Property ID: ' + ${app.propertyID}">Property</p>
-    <p th:text="'Status: ' + ${app.status}">Status</p>
-    <p th:text="'Applied: ' + ${app.applicationDate}">Date</p>
 
-    <form th:action="@{/submit-documents/{id}(id=${app.applicationID})}" method="post" enctype="multipart/form-data">
-        <input type="file" name="file" required />
-        <button type="submit">Submit Document</button>
-    </form>
+<header class="topbar">
+    <a class="brand" th:href="@{/student-dashboard}">ULEE</a>
+    <a class="back-link" th:href="@{/student-dashboard}">Browse Properties</a>
+</header>
 
-    <form th:action="@{/cancel-application/{id}(id=${app.applicationID})}" method="post">
-        <button type="submit">Cancel Application</button>
-    </form>
-    <hr/>
-</div>
+<main class="page">
+
+    <header class="page-header">
+        <p class="eyebrow">Student Portal</p>
+        <h1>My Applications</h1>
+        <p class="welcome">
+            Welcome back, <strong th:text="${currentUserName}">Student</strong>.
+            Track your residence applications and submit any required documents here.
+        </p>
+    </header>
+
+    <section class="applications" th:if="${not #lists.isEmpty(applications)}">
+
+        <article class="application-card" th:each="app : ${applications}">
+
+            <div class="application-top">
+                <div>
+                    <p class="application-number"
+                       th:text="'Application #' + ${app.applicationID}">
+                        Application #1
+                    </p>
+                    <h2 class="property-id"
+                        th:text="'Property ID: ' + ${app.propertyID}">
+                        Property ID: 1
+                    </h2>
+                </div>
+
+                <span class="status"
+                      th:classappend="${#strings.equalsIgnoreCase(app.status, 'Pending')} ? ' pending' :
+                                     (${#strings.equalsIgnoreCase(app.status, 'Accepted')} ? ' accepted' :
+                                     (${#strings.equalsIgnoreCase(app.status, 'Rejected')} ? ' rejected' : ''))"
+                      th:text="${app.status}">
+                    Pending
+                </span>
+            </div>
+
+            <div class="details">
+                <div class="detail">
+                    <span class="detail-label">Application Date</span>
+                    <span class="detail-value" th:text="${app.applicationDate}">
+                        2026-08-17
+                    </span>
+                </div>
+
+                <div class="detail">
+                    <span class="detail-label">Application Status</span>
+                    <span class="detail-value" th:text="${app.status}">
+                        Pending
+                    </span>
+                </div>
+            </div>
+
+            <div class="actions">
+
+                <form class="document-form"
+                      th:action="@{/submit-documents/{id}(id=${app.applicationID})}"
+                      method="post"
+                      enctype="multipart/form-data">
+
+                    <input type="file" name="file" required>
+
+                    <button type="submit" class="primary-button">
+                        Submit Document
+                    </button>
+                </form>
+
+                <form th:action="@{/cancel-application/{id}(id=${app.applicationID})}"
+                      method="post">
+
+                    <button type="submit" class="danger-button">
+                        Cancel Application
+                    </button>
+                </form>
+
+            </div>
+
+        </article>
+
+    </section>
+
+    <section class="empty-state" th:if="${#lists.isEmpty(applications)}">
+        <div class="empty-icon">✓</div>
+        <h2>No applications yet</h2>
+        <p>
+            You haven't submitted any residence applications yet.
+            Browse available properties to find your next home.
+        </p>
+    </section>
+
+</main>
+
+<div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null)}"></div>
+
 </body>
 </html>

@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title th:text="${property.title} + ' – ULEE'">Property Details</title>
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/speak-with-ai.css">
+    <script src="/speak-with-ai-logic.js" defer></script>
+    <script src="/speak-with-ai.js" defer></script>
     <style>
         :root {
             --primary:        hsl(180, 67%, 47%);
@@ -582,6 +585,8 @@
         });
     });
 </script>
+
+<div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(${property.propertyID}, ${property.title})}"></div>
 
 </body>
 </html>

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  Reusable persistent top hero nav bar for pages that do NOT already have
+  their own sidebar (e.g. properties.html, application.html, update.html).
+
+  Usage:
+    <div th:replace="~{fragments/hero-nav :: heroNav}"></div>
+
+  Requires hero-theme.css to be linked on the host page for styling:
+    <link rel="stylesheet" href="/hero-theme.css">
+-->
+<nav th:fragment="heroNav" class="hero-navbar">
+    <a class="hero-navbar-brand" href="/">ULEE</a>
+    <div class="hero-navbar-links">
+        <a href="/search">Properties</a>
+        <a href="/my-applications">My Applications</a>
+        <a href="/landlord-index">Landlord</a>
+        <a href="/admin-index">Admin</a>
+    </div>
+    <a class="hero-pill-btn" href="/">Home</a>
+</nav>
+</body>
+</html>

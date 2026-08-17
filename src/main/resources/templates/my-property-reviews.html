@@ -53,6 +53,9 @@
     .no-reviews { font-size: 13.5px; color: var(--muted); font-style: italic; }
     .empty { text-align: center; color: var(--muted); padding: 60px 0; font-size: 14px; }
   </style>
+  <link rel="stylesheet" href="/speak-with-ai.css">
+  <script src="/speak-with-ai-logic.js" defer></script>
+  <script src="/speak-with-ai.js" defer></script>
 </head>
 <body>
 
@@ -88,5 +91,6 @@
   </div>
 </div>
 
+<div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null)}"></div>
 </body>
 </html>
