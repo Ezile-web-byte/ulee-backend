@@ -13,7 +13,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Comparator;
+import java.time.LocalDateTime;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.util.stream.Collectors;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -21,6 +26,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.ulee.ulee_backend.repository.UserRepository;
 import com.ulee.ulee_backend.repository.StudentRepository;
 import com.ulee.ulee_backend.repository.LandlordRepository;
+import com.ulee.ulee_backend.repository.ApplicationRepository;
 
 
 @Controller
@@ -43,11 +49,43 @@ public class AdminController {
     @Autowired
     private LandlordRepository landlordRepository;
 
+    @Autowired
+    private ApplicationRepository applicationRepository;
+
+    /**
+     * Populates the counts every admin page's sidebar badges need
+     * (Review Properties, Reported, Reviews) so they stay consistent
+     * across pages instead of drifting per-controller-method.
+     */
+    private void addSidebarCounts(Model model) {
+        model.addAttribute("totalPending", propertyRepository.findByStatus("Pending").size());
+        model.addAttribute("totalReported", propertyRepository.findByIsReportedTrue().size());
+        model.addAttribute("totalReviews", reviewRepository.findAll().size());
+    }
+
     @GetMapping("/admin/listings")
-    public String viewAllListings(Model model) {
+    public String viewAllListings(Model model, @RequestParam(required = false) String search) {
         List<Property> allProperties = propertyRepository.findAll();
-        model.addAttribute("properties", allProperties);
+
+        String searchLower = search != null ? search.trim().toLowerCase() : null;
+        List<Property> filtered = allProperties.stream()
+                .filter(p -> searchLower == null || searchLower.isBlank()
+                        || (p.getCity() != null && p.getCity().toLowerCase().contains(searchLower))
+                        || (p.getTitle() != null && p.getTitle().toLowerCase().contains(searchLower))
+                        || (p.getAddress() != null && p.getAddress().toLowerCase().contains(searchLower))
+                        || (p.getSuburb() != null && p.getSuburb().toLowerCase().contains(searchLower)))
+                .collect(Collectors.toList());
+
+        // Number of students who applied to each property, for the "Applicants" column
+        Map<Integer, Long> applicationCounts = applicationRepository.findAll().stream()
+                .filter(a -> a.getPropertyID() != null)
+                .collect(Collectors.groupingBy(Application::getPropertyID, Collectors.counting()));
+
+        model.addAttribute("properties", filtered);
         model.addAttribute("totalListings", allProperties.size());
+        model.addAttribute("applicationCounts", applicationCounts);
+        model.addAttribute("search", search);
+        addSidebarCounts(model);
         return "admin/admin-listings";
     }
 
@@ -59,10 +97,81 @@ public class AdminController {
     }
 
     @GetMapping("/admin/approved-properties")
-    public String viewApprovedProperties(Model model) {
-        List<Property> approvedProperties = propertyRepository.findByStatus("Approved");
-        model.addAttribute("approvedProperties", approvedProperties);
-        model.addAttribute("totalApproved", approvedProperties.size());
+    public String viewApprovedProperties(Model model,
+                                         @RequestParam(required = false) String search,
+                                         @RequestParam(required = false) String city,
+                                         @RequestParam(required = false) java.math.BigDecimal minPrice,
+                                         @RequestParam(required = false) java.math.BigDecimal maxPrice,
+                                         @RequestParam(required = false) Integer bedrooms,
+                                         @RequestParam(required = false) Integer academicYear) {
+
+        List<Property> allApproved = propertyRepository.findByStatus("Approved");
+
+        // Distinct cities from the full approved set, for the city filter dropdown
+        List<String> cityOptions = allApproved.stream()
+                .map(Property::getCity)
+                .filter(c -> c != null && !c.isBlank())
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+
+        String searchLower = search != null ? search.trim().toLowerCase() : null;
+
+        List<Property> filtered = allApproved.stream()
+                .filter(p -> searchLower == null || searchLower.isBlank()
+                        || (p.getTitle() != null && p.getTitle().toLowerCase().contains(searchLower))
+                        || (p.getCity() != null && p.getCity().toLowerCase().contains(searchLower))
+                        || (p.getAddress() != null && p.getAddress().toLowerCase().contains(searchLower)))
+                .filter(p -> city == null || city.isBlank() || city.equalsIgnoreCase(p.getCity()))
+                .filter(p -> minPrice == null || (p.getRent() != null && p.getRent().compareTo(minPrice) >= 0))
+                .filter(p -> maxPrice == null || (p.getRent() != null && p.getRent().compareTo(maxPrice) <= 0))
+                .filter(p -> bedrooms == null || (p.getBedrooms() != null && p.getBedrooms().intValue() == bedrooms))
+                .collect(Collectors.toList());
+
+        // Selecting an academic year bumps properties available that year to the
+        // top, rather than hiding the rest — sort is stable so order within each
+        // group (matches / non-matches) is otherwise unchanged.
+        final Integer selectedYear = academicYear;
+        if (selectedYear != null) {
+            filtered.sort(Comparator.comparing(
+                    (Property p) -> !(p.getAvailableFrom() != null && p.getAvailableFrom().getYear() == selectedYear)));
+        }
+
+        // Headline stats always reflect ALL approved properties, not just the filtered view
+        java.util.Set<Integer> approvedIds = allApproved.stream()
+                .map(Property::getPropertyID)
+                .collect(Collectors.toSet());
+        long applicantsForApproved = applicationRepository.findAll().stream()
+                .filter(a -> a.getPropertyID() != null && approvedIds.contains(a.getPropertyID()))
+                .count();
+        long approvedCapacity = allApproved.stream()
+                .mapToLong(p -> p.getCapacity() != null ? p.getCapacity() : 0)
+                .sum();
+        double occupancyRate = approvedCapacity > 0 ? (applicantsForApproved * 100.0 / approvedCapacity) : 0;
+
+        YearMonth currentMonth = YearMonth.now();
+        long approvedThisMonth = allApproved.stream()
+                .filter(p -> p.getCreatedAt() != null && YearMonth.from(p.getCreatedAt()).equals(currentMonth))
+                .count();
+
+        // A few selectable academic years around the current one, for the dropdown
+        int currentYear = java.time.Year.now().getValue();
+        List<Integer> academicYearOptions = java.util.Arrays.asList(currentYear - 1, currentYear, currentYear + 1);
+
+        model.addAttribute("approvedProperties", filtered);
+        model.addAttribute("totalApproved", allApproved.size());
+        model.addAttribute("occupancyRate", occupancyRate);
+        model.addAttribute("approvedThisMonth", approvedThisMonth);
+        model.addAttribute("cityOptions", cityOptions);
+        model.addAttribute("search", search);
+        model.addAttribute("selectedCity", city);
+        model.addAttribute("minPrice", minPrice);
+        model.addAttribute("maxPrice", maxPrice);
+        model.addAttribute("bedrooms", bedrooms);
+        model.addAttribute("totalListings", propertyRepository.findAll().size());
+        model.addAttribute("academicYearOptions", academicYearOptions);
+        model.addAttribute("selectedAcademicYear", selectedYear != null ? selectedYear : currentYear);
+        addSidebarCounts(model);
         return "admin/admin-approved-properties";
     }
 
@@ -169,6 +278,7 @@ public class AdminController {
         List<Property> allProperties = propertyRepository.findAll();
         List<Review> allReviews = reviewRepository.findAll();
         List<Property> pendingProperties = propertyRepository.findByStatus("Pending");
+        List<Property> approvedProperties = propertyRepository.findByStatus("Approved");
         List<Property> reportedProperties = propertyRepository.findByIsReportedTrue();
 
         Map<Integer, Property> propertyLookup = allProperties.stream()
@@ -192,8 +302,76 @@ public class AdminController {
         model.addAttribute("totalReviews", allReviews.size());
         model.addAttribute("totalPending", pendingProperties.size());
         model.addAttribute("totalReported", reportedProperties.size());
+        model.addAttribute("totalApproved", approvedProperties.size());
+        Map<YearMonth, Long> monthlyCounts = buildMonthlyListingCounts(allProperties);
+        DateTimeFormatter labelFormat = DateTimeFormatter.ofPattern("MMM");
+        model.addAttribute("monthlyLabels", monthlyCounts.keySet().stream().map(m -> m.format(labelFormat)).collect(Collectors.toList()));
+        model.addAttribute("monthlyCounts", new ArrayList<>(monthlyCounts.values()));
+        model.addAttribute("recentActivity", buildRecentActivity(allProperties));
 
         return "admin/admin-index";
+    }
+
+    /**
+     * Counts listings created per month for the last 6 months (oldest first),
+     * for the Dashboard's "Listings Trend" chart. Returns a LinkedHashMap so
+     * insertion order (oldest -> newest) is preserved for the caller.
+     */
+    private Map<YearMonth, Long> buildMonthlyListingCounts(List<Property> allProperties) {
+        YearMonth currentMonth = YearMonth.now();
+
+        // Pre-fill the last 6 months (oldest -> newest) with zero counts
+        Map<YearMonth, Long> counts = new LinkedHashMap<>();
+        for (int i = 5; i >= 0; i--) {
+            counts.put(currentMonth.minusMonths(i), 0L);
+        }
+
+        for (Property p : allProperties) {
+            LocalDateTime createdAt = p.getCreatedAt();
+            if (createdAt == null) continue;
+            YearMonth month = YearMonth.from(createdAt);
+            if (counts.containsKey(month)) {
+                counts.merge(month, 1L, Long::sum);
+            }
+        }
+
+        return counts;
+    }
+
+    /**
+     * Builds a simple "recent activity" feed from the most recently
+     * created/updated listings, for the Dashboard.
+     */
+    private List<ActivityItem> buildRecentActivity(List<Property> allProperties) {
+        DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("MMM d, h:mm a");
+
+        return allProperties.stream()
+                .filter(p -> p.getCreatedAt() != null || p.getUpdatedAt() != null)
+                .sorted(Comparator.comparing(
+                        (Property p) -> p.getUpdatedAt() != null ? p.getUpdatedAt() : p.getCreatedAt(),
+                        Comparator.reverseOrder()))
+                .limit(5)
+                .map(p -> {
+                    LocalDateTime when = p.getUpdatedAt() != null ? p.getUpdatedAt() : p.getCreatedAt();
+                    String status = p.getStatus() != null ? p.getStatus() : "Pending";
+                    String message = "\"" + p.getTitle() + "\" — " + status;
+                    return new ActivityItem(message, when.format(timeFormat));
+                })
+                .collect(Collectors.toList());
+    }
+
+    /** Small holder for a single row in the Dashboard's recent-activity feed. */
+    public static class ActivityItem {
+        private final String message;
+        private final String timestamp;
+
+        public ActivityItem(String message, String timestamp) {
+            this.message = message;
+            this.timestamp = timestamp;
+        }
+
+        public String getMessage() { return message; }
+        public String getTimestamp() { return timestamp; }
     }
 
     @GetMapping("/admin/listing/{id}")
@@ -215,6 +393,8 @@ public class AdminController {
         model.addAttribute("reviews", reviewRepository.findByPropertyID(id));
         model.addAttribute("validationIssues", validationIssues);
         model.addAttribute("isValid", validationIssues.isEmpty());
+        model.addAttribute("totalListings", propertyRepository.findAll().size());
+        addSidebarCounts(model);
         return "admin/admin-listing-details";
     }
 
