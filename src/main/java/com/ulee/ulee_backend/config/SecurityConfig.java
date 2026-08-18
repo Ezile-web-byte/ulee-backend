@@ -69,7 +69,7 @@ public class SecurityConfig {
         };
     }
 }
- //I use the below code for testing since login egeza
+// I use the below code for testing since login egeza
 
 
 
@@ -83,7 +83,7 @@ public class SecurityConfig {
 //import org.springframework.security.crypto.password.PasswordEncoder;
 //import org.springframework.security.web.SecurityFilterChain;
 //import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
-//
+
 //@Configuration
 //@EnableWebSecurity
 //public class SecurityConfig {
@@ -129,7 +129,7 @@ public class SecurityConfig {
 //
 //       return http.build();
 //   }
-//
+
 //    private AuthenticationSuccessHandler roleBasedSuccessHandler() {
 //        return (request, response, authentication) -> {
 //            String redirectUrl = authentication.getAuthorities().stream()
@@ -144,5 +144,5 @@ public class SecurityConfig {
 //        };
 //    }
 //}
-//
+
 
