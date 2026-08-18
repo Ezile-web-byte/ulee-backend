@@ -6,6 +6,7 @@
     <title>ULEE — Admin Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/admin-style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js" defer></script>
     <script src="/admin-script.js" defer></script>
 </head>
 <body>
@@ -34,6 +35,17 @@
             <div class="nav-item active" data-section="dashboard" data-label="Dashboard">
                 <svg class="nav-icon" viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="11" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="11" width="6" height="6" rx="1.5"/><rect x="11" y="11" width="6" height="6" rx="1.5"/></svg>
                 <span class="nav-item-label">Dashboard</span>
+            </div>
+
+            <div class="nav-item" data-section="review-properties" data-label="Review Properties">
+                <svg class="nav-icon" viewBox="0 0 20 20"><path d="M3 5h14M3 10h14M3 15h10"/></svg>
+                <span class="nav-item-label">Review Properties</span>
+                <span class="nav-badge" th:text="${totalPending}">0</span>
+            </div>
+
+            <div class="nav-item" data-section="approved-properties" data-label="Approved Properties" onclick="window.location.href='/admin/approved-properties'">
+                <svg class="nav-icon" viewBox="0 0 20 20"><path d="M4 10l4 4 8-8"/></svg>
+                <span class="nav-item-label">Approved Properties</span>
             </div>
 
             <div class="nav-item" data-section="listings" data-label="Listings" onclick="window.location.href='/admin/listings'">
@@ -102,6 +114,7 @@
             <div th:if="${actionMessage}" style="margin:16px 0;padding:12px 16px;border-radius:8px;background:#e6f6ec;color:#1a7a3c;" th:text="${actionMessage}"></div>
             <div th:if="${actionError}" style="margin:16px 0;padding:12px 16px;border-radius:8px;background:#fdecec;color:#b3261e;" th:text="${actionError}"></div>
 
+            <!-- ============ DASHBOARD (overview only — no per-listing review table here) ============ -->
             <div class="section active" id="sec-dashboard">
 
                 <div class="stats">
@@ -137,14 +150,88 @@
 
                     <div class="stat-card">
                         <div class="stat-top">
-                            <div class="stat-icon blue">
-                                <svg viewBox="0 0 20 20"><path d="M10 2l2.3 4.7 5.2.8-3.8 3.7.9 5.2L10 14l-4.6 2.4.9-5.2L2.5 7.5l5.2-.8z"/></svg>
+                            <div class="stat-icon" style="background:#edfaf4">
+                                <svg viewBox="0 0 20 20" style="stroke:#1a9b5b"><path d="M4 10l4 4 8-8"/></svg>
                             </div>
                         </div>
-                        <div class="stat-num" th:text="${totalReviews}">0</div>
-                        <div class="stat-label">Total Reviews</div>
+                        <div class="stat-num" th:text="${totalApproved}">0</div>
+                        <div class="stat-label">Approved</div>
                     </div>
                 </div>
+
+                <!-- Quick actions — jump straight into the section that needs attention -->
+                <div class="panel" style="margin-bottom:20px">
+                    <div class="panel-header">
+                        <div><span class="panel-title">Quick Actions</span></div>
+                    </div>
+                    <div style="display:flex;flex-wrap:wrap;gap:12px;padding:18px">
+                        <div style="flex:1 1 200px;border:1px solid #eee;border-radius:10px;padding:14px;cursor:pointer"
+                             onclick="document.querySelector('.nav-item[data-section=review-properties]').click()">
+                            <div style="font-weight:600">Review Properties</div>
+                            <div style="color:var(--muted);font-size:13px" th:text="${totalPending} + ' awaiting review'">0 awaiting review</div>
+                        </div>
+                        <div style="flex:1 1 200px;border:1px solid #eee;border-radius:10px;padding:14px;cursor:pointer"
+                             onclick="window.location.href='/admin/reported-listings'">
+                            <div style="font-weight:600">Reported Listings</div>
+                            <div style="color:var(--muted);font-size:13px" th:text="${totalReported} + ' flagged'">0 flagged</div>
+                        </div>
+                        <div style="flex:1 1 200px;border:1px solid #eee;border-radius:10px;padding:14px;cursor:pointer"
+                             onclick="window.location.href='/admin/manage-users'">
+                            <div style="font-weight:600">Manage Users</div>
+                            <div style="color:var(--muted);font-size:13px">View &amp; manage accounts</div>
+                        </div>
+                        <div style="flex:1 1 200px;border:1px solid #eee;border-radius:10px;padding:14px;cursor:pointer"
+                             onclick="window.location.href='/admin/listings'">
+                            <div style="font-weight:600">All Listings</div>
+                            <div style="color:var(--muted);font-size:13px" th:text="${totalListings} + ' total'">0 total</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:20px;align-items:start">
+
+                    <!-- Listings trend chart. Backend should add a model attribute:
+                         monthlyListingStats: List<{ label: String, count: Integer }>  (e.g. last 6 months) -->
+                    <div class="panel">
+                        <div class="panel-header">
+                            <div><span class="panel-title">Listings Trend</span><span class="panel-sub">Last 6 months</span></div>
+                        </div>
+                        <div style="padding:18px">
+                            <canvas id="listingsTrendChart" height="140"
+                                    th:attr="data-labels=${monthlyListingStats != null ? #arrays.toString(monthlyListingStats.![label]) : ''},
+                                              data-counts=${monthlyListingStats != null ? #arrays.toString(monthlyListingStats.![count]) : ''}"></canvas>
+                            <p th:if="${monthlyListingStats == null or #lists.isEmpty(monthlyListingStats)}"
+                               style="color:var(--muted);text-align:center;padding:30px 0">
+                                No trend data yet.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Recent activity feed. Backend should add a model attribute:
+                         recentActivity: List<{ message: String, timestamp: String }> -->
+                    <div class="panel">
+                        <div class="panel-header">
+                            <div><span class="panel-title">Recent Activity</span></div>
+                        </div>
+                        <div style="padding:6px 0">
+                            <div th:each="activity : ${recentActivity}"
+                                 style="padding:12px 18px;border-bottom:1px solid #f2f2f2">
+                                <div th:text="${activity.message}" style="font-size:14px">Activity description</div>
+                                <div th:text="${activity.timestamp}" style="color:var(--muted);font-size:12px;margin-top:2px">Just now</div>
+                            </div>
+                            <p th:if="${recentActivity == null or #lists.isEmpty(recentActivity)}"
+                               style="color:var(--muted);text-align:center;padding:30px 18px">
+                                No recent activity to show.
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- ============ REVIEW PROPERTIES (the pending-listings queue lives here now) ============ -->
+            <div class="section" id="sec-review-properties">
 
                 <div class="panel">
                     <div class="panel-header">
@@ -156,6 +243,7 @@
                     <table>
                         <thead>
                         <tr>
+                            <th style="width:56px">PHOTO</th>
                             <th>PROPERTY NAME</th>
                             <th>LANDLORD</th>
                             <th>LOCATION</th>
@@ -166,6 +254,13 @@
                         </thead>
                         <tbody>
                         <tr th:each="prop : ${pendingProperties}">
+                            <td>
+                                <img th:if="${mainImageLookup.get(prop.propertyID)} != null"
+                                     th:src="${mainImageLookup.get(prop.propertyID)}"
+                                     style="width:40px;height:40px;object-fit:cover;border-radius:8px" />
+                                <span th:if="${mainImageLookup.get(prop.propertyID)} == null"
+                                      style="display:inline-block;width:40px;height:40px;background:#eee;border-radius:8px"></span>
+                            </td>
                             <td>
                                 <a th:href="@{/admin/listing/{id}(id=${prop.propertyID})}" th:text="${prop.title}">Property Name</a>
                             </td>
@@ -197,6 +292,42 @@
         </div>
     </div>
 </div>
+
+<script>
+    // Renders the Listings Trend chart once the backend supplies `monthlyListingStats`
+    // as a model attribute (list of { label, count }). Safe no-op if empty.
+    document.addEventListener('DOMContentLoaded', function () {
+        var canvas = document.getElementById('listingsTrendChart');
+        if (!canvas || typeof Chart === 'undefined') return;
+
+        var rawLabels = canvas.dataset.labels || '';
+        var rawCounts = canvas.dataset.counts || '';
+        if (!rawLabels || !rawCounts) return;
+
+        var labels = rawLabels.replace(/^\[|\]$/g, '').split(',').map(function (s) { return s.trim(); });
+        var counts = rawCounts.replace(/^\[|\]$/g, '').split(',').map(function (s) { return Number(s.trim()); });
+
+        new Chart(canvas.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Listings',
+                    data: counts,
+                    borderColor: '#1a9b5b',
+                    backgroundColor: 'rgba(26,155,91,0.1)',
+                    tension: 0.35,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+            }
+        });
+    });
+</script>
 
 </body>
 </html>
