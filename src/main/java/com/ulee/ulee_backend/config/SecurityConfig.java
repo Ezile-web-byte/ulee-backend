@@ -69,7 +69,7 @@ public class SecurityConfig {
         };
     }
 }
-// I use the below code for testing since login egeza
+ //I use the below code for testing since login egeza
 
 
 
@@ -115,20 +115,20 @@ public class SecurityConfig {
 //                        .anyRequest().authenticated()
 //                )
 //                .formLogin(form -> form
-//                        .loginPage("/")
-//                        .loginProcessingUrl("/login")
-//                        .successHandler(roleBasedSuccessHandler())
-//                        .failureUrl("/?loginError=true")
-//                        .permitAll()
+//                     .loginPage("/")
+//                      .loginProcessingUrl("/login")
+//                      .successHandler(roleBasedSuccessHandler())
+//                     .failureUrl("/?loginError=true")
+//                      .permitAll()
 //                )
-//                .logout(logout -> logout
-//                        .logoutUrl("/logout")
-//                        .logoutSuccessUrl("/")
-//                        .permitAll()
-//                );
+//              .logout(logout -> logout
+//                     .logoutUrl("/logout")
+//                      .logoutSuccessUrl("/")
+//                       .permitAll()
+//               );
 //
-//        return http.build();
-//    }
+//       return http.build();
+//   }
 //
 //    private AuthenticationSuccessHandler roleBasedSuccessHandler() {
 //        return (request, response, authentication) -> {
@@ -144,5 +144,5 @@ public class SecurityConfig {
 //        };
 //    }
 //}
-
+//
 

@@ -6,6 +6,7 @@
     <title>ULEE — All Listings</title>
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/admin-style.css">
+    <script src="/admin-script.js" defer></script>
 </head>
 <body>
 <div class="shell">
@@ -22,7 +23,6 @@
                 </div>
             </div>
         </div>
-
         <nav class="nav">
             <div class="nav-label">Main</div>
 
@@ -31,9 +31,21 @@
                 <span class="nav-item-label">Dashboard</span>
             </div>
 
+            <div class="nav-item" data-section="review-properties" data-label="Review Properties" onclick="window.location.href='/admin-index'">
+                <svg class="nav-icon" viewBox="0 0 20 20"><path d="M3 5h14M3 10h14M3 15h10"/></svg>
+                <span class="nav-item-label">Review Properties</span>
+                <span class="nav-badge" th:text="${totalPending}">0</span>
+            </div>
+
+            <div class="nav-item" data-section="approved-properties" data-label="Approved Properties" onclick="window.location.href='/admin/approved-properties'">
+                <svg class="nav-icon" viewBox="0 0 20 20"><path d="M4 10l4 4 8-8"/></svg>
+                <span class="nav-item-label">Approved Properties</span>
+            </div>
+
             <div class="nav-item active" data-section="listings" data-label="Listings">
                 <svg class="nav-icon" viewBox="0 0 20 20"><path d="M3 5h14M3 10h14M3 15h10"/></svg>
                 <span class="nav-item-label">Listings</span>
+                <span class="nav-badge" th:text="${totalListings}">0</span>
             </div>
 
             <div class="nav-item" data-section="users" data-label="Users" onclick="window.location.href='/admin/manage-users'">
@@ -46,11 +58,13 @@
             <div class="nav-item" data-section="reviews" data-label="Reviews" onclick="window.location.href='/admin/reviews'">
                 <svg class="nav-icon" viewBox="0 0 20 20"><path d="M10 2l2.3 4.7 5.2.8-3.8 3.7.9 5.2L10 14l-4.6 2.4.9-5.2L2.5 7.5l5.2-.8z"/></svg>
                 <span class="nav-item-label">Reviews</span>
+                <span class="nav-badge" th:text="${totalReviews}">0</span>
             </div>
 
             <div class="nav-item" data-section="reported" data-label="Reported" onclick="window.location.href='/admin/reported-listings'">
                 <svg class="nav-icon" viewBox="0 0 20 20"><path d="M10 3l7 14H3L10 3z"/><path d="M10 9v4M10 15h.01"/></svg>
                 <span class="nav-item-label">Reported</span>
+                <span class="nav-badge" th:text="${totalReported}">0</span>
             </div>
 
             <div class="nav-label">System</div>
@@ -84,18 +98,46 @@
                     <strong style="color:#c62828" th:text="${actionError}">Error</strong>
                 </div>
 
+                <!-- Search by area / property name / address -->
+                <div style="margin-bottom:16px;max-width:360px;position:relative">
+                    <svg viewBox="0 0 20 20" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;stroke:#9aa1a9;fill:none;stroke-width:1.6">
+                        <circle cx="9" cy="9" r="6"/><path d="M14 14l4 4"/>
+                    </svg>
+                    <input type="text" id="listingsSearchInput" th:value="${search}"
+                           placeholder="Search by area, address, or property name…"
+                           onkeydown="if(event.key==='Enter'){window.location.href='/admin/listings?search='+encodeURIComponent(this.value);}"
+                           style="width:100%;padding:9px 12px 9px 34px;border:1px solid #e5e7eb;border-radius:8px;font-family:inherit;font-size:14px" />
+                </div>
+
                 <div class="panel">
                     <div class="panel-header">
                         <span class="panel-title">All Listings</span>
-                        <span class="panel-sub" th:text="${totalListings} + ' total'">0 total</span>
+                        <span class="panel-sub" th:text="${#lists.size(properties)} + ' of ' + ${totalListings} + ' total'">0 total</span>
                     </div>
                     <table>
                         <thead>
-                        <tr><th>Property Name</th><th>Location</th><th>Rent</th><th>Status</th></tr>
+                        <tr>
+                            <th style="width:56px">PHOTO</th>
+                            <th>Property Name</th>
+                            <th>Location</th>
+                            <th>Rent</th>
+                            <th>Status</th>
+                            <th>Applicants</th>
+                        </tr>
                         </thead>
                         <tbody>
                         <tr th:each="property : ${properties}">
-                            <td><strong th:text="${property.title}">Name</strong></td>
+                            <td>
+                                <img th:if="${property.mainImageUrl} != null" th:src="${property.mainImageUrl}"
+                                     style="width:40px;height:40px;object-fit:cover;border-radius:8px" />
+                                <span th:if="${property.mainImageUrl} == null"
+                                      style="display:inline-block;width:40px;height:40px;background:#eee;border-radius:8px"></span>
+                            </td>
+                            <td>
+                                <a th:href="@{/admin/listing/{id}(id=${property.propertyID})}"
+                                   th:text="${property.title}"
+                                   style="font-weight:600;color:#1a1a1a;text-decoration:none">Name</a>
+                            </td>
                             <td th:text="${property.city}">Location</td>
                             <td th:text="'R' + ${property.rent}">Rent</td>
                             <td>
@@ -103,6 +145,10 @@
                                 <span th:if="${property.status} == 'Pending'" class="badge badge-amber"><span class="badge-dot"></span>Pending</span>
                                 <span th:if="${property.status} == 'Rejected'" class="badge badge-red"><span class="badge-dot"></span>Rejected</span>
                                 <span th:if="${property.status} == null" class="badge badge-amber">Unknown</span>
+                            </td>
+                            <td>
+                                <span th:text="${applicationCounts.get(property.propertyID)} ?: 0">0</span>
+                                <span style="color:var(--muted)">applied</span>
                             </td>
                         </tr>
                         </tbody>

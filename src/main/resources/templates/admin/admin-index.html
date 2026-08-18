@@ -6,7 +6,6 @@
     <title>ULEE — Admin Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/admin-style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js" defer></script>
     <script src="/admin-script.js" defer></script>
 </head>
 <body>
@@ -190,24 +189,30 @@
 
                 <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:20px;align-items:start">
 
-                    <!-- Listings trend chart. Backend should add a model attribute:
-                         monthlyListingStats: List<{ label: String, count: Integer }>  (e.g. last 6 months) -->
+                    <!-- Listings trend chart. Backend supplies two parallel lists:
+                         monthlyLabels: List<String>, monthlyCounts: List<Long>  (last 6 months, oldest first) -->
                     <div class="panel">
                         <div class="panel-header">
                             <div><span class="panel-title">Listings Trend</span><span class="panel-sub">Last 6 months</span></div>
                         </div>
                         <div style="padding:18px">
-                            <canvas id="listingsTrendChart" height="140"
-                                    th:attr="data-labels=${monthlyListingStats != null ? #arrays.toString(monthlyListingStats.![label]) : ''},
-                                              data-counts=${monthlyListingStats != null ? #arrays.toString(monthlyListingStats.![count]) : ''}"></canvas>
-                            <p th:if="${monthlyListingStats == null or #lists.isEmpty(monthlyListingStats)}"
+                            <div id="listingsTrendChart" style="display:flex;align-items:flex-end;gap:10px;height:160px"></div>
+                            <p th:if="${monthlyCounts == null or #lists.isEmpty(monthlyCounts)}"
                                style="color:var(--muted);text-align:center;padding:30px 0">
                                 No trend data yet.
                             </p>
                         </div>
                     </div>
 
-                    <!-- Recent activity feed. Backend should add a model attribute:
+                    <!-- Values Thymeleaf inlines into the chart script below -->
+                    <script th:inline="javascript">
+                        /*<![CDATA[*/
+                        var ULEE_monthlyLabels = /*[[${monthlyLabels}]]*/ [];
+                        var ULEE_monthlyCounts = /*[[${monthlyCounts}]]*/ [];
+                        /*]]>*/
+                    </script>
+
+                    <!-- Recent activity feed. Backend supplies a model attribute:
                          recentActivity: List<{ message: String, timestamp: String }> -->
                     <div class="panel">
                         <div class="panel-header">
@@ -255,10 +260,10 @@
                         <tbody>
                         <tr th:each="prop : ${pendingProperties}">
                             <td>
-                                <img th:if="${mainImageLookup.get(prop.propertyID)} != null"
-                                     th:src="${mainImageLookup.get(prop.propertyID)}"
+                                <img th:if="${prop.mainImageUrl} != null"
+                                     th:src="${prop.mainImageUrl}"
                                      style="width:40px;height:40px;object-fit:cover;border-radius:8px" />
-                                <span th:if="${mainImageLookup.get(prop.propertyID)} == null"
+                                <span th:if="${prop.mainImageUrl} == null"
                                       style="display:inline-block;width:40px;height:40px;background:#eee;border-radius:8px"></span>
                             </td>
                             <td>
@@ -294,37 +299,38 @@
 </div>
 
 <script>
-    // Renders the Listings Trend chart once the backend supplies `monthlyListingStats`
-    // as a model attribute (list of { label, count }). Safe no-op if empty.
+    // Renders the Listings Trend as simple CSS bars from ULEE_monthlyLabels /
+    // ULEE_monthlyCounts (inlined by Thymeleaf further up the page). No
+    // external library or network access required, so it always renders.
     document.addEventListener('DOMContentLoaded', function () {
-        var canvas = document.getElementById('listingsTrendChart');
-        if (!canvas || typeof Chart === 'undefined') return;
+        var container = document.getElementById('listingsTrendChart');
+        if (!container) return;
+        if (typeof ULEE_monthlyCounts === 'undefined' || !ULEE_monthlyCounts.length) return;
 
-        var rawLabels = canvas.dataset.labels || '';
-        var rawCounts = canvas.dataset.counts || '';
-        if (!rawLabels || !rawCounts) return;
+        var maxCount = Math.max.apply(null, ULEE_monthlyCounts.concat([1])); // avoid divide-by-zero
 
-        var labels = rawLabels.replace(/^\[|\]$/g, '').split(',').map(function (s) { return s.trim(); });
-        var counts = rawCounts.replace(/^\[|\]$/g, '').split(',').map(function (s) { return Number(s.trim()); });
+        ULEE_monthlyCounts.forEach(function (count, i) {
+            var label = ULEE_monthlyLabels[i] || '';
+            var barHeightPct = Math.round((count / maxCount) * 100);
 
-        new Chart(canvas.getContext('2d'), {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Listings',
-                    data: counts,
-                    borderColor: '#1a9b5b',
-                    backgroundColor: 'rgba(26,155,91,0.1)',
-                    tension: 0.35,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-            }
+            var col = document.createElement('div');
+            col.style.cssText = 'flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:6px';
+
+            var countLabel = document.createElement('div');
+            countLabel.textContent = count;
+            countLabel.style.cssText = 'font-size:12px;font-weight:600;color:#333';
+
+            var bar = document.createElement('div');
+            bar.style.cssText = 'width:100%;max-width:36px;background:#1a9b5b;border-radius:6px 6px 0 0;height:' + Math.max(barHeightPct, 3) + '%;transition:height 0.3s ease';
+
+            var monthLabel = document.createElement('div');
+            monthLabel.textContent = label;
+            monthLabel.style.cssText = 'font-size:12px;color:var(--muted);margin-top:4px';
+
+            col.appendChild(countLabel);
+            col.appendChild(bar);
+            col.appendChild(monthLabel);
+            container.appendChild(col);
         });
     });
 </script>
