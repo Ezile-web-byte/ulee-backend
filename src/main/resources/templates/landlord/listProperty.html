@@ -1,268 +1,387 @@
+<!--<!DOCTYPE html>-->
+<!--<html lang="en" xmlns:th="http://www.thymeleaf.org">-->
+<!--<head>-->
+<!--  <meta charset="UTF-8" />-->
+<!--  <meta name="viewport" content="width=device-width, initial-scale=1.0" />-->
+<!--  <title>List a New Property – ULEE</title>-->
+<!--  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />-->
+<!--  <style>-->
+<!--    :root {-->
+<!--      &#45;&#45;primary: hsl(180, 67%, 47%);-->
+<!--      &#45;&#45;primary-dark: hsl(180, 67%, 36%);-->
+<!--      &#45;&#45;bg: hsl(0, 0%, 99%);-->
+<!--      &#45;&#45;text: #1a1a1a;-->
+<!--      &#45;&#45;muted: #777;-->
+<!--      &#45;&#45;white: #ffffff;-->
+<!--      &#45;&#45;border: hsl(180, 20%, 88%);-->
+<!--      &#45;&#45;shadow-md: 0 6px 28px rgba(0,0,0,0.13);-->
+<!--      &#45;&#45;radius: 12px;-->
+<!--    }-->
+<!--    * { box-sizing: border-box; margin: 0; padding: 0; }-->
+<!--    body { font-family: 'Sora', sans-serif; background: var(&#45;&#45;bg); color: var(&#45;&#45;text); }-->
+
+<!--    .wrap { max-width: 640px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }-->
+<!--    h1 { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 6px; }-->
+<!--    .page-sub { font-size: 13.5px; color: var(&#45;&#45;muted); margin-bottom: 24px; }-->
+
+<!--    .form-card {-->
+<!--      background: var(&#45;&#45;white); border-radius: var(&#45;&#45;radius);-->
+<!--      box-shadow: var(&#45;&#45;shadow-md); border: 1px solid var(&#45;&#45;border);-->
+<!--      padding: 28px; display: flex; flex-direction: column; gap: 16px;-->
+<!--    }-->
+<!--    .field { display: flex; flex-direction: column; gap: 6px; }-->
+<!--    .field label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(&#45;&#45;text); }-->
+<!--    .field input, .field select, .field textarea {-->
+<!--      font-family: 'Sora', sans-serif; font-size: 14px; padding: 10px 14px;-->
+<!--      border: 1.5px solid var(&#45;&#45;border); border-radius: 8px; color: var(&#45;&#45;text);-->
+<!--      background: var(&#45;&#45;white);-->
+<!--    }-->
+<!--    .field input:focus, .field select:focus, .field textarea:focus {-->
+<!--      outline: none; border-color: var(&#45;&#45;primary);-->
+<!--    }-->
+<!--    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }-->
+<!--    .section-hint { font-size: 12px; color: var(&#45;&#45;muted); margin-top: -8px; }-->
+
+<!--    .actions { display: flex; gap: 12px; margin-top: 8px; }-->
+<!--    .btn { flex: 1; text-align: center; border: none; border-radius: 8px; padding: 12px 0; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; }-->
+<!--    .btn-save { background: var(&#45;&#45;primary); color: #fff; }-->
+<!--    .btn-save:hover { background: var(&#45;&#45;primary-dark); }-->
+<!--    .btn-cancel { background: hsl(0,0%,94%); color: var(&#45;&#45;text); }-->
+
+<!--    /* Amenities */-->
+<!--    .amenity-group { display: flex; flex-direction: column; gap: 8px; }-->
+<!--    .amenity-group-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(&#45;&#45;primary-dark); margin-top: 6px; }-->
+<!--    .amenity-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; }-->
+<!--    .amenity-item { display: flex; align-items: center; gap: 8px; font-size: 13.5px; }-->
+<!--    .amenity-item label { text-transform: none; font-weight: 500; }-->
+
+<!--    .upload-field input[type="file"] {-->
+<!--      font-size: 13px; padding: 8px 10px; border: 1.5px dashed var(&#45;&#45;border);-->
+<!--      border-radius: 8px; background: hsl(180, 20%, 98%);-->
+<!--    }-->
+
+<!--    .feature-note {-->
+<!--      font-size: 12.5px; color: var(&#45;&#45;muted); background: hsl(180, 20%, 97%);-->
+<!--      border: 1px solid var(&#45;&#45;border); border-radius: 8px; padding: 10px 14px;-->
+<!--    }-->
+
+<!--    .photo-preview-grid {-->
+<!--      display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;-->
+<!--    }-->
+<!--    .photo-preview-item {-->
+<!--      position: relative; aspect-ratio: 1/1; border-radius: 8px; overflow: hidden;-->
+<!--      border: 1.5px solid var(&#45;&#45;border);-->
+<!--    }-->
+<!--    .photo-preview-item img { width: 100%; height: 100%; object-fit: cover; display: block; }-->
+<!--    .photo-preview-item .remove-btn {-->
+<!--      position: absolute; top: 4px; right: 4px; width: 20px; height: 20px;-->
+<!--      border-radius: 50%; border: none; background: rgba(0,0,0,0.6); color: #fff;-->
+<!--      font-size: 13px; line-height: 1; cursor: pointer; display: flex;-->
+<!--      align-items: center; justify-content: center;-->
+<!--    }-->
+<!--    .photo-preview-item .remove-btn:hover { background: hsl(0, 65%, 52%); }-->
+<!--    .btn-add-photos {-->
+<!--      align-self: flex-start; background: hsl(180, 20%, 96%); color: var(&#45;&#45;primary-dark);-->
+<!--      border: 1.5px dashed var(&#45;&#45;border); border-radius: 8px; padding: 10px 16px;-->
+<!--      font-size: 13.5px; font-weight: 600; cursor: pointer; font-family: 'Sora', sans-serif;-->
+<!--    }-->
+<!--    .btn-add-photos:hover { background: hsl(180, 20%, 92%); }-->
+<!--  </style>-->
+<!--</head>-->
+<!--<body>-->
+
+<!--<div class="wrap">-->
+<!--  <h1>List a New Property</h1>-->
+<!--  <p class="page-sub">Fill in the details below — you can always come back and edit this listing afterward.</p>-->
+
+<!--  <form id="listPropertyForm" class="form-card" th:action="@{/list-property}" method="post" enctype="multipart/form-data">-->
+<!--    <div class="field">-->
+<!--      <label>Property Title</label>-->
+<!--      <input type="text" name="title" placeholder="e.g. The Dunes" required />-->
+<!--    </div>-->
+
+<!--    <div class="row-2">-->
+<!--      <div class="field">-->
+<!--        <label>Room Type</label>-->
+<!--        <select name="type">-->
+<!--          <option value="" selected>Select a type</option>-->
+<!--          <option value="Single Room">Single Room</option>-->
+<!--          <option value="Sharing">Sharing</option>-->
+<!--        </select>-->
+<!--      </div>-->
+<!--      <div class="field">-->
+<!--        <label>Suburb</label>-->
+<!--        <input type="text" name="city" placeholder="e.g. Summerstrand" />-->
+<!--      </div>-->
+<!--    </div>-->
+
+<!--    <div class="field">-->
+<!--      <label>Address</label>-->
+<!--      <input type="text" name="address" placeholder="Full street address" />-->
+<!--    </div>-->
+
+<!--    <div class="field">-->
+<!--      <label>Getting to Campus</label>-->
+<!--      <select name="commuteType">-->
+<!--        <option value="" selected>Select an option</option>-->
+<!--        <option value="Walking distance">Walking distance</option>-->
+<!--        <option value="Shuttle required">Shuttle required</option>-->
+<!--      </select>-->
+<!--    </div>-->
+
+<!--    <div class="row-2">-->
+<!--      <div class="field">-->
+<!--        <label>Monthly Rent (R)</label>-->
+<!--        <input type="number" step="0.01" name="rent" placeholder="0.00" />-->
+<!--      </div>-->
+<!--      <div class="field">-->
+<!--        <label>Deposit (R)</label>-->
+<!--        <input type="number" step="0.01" name="deposit" placeholder="0.00" />-->
+<!--      </div>-->
+<!--    </div>-->
+
+<!--    <div class="field">-->
+<!--      <label>Available From</label>-->
+<!--      <select name="availableFrom">-->
+<!--        <option value="" selected>Select a semester</option>-->
+<!--        <option th:each="option : ${availableFromOptions}"-->
+<!--                th:value="${#temporals.format(option, 'yyyy-MM-dd')}"-->
+<!--                th:text="${#temporals.format(option, 'MMMM yyyy')}">-->
+<!--        </option>-->
+<!--      </select>-->
+<!--    </div>-->
+
+<!--    <div class="field">-->
+<!--      <label>Description</label>-->
+<!--      <textarea name="description" rows="5" placeholder="Tell students what makes this place worth renting."></textarea>-->
+<!--    </div>-->
+
+<!--    &lt;!&ndash; Amenities, grouped by category &ndash;&gt;-->
+<!--    <div class="field">-->
+<!--      <label>Amenities</label>-->
+<!--      <p class="section-hint">Tick everything included with this room.</p>-->
+<!--    </div>-->
+<!--    <div class="amenity-group" th:each="entry : ${amenityCategories}">-->
+<!--      <div class="amenity-group-title" th:text="${entry.key}">Category</div>-->
+<!--      <div class="amenity-grid">-->
+<!--        <div class="amenity-item" th:each="amenity : ${entry.value}">-->
+<!--          <input type="checkbox" th:id="'amenity-' + ${amenity.amenityID}"-->
+<!--                 name="amenityIds" th:value="${amenity.amenityID}" />-->
+<!--          <label th:for="'amenity-' + ${amenity.amenityID}" th:text="${amenity.name}">Amenity</label>-->
+<!--        </div>-->
+<!--      </div>-->
+<!--    </div>-->
+
+<!--    &lt;!&ndash; Cover photo + additional photos &ndash;&gt;-->
+<!--    <div class="field upload-field">-->
+<!--      <label for="coverImage">Cover Photo</label>-->
+<!--      <input type="file" id="coverImage" name="coverImage" accept="image/*" />-->
+<!--      <p class="section-hint">This is the main photo students see first on your listing.</p>-->
+<!--    </div>-->
+
+<!--    <div class="field upload-field">-->
+<!--      <label>Additional Photos</label>-->
+<!--      <div id="additionalPhotosPreview" class="photo-preview-grid"></div>-->
+<!--      <button type="button" id="addPhotosBtn" class="btn-add-photos">+ Add Photos</button>-->
+<!--      <input type="file" id="additionalPhotosInput" accept="image/*" multiple style="display:none;" />-->
+<!--      <p class="section-hint">Add photos in as many rounds as you like — nothing already added gets replaced.</p>-->
+<!--    </div>-->
+
+<!--    <p class="feature-note">-->
+<!--      Study hubs, braai areas, game rooms and other special features can be added once the listing is created — head to "Manage" on this property afterward.-->
+<!--    </p>-->
+
+<!--    <input type="hidden" name="action" id="formAction" value="submit" />-->
+
+<!--    <div class="actions">-->
+<!--      <a class="btn btn-cancel" href="/landlord-index">Cancel</a>-->
+<!--      <button type="submit" class="btn btn-cancel" onclick="document.getElementById('formAction').value='draft';">Save as Draft</button>-->
+<!--      <button type="submit" class="btn btn-save" onclick="document.getElementById('formAction').value='submit';">List Property</button>-->
+<!--    </div>-->
+<!--  </form>-->
+<!--</div>-->
+
+<!--<script>-->
+<!--  (function () {-->
+<!--    const addBtn = document.getElementById('addPhotosBtn');-->
+<!--    const fileInput = document.getElementById('additionalPhotosInput');-->
+<!--    const preview = document.getElementById('additionalPhotosPreview');-->
+<!--    const form = document.querySelector('form[action*="list-property"]');-->
+<!--    let accumulatedFiles = [];-->
+
+<!--    addBtn.addEventListener('click', () => fileInput.click());-->
+
+<!--    fileInput.addEventListener('change', () => {-->
+<!--      for (const file of fileInput.files) {-->
+<!--        accumulatedFiles.push(file);-->
+<!--      }-->
+<!--      fileInput.value = ''; // reset so picking again fires 'change' even for the same file-->
+<!--      renderPreviews();-->
+<!--    });-->
+
+<!--    function renderPreviews() {-->
+<!--      preview.innerHTML = '';-->
+<!--      accumulatedFiles.forEach((file, index) => {-->
+<!--        const item = document.createElement('div');-->
+<!--        item.className = 'photo-preview-item';-->
+
+<!--        const img = document.createElement('img');-->
+<!--        img.src = URL.createObjectURL(file);-->
+<!--        item.appendChild(img);-->
+
+<!--        const removeBtn = document.createElement('button');-->
+<!--        removeBtn.type = 'button';-->
+<!--        removeBtn.className = 'remove-btn';-->
+<!--        removeBtn.innerHTML = '&times;';-->
+<!--        removeBtn.title = 'Remove photo';-->
+<!--        removeBtn.addEventListener('click', () => {-->
+<!--          accumulatedFiles.splice(index, 1);-->
+<!--          renderPreviews();-->
+<!--        });-->
+<!--        item.appendChild(removeBtn);-->
+
+<!--        preview.appendChild(item);-->
+<!--      });-->
+<!--    }-->
+
+<!--    // Before the form submits, build the real "images" file list from everything accumulated-->
+<!--    form.addEventListener('submit', () => {-->
+<!--      const dataTransfer = new DataTransfer();-->
+<!--      accumulatedFiles.forEach(file => dataTransfer.items.add(file));-->
+
+<!--      let hiddenImagesInput = document.getElementById('imagesSubmitInput');-->
+<!--      if (!hiddenImagesInput) {-->
+<!--        hiddenImagesInput = document.createElement('input');-->
+<!--        hiddenImagesInput.type = 'file';-->
+<!--        hiddenImagesInput.id = 'imagesSubmitInput';-->
+<!--        hiddenImagesInput.name = 'images';-->
+<!--        hiddenImagesInput.multiple = true;-->
+<!--        hiddenImagesInput.style.display = 'none';-->
+<!--        form.appendChild(hiddenImagesInput);-->
+<!--      }-->
+<!--      hiddenImagesInput.files = dataTransfer.files;-->
+<!--    });-->
+<!--  })();-->
+<!--</script>-->
+
+<!--</body>-->
+<!--</html>-->
+
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>List a New Property – ULEE</title>
-  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
-  <style>
-    :root {
-      --primary: hsl(180, 67%, 47%);
-      --primary-dark: hsl(180, 67%, 36%);
-      --bg: hsl(0, 0%, 99%);
-      --text: #1a1a1a;
-      --muted: #777;
-      --white: #ffffff;
-      --border: hsl(180, 20%, 88%);
-      --shadow-md: 0 6px 28px rgba(0,0,0,0.13);
-      --radius: 12px;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Sora', sans-serif; background: var(--bg); color: var(--text); }
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
-    .wrap { max-width: 640px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
-    h1 { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 6px; }
-    .page-sub { font-size: 13.5px; color: var(--muted); margin-bottom: 24px; }
-
-    .form-card {
-      background: var(--white); border-radius: var(--radius);
-      box-shadow: var(--shadow-md); border: 1px solid var(--border);
-      padding: 28px; display: flex; flex-direction: column; gap: 16px;
-    }
-    .field { display: flex; flex-direction: column; gap: 6px; }
-    .field label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text); }
-    .field input, .field select, .field textarea {
-      font-family: 'Sora', sans-serif; font-size: 14px; padding: 10px 14px;
-      border: 1.5px solid var(--border); border-radius: 8px; color: var(--text);
-      background: var(--white);
-    }
-    .field input:focus, .field select:focus, .field textarea:focus {
-      outline: none; border-color: var(--primary);
-    }
-    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .section-hint { font-size: 12px; color: var(--muted); margin-top: -8px; }
-
-    .actions { display: flex; gap: 12px; margin-top: 8px; }
-    .btn { flex: 1; text-align: center; border: none; border-radius: 8px; padding: 12px 0; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; }
-    .btn-save { background: var(--primary); color: #fff; }
-    .btn-save:hover { background: var(--primary-dark); }
-    .btn-cancel { background: hsl(0,0%,94%); color: var(--text); }
-
-    /* Amenities */
-    .amenity-group { display: flex; flex-direction: column; gap: 8px; }
-    .amenity-group-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--primary-dark); margin-top: 6px; }
-    .amenity-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; }
-    .amenity-item { display: flex; align-items: center; gap: 8px; font-size: 13.5px; }
-    .amenity-item label { text-transform: none; font-weight: 500; }
-
-    .upload-field input[type="file"] {
-      font-size: 13px; padding: 8px 10px; border: 1.5px dashed var(--border);
-      border-radius: 8px; background: hsl(180, 20%, 98%);
-    }
-
-    .feature-note {
-      font-size: 12.5px; color: var(--muted); background: hsl(180, 20%, 97%);
-      border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px;
-    }
-
-    .photo-preview-grid {
-      display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
-    }
-    .photo-preview-item {
-      position: relative; aspect-ratio: 1/1; border-radius: 8px; overflow: hidden;
-      border: 1.5px solid var(--border);
-    }
-    .photo-preview-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .photo-preview-item .remove-btn {
-      position: absolute; top: 4px; right: 4px; width: 20px; height: 20px;
-      border-radius: 50%; border: none; background: rgba(0,0,0,0.6); color: #fff;
-      font-size: 13px; line-height: 1; cursor: pointer; display: flex;
-      align-items: center; justify-content: center;
-    }
-    .photo-preview-item .remove-btn:hover { background: hsl(0, 65%, 52%); }
-    .btn-add-photos {
-      align-self: flex-start; background: hsl(180, 20%, 96%); color: var(--primary-dark);
-      border: 1.5px dashed var(--border); border-radius: 8px; padding: 10px 16px;
-      font-size: 13.5px; font-weight: 600; cursor: pointer; font-family: 'Sora', sans-serif;
-    }
-    .btn-add-photos:hover { background: hsl(180, 20%, 92%); }
-  </style>
+  <link rel="stylesheet" th:href="@{/landlord-style.css}" href="/landlord-style.css" />
+  <link rel="stylesheet" th:href="@{/listProperty.css}" href="/listProperty.css" />
 </head>
 <body>
 
-<div class="wrap">
-  <h1>List a New Property</h1>
-  <p class="page-sub">Fill in the details below — you can always come back and edit this listing afterward.</p>
+<header class="topbar">
+  <h1 class="topbar-title">List a New Property</h1>
+  <div style="display: flex; align-items: center; gap: 16px;">
+    <a th:href="@{/landlord-index}" href="/landlord-index" class="btn btn-secondary" style="display: inline-flex; align-items: center; text-decoration: none; font-size: 0.9rem; padding: 6px 14px;">
+      ← Back
+    </a>
+    <div class="avatar-initials" th:text="${userInitials != null ? userInitials : 'EH'}">EH</div>
+  </div>
+</header>
 
-  <form id="listPropertyForm" class="form-card" th:action="@{/list-property}" method="post" enctype="multipart/form-data">
-    <div class="field">
-      <label>Property Title</label>
-      <input type="text" name="title" placeholder="e.g. The Dunes" required />
+<main class="container" style="padding-top: 2rem;">
+  <!-- Clean Back Link -->
+  <div class="head-title">
+    <h1>List a New Property</h1>
+    <p>Follow the steps below to publish your student accommodation listing.</p>
+  </div>
+
+  <!-- Step Tracker -->
+  <div class="tracker-card">
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progressFill"></div>
+    </div>
+    <div class="steps-row" id="stepsTracker"></div>
+  </div>
+
+  <!-- Wizard Form -->
+  <form id="listPropertyForm" class="wizard-card" th:action="@{/listProperty}" method="post" enctype="multipart/form-data">
+
+    <div class="panel-content" id="stepPanel">
+      <!-- Rendered by JS -->
     </div>
 
-    <div class="row-2">
-      <div class="field">
-        <label>Room Type</label>
-        <select name="type">
-          <option value="" selected>Select a type</option>
-          <option value="Single Room">Single Room</option>
-          <option value="Sharing">Sharing</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Suburb</label>
-        <input type="text" name="city" placeholder="e.g. Summerstrand" />
-      </div>
-    </div>
-
-    <div class="field">
-      <label>Address</label>
-      <input type="text" name="address" placeholder="Full street address" />
-    </div>
-
-    <div class="field">
-      <label>Getting to Campus</label>
-      <select name="commuteType">
-        <option value="" selected>Select an option</option>
-        <option value="Walking distance">Walking distance</option>
-        <option value="Shuttle required">Shuttle required</option>
-      </select>
-    </div>
-
-    <div class="row-2">
-      <div class="field">
-        <label>Monthly Rent (R)</label>
-        <input type="number" step="0.01" name="rent" placeholder="0.00" />
-      </div>
-      <div class="field">
-        <label>Deposit (R)</label>
-        <input type="number" step="0.01" name="deposit" placeholder="0.00" />
+    <div class="actions-bar">
+      <button type="button" class="btn btn-secondary" id="prevBtn" onclick="navigateStep(-1)">← Back</button>
+      <div class="btn-group-right">
+        <button type="submit" class="btn btn-outline" id="draftBtn" onclick="setSubmitAction('draft')">Save Draft</button>
+        <button type="button" class="btn btn-primary" id="nextBtn" onclick="navigateStep(1)">Continue →</button>
       </div>
     </div>
-
-    <div class="field">
-      <label>Available From</label>
-      <select name="availableFrom">
-        <option value="" selected>Select a semester</option>
-        <option th:each="option : ${availableFromOptions}"
-                th:value="${#temporals.format(option, 'yyyy-MM-dd')}"
-                th:text="${#temporals.format(option, 'MMMM yyyy')}">
-        </option>
-      </select>
-    </div>
-
-    <div class="field">
-      <label>Description</label>
-      <textarea name="description" rows="5" placeholder="Tell students what makes this place worth renting."></textarea>
-    </div>
-
-    <!-- Amenities, grouped by category -->
-    <div class="field">
-      <label>Amenities</label>
-      <p class="section-hint">Tick everything included with this room.</p>
-    </div>
-    <div class="amenity-group" th:each="entry : ${amenityCategories}">
-      <div class="amenity-group-title" th:text="${entry.key}">Category</div>
-      <div class="amenity-grid">
-        <div class="amenity-item" th:each="amenity : ${entry.value}">
-          <input type="checkbox" th:id="'amenity-' + ${amenity.amenityID}"
-                 name="amenityIds" th:value="${amenity.amenityID}" />
-          <label th:for="'amenity-' + ${amenity.amenityID}" th:text="${amenity.name}">Amenity</label>
-        </div>
-      </div>
-    </div>
-
-    <!-- Cover photo + additional photos -->
-    <div class="field upload-field">
-      <label for="coverImage">Cover Photo</label>
-      <input type="file" id="coverImage" name="coverImage" accept="image/*" />
-      <p class="section-hint">This is the main photo students see first on your listing.</p>
-    </div>
-
-    <div class="field upload-field">
-      <label>Additional Photos</label>
-      <div id="additionalPhotosPreview" class="photo-preview-grid"></div>
-      <button type="button" id="addPhotosBtn" class="btn-add-photos">+ Add Photos</button>
-      <input type="file" id="additionalPhotosInput" accept="image/*" multiple style="display:none;" />
-      <p class="section-hint">Add photos in as many rounds as you like — nothing already added gets replaced.</p>
-    </div>
-
-    <p class="feature-note">
-      Study hubs, braai areas, game rooms and other special features can be added once the listing is created — head to "Manage" on this property afterward.
-    </p>
 
     <input type="hidden" name="action" id="formAction" value="submit" />
-
-    <div class="actions">
-      <a class="btn btn-cancel" href="/landlord-index">Cancel</a>
-      <button type="submit" class="btn btn-cancel" onclick="document.getElementById('formAction').value='draft';">Save as Draft</button>
-      <button type="submit" class="btn btn-save" onclick="document.getElementById('formAction').value='submit';">List Property</button>
-    </div>
   </form>
-</div>
 
-<script>
-  (function () {
-    const addBtn = document.getElementById('addPhotosBtn');
-    const fileInput = document.getElementById('additionalPhotosInput');
-    const preview = document.getElementById('additionalPhotosPreview');
-    const form = document.querySelector('form[action*="list-property"]');
-    let accumulatedFiles = [];
+  <!-- Special-features prompt, shown after the Photos step. Kept outside
+       the <form> and using plain type="button"s so it can never itself
+       trigger a submit. -->
+  <div id="specialFeatureModal" class="modal-overlay">
+    <div class="modal-box">
+      <h3>Any special features?</h3>
+      <p>Things like a Braai Area, Study Hub, or Game Room that make this place stand out.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" onclick="closeSpecialModal(false)">No, skip to Review</button>
+        <button type="button" class="btn btn-primary" onclick="closeSpecialModal(true)">Yes, add features</button>
+      </div>
+    </div>
+  </div>
+</main>
 
-    addBtn.addEventListener('click', () => fileInput.click());
+<style>
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal-box {
+    background: #fff;
+    border-radius: 12px;
+    padding: 28px;
+    max-width: 380px;
+    width: 90%;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  /*<!--making the header stick at the top -->*/
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .modal-box h3 { margin: 0 0 8px; font-size: 1.15rem; }
+  .modal-box p { margin: 0 0 20px; color: #666; font-size: 0.9rem; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+</style>
 
-    fileInput.addEventListener('change', () => {
-      for (const file of fileInput.files) {
-        accumulatedFiles.push(file);
-      }
-      fileInput.value = ''; // reset so picking again fires 'change' even for the same file
-      renderPreviews();
-    });
-
-    function renderPreviews() {
-      preview.innerHTML = '';
-      accumulatedFiles.forEach((file, index) => {
-        const item = document.createElement('div');
-        item.className = 'photo-preview-item';
-
-        const img = document.createElement('img');
-        img.src = URL.createObjectURL(file);
-        item.appendChild(img);
-
-        const removeBtn = document.createElement('button');
-        removeBtn.type = 'button';
-        removeBtn.className = 'remove-btn';
-        removeBtn.innerHTML = '&times;';
-        removeBtn.title = 'Remove photo';
-        removeBtn.addEventListener('click', () => {
-          accumulatedFiles.splice(index, 1);
-          renderPreviews();
-        });
-        item.appendChild(removeBtn);
-
-        preview.appendChild(item);
-      });
-    }
-
-    // Before the form submits, build the real "images" file list from everything accumulated
-    form.addEventListener('submit', () => {
-      const dataTransfer = new DataTransfer();
-      accumulatedFiles.forEach(file => dataTransfer.items.add(file));
-
-      let hiddenImagesInput = document.getElementById('imagesSubmitInput');
-      if (!hiddenImagesInput) {
-        hiddenImagesInput = document.createElement('input');
-        hiddenImagesInput.type = 'file';
-        hiddenImagesInput.id = 'imagesSubmitInput';
-        hiddenImagesInput.name = 'images';
-        hiddenImagesInput.multiple = true;
-        hiddenImagesInput.style.display = 'none';
-        form.appendChild(hiddenImagesInput);
-      }
-      hiddenImagesInput.files = dataTransfer.files;
-    });
-  })();
+<!--
+  Passes the real amenity list (grouped by category) from the controller's
+  model straight into the wizard's JS as JSON. This is what lets the
+  Amenities step render your actual database rows instead of a hardcoded
+  placeholder list, and keeps the two permanently in sync.
+-->
+<script th:inline="javascript">
+  /*<![CDATA[*/
+  window.AMENITY_CATEGORIES = /*[[${amenityCategories}]]*/ {};
+  /*]]>*/
 </script>
-
+<script th:src="@{/listProperty.js}" src="/listProperty.js"></script>
 </body>
 </html>

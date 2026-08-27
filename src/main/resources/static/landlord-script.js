@@ -1,7 +1,7 @@
+
 // ==========================================================
 // ULEE — Landlord Dashboard (My Properties)
-// Cards are now server-rendered by Thymeleaf in landlord-index.html.
-// This script only filters/sorts/handles the already-rendered DOM.
+// Handles client-side filtering, sorting, and dynamic metric navigation.
 // ==========================================================
 
 let activeFilter = "all";
@@ -16,7 +16,7 @@ function applyFilterAndSort() {
   const grid = document.getElementById("propertyGrid");
   const emptyState = document.getElementById("filterEmptyState");
 
-  // Filter
+  // Filter logic
   let visibleCount = 0;
   cards.forEach(card => {
     const matches = activeFilter === "all" || card.dataset.status === activeFilter;
@@ -24,9 +24,11 @@ function applyFilterAndSort() {
     if (matches) visibleCount++;
   });
 
-  emptyState.style.display = visibleCount === 0 ? "block" : "none";
+  if (emptyState) {
+    emptyState.style.display = visibleCount === 0 ? "block" : "none";
+  }
 
-  // Sort (re-append in new order; hidden cards move with their sorted position, harmless)
+  // Sort logic
   const sorted = cards.slice().sort((a, b) => {
     if (activeSort === "name-asc") {
       return a.dataset.name.localeCompare(b.dataset.name);
@@ -34,7 +36,7 @@ function applyFilterAndSort() {
     if (activeSort === "rent-desc") {
       return parseFloat(b.dataset.rent) - parseFloat(a.dataset.rent);
     }
-    return 0; // "date-added" — keep server-provided order
+    return 0; // "date-added" — preserves server sequence
   });
 
   sorted.forEach(card => grid.appendChild(card));
@@ -71,11 +73,21 @@ function initSort() {
 }
 
 function initMetricLinks() {
+  // "Awaiting Review" now shows PROPERTIES pending admin approval (see
+  // PropertyController.viewLandlordDashboard's awaitingApprovalCount), so
+  // clicking it should filter this same page down to Pending Approval —
+  // not navigate away to Applications, which is a different concept
+  // entirely (student applications waiting on the landlord, not
+  // properties waiting on the admin).
   const pendingCard = document.getElementById("statPendingApplications")?.closest(".stat-card");
   if (pendingCard) {
     pendingCard.style.cursor = "pointer";
     pendingCard.addEventListener("click", () => {
-      window.location.href = "/manage-applications";
+      const pendingChip = document.querySelector('.chip[data-filter="pending"]');
+      if (pendingChip) {
+        pendingChip.click(); // reuses the exact same logic as clicking the chip by hand
+      }
+      document.getElementById("propertyGrid")?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   }
 
@@ -83,7 +95,7 @@ function initMetricLinks() {
   if (totalCard) {
     totalCard.style.cursor = "pointer";
     totalCard.addEventListener("click", () => {
-      document.getElementById("propertyGrid").scrollIntoView({ behavior: "smooth", block: "start" });
+      document.getElementById("propertyGrid")?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   }
 }

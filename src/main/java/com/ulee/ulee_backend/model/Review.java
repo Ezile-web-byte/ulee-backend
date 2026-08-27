@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "reviews")
+@Table(name = "review")
 public class Review {
 
     @Id
@@ -14,11 +14,21 @@ public class Review {
     private Integer studentID;
     private Integer propertyID;
     private Integer rating;
-
-    @Column(columnDefinition = "TEXT")
     private String comment;
-
     private LocalDateTime reviewDate;
+
+    // Landlord's reply to this review (already existed in the DB before
+    // this change — carried over here so this stays a complete, drop-in
+    // replacement for the entity).
+    private String landlordResponse;
+    private LocalDateTime responseDate;
+
+    // Flag a review as reported (e.g. abusive, spam, off-topic). Mirrors
+    // the isReported/reportReason pattern already used on Property.
+    // "Mark Resolved" on the landlord Reviews page clears this back to
+    // false without deleting the underlying review.
+    private Boolean isReported;
+    private String reportReason;
 
     public Integer getReviewID() { return reviewID; }
     public void setReviewID(Integer reviewID) { this.reviewID = reviewID; }
@@ -37,4 +47,16 @@ public class Review {
 
     public LocalDateTime getReviewDate() { return reviewDate; }
     public void setReviewDate(LocalDateTime reviewDate) { this.reviewDate = reviewDate; }
+
+    public String getLandlordResponse() { return landlordResponse; }
+    public void setLandlordResponse(String landlordResponse) { this.landlordResponse = landlordResponse; }
+
+    public LocalDateTime getResponseDate() { return responseDate; }
+    public void setResponseDate(LocalDateTime responseDate) { this.responseDate = responseDate; }
+
+    public Boolean getIsReported() { return isReported; }
+    public void setIsReported(Boolean isReported) { this.isReported = isReported; }
+
+    public String getReportReason() { return reportReason; }
+    public void setReportReason(String reportReason) { this.reportReason = reportReason; }
 }

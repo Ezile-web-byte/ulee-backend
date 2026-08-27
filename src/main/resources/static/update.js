@@ -1,141 +1,154 @@
-  /* ── Sidebar toggle ── */
-  const sidebar  = document.getElementById('sidebar');
-  const mainWrap = document.getElementById('mainWrap');
-  const topbar   = document.getElementById('topbar');
+// edit-property.js — Manage Property, free-navigation editor.
+//
+// Unlike the creation wizard (listProperty.js), this page's HTML is fully
+// server-rendered by Thymeleaf in one pass: every field for every step is
+// already present in the DOM as a real named <input>/<select>/<textarea>
+// from the moment the page loads. This script never removes or rebuilds
+// those elements — it only toggles which .edit-step container is visible.
+// That means there's no need to track a separate `state` object or
+// re-inject hidden fields before submit (the pattern listProperty.js uses):
+// every field the landlord has ever touched, on any step, is already
+// sitting in the <form> and gets submitted together automatically on Save,
+// no matter which step happens to be showing at the time.
 
-  function toggleSidebar() {
-    sidebar.classList.toggle('collapsed');
-    const w = sidebar.classList.contains('collapsed')
-      ? 'var(--sidebar-w-col)' : 'var(--sidebar-w)';
-    mainWrap.style.marginLeft = w;
-    topbar.style.left = w;
+const EDIT_STEPS = [
+  { label: 'Review' },
+  { label: 'Basic Info' },
+  { label: 'Pricing & Location' },
+  { label: 'Description' },
+  { label: 'Amenities' },
+  { label: 'Photos' }
+];
+
+let editCurrentStep = 0;
+
+function renderEditTracker() {
+  const tracker = document.getElementById('editStepsTracker');
+  const fill = document.getElementById('editProgressFill');
+  if (!tracker) return;
+
+  if (fill) {
+    const pct = ((editCurrentStep + 1) / EDIT_STEPS.length) * 100;
+    fill.style.width = `${pct}%`;
   }
 
-  function navClick(el) {
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    el.classList.add('active');
-  }
+  // No "completed" checkmarks here (unlike the creation wizard) — this
+  // editor is non-linear, so only the current step is highlighted.
+  tracker.innerHTML = EDIT_STEPS.map((s, i) => `
+    <div class="step-node ${i === editCurrentStep ? 'active' : ''}" onclick="goToEditStep(${i})">
+      <div class="node-circle">${i + 1}</div>
+      <div class="node-label">${s.label}</div>
+    </div>
+  `).join('');
+}
 
-  /* ── Notification dropdown ── */
-  const notifBtn = document.getElementById('notifBtn');
-  const notifDD  = document.getElementById('notifDropdown');
-  function toggleNotif() { notifBtn.classList.toggle('notif-open'); }
-  document.addEventListener('click', e => {
-    if (!notifBtn.contains(e.target)) notifBtn.classList.remove('notif-open');
+// The only navigation function the rest of the page needs — tracker nodes,
+// Review row clicks, and the optional Back/Next buttons all just call this.
+function goToEditStep(idx) {
+  editCurrentStep = Math.max(0, Math.min(EDIT_STEPS.length - 1, idx));
+
+  document.querySelectorAll('.edit-step').forEach(el => {
+    el.style.display = (parseInt(el.dataset.step, 10) === editCurrentStep) ? '' : 'none';
   });
 
-  /* ── Property data ── */
-  const properties = [
-    { name: 'Summerstrand Studio',      type: 'Studio Apartment',       loc: 'Summerstrand, Port Elizabeth', price: 4500, beds: 1, baths: 1, occ: 2, date: '2025-07-01', status: 'available', desc: 'Cozy studio apartment perfect for NMU students, located just 5 minutes from the main campus. Features high-speed WiFi, backup power, and a secure gate. The unit comes with a kitchenette, private bathroom, and study desk. Bills are included in the rent. Safe neighbourhood with 24/7 security cameras.' },
-    { name: 'North End 2-Bed Apartment', type: '2-Bedroom Apartment',   loc: 'North End, Port Elizabeth',   price: 7200, beds: 2, baths: 1, occ: 4, date: '2025-08-01', status: 'rented',    desc: 'Spacious two-bedroom apartment in North End, close to transport links and NMU. Fully furnished with all major appliances. Shared kitchen and lounge area. Secure complex with parking.' },
-    { name: 'Walmer Heights Room',       type: 'Room in Shared House',   loc: 'Walmer, Port Elizabeth',      price: 3100, beds: 1, baths: 1, occ: 1, date: '2025-06-15', status: 'available', desc: 'Single room in a quiet shared house in Walmer. Ideal for focused students. Comes with a study desk, wardrobe, and shared kitchen. Shuttle service nearby.' },
-    { name: 'Central Campus Flat',       type: '1-Bedroom Apartment',    loc: 'Central, Port Elizabeth',     price: 5800, beds: 1, baths: 1, occ: 2, date: '2025-07-15', status: 'available', desc: 'Modern 1-bedroom flat centrally located. Walking distance to NMU. High-speed internet, backup power, and laundry facilities on site.' },
-    { name: 'Newton Park Bachelor',      type: 'Bachelor Flat',          loc: 'Newton Park, Port Elizabeth', price: 2900, beds: 0, baths: 1, occ: 1, date: '2025-06-01', status: 'rented',    desc: 'Affordable bachelor flat great for first-year students. All utilities included. Close to public transport.' },
-    { name: 'Greenacres Garden Unit',    type: '1-Bedroom Apartment',    loc: 'Greenacres, Port Elizabeth',  price: 6400, beds: 1, baths: 1, occ: 2, date: '2025-08-15', status: 'available', desc: 'Beautiful garden unit in Greenacres. Private garden patio, fully furnished, with study area and secure parking.' },
+  if (editCurrentStep === 0) renderReviewSummary();
+
+  renderEditTracker();
+  updateEditNavButtons();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateEditNavButtons() {
+  const prevBtn = document.getElementById('editPrevBtn');
+  const nextBtn = document.getElementById('editNextBtn');
+  if (prevBtn) prevBtn.style.visibility = editCurrentStep === 0 ? 'hidden' : 'visible';
+  if (nextBtn) nextBtn.style.visibility = editCurrentStep === EDIT_STEPS.length - 1 ? 'hidden' : 'visible';
+}
+
+// Same interaction as the creation wizard's tile selector: clicking a tile
+// checks its radio and toggles the "selected" class among its siblings.
+// Native :checked styling isn't used by listProperty.css, so this class
+// toggle is required for the visual state to update.
+function selectEditTile(element, fieldName) {
+  const container = element.closest('.tile-selector');
+  container.querySelectorAll('.tile-option').forEach(el => el.classList.remove('selected'));
+  element.classList.add('selected');
+  const input = element.querySelector('input');
+  input.checked = true;
+  if (editCurrentStep === 0) renderReviewSummary();
+}
+
+// Builds the live Review summary by reading straight off the real form
+// fields — so it always reflects whatever the landlord has typed so far,
+// even before Save is clicked. Each row is clickable and jumps to the step
+// that field lives on.
+function renderReviewSummary() {
+  const container = document.getElementById('reviewSummaryBody');
+  if (!container) return;
+
+  const form = document.getElementById('editPropertyForm');
+  const val = (name) => {
+    const el = form.querySelector(`[name="${name}"]`);
+    return el ? (el.value || '') : '';
+  };
+  const checkedRadioValue = (name) => {
+    const el = form.querySelector(`input[name="${name}"]:checked`);
+    return el ? el.value : '';
+  };
+  const selectedOptionText = (name) => {
+    const el = form.querySelector(`select[name="${name}"]`);
+    if (!el || el.selectedIndex < 0) return '';
+    return el.options[el.selectedIndex].text || '';
+  };
+
+  const amenityLabels = Array.from(form.querySelectorAll('input[name="amenityIds"]:checked'))
+      .map(cb => {
+        const label = cb.closest('.amenity-card-item')?.querySelector('label');
+        return label ? label.textContent.trim() : cb.value;
+      });
+
+  const photoCount = document.querySelectorAll('.gallery-item').length;
+
+  const rows = [
+    { label: 'Title', value: val('title') || '—', step: 1 },
+    { label: 'Room Type', value: checkedRadioValue('type') || '—', step: 1 },
+    { label: 'Monthly Rent', value: val('rent') ? `R${val('rent')}` : '—', step: 2 },
+    { label: 'Deposit', value: val('deposit') ? `R${val('deposit')}` : '—', step: 2 },
+    { label: 'Location', value: [val('address'), val('city')].filter(Boolean).join(', ') || '—', step: 2 },
+    { label: 'Commute', value: checkedRadioValue('commuteType') || '—', step: 2 },
+    { label: 'Available From', value: selectedOptionText('availableFrom') || 'Not set', step: 2 },
+    { label: 'Description', value: val('description') ? (val('description').length > 80 ? val('description').slice(0, 80) + '…' : val('description')) : '—', step: 3 },
+    { label: 'Amenities', value: amenityLabels.length ? `${amenityLabels.length} selected` : 'None selected', step: 4 },
+    { label: 'Photos', value: `${photoCount} uploaded`, step: 5 }
   ];
 
-  let currentIdx = -1;
+  container.innerHTML = rows.map(r => `
+    <div class="review-row" onclick="goToEditStep(${r.step})" title="Click to edit">
+      <span class="review-key">${escapeHtmlEdit(r.label)}</span>
+      <span class="review-val">${escapeHtmlEdit(r.value)}</span>
+    </div>
+  `).join('');
+}
 
-  function selectCard(el, idx) {
-    /* Deselect all */
-    document.querySelectorAll('.prop-card').forEach(c => c.classList.remove('selected'));
-    el.classList.add('selected');
-    currentIdx = idx;
-    loadForm(idx);
-  }
+function escapeHtmlEdit(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
 
-  function loadForm(idx) {
-    const p = properties[idx];
-    document.getElementById('formTitle').textContent = 'Edit: ' + p.name;
-    document.getElementById('formSubtitle').textContent = p.loc;
-    document.getElementById('propTitle').value  = p.name;
-    document.getElementById('propLoc').value    = p.loc;
-    document.getElementById('propPrice').value  = p.price;
-    document.getElementById('bedrooms').value   = p.beds;
-    document.getElementById('bathrooms').value  = p.baths;
-    document.getElementById('maxOcc').value     = p.occ;
-    document.getElementById('availDate').value  = p.date;
-    document.getElementById('propDesc').value   = p.desc;
+document.addEventListener('DOMContentLoaded', () => {
+  renderEditTracker();
+  goToEditStep(0); // land on Review by default, per spec
 
-    /* Set type */
-    const sel = document.getElementById('propType');
-    for (let i = 0; i < sel.options.length; i++) {
-      if (sel.options[i].text === p.type) { sel.selectedIndex = i; break; }
-    }
-
-    /* Status toggle */
-    setStatus(p.status);
-
-    /* Show form */
-    const wrap = document.getElementById('editFormWrap');
-    wrap.classList.add('visible');
-    setTimeout(() => wrap.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
-  }
-
-  function closeForm() {
-    document.getElementById('editFormWrap').classList.remove('visible');
-    document.querySelectorAll('.prop-card').forEach(c => c.classList.remove('selected'));
-    currentIdx = -1;
-  }
-
-  /* ── Status toggle ── */
-  function setStatus(val) {
-    const a = document.getElementById('toggleAvail');
-    const r = document.getElementById('toggleRented');
-    a.className = 'toggle-opt' + (val === 'available' ? ' active-available' : '');
-    r.className = 'toggle-opt' + (val === 'rented'    ? ' active-rented'    : '');
-  }
-
-  /* ── Amenity chips ── */
-  function toggleChip(el) { el.classList.toggle('selected'); }
-
-  /* ── Remove image ── */
-  function removeImg(id) {
-    const el = document.getElementById(id);
-    if (el) { el.style.opacity = '0'; setTimeout(() => el.remove(), 200); }
-  }
-
-  /* ── Preview new images ── */
-  function previewImages(e) {
-    const grid = document.getElementById('imagesGrid');
-    Array.from(e.target.files).forEach(file => {
-      const reader = new FileReader();
-      reader.onload = ev => {
-        const uid = 'img_' + Date.now() + Math.random().toString(36).slice(2);
-        const div = document.createElement('div');
-        div.className = 'img-thumb'; div.id = uid;
-        div.innerHTML = `<img src="${ev.target.result}" alt="new"/><div class="img-remove" onclick="removeImg('${uid}')">✕</div>`;
-        grid.appendChild(div);
-      };
-      reader.readAsDataURL(file);
+  // Keep the Review view live: if the landlord jumps to a step, edits a
+  // field, then jumps straight back to Review without visiting every step
+  // in order, the summary should still reflect the edit.
+  const form = document.getElementById('editPropertyForm');
+  if (form) {
+    form.addEventListener('input', () => {
+      if (editCurrentStep === 0) renderReviewSummary();
+    });
+    form.addEventListener('change', () => {
+      if (editCurrentStep === 0) renderReviewSummary();
     });
   }
-
-  /* ── Save changes ── */
-  function saveChanges() {
-    if (currentIdx < 0) return;
-    properties[currentIdx].name  = document.getElementById('propTitle').value;
-    properties[currentIdx].loc   = document.getElementById('propLoc').value;
-    properties[currentIdx].price = document.getElementById('propPrice').value;
-    properties[currentIdx].desc  = document.getElementById('propDesc').value;
-
-    const now = new Date().toLocaleTimeString();
-    document.getElementById('saveStatus').textContent = 'Last saved: ' + now;
-
-    /* Update card visually */
-    const cards = document.querySelectorAll('.prop-card');
-    if (cards[currentIdx]) {
-      cards[currentIdx].querySelector('.prop-card-title').textContent = properties[currentIdx].name;
-      cards[currentIdx].querySelector('.prop-card-loc').innerHTML     = '📍 ' + properties[currentIdx].loc;
-      cards[currentIdx].querySelector('.prop-price').innerHTML        = 'R' + Number(properties[currentIdx].price).toLocaleString() + ' <span>/month</span>';
-    }
-
-    showToast('✅ Property updated successfully!');
-  }
-
-  function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 3000);
-  }
+});

@@ -9,8 +9,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 
-import java.io.IOException;
-
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -20,24 +18,29 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-
-
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
-                        // Public: homepage, browsing, registration, static assets
+                        // Public: homepage, browsing, registration, ALL static assets
                         .requestMatchers(
                                 "/", "/student-dashboard", "/property/**", "/search",
-                                "/register", "/login", "/login-style.css", "/login-script.js",
+                                "/register", "/login",
+                                "/images/**", "/*.css", "/*.js",
+                                "/login-style.css", "/login-script.js",
                                 "/student-style.css", "/student-script.js",
                                 "/static/**", "/uploads/**"
                         ).permitAll()
-                        .requestMatchers("/landlord-index", "/list-property",
+
+                        // Landlord Protected Routes (ADD `/listProperty` HERE)
+                        .requestMatchers(
+                                "/landlord-index",
+                                "/listProperty",  // <-- BOTH MATCHED NOW
                                 "/edit-property/**", "/update-property/**", "/delete-property-image/**",
                                 "/add-property-feature/**", "/delete-property-feature/**", "/submit-property/**",
-                                "/toggle-property-status/**", "/manage-applications", "/my-property-reviews")
-                        .hasRole("LANDLORD")
+                                "/toggle-property-status/**", "/manage-applications", "/my-property-reviews"
+                        ).hasRole("LANDLORD")
+
                         .requestMatchers("/admin-dashboard").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
@@ -55,8 +58,6 @@ public class SecurityConfig {
 
         return http.build();
     }
-
-
 
     // Redirects each role to its own dashboard after successful login
     private AuthenticationSuccessHandler roleBasedSuccessHandler() {

@@ -4,74 +4,48 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title th:text="'Edit ' + ${property.title} + ' – ULEE'">Edit Property</title>
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <link rel="stylesheet" th:href="@{/landlord-style.css}" href="/landlord-style.css" />
+
+    <!-- Reuses the exact same stylesheet as the creation wizard, so both
+         forms share one visual language. -->
+    <link rel="stylesheet" th:href="@{/listProperty.css}" href="/listProperty.css" />
+
     <style>
-        :root {
-            --primary: hsl(180, 67%, 47%);
-            --primary-dark: hsl(180, 67%, 36%);
-            --bg: hsl(0, 0%, 99%);
-            --text: #1a1a1a;
-            --muted: #777;
-            --white: #ffffff;
-            --border: hsl(180, 20%, 88%);
-            --danger: hsl(0, 65%, 52%);
-            --shadow-md: 0 6px 28px rgba(0,0,0,0.13);
-            --radius: 12px;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Sora', sans-serif; background: var(--bg); color: var(--text); }
+        /* ── Pieces specific to Manage Property that listProperty.css doesn't
+             define: the existing-photo gallery (with Main badge + delete
+             button), the Special Features cards, the status note, and the
+             danger-styled Deactivate button. Everything else below (tracker,
+             wizard-card, panel-content, f-grid, field, tile-selector,
+             amenity-cat, review-table, actions-bar, btn) comes straight from
+             listProperty.css's shared design tokens. ── */
 
-        .wrap { max-width: 680px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
-        h1 { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 24px; }
-        h2 { font-family: 'Playfair Display', serif; font-size: 17px; margin: 4px 0 2px; }
-
-        .form-card {
-            background: var(--white); border-radius: var(--radius);
-            box-shadow: var(--shadow-md); border: 1px solid var(--border);
-            padding: 28px; display: flex; flex-direction: column; gap: 16px;
-            margin-bottom: 20px;
+        .status-note {
+            font-size: 13px; color: var(--pdd); background: var(--pl2);
+            border: 1px solid var(--border); border-radius: var(--r-sm);
+            padding: 12px 16px; margin-bottom: 20px;
         }
-        .field { display: flex; flex-direction: column; gap: 6px; }
-        .field label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text); }
-        .field input, .field select, .field textarea {
-            font-family: 'Sora', sans-serif; font-size: 14px; padding: 10px 14px;
-            border: 1.5px solid var(--border); border-radius: 8px; color: var(--text);
-            background: var(--white);
-        }
-        .field input:focus, .field select:focus, .field textarea:focus {
-            outline: none; border-color: var(--primary);
-        }
-        .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-        .section-hint { font-size: 12px; color: var(--muted); margin-top: -8px; }
 
-        .actions { display: flex; gap: 12px; margin-top: 8px; }
-        .btn { border: none; border-radius: 8px; padding: 12px 0; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; text-align: center; }
-        .btn-save { flex: 1; background: var(--primary); color: #fff; }
-        .btn-save:hover { background: var(--primary-dark); }
-        .btn-cancel { flex: 1; background: hsl(0,0%,94%); color: var(--text); }
-        .btn-add { background: var(--primary); color: #fff; padding: 10px 18px; align-self: flex-start; }
-        .btn-add:hover { background: var(--primary-dark); }
-        .btn-delete {
-            width: 100%; background: var(--white); color: var(--danger);
-            border: 1.5px solid var(--danger);
+        .side-card {
+            background: var(--white); border: 1px solid var(--border);
+            border-radius: var(--r-lg); box-shadow: var(--shadow-sm);
+            padding: 28px; margin-top: 24px;
         }
-        .btn-delete:hover { background: hsl(0, 65%, 96%); }
+        .side-card h2 {
+            font-family: var(--font-display); font-size: 18px; color: var(--pdd);
+            margin-bottom: 4px;
+        }
+        .side-card .hint-text { margin-bottom: 14px; }
 
-        /* Amenities */
-        .amenity-group { display: flex; flex-direction: column; gap: 8px; }
-        .amenity-group-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--primary-dark); margin-top: 6px; }
-        .amenity-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; }
-        .amenity-item { display: flex; align-items: center; gap: 8px; font-size: 13.5px; }
-        .amenity-item label { text-transform: none; font-weight: 500; }
-
-        /* Photo gallery */
-        .gallery-section { display: flex; flex-direction: column; gap: 10px; }
-        .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .gallery-item { position: relative; border-radius: 8px; overflow: hidden; border: 1.5px solid var(--border); aspect-ratio: 1 / 1; }
+        .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .gallery-item { position: relative; border-radius: var(--r-sm); overflow: hidden; border: 1.5px solid var(--border); aspect-ratio: 1/1; }
         .gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .gallery-item .main-badge {
-            position: absolute; top: 6px; left: 6px; background: var(--primary);
-            color: #fff; font-size: 10px; font-weight: 600; text-transform: uppercase;
+            position: absolute; top: 6px; left: 6px; background: var(--p);
+            color: #fff; font-size: 10px; font-weight: 700; text-transform: uppercase;
             letter-spacing: 0.03em; padding: 3px 7px; border-radius: 5px;
         }
         .gallery-item .delete-btn {
@@ -80,163 +54,271 @@
             background: rgba(0,0,0,0.55); color: #fff; font-size: 14px; line-height: 1;
             cursor: pointer; display: flex; align-items: center; justify-content: center;
         }
-        .gallery-item .delete-btn:hover { background: var(--danger); }
-        .gallery-empty { font-size: 13px; color: var(--muted); }
-        .upload-field input[type="file"] {
-            font-size: 13px; padding: 8px 10px; border: 1.5px dashed var(--border);
-            border-radius: 8px; background: hsl(180, 20%, 98%);
-        }
+        .gallery-item .delete-btn:hover { background: hsl(0, 65%, 52%); }
+        .gallery-empty { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
 
-        /* Special features */
         .feature-card {
-            border: 1.5px solid var(--border); border-radius: 10px; padding: 16px;
-            display: flex; flex-direction: column; gap: 10px; position: relative;
+            border: 1.5px solid var(--border); border-radius: var(--r-sm); padding: 16px;
+            display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;
         }
         .feature-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
-        .feature-name { font-weight: 700; font-size: 14.5px; }
+        .feature-name { font-weight: 700; font-size: 14.5px; color: var(--txt); }
         .feature-desc { font-size: 13px; color: var(--muted); }
         .feature-photos { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
         .feature-photos img { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); }
         .feature-delete-btn {
             background: none; border: 1.5px solid var(--border); border-radius: 7px;
-            padding: 5px 10px; font-size: 12px; font-weight: 600; color: var(--danger);
+            padding: 5px 10px; font-size: 12px; font-weight: 600; color: hsl(0, 65%, 52%);
             cursor: pointer; white-space: nowrap;
         }
-        .feature-delete-btn:hover { background: hsl(0, 65%, 96%); border-color: var(--danger); }
+        .feature-delete-btn:hover { background: hsl(0, 65%, 96%); border-color: hsl(0, 65%, 52%); }
         .no-features { font-size: 13px; color: var(--muted); }
+        .add-feature-form { border-top: 1px dashed var(--border); padding-top: 16px; display: flex; flex-direction: column; gap: 14px; margin-top: 6px; }
 
-        .add-feature-form { border-top: 1px dashed var(--border); padding-top: 16px; display: flex; flex-direction: column; gap: 12px; }
-
-        .status-note {
-            font-size: 12.5px; color: var(--primary-dark); background: hsl(180, 20%, 97%);
-            border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px;
-            margin-bottom: -4px;
+        .btn-delete {
+            width: 100%; background: var(--white); color: hsl(0, 65%, 52%);
+            border: 1.5px solid hsl(0, 65%, 52%);
         }
+        .btn-delete:hover { background: hsl(0, 65%, 96%); }
+
+        /* Review rows in Manage Property are clickable — creation wizard's
+           review-table is read-only, so we only add the interaction affordance
+           here without touching the shared class. */
+        #reviewSummaryBody .review-row { cursor: pointer; transition: background 0.15s ease; }
+        #reviewSummaryBody .review-row:hover { background: var(--pl2); }
     </style>
 </head>
 <body>
 
-<div class="wrap">
-    <h1>Edit Property</h1>
+<header class="topbar">
+    <h1 class="topbar-title" th:text="'Edit ' + ${property.title}">Edit Property</h1>
+    <div style="display: flex; align-items: center; gap: 16px;">
+        <a th:href="@{/landlord-index}" href="/landlord-index" class="btn btn-secondary" style="display: inline-flex; align-items: center; text-decoration: none; font-size: 0.9rem; padding: 6px 14px;">
+            ← Back
+        </a>
+        <div class="avatar-initials" th:text="${userInitials != null ? userInitials : 'EH'}">EH</div>
+    </div>
+</header>
+
+<main class="container" style="padding-top: 2rem;">
+    <div class="head-title">
+        <h1 th:text="'Edit ' + ${property.title}">Edit Property</h1>
+        <p>Jump to any section below and make your changes — one Save applies everything.</p>
+    </div>
 
     <p class="status-note" th:if="${property.status == 'Draft'}">
         This listing is still a <strong>Draft</strong>. It won't be visible to students until you fill in the required fields and hit "Save Changes" to submit it for approval.
     </p>
 
-    <!-- Core property details -->
-    <form id="editPropertyForm" class="form-card" th:action="@{/update-property/{id}(id=${property.propertyID})}" method="post" enctype="multipart/form-data">
-        <div class="field">
-            <label>Property Title</label>
-            <input type="text" name="title" th:value="${property.title}" required />
+    <!-- Step Tracker — jumps to any step from anywhere -->
+    <div class="tracker-card">
+        <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="editProgressFill"></div>
         </div>
+        <div class="steps-row" id="editStepsTracker"></div>
+    </div>
 
-        <div class="row-2">
-            <div class="field">
-                <label>Room Type</label>
-                <select name="type" required>
-                    <option value="Single Room" th:selected="${property.type == 'Single Room'}">Single Room</option>
-                    <option value="Sharing" th:selected="${property.type == 'Sharing'}">Sharing</option>
-                </select>
-            </div>
-            <div class="field">
-                <label>Suburb</label>
-                <input type="text" name="city" th:value="${property.city}" placeholder="e.g. Summerstrand" />
-            </div>
-        </div>
+    <form id="editPropertyForm" class="wizard-card" th:action="@{/update-property/{id}(id=${property.propertyID})}" method="post" enctype="multipart/form-data">
 
-        <div class="field">
-            <label>Address</label>
-            <input type="text" name="address" th:value="${property.address}" required />
-        </div>
+        <div class="panel-content">
 
-        <div class="row-2">
-            <div class="field">
-                <label>Monthly Rent (R)</label>
-                <input type="number" step="0.01" name="rent" th:value="${property.rent}" required />
-            </div>
-            <div class="field">
-                <label>Deposit (R)</label>
-                <input type="number" step="0.01" name="deposit" th:value="${property.deposit}" />
-            </div>
-        </div>
-
-        <div class="field">
-            <label>Available From</label>
-            <select name="availableFrom">
-                <option value="">Select a semester</option>
-                <option th:each="option : ${availableFromOptions}"
-                        th:value="${#temporals.format(option, 'yyyy-MM-dd')}"
-                        th:text="${#temporals.format(option, 'MMMM yyyy')}"
-                        th:selected="${option == property.availableFrom}">
-                </option>
-            </select>
-        </div>
-
-        <div class="field">
-            <label>Description</label>
-            <textarea name="description" rows="5" th:text="${property.description}"></textarea>
-        </div>
-
-        <!-- Amenities, grouped by category -->
-        <div class="field">
-            <label>Amenities</label>
-            <p class="section-hint">Tick everything included with this room.</p>
-        </div>
-        <div class="amenity-group" th:each="entry : ${amenityCategories}">
-            <div class="amenity-group-title" th:text="${entry.key}">Category</div>
-            <div class="amenity-grid">
-                <div class="amenity-item" th:each="amenity : ${entry.value}">
-                    <input type="checkbox" th:id="'amenity-' + ${amenity.amenityID}"
-                           name="amenityIds" th:value="${amenity.amenityID}"
-                           th:checked="${selectedAmenityIds.contains(amenity.amenityID)}" />
-                    <label th:for="'amenity-' + ${amenity.amenityID}" th:text="${amenity.name}">Amenity</label>
+            <!-- Step 0 — Review (default landing). Built live by edit-property.js
+                 from whatever's currently in the real fields below, so it always
+                 reflects the latest edits even when you jump around out of order. -->
+            <div class="edit-step" data-step="0">
+                <div class="panel-header">
+                    <h2>Review</h2>
+                    <p>Click any row to jump straight to that section and edit it.</p>
                 </div>
+                <div class="review-table" id="reviewSummaryBody"></div>
             </div>
-        </div>
 
-        <!--
-            Photo gallery: existing images.
-            IMPORTANT: each delete button is bound to THIS form via form="editPropertyForm"
-            plus formaction/formmethod — it is NOT its own nested <form>. Nested <form>
-            elements are invalid HTML; the browser silently closes the outer form at the
-            first nested </form> it hits, which orphans everything after it in the markup
-            (including the Save Draft / Save Changes buttons below) so they stop submitting
-            entirely once a property has at least one photo. This pattern avoids that.
-        -->
-        <div class="gallery-section">
-            <label style="font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.03em;">Photos</label>
-
-            <div class="gallery-grid" th:if="${!images.isEmpty()}">
-                <div class="gallery-item" th:each="img : ${images}">
-                    <img th:src="${img.url}" alt="Property photo" />
-                    <span class="main-badge" th:if="${img.isMain}">Main</span>
-
-                    <button type="submit"
-                            class="delete-btn"
-                            title="Delete photo"
-                            form="editPropertyForm"
-                            th:formaction="@{/delete-property-image/{imageId}(imageId=${img.imageID})}"
-                            formmethod="post"
-                            formnovalidate
-                            onclick="return confirm('Remove this photo?');">&times;</button>
+            <!-- Step 1 — Basic Info -->
+            <div class="edit-step" data-step="1">
+                <div class="panel-header">
+                    <h2>Basic Info & Accommodation Type</h2>
+                    <p>The title students see first, and the room setup.</p>
+                </div>
+                <div class="f-grid">
+                    <div class="field f-col-2">
+                        <label>Property Title</label>
+                        <input type="text" name="title" th:value="${property.title}" required />
+                    </div>
+                    <div class="field f-col-2">
+                        <label>Room Type</label>
+                        <div class="tile-selector">
+                            <label class="tile-option" th:classappend="${property.type == 'Single Room'} ? 'selected'" onclick="selectEditTile(this, 'type')">
+                                <input type="radio" name="type" value="Single Room" th:checked="${property.type == 'Single Room'}" />
+                                <span class="tile-icon">🛏️</span>
+                                <span class="tile-text">
+                  <span class="tile-title">Single Room</span>
+                  <span class="hint-text">Private bedroom for one student</span>
+                </span>
+                            </label>
+                            <label class="tile-option" th:classappend="${property.type == 'Sharing'} ? 'selected'" onclick="selectEditTile(this, 'type')">
+                                <input type="radio" name="type" value="Sharing" th:checked="${property.type == 'Sharing'}" />
+                                <span class="tile-icon">👥</span>
+                                <span class="tile-text">
+                  <span class="tile-title">Sharing Room</span>
+                  <span class="hint-text">Shared bedroom arrangement</span>
+                </span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="field f-col-2">
+                        <label>Capacity (number of students this listing can hold)</label>
+                        <input type="number" name="capacity" min="1" step="1"
+                               th:value="${property.capacity != null ? property.capacity : 1}" required />
+                        <p class="hint-text">This is what caps how many applications you can accept for this property.</p>
+                    </div>
                 </div>
             </div>
 
-            <p class="gallery-empty" th:if="${images.isEmpty()}">No photos uploaded yet.</p>
+            <!-- Step 2 — Pricing & Location -->
+            <div class="edit-step" data-step="2">
+                <div class="panel-header">
+                    <h2>Pricing & Location Details</h2>
+                    <p>Rent, deposit, and where students will find you.</p>
+                </div>
+                <div class="f-grid f-grid-2">
+                    <div class="field">
+                        <label>Monthly Rent (R)</label>
+                        <input type="number" step="0.01" name="rent" th:value="${property.rent}" required />
+                    </div>
+                    <div class="field">
+                        <label>Deposit (R)</label>
+                        <input type="number" step="0.01" name="deposit" th:value="${property.deposit}" />
+                    </div>
+                    <div class="field">
+                        <label>Suburb</label>
+                        <input type="text" name="city" th:value="${property.city}" placeholder="e.g. Summerstrand" />
+                    </div>
+                    <div class="field">
+                        <label>Full Address</label>
+                        <input type="text" name="address" th:value="${property.address}" required />
+                    </div>
+                    <div class="field f-col-2">
+                        <label>Getting to Campus</label>
+                        <div class="tile-selector">
+                            <label class="tile-option" th:classappend="${property.commuteType == 'Walking distance'} ? 'selected'" onclick="selectEditTile(this, 'commuteType')">
+                                <input type="radio" name="commuteType" value="Walking distance" th:checked="${property.commuteType == 'Walking distance'}" />
+                                <span class="tile-icon">🚶</span>
+                                <span class="tile-text">
+                  <span class="tile-title">Walking Distance</span>
+                  <span class="hint-text">Close enough to walk to campus</span>
+                </span>
+                            </label>
+                            <label class="tile-option" th:classappend="${property.commuteType == 'Shuttle required'} ? 'selected'" onclick="selectEditTile(this, 'commuteType')">
+                                <input type="radio" name="commuteType" value="Shuttle required" th:checked="${property.commuteType == 'Shuttle required'}" />
+                                <span class="tile-icon">🚌</span>
+                                <span class="tile-text">
+                  <span class="tile-title">Shuttle Required</span>
+                  <span class="hint-text">Transport required to reach campus</span>
+                </span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
 
-            <div class="field upload-field">
-                <label for="images">Add Photos</label>
-                <input type="file" id="images" name="images" multiple accept="image/*" />
+                <div class="f-grid" style="margin-top: 20px;">
+                    <div class="field f-col-2">
+                        <label>Available From</label>
+                        <select name="availableFrom">
+                            <option value="">Select a semester</option>
+                            <option th:each="option : ${availableFromOptions}"
+                                    th:value="${#temporals.format(option, 'yyyy-MM-dd')}"
+                                    th:text="${#temporals.format(option, 'MMMM yyyy')}"
+                                    th:selected="${option == property.availableFrom}">
+                            </option>
+                        </select>
+                    </div>
+                </div>
             </div>
+
+            <!-- Step 3 — Description -->
+            <div class="edit-step" data-step="3">
+                <div class="panel-header">
+                    <h2>Property Description</h2>
+                    <p>Highlight key selling points, house rules, and nearby universities.</p>
+                </div>
+                <div class="f-grid">
+                    <div class="field f-col-2">
+                        <label>Description</label>
+                        <textarea name="description" th:text="${property.description}"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4 — Amenities, grouped by category -->
+            <div class="edit-step" data-step="4">
+                <div class="panel-header">
+                    <h2>Property Amenities</h2>
+                    <p>Tick everything included with this room.</p>
+                </div>
+                <div th:each="entry : ${amenityCategories}" class="amenity-cat">
+                    <div class="amenity-cat-title" th:text="${entry.key}">Category</div>
+                    <div class="amenity-grid-list">
+                        <label class="amenity-card-item" th:each="amenity : ${entry.value}">
+                            <input type="checkbox" name="amenityIds" th:value="${amenity.amenityID}"
+                                   th:checked="${selectedAmenityIds.contains(amenity.amenityID)}" />
+                            <label th:text="${amenity.name}" style="pointer-events:none;">Amenity</label>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!--
+                Step 5 — Photos.
+                IMPORTANT: each delete button is bound to THIS form via form="editPropertyForm"
+                plus formaction/formmethod — it is NOT its own nested <form>. Nested <form>
+                elements are invalid HTML; the browser silently closes the outer form at the
+                first nested </form> it hits, which would orphan the Save buttons below.
+                This pattern avoids that.
+            -->
+            <div class="edit-step" data-step="5">
+                <div class="panel-header">
+                    <h2>Property Photos</h2>
+                    <p>Manage existing photos and upload new ones.</p>
+                </div>
+
+                <div class="gallery-grid" th:if="${!images.isEmpty()}" style="margin-bottom: 20px;">
+                    <div class="gallery-item" th:each="img : ${images}">
+                        <img th:src="${img.url}" alt="Property photo" />
+                        <span class="main-badge" th:if="${img.isMain}">Main</span>
+                        <button type="submit"
+                                class="delete-btn"
+                                title="Delete photo"
+                                form="editPropertyForm"
+                                th:formaction="@{/delete-property-image/{imageId}(imageId=${img.imageID})}"
+                                formmethod="post"
+                                formnovalidate
+                                onclick="return confirm('Remove this photo?');">&times;</button>
+                    </div>
+                </div>
+                <p class="gallery-empty" th:if="${images.isEmpty()}">No photos uploaded yet.</p>
+
+                <div class="f-grid">
+                    <div class="field f-col-2">
+                        <label>Add Photos</label>
+                        <input type="file" name="images" multiple accept="image/*" />
+                    </div>
+                </div>
+            </div>
+
         </div>
 
         <input type="hidden" name="action" id="formAction" value="update" />
 
-        <div class="actions">
-            <button type="submit" formnovalidate class="btn btn-cancel"
-                    onclick="document.getElementById('formAction').value='draft';">Save Draft</button>
-            <button type="submit" class="btn btn-save"
-                    onclick="document.getElementById('formAction').value='update';">Save Changes</button>
+        <!-- Save actions — always visible regardless of which step is showing,
+             so changes made across any steps you visited save together, from
+             wherever you currently are. -->
+        <div class="actions-bar">
+            <div class="btn-group-right">
+                <button type="submit" formnovalidate class="btn btn-outline"
+                        onclick="document.getElementById('formAction').value='draft';">Save Draft</button>
+                <button type="submit" class="btn btn-primary"
+                        onclick="document.getElementById('formAction').value='update';">Save Changes</button>
+            </div>
         </div>
     </form>
 
@@ -244,15 +326,15 @@
     <form th:action="@{/toggle-property-status/{id}(id=${property.propertyID})}"
           method="post"
           th:attr="onsubmit=|return confirm('Deactivate &quot;${#strings.escapeJavaScript(property.title)}&quot;? It will stop showing to students until you reactivate it.');|"
-          style="margin-bottom: 20px;">
+          class="side-card">
         <input type="hidden" name="isAvailable" value="false" />
         <button type="submit" class="btn btn-delete">Deactivate Property</button>
     </form>
 
     <!-- Special features -->
-    <div class="form-card">```````
+    <div class="side-card">
         <h2>Special Features</h2>
-        <p class="section-hint">Highlight anything extra this place offers — a study hub, a braai area, a game room — each with its own photos.</p>
+        <p class="hint-text">Highlight anything extra this place offers — a study hub, a braai area, a game room — each with its own photos.</p>
 
         <p class="no-features" th:if="${features.isEmpty()}">No special features added yet.</p>
 
@@ -268,7 +350,6 @@
                     <button type="submit" class="feature-delete-btn">Remove</button>
                 </form>
             </div>
-
             <div class="feature-photos" th:if="${feature.images != null and !feature.images.isEmpty()}">
                 <img th:each="img : ${feature.images}" th:src="${img.url}" alt="Feature photo" />
             </div>
@@ -284,15 +365,16 @@
                 <label>Description (optional)</label>
                 <input type="text" name="description" placeholder="A quiet, well-lit space for group study" />
             </div>
-            <div class="field upload-field">
-                <label for="feature-images">Photos (optional)</label>
-                <input type="file" id="feature-images" name="images" multiple accept="image/*" />
+            <div class="field">
+                <label>Photos (optional)</label>
+                <input type="file" name="images" multiple accept="image/*" />
             </div>
-            <button type="submit" class="btn btn-add">Add Feature</button>
+            <button type="submit" class="btn btn-primary" style="align-self: flex-start;">Add Feature</button>
         </form>
     </div>
-</div>
 
+</main>
+
+<script th:src="@{/edit-property.js}" src="/edit-property.js"></script>
 </body>
 </html>
-

@@ -11,4 +11,10 @@ public interface ApplicationRepository extends JpaRepository<Application, Intege
 
     List<Application> findByPropertyIDIn(List<Integer> propertyIDs);
 
+    // Backs the one-application-per-property rule in
+    // PropertyController.applyToProperty(). Matches on studentID + propertyID
+    // regardless of status, so a student can't apply again even if their
+    // first application was Rejected.
+    boolean existsByStudentIDAndPropertyID(Integer studentID, Integer propertyID);
+
 }

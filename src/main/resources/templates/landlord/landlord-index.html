@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
@@ -12,6 +14,27 @@
       background: hsl(38, 92%, 50%);
       color: #fff;
     }
+
+    /* Initials Avatar Styling */
+    .avatar-initials {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: hsl(180, 67%, 36%);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      user-select: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+      flex-shrink: 0;
+    }
+
     #addedToast {
       position: fixed;
       top: 20px;
@@ -68,7 +91,7 @@
 
     <header class="topbar">
       <h1 class="topbar-title">My Properties</h1>
-      <img class="avatar" src="/static/uploads/landlord-avatar.jpg" alt="Landlord profile photo">
+      <div class="avatar-initials" th:text="${userInitials != null ? userInitials : 'EH'}">EH</div>
     </header>
 
     <div class="page-body">
@@ -102,10 +125,10 @@
             <svg viewBox="0 0 24 24" fill="none"><path d="M8 3h8a2 2 0 0 1 2 2v14l-6-3-6 3V5a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
           </div>
           <div class="stat-copy">
-            <span class="stat-value" id="statPendingApplications" th:text="${pendingApplications}">24</span>
+            <span class="stat-value" id="statPendingApplications" th:text="${awaitingApprovalCount}">24</span>
             <span class="stat-label">Awaiting Review</span>
           </div>
-          <span class="stat-alert-dot" id="statAlertDot" th:hidden="${pendingApplications == 0}" aria-hidden="true"></span>
+          <span class="stat-alert-dot" id="statAlertDot" th:hidden="${awaitingApprovalCount == 0}" aria-hidden="true"></span>
         </div>
 
         <div class="stat-card">
@@ -148,11 +171,7 @@
         </label>
       </section>
 
-      <!-- Property grid — now server-rendered from real data.
-           Deactivated properties are filtered out server-side in the
-           controller, so only Draft / Pending / Available listings ever
-           reach this loop; the "inactive" status case below is unreachable
-           but kept harmless in case that ever changes. -->
+      <!-- Property grid -->
       <section class="property-grid" id="propertyGrid" aria-label="Property listings">
 
         <article th:each="property : ${properties}"
@@ -236,7 +255,6 @@
       toast.textContent = message;
       toast.classList.add('show');
       setTimeout(() => toast.classList.remove('show'), 4000);
-      // Clean the query param out of the URL so refreshing doesn't re-show it
       const cleanUrl = window.location.pathname;
       window.history.replaceState({}, document.title, cleanUrl);
     }
