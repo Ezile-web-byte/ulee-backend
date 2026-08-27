@@ -617,3 +617,30 @@ CREATE TABLE property_feature_image (
                                         KEY featureID (featureID),
                                         CONSTRAINT property_feature_image_ibfk_1 FOREIGN KEY (featureID) REFERENCES property_feature (featureID)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+
+
+-- 3. Optional: if you want to double check nothing got missed,
+--    run this afterward to see current status/capacity per property.
+SELECT propertyID, title, status, isAvailable, capacity
+FROM property
+ORDER BY propertyID;
+
+SET SQL_SAFE_UPDATES = 0;
+
+-- Normalize any status your app doesn't actually use (Active, NULL, etc.)
+-- into Approved — leaves Draft and Inactive alone on purpose.
+UPDATE property
+SET status = 'Approved', isAvailable = 1
+WHERE status NOT IN ('Draft', 'Inactive', 'Approved');
+
+-- Fix capacity for anything still stuck at the old default
+UPDATE property
+SET capacity = 5
+WHERE capacity IS NULL OR capacity = 1;
+
+-- Full picture, including which landlord owns each row
+SELECT propertyID, landlordID, title, status, isAvailable, capacity
+FROM property
+ORDER BY propertyID;

@@ -1,399 +1,515 @@
-// ── Profile dropdown ──
-const profileArea = document.getElementById('profileArea');
-const profileTrigger = document.getElementById('profileTrigger');
-profileTrigger.addEventListener('click', e => {
-  e.stopPropagation();
-  profileArea.classList.toggle('open');
-});
-document.addEventListener('click', () => profileArea.classList.remove('open'));
-
-// ── Fav toggle ──
-function toggleFav(btn) { btn.classList.toggle('liked'); }
-
-// ── Form open/close ──
-const formBox = document.getElementById('formBox');
-const addBtn = document.getElementById('addBtn');
-const closeForm = document.getElementById('closeForm');
-
-addBtn.addEventListener('click', () => {
-  resetWizard();
-  formBox.classList.add('visible');
-  renderTrack(); renderPanel();
-  formBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
-});
-closeForm.addEventListener('click', () => formBox.classList.remove('visible'));
-
-// ── Steps ──
 const STEPS = [
   { label: 'Basic Info' },
-  { label: 'Details' },
-  { label: 'Amenities' },
-  { label: 'Images' },
+  { label: 'Pricing & Location' },
   { label: 'Description' },
+  { label: 'Amenities' },
+  { label: 'Photos' },
+  { label: 'Features' },
   { label: 'Review' }
 ];
 
-const AMENITIES = [
-  { icon: '📶', label: 'WiFi' },
-  { icon: '🅿️', label: 'Parking' },
-  { icon: '🛋️', label: 'Furnished' },
-  { icon: '🔒', label: 'Security' },
-  { icon: '🧺', label: 'Laundry' },
-  { icon: '🍳', label: 'Kitchen' },
-  { icon: '🌿', label: 'Garden' },
-  { icon: '📦', label: 'Storage' }
-];
-
-const PROPERTY_TYPES = ['Studio Apartment', 'Shared House', 'En-suite Room', 'Purpose-built Block', 'Terraced House'];
-
 let currentStep = 0;
-let checkedAmenities = new Set();
+let accumulatedImages = [];
+let customFeatures = [];
+let selectedAmenityIds = new Set(); // persists across steps, unlike DOM checkboxes
 
-// ── One shared object that actually holds what the user typed ──
-let formData = {
+// Real categories/amenities injected by Thymeleaf (see list-property.html).
+// Shape: { "Room": [{amenityID:1, name:"Furnished", category:"Room"}, ...], "Kitchen & Bathroom": [...] }
+const AMENITY_CATEGORIES = window.AMENITY_CATEGORIES || {};
+
+const state = {
   title: '',
-  type: PROPERTY_TYPES[0],
-  address: '',
+  type: '',
+  capacity: '1',
   city: '',
-  bedrooms: 2,
-  bathrooms: 1,
+  address: '',
+  commuteType: '',
   rent: '',
+  deposit: '',
   availableFrom: '',
   description: ''
 };
-let uploadedFiles = []; // real File objects, not just preview thumbnails
 
-function resetWizard() {
-  currentStep = 0;
-  checkedAmenities = new Set();
-  uploadedFiles = [];
-  formData = {
-    title: '',
-    type: PROPERTY_TYPES[0],
-    address: '',
-    city: '',
-    bedrooms: 2,
-    bathrooms: 1,
-    rent: '',
-    availableFrom: '',
-    description: ''
+function syncStateFromDOM() {
+  const getVal = (name) => {
+    const el = document.querySelector(`[name="${name}"]`);
+    return el ? el.value : (state[name] || '');
   };
-}
-let mainImageIndex = 0; // tracks which uploadedFiles[] index is the front photo
-
-function renderThumbs() {
-  const strip = document.getElementById('thumbStrip');
-  if (!strip) return;
-  strip.innerHTML = '';
-  uploadedFiles.forEach((f, idx) => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      const wrap = document.createElement('div');
-      wrap.style.cssText = 'position:relative;display:inline-block;';
-
-      const img = document.createElement('img');
-      img.className = 'thumb-img';
-      img.src = e.target.result;
-      if (idx === mainImageIndex) img.style.outline = '3px solid var(--primary)';
-      wrap.appendChild(img);
-
-      const mainBtn = document.createElement('button');
-      mainBtn.type = 'button';
-      mainBtn.textContent = idx === mainImageIndex ? '★ Main' : '☆';
-      mainBtn.title = 'Set as front/main photo';
-      mainBtn.style.cssText = 'position:absolute;bottom:-6px;left:0;right:0;font-size:10px;background:var(--primary);color:#fff;border:none;border-radius:4px;cursor:pointer;padding:2px 0;';
-      mainBtn.onclick = () => { mainImageIndex = idx; renderThumbs(); };
-      wrap.appendChild(mainBtn);
-
-      const rm = document.createElement('button');
-      rm.type = 'button';
-      rm.textContent = '×';
-      rm.style.cssText = 'position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#c0392b;color:#fff;border:none;cursor:pointer;font-size:12px;';
-      rm.onclick = () => {
-        uploadedFiles.splice(idx, 1);
-        if (mainImageIndex === idx) mainImageIndex = 0;
-        else if (mainImageIndex > idx) mainImageIndex--;
-        renderThumbs();
-      };
-      wrap.appendChild(rm);
-
-      strip.appendChild(wrap);
-    };
-    reader.readAsDataURL(f);
-  });
+  state.title = getVal('title');
+  state.type = getVal('type');
+  state.capacity = getVal('capacity');
+  state.city = getVal('city');
+  state.address = getVal('address');
+  state.commuteType = getVal('commuteType');
+  state.rent = getVal('rent');
+  state.deposit = getVal('deposit');
+  state.availableFrom = getVal('availableFrom');
+  state.description = getVal('description');
 }
 
-function escapeHtml(str) {
-  if (!str) return '';
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
+function renderTracker() {
+  const tracker = document.getElementById('stepsTracker');
+  const fill = document.getElementById('progressFill');
+  if (!tracker || !fill) return;
 
-// ── Reads whatever's currently on screen into formData before we navigate away ──
-function saveCurrentStepData() {
-  switch (currentStep) {
-    case 0:
-      formData.title = (document.getElementById('in_title')?.value || '').trim();
-      formData.type = document.getElementById('in_type')?.value || formData.type;
-      formData.city = (document.getElementById('in_city')?.value || '').trim();
-      formData.address = (document.getElementById('in_address')?.value || '').trim();
-      break;
-    case 1:
-      formData.bedrooms = document.getElementById('in_bedrooms')?.value || formData.bedrooms;
-      formData.bathrooms = document.getElementById('in_bathrooms')?.value || formData.bathrooms;
-      formData.rent = document.getElementById('in_rent')?.value || formData.rent;
-      formData.availableFrom = document.getElementById('in_availableFrom')?.value || formData.availableFrom;
-      break;
-    case 4:
-      formData.description = (document.getElementById('in_description')?.value || '').trim();
-      break;
-      // step 2 (amenities) and step 3 (images) already write straight into
-      // checkedAmenities / uploadedFiles as you interact with them, so nothing to grab here
-  }
-}
+  const pct = ((currentStep + 1) / STEPS.length) * 100;
+  fill.style.width = `${pct}%`;
 
-const PANELS = [
-  // 0 – Basic info (single panel — the duplicate has been removed)
-  () => `
-    <div class="f-grid f-grid-2">
-      <div class="field f-col">
-        <label>Property Title</label>
-        <input type="text" id="in_title" placeholder="e.g. Riverside Student Studio" value="${escapeHtml(formData.title)}" />
-      </div>
-      <div class="field">
-        <label>Property Type</label>
-        <select id="in_type">
-          ${PROPERTY_TYPES.map(t => `<option ${formData.type === t ? 'selected' : ''}>${t}</option>`).join('')}
-        </select>
-      </div>
-      <div class="field">
-        <label>City</label>
-        <input type="text" id="in_city" placeholder="e.g. Gqeberha" value="${escapeHtml(formData.city)}" />
-      </div>
-      <div class="field f-col">
-        <label>Full Address</label>
-        <input type="text" id="in_address" placeholder="14 Campus Road, Gqeberha" value="${escapeHtml(formData.address)}" />
-      </div>
-    </div>`,
-
-  // 1 – Details
-  () => `
-    <div class="f-grid f-grid-3">
-      <div class="field">
-        <label>Bedrooms</label>
-        <input type="number" id="in_bedrooms" min="1" max="20" value="${formData.bedrooms}" />
-      </div>
-      <div class="field">
-        <label>Bathrooms</label>
-        <input type="number" id="in_bathrooms" min="1" max="10" value="${formData.bathrooms}" />
-      </div>
-      <div class="field">
-        <label>Monthly Rent (R)</label>
-        <input type="number" id="in_rent" placeholder="4500" value="${escapeHtml(String(formData.rent))}" />
-      </div>
-      <div class="field f-col">
-        <label>Available From</label>
-        <input type="date" id="in_availableFrom" value="${formData.availableFrom}" />
-      </div>
-    </div>`,
-
-  // 2 – Amenities
-  () => `
-    <div class="amenity-grid">
-      ${AMENITIES.map((a, i) => `
-        <label class="amenity-tile ${checkedAmenities.has(i) ? 'checked' : ''}" id="am${i}" onclick="toggleAm(${i})">
-          <input type="checkbox" ${checkedAmenities.has(i) ? 'checked' : ''}>
-          <span class="a-icon">${a.icon}</span>
-          <span class="a-lbl">${a.label}</span>
-        </label>`).join('')}
-    </div>`,
-
-  // 3 – Images
-  () => `
-    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileIn').click()">
-      <div class="drop-icon-big">🖼️</div>
-      <div class="drop-text">
-        Drag &amp; drop photos here, or <b onclick="event.stopPropagation();document.getElementById('fileIn').click()">browse files</b><br>
-        <span style="font-size:12px;color:#aaa;margin-top:4px;display:block">PNG, JPG, WEBP — up to 10 files</span>
-      </div>
-      <input type="file" id="fileIn" multiple accept="image/*" style="display:none" onchange="previewFiles(this.files)">
+  tracker.innerHTML = STEPS.map((s, i) => `
+    <div class="step-node ${i === currentStep ? 'active' : ''} ${i < currentStep ? 'completed' : ''}" onclick="jumpToStep(${i})">
+      <div class="node-circle">${i < currentStep ? '✓' : i + 1}</div>
+      <div class="node-label">${s.label}</div>
     </div>
-    <div class="thumb-strip" id="thumbStrip"></div>`,
+  `).join('');
+}
 
-  // 4 – Description
-  () => `
-    <div class="f-grid">
-      <div class="field f-col">
-        <label>Property Description</label>
-        <textarea id="in_description" rows="7" placeholder="Describe your property — highlight key features, proximity to universities, transport links, house rules, and what makes this a great home for students…">${escapeHtml(formData.description)}</textarea>
-      </div>
-    </div>`,
+function renderStepContent() {
+  const panel = document.getElementById('stepPanel');
+  if (!panel) return;
 
-  // 5 – Review (built from real data)
-  () => {
-    const amenityLabels = [...checkedAmenities].map(i => AMENITIES[i].label).join(', ') || 'None selected';
-    return `
-    <div class="review-card">
-      <div class="review-row"><span class="rv-key">Title</span><span class="rv-val">${escapeHtml(formData.title) || '—'}</span></div>
-      <div class="review-row"><span class="rv-key">Type</span><span class="rv-val">${escapeHtml(formData.type)}</span></div>
-      <div class="review-row"><span class="rv-key">City</span><span class="rv-val">${escapeHtml(formData.city) || '—'}</span></div>
-      <div class="review-row"><span class="rv-key">Address</span><span class="rv-val">${escapeHtml(formData.address) || '—'}</span></div>
-      <div class="review-row"><span class="rv-key">Beds / Baths</span><span class="rv-val">${formData.bedrooms} bed · ${formData.bathrooms} bath</span></div>
-      <div class="review-row"><span class="rv-key">Monthly Rent</span><span class="rv-val price">R${escapeHtml(String(formData.rent || '0'))} / month</span></div>
-      <div class="review-row"><span class="rv-key">Available From</span><span class="rv-val">${formData.availableFrom || '—'}</span></div>
-      <div class="review-row"><span class="rv-key">Amenities</span><span class="rv-val">${amenityLabels}</span></div>
-      <div class="review-row"><span class="rv-key">Photos</span><span class="rv-val">${uploadedFiles.length} uploaded</span></div>
-      <div class="review-row"><span class="rv-key">Description</span><span class="rv-val" style="font-style:italic;font-size:12.5px;color:#888">${escapeHtml(formData.description) || '—'}</span></div>
-    </div>`;
-  }
-];
-
-function renderTrack() {
-  const t = document.getElementById('stepTrack');
-  t.innerHTML = STEPS.map((s, i) => `
-    <div class="step-unit">
-      <div class="step-col">
-        <div class="step-node ${i < currentStep ? 'done' : i === currentStep ? 'active' : ''}">
-          ${i < currentStep ? '✓' : i + 1}
+  switch(currentStep) {
+    case 0:
+      panel.innerHTML = `
+        <div class="panel-header">
+          <h2>Basic Info & Accommodation Type</h2>
+          <p>Start by giving your listing a title and selecting the room setup.</p>
         </div>
-        <div class="step-lbl ${i === currentStep ? 'active' : ''}">${s.label}</div>
+        <div class="f-grid">
+          <div class="field f-col-2">
+            <label>Property Title</label>
+            <input type="text" name="title" placeholder="e.g. The Dunes Student Residence" value="${escapeHtml(state.title)}" required />
+          </div>
+          <div class="field f-col-2">
+            <label>Room Type</label>
+            <div class="tile-selector">
+              <label class="tile-option ${state.type === 'Single Room' ? 'selected' : ''}" onclick="selectTile(this, 'type')">
+                <input type="radio" name="type" value="Single Room" ${state.type === 'Single Room' ? 'checked' : ''} />
+                <span class="tile-icon">🛏️</span>
+                <span class="tile-text">
+                  <span class="tile-title">Single Room</span>
+                  <span class="hint-text">Private bedroom for one student</span>
+                </span>
+              </label>
+              <label class="tile-option ${state.type === 'Sharing' ? 'selected' : ''}" onclick="selectTile(this, 'type')">
+                <input type="radio" name="type" value="Sharing" ${state.type === 'Sharing' ? 'checked' : ''} />
+                <span class="tile-icon">👥</span>
+                <span class="tile-text">
+                  <span class="tile-title">Sharing Room</span>
+                  <span class="hint-text">Shared bedroom arrangement</span>
+                </span>
+              </label>
+            </div>
+          </div>
+          <div class="field f-col-2">
+            <label>Capacity (number of students this listing can hold)</label>
+            <input type="number" name="capacity" min="1" step="1" placeholder="e.g. 4" value="${escapeHtml(state.capacity)}" required />
+            <p class="hint-text">This caps how many student applications you can accept for this property.</p>
+          </div>
+        </div>`;
+      break;
+
+    case 1:
+      panel.innerHTML = `
+        <div class="panel-header">
+          <h2>Pricing & Location Details</h2>
+          <p>Set rent amounts and help students know where you are located.</p>
+        </div>
+        <div class="f-grid f-grid-2">
+          <div class="field">
+            <label>Monthly Rent (R)</label>
+            <input type="number" step="0.01" name="rent" placeholder="4500.00" value="${escapeHtml(state.rent)}" />
+          </div>
+          <div class="field">
+            <label>Deposit (R)</label>
+            <input type="number" step="0.01" name="deposit" placeholder="4500.00" value="${escapeHtml(state.deposit)}" />
+          </div>
+          <div class="field">
+            <label>Suburb</label>
+            <input type="text" name="city" placeholder="e.g. Summerstrand" value="${escapeHtml(state.city)}" />
+          </div>
+          <div class="field">
+            <label>Full Address</label>
+            <input type="text" name="address" placeholder="Full street address" value="${escapeHtml(state.address)}" />
+          </div>
+          <div class="field f-col-2">
+            <label>Getting to Campus</label>
+            <div class="tile-selector">
+              <label class="tile-option ${state.commuteType === 'Walking distance' ? 'selected' : ''}" onclick="selectTile(this, 'commuteType')">
+                <input type="radio" name="commuteType" value="Walking distance" ${state.commuteType === 'Walking distance' ? 'checked' : ''} />
+                <span class="tile-icon">🚶</span>
+                <span class="tile-text">
+                  <span class="tile-title">Walking Distance</span>
+                  <span class="hint-text">Close enough to walk to campus</span>
+                </span>
+              </label>
+              <label class="tile-option ${state.commuteType === 'Shuttle required' ? 'selected' : ''}" onclick="selectTile(this, 'commuteType')">
+                <input type="radio" name="commuteType" value="Shuttle required" ${state.commuteType === 'Shuttle required' ? 'checked' : ''} />
+                <span class="tile-icon">🚌</span>
+                <span class="tile-text">
+                  <span class="tile-title">Shuttle Required</span>
+                  <span class="hint-text">Transport required to reach campus</span>
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>`;
+      break;
+
+    case 2:
+      panel.innerHTML = `
+        <div class="panel-header">
+          <h2>Property Description</h2>
+          <p>Highlight key selling points, house rules, and close universities.</p>
+        </div>
+        <div class="f-grid">
+          <div class="field f-col-2">
+            <label>Description</label>
+            <textarea name="description" placeholder="Tell students what makes this place worth renting...">${escapeHtml(state.description)}</textarea>
+          </div>
+        </div>`;
+      break;
+
+    case 3:
+      panel.innerHTML = `
+        <div class="panel-header">
+          <h2>Property Amenities</h2>
+          <p>Tick everything included with this accommodation. The first 3 you select
+             (in the order shown) are the ones that appear as badges on the property card.</p>
+        </div>
+        <div id="amenitiesContainer">
+          ${renderAmenityCategories()}
+        </div>`;
+      wireAmenityCheckboxes();
+      break;
+
+    case 4:
+      panel.innerHTML = `
+        <div class="panel-header">
+          <h2>Property Photos</h2>
+          <p>Upload a cover photo and additional images of the rooms.</p>
+        </div>
+        <div class="f-grid">
+          <div class="field f-col-2">
+            <label>Cover Photo (Main Display Image)</label>
+            <input type="file" id="coverImageInput" name="coverImage" accept="image/*" />
+          </div>
+          <div class="field f-col-2" style="margin-top:10px;">
+            <label>Additional Photos</label>
+            <div class="upload-box" id="dropZone">
+              <div class="upload-icon">📸</div>
+              <div class="upload-title">Drag & drop photos here, or <b>browse files</b></div>
+            </div>
+            <input type="file" id="additionalPhotosInput" accept="image/*" multiple style="display:none;" />
+            <div class="photo-grid" id="photosPreview"></div>
+          </div>
+        </div>`;
+      setupImageHandlers();
+      renderPhotoPreviews();
+      break;
+
+    case 5:
+      panel.innerHTML = `
+        <div class="panel-header">
+          <h2>Special Features & Highlights</h2>
+          <p>Add tags for unique highlights like Braai areas, Study hubs, or Game rooms.
+             You can attach photos to each one afterwards from the Manage Property page.</p>
+        </div>
+        <div class="f-grid">
+          <div class="field f-col-2">
+            <label>Add Custom Special Feature</label>
+            <div style="display:flex; gap:10px;">
+              <input type="text" id="featureInput" placeholder="e.g. Braai Area, Quiet Study Lounge" />
+              <button type="button" class="btn btn-secondary" onclick="addFeatureTag()">+ Add</button>
+            </div>
+            <div class="feature-tag-wrap" id="featureTagList"></div>
+          </div>
+        </div>`;
+      renderFeatureTags();
+      break;
+
+    case 6:
+      panel.innerHTML = `
+        <div class="panel-header">
+          <h2>Review Listing Details</h2>
+          <p>Double-check all information before publishing your property.</p>
+        </div>
+        <div class="review-table">
+          <div class="review-row"><span class="review-key">Title</span><span class="review-val">${escapeHtml(state.title) || '—'}</span></div>
+          <div class="review-row"><span class="review-key">Room Type</span><span class="review-val">${escapeHtml(state.type) || '—'}</span></div>
+          <div class="review-row"><span class="review-key">Capacity</span><span class="review-val">${escapeHtml(state.capacity) || '—'} student(s)</span></div>
+          <div class="review-row"><span class="review-key">Monthly Rent</span><span class="review-val price">R${escapeHtml(state.rent || '0')} / mo</span></div>
+          <div class="review-row"><span class="review-key">Deposit</span><span class="review-val">R${escapeHtml(state.deposit || '0')}</span></div>
+          <div class="review-row"><span class="review-key">Location</span><span class="review-val">${escapeHtml(state.address)}, ${escapeHtml(state.city)}</span></div>
+          <div class="review-row"><span class="review-key">Commute</span><span class="review-val">${escapeHtml(state.commuteType) || '—'}</span></div>
+          <div class="review-row"><span class="review-key">Amenities</span><span class="review-val">${selectedAmenityIds.size} selected</span></div>
+          <div class="review-row"><span class="review-key">Special Features</span><span class="review-val">${customFeatures.length ? customFeatures.map(escapeHtml).join(', ') : '—'}</span></div>
+          <div class="review-row"><span class="review-key">Additional Photos</span><span class="review-val">${accumulatedImages.length} attached</span></div>
+        </div>`;
+      break;
+  }
+
+  updateNavButtons();
+}
+
+// ── Amenities: built from the real DB categories passed in by Thymeleaf ──
+function renderAmenityCategories() {
+  const categoryNames = Object.keys(AMENITY_CATEGORIES);
+  if (categoryNames.length === 0) {
+    return `<p style="color:#999;">No amenities configured yet. Ask an admin to add some to the "amenity" table.</p>`;
+  }
+  return categoryNames.map(cat => `
+    <div class="amenity-cat">
+      <div class="amenity-cat-title">${escapeHtml(cat)}</div>
+      <div class="amenity-grid-list">
+        ${AMENITY_CATEGORIES[cat].map(a => `
+          <label class="amenity-card-item">
+            <input type="checkbox" class="amenity-checkbox" value="${a.amenityID}" ${selectedAmenityIds.has(a.amenityID) ? 'checked' : ''} />
+            ${escapeHtml(a.name)}
+          </label>`).join('')}
       </div>
-      ${i < STEPS.length - 1 ? `<div class="step-line ${i < currentStep ? 'done' : ''}"></div>` : ''}
     </div>`).join('');
 }
 
-function renderPanel() {
-  document.getElementById('panelWrap').innerHTML = PANELS[currentStep]();
-  document.getElementById('prevBtn').style.display = currentStep === 0 ? 'none' : 'inline-flex';
-  const nb = document.getElementById('nextBtn');
-  nb.textContent = currentStep === STEPS.length - 1 ? '🎉 Publish Listing' : 'Continue →';
-
-  // drag-drop events for step 3
-  if (currentStep === 3) {
-    renderThumbs(); // redraw any photos already added on a previous visit to this step
-    const dz = document.getElementById('dropZone');
-    dz && dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
-    dz && dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
-    dz && dz.addEventListener('drop', e => {
-      e.preventDefault(); dz.classList.remove('dragover');
-      previewFiles(e.dataTransfer.files);
+function wireAmenityCheckboxes() {
+  document.querySelectorAll('.amenity-checkbox').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const id = parseInt(cb.value, 10);
+      if (cb.checked) selectedAmenityIds.add(id);
+      else selectedAmenityIds.delete(id);
     });
-  }
+  });
 }
 
-function goStep(dir) {
-  // capture whatever's currently typed before we navigate anywhere, forward or back
-  saveCurrentStepData();
+function selectTile(element, fieldName) {
+  const container = element.closest('.tile-selector');
+  container.querySelectorAll('.tile-option').forEach(el => el.classList.remove('selected'));
+  element.classList.add('selected');
+  const input = element.querySelector('input');
+  input.checked = true;
+  state[fieldName] = input.value;
+}
 
-  if (dir > 0 && currentStep === STEPS.length - 1) {
-    publishListing();
+function navigateStep(dir) {
+  syncStateFromDOM();
+
+  if (dir === 1 && currentStep === 0 && (!state.title || !state.title.trim())) {
+    alert('Please enter a property title before continuing.');
+    return;
+  }
+
+  if (dir === 1 && currentStep === 0 && (!state.capacity || Number(state.capacity) < 1)) {
+    alert('Please enter how many students this listing can hold (at least 1).');
+    return;
+  }
+
+  // After the Photos step, ask whether the landlord wants to add any
+  // special features (Braai Area, Study Hub, etc.) before deciding whether
+  // to show the Features step or skip straight to Review.
+  if (dir === 1 && currentStep === 4) {
+    openSpecialFeatureModal();
     return;
   }
 
   currentStep = Math.max(0, Math.min(STEPS.length - 1, currentStep + dir));
-  renderTrack(); renderPanel();
+  renderTracker();
+  renderStepContent();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function toggleAm(i) {
-  if (checkedAmenities.has(i)) checkedAmenities.delete(i);
-  else checkedAmenities.add(i);
-  const el = document.getElementById('am' + i);
-  if (el) el.classList.toggle('checked');
+function jumpToStep(idx) {
+  syncStateFromDOM();
+  if (idx > currentStep && (!state.title || !state.title.trim())) {
+    alert('Please complete step 1 basic info first.');
+    return;
+  }
+  currentStep = idx;
+  renderTracker();
+  renderStepContent();
 }
 
-// ── Images: keep the real File objects (not just previews) so they survive step navigation ──
-function previewFiles(files) {
-  const room = 10 - uploadedFiles.length;
-  if (room <= 0) return;
-  Array.from(files).slice(0, room).forEach(f => uploadedFiles.push(f));
-  renderThumbs();
+function openSpecialFeatureModal() {
+  const modal = document.getElementById('specialFeatureModal');
+  if (modal) modal.classList.add('active');
 }
 
-function renderThumbs() {
-  const strip = document.getElementById('thumbStrip');
-  if (!strip) return;
-  strip.innerHTML = '';
-  uploadedFiles.forEach((f, idx) => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      const wrap = document.createElement('div');
-      wrap.style.position = 'relative';
-      wrap.style.display = 'inline-block';
+// wantsFeatures = true  -> go to the Features step (index 5)
+// wantsFeatures = false -> skip straight to Review (index 6)
+function closeSpecialModal(wantsFeatures) {
+  const modal = document.getElementById('specialFeatureModal');
+  if (modal) modal.classList.remove('active');
+  currentStep = wantsFeatures ? 5 : 6;
+  renderTracker();
+  renderStepContent();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 
-      const img = document.createElement('img');
-      img.className = 'thumb-img';
-      img.src = e.target.result;
-      wrap.appendChild(img);
+// IMPORTANT: nextBtn's type attribute is NEVER changed to "submit" here.
+// Flipping a button's type to "submit" from inside its own click handler is
+// a known browser quirk — some browsers finish processing that same click
+// as a form submission once the type changes mid-event, which is exactly
+// what was causing Publish to fire itself the instant you landed on the
+// Review step. Instead, the button stays type="button" permanently, and on
+// the final step we submit explicitly and deliberately via requestSubmit().
+function updateNavButtons() {
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
 
-      const rm = document.createElement('button');
-      rm.type = 'button';
-      rm.textContent = '×';
-      rm.title = 'Remove photo';
-      rm.style.cssText = 'position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#c0392b;color:#fff;border:none;cursor:pointer;font-size:12px;line-height:1;';
-      rm.onclick = () => { uploadedFiles.splice(idx, 1); renderThumbs(); };
-      wrap.appendChild(rm);
+  if (prevBtn) prevBtn.style.visibility = currentStep === 0 ? 'hidden' : 'visible';
+  if (nextBtn) {
+    if (currentStep === STEPS.length - 1) {
+      nextBtn.textContent = '🎉 Publish Listing';
+      nextBtn.onclick = () => {
+        setSubmitAction('submit');
+        const form = document.getElementById('listPropertyForm');
+        if (form) form.requestSubmit(); // fires the 'submit' listener, unlike form.submit()
+      };
+    } else {
+      nextBtn.textContent = 'Continue →';
+      nextBtn.onclick = () => navigateStep(1);
+    }
+  }
+}
 
-      strip.appendChild(wrap);
+function setSubmitAction(val) {
+  const actionEl = document.getElementById('formAction');
+  if (actionEl) actionEl.value = val;
+}
+
+function setupImageHandlers() {
+  const dropZone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('additionalPhotosInput');
+
+  if (dropZone && fileInput) {
+    dropZone.onclick = () => fileInput.click();
+    fileInput.onchange = () => {
+      for (const file of fileInput.files) accumulatedImages.push(file);
+      fileInput.value = '';
+      renderPhotoPreviews();
     };
-    reader.readAsDataURL(f);
+    dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('dragover'); };
+    dropZone.ondragleave = () => dropZone.classList.remove('dragover');
+    dropZone.ondrop = (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      for (const file of e.dataTransfer.files) accumulatedImages.push(file);
+      renderPhotoPreviews();
+    };
+  }
+}
+
+function renderPhotoPreviews() {
+  const container = document.getElementById('photosPreview');
+  if (!container) return;
+  container.innerHTML = '';
+  accumulatedImages.forEach((file, index) => {
+    const item = document.createElement('div');
+    item.className = 'photo-item';
+
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(file);
+    item.appendChild(img);
+
+    const rm = document.createElement('button');
+    rm.type = 'button';
+    rm.className = 'rm-btn';
+    rm.innerHTML = '×';
+    rm.onclick = () => {
+      accumulatedImages.splice(index, 1);
+      renderPhotoPreviews();
+    };
+    item.appendChild(rm);
+    container.appendChild(item);
   });
 }
 
-// ── Real submission to the Spring Boot backend (POST /list-property) ──
-// Uses a native hidden <form> instead of fetch() so the browser handles the
-// multipart file upload correctly and follows the server's redirect on its own.
-function publishListing() {
-  if (!formData.title || !formData.rent) {
-    alert('Please fill in at least a property title and monthly rent before publishing.');
-    currentStep = 0;
-    renderTrack(); renderPanel();
-    return;
+function addFeatureTag() {
+  const input = document.getElementById('featureInput');
+  if (!input) return;
+  const val = input.value.trim();
+  if (val && !customFeatures.includes(val)) {
+    customFeatures.push(val);
+    input.value = '';
+    renderFeatureTags();
   }
+}
 
-  const furnished = [...checkedAmenities].some(i => AMENITIES[i].label === 'Furnished');
+function removeFeatureTag(idx) {
+  customFeatures.splice(idx, 1);
+  renderFeatureTags();
+}
 
-  const form = document.createElement('form');
-  form.method = 'POST';
-  form.action = '/list-property';
-  form.enctype = 'multipart/form-data';
-  form.style.display = 'none';
+function renderFeatureTags() {
+  const wrap = document.getElementById('featureTagList');
+  if (!wrap) return;
+  wrap.innerHTML = customFeatures.map((f, i) => `
+    <div class="feature-chip">${escapeHtml(f)} <span onclick="removeFeatureTag(${i})">×</span></div>
+  `).join('');
+}
 
-  const addField = (name, value) => {
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// ── The single place that turns everything the user has entered across every
+//    step into real <input> elements inside the <form>, right before it's
+//    actually sent. This is what fixes "draft/publish not working": the
+//    wizard only ever renders ONE step's inputs into the DOM at a time, so
+//    without this step, most fields (and all amenities) never reach Spring. ──
+function prepareFormForSubmit(form) {
+  syncStateFromDOM();
+
+  // Wipe any hidden inputs we injected on a previous attempt, so re-submits
+  // (e.g. clicking Draft, going back, then Publish) don't duplicate fields.
+  form.querySelectorAll('.js-injected-field').forEach(el => el.remove());
+
+  const addHidden = (name, value) => {
     const input = document.createElement('input');
     input.type = 'hidden';
     input.name = name;
-    input.value = value;
+    input.value = value != null ? value : '';
+    input.className = 'js-injected-field';
     form.appendChild(input);
   };
 
-  addField('title', formData.title);
-  addField('type', formData.type);
-  addField('city', formData.city);
-  addField('address', formData.address);
-  addField('bedrooms', formData.bedrooms);
-  addField('bathrooms', formData.bathrooms);
-  addField('rent', formData.rent);
-  addField('availableFrom', formData.availableFrom);
-  addField('description', formData.description);
-  addField('furnished', furnished);
+  // Only inject a hidden field for a given name if the currently-rendered
+  // step doesn't already have a live input with that name (avoids sending
+  // the same field twice when the user submits while sitting on that step).
+  const hasLiveField = (name) => !!form.querySelector(`[name="${name}"]:not(.js-injected-field)`);
 
-  if (uploadedFiles.length > 0) {
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.name = 'images';
-    fileInput.multiple = true;
+  Object.keys(state).forEach(key => {
+    if (!hasLiveField(key)) addHidden(key, state[key]);
+  });
 
-    const dt = new DataTransfer();
-    uploadedFiles.forEach(f => dt.items.add(f));
-    fileInput.files = dt.files;
+  selectedAmenityIds.forEach(id => addHidden('amenityIds', id));
+  customFeatures.forEach(name => addHidden('featureNames', name));
 
-    form.appendChild(fileInput);
+  const dataTransfer = new DataTransfer();
+  accumulatedImages.forEach(file => dataTransfer.items.add(file));
+  let hiddenImagesInput = document.getElementById('imagesSubmitInput');
+  if (!hiddenImagesInput) {
+    hiddenImagesInput = document.createElement('input');
+    hiddenImagesInput.type = 'file';
+    hiddenImagesInput.id = 'imagesSubmitInput';
+    hiddenImagesInput.name = 'images';
+    hiddenImagesInput.multiple = true;
+    hiddenImagesInput.style.display = 'none';
+    form.appendChild(hiddenImagesInput);
   }
-
-  document.body.appendChild(form);
-  form.submit(); // navigates the browser to /list-property, backend redirects to /landlord-index on success
+  hiddenImagesInput.files = dataTransfer.files;
 }
 
-// init
-renderTrack(); renderPanel();
+document.addEventListener('DOMContentLoaded', () => {
+  renderTracker();
+  renderStepContent();
+
+  const form = document.getElementById('listPropertyForm');
+  if (form) {
+    // Native 'submit' fires for BOTH the Draft button (type=submit) and the
+    // Publish button once it becomes type=submit on the final step — so this
+    // one listener covers every real way the form can be sent.
+    form.addEventListener('submit', function(e) {
+      prepareFormForSubmit(this);
+    });
+  }
+});
