@@ -3,82 +3,37 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ULEE — Handle Reported Property</title>
+  <title th:text="'ULEE — ' + ${property.title}">ULEE — Handle Reported Property</title>
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/admin-style.css">
-  <link rel="stylesheet" href="/speak-with-ai.css">
-  <script src="/speak-with-ai-logic.js" defer></script>
-  <script src="/speak-with-ai.js" defer></script>
+  <script src="/admin-script.js" defer></script>
 </head>
 <body>
 <div class="shell">
 
-  <aside class="sidebar" id="sidebar">
-    <div class="logo">
-      <div class="logo-mark">
-        <div class="logo-icon">
-          <svg viewBox="0 0 20 20"><path d="M10 2L3 7v11h14V7L10 2zm0 2.6 5 3.5V16H5V8.1l5-3.5zM8 10h4v6H8z"/></svg>
-        </div>
-        <div class="logo-text">
-          <div class="logo-name">ULEE</div>
-          <div class="logo-tag">The future of Student Living</div>
-        </div>
-      </div>
-    </div>
-
-    <nav class="nav">
-      <div class="nav-label">Main</div>
-
-      <div class="nav-item" data-section="dashboard" data-label="Dashboard" onclick="window.location.href='/admin-index'">
-        <svg class="nav-icon" viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="11" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="11" width="6" height="6" rx="1.5"/><rect x="11" y="11" width="6" height="6" rx="1.5"/></svg>
-        <span class="nav-item-label">Dashboard</span>
-      </div>
-
-      <div class="nav-item" data-section="listings" data-label="Listings" onclick="window.location.href='/admin/listings'">
-        <svg class="nav-icon" viewBox="0 0 20 20"><path d="M3 5h14M3 10h14M3 15h10"/></svg>
-        <span class="nav-item-label">Listings</span>
-      </div>
-
-      <div class="nav-item" data-section="users" data-label="Users" onclick="window.location.href='/admin/manage-users'">
-        <svg class="nav-icon" viewBox="0 0 20 20"><circle cx="8" cy="7" r="3"/><path d="M2 17c0-3.3 2.7-6 6-6"/><circle cx="15" cy="9" r="2.5"/><path d="M11 17c0-2.2 1.8-4 4-4s4 1.8 4 4"/></svg>
-        <span class="nav-item-label">Users</span>
-      </div>
-
-      <div class="nav-label">Moderation</div>
-
-      <div class="nav-item" data-section="reviews" data-label="Reviews" onclick="window.location.href='/admin/reviews'">
-        <svg class="nav-icon" viewBox="0 0 20 20"><path d="M10 2l2.3 4.7 5.2.8-3.8 3.7.9 5.2L10 14l-4.6 2.4.9-5.2L2.5 7.5l5.2-.8z"/></svg>
-        <span class="nav-item-label">Reviews</span>
-      </div>
-
-      <div class="nav-item active" data-section="reported" data-label="Reported" onclick="window.location.href='/admin/reported-listings'">
-        <svg class="nav-icon" viewBox="0 0 20 20"><path d="M10 3l7 14H3L10 3z"/><path d="M10 9v4M10 15h.01"/></svg>
-        <span class="nav-item-label">Reported</span>
-      </div>
-
-      <div class="nav-label">System</div>
-
-      <div class="nav-item" data-section="settings" data-label="Settings">
-        <svg class="nav-icon" viewBox="0 0 20 20"><circle cx="10" cy="10" r="2.5"/><path d="M10 3v2M10 15v2M3 10h2M15 10h2M5.1 5.1l1.4 1.4M13.5 13.5l1.4 1.4M5.1 14.9l1.4-1.4M13.5 6.5l1.4-1.4"/></svg>
-        <span class="nav-item-label">Settings</span>
-      </div>
-    </nav>
-
-    <div class="sidebar-footer">
-      <div class="admin-chip">
-        <div class="avatar">SA</div>
-        <div class="admin-info">
-          <div class="admin-name">Sarah Admin</div>
-          <div class="admin-role">Admin</div>
-        </div>
-      </div>
-    </div>
-  </aside>
+  <div th:replace="~{fragments/admin-sidebar :: sidebar('reported')}"></div>
 
   <div class="main">
-    <header class="topbar"><div class="topbar-title">Handle Reported Property</div></header>
+    <header class="topbar">
+      <div class="topbar-title">Handle Reported Property</div>
+      <div class="notif-wrap">
+        <button class="icon-btn" title="Notifications">
+          <svg viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3l-1.5 2.5h15L16 11V8a6 6 0 00-6-6zM8 16a2 2 0 004 0"/></svg>
+        </button>
+      </div>
+      <button class="logout-btn" onclick="alert('Logging out…')">
+        <svg viewBox="0 0 20 20"><path d="M13 3h4v14h-4M9 14l4-4-4-4M13 10H5"/></svg>
+        <span>Log out</span>
+      </button>
+    </header>
+
     <div class="content">
       <div class="section active">
+
+        <a href="/admin/reported-listings" style="display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:13px;text-decoration:none;margin-bottom:14px">
+          <svg viewBox="0 0 20 20" style="width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2"><path d="M12 4l-6 6 6 6"/></svg>
+          Back to Reported Listings
+        </a>
 
         <div th:if="${actionMessage}" style="background:#e8f5e9;border:1px solid #81c784;border-radius:8px;padding:12px 18px;margin-bottom:16px">
           <strong style="color:#2e7d32" th:text="${actionMessage}">Success</strong>
@@ -87,43 +42,188 @@
           <strong style="color:#c62828" th:text="${actionError}">Error</strong>
         </div>
 
-        <div class="panel">
-          <div class="panel-header">
-            <div>
-              <span class="panel-title" th:text="${property.title}">Property Name</span>
-              <span class="panel-sub" th:text="${property.address} + ', ' + ${property.city}">Address</span>
-            </div>
-            <span class="badge badge-red"><span class="badge-dot"></span>Reported</span>
-          </div>
+        <!-- ============ HEADER CARD: photo, title, address, landlord, accreditation ============ -->
+        <div style="display:flex;gap:20px;align-items:center;background:#fff;border:1px solid #eee;border-radius:14px;padding:18px;margin-bottom:18px;flex-wrap:wrap">
+          <img th:if="${property.mainImageUrl} != null" th:src="${property.mainImageUrl}"
+               style="width:190px;height:110px;object-fit:cover;border-radius:10px;flex-shrink:0" />
+          <div th:if="${property.mainImageUrl} == null"
+               style="width:190px;height:110px;background:#eee;border-radius:10px;flex-shrink:0"></div>
 
-          <div style="padding:22px">
-            <div class="field-group">
-              <label class="field-label">Landlord</label>
-              <p th:if="${landlord != null}" th:text="${landlord.firstName} + ' ' + ${landlord.lastName} + ' (' + ${landlord.email} + ')'">Landlord</p>
-              <p th:if="${landlord == null}" style="color:var(--muted)">Landlord record not found.</p>
+          <div style="flex:1;min-width:220px">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <h2 style="margin:0;font-size:22px" th:text="${property.title}">Property Name</h2>
+              <span th:if="${landlordVerified}" class="badge badge-green" style="white-space:nowrap">
+                                <span class="badge-dot"></span>NSFAS Accredited
+                            </span>
             </div>
+            <p style="margin:6px 0 14px;color:var(--muted);font-size:13.5px;display:flex;align-items:center;gap:5px">
+              <svg viewBox="0 0 20 20" style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.6"><path d="M10 2c-3 0-5.5 2.4-5.5 5.5C4.5 11.5 10 18 10 18s5.5-6.5 5.5-10.5C15.5 4.4 13 2 10 2z"/><circle cx="10" cy="7.5" r="2"/></svg>
+              <span th:text="${addressLine}">Address</span>
+            </p>
 
-            <div class="field-group">
-              <label class="field-label">Report Reason</label>
-              <p th:text="${property.reportReason} ?: 'No reason provided'">Reason</p>
-            </div>
-
-            <div style="display:flex;gap:10px;margin-top:20px">
-              <form th:action="@{/admin/warn-landlord-for-listing/{id}(id=${property.propertyID})}" method="post">
-                <button type="submit" class="btn btn-primary" style="padding:9px 22px;border-radius:8px">Send Official Warning</button>
-              </form>
-              <form th:action="@{/admin/remove-listing/{id}(id=${property.propertyID})}" method="post"
-                    onsubmit="return confirm('Permanently remove this listing? This cannot be undone.');">
-                <button type="submit" class="btn btn-danger" style="padding:9px 22px;border-radius:8px">Remove Listing</button>
-              </form>
-              <a href="/admin/reported-listings" class="btn btn-view" style="padding:9px 22px;border-radius:8px;text-decoration:none">Back</a>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:34px;height:34px;border-radius:50%;background:#e6f6ec;color:#1a9b5b;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px"
+                   th:text="${landlord != null} ? ${#strings.substring(landlord.firstName,0,1)} + ${#strings.substring(landlord.lastName,0,1)} : '?'">JS</div>
+              <div>
+                <div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em">Landlord</div>
+                <div style="font-weight:600;font-size:14px" th:text="${landlord != null} ? (${landlord.firstName} + ' ' + ${landlord.lastName}) : ('Landlord #' + ${property.landlordID})">Landlord Name</div>
+              </div>
+              <a th:if="${landlord != null}" th:href="'mailto:' + ${landlord.email}"
+                 style="margin-left:8px;width:32px;height:32px;border:1px solid #e5e7eb;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#555;text-decoration:none">
+                <svg viewBox="0 0 20 20" style="width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.6"><path d="M3 5h14v10H3V5zM3 5l7 6 7-6"/></svg>
+              </a>
+              <a th:if="${landlord != null and landlord.phone != null}" th:href="'tel:' + ${landlord.phone}"
+                 style="width:32px;height:32px;border:1px solid #e5e7eb;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#555;text-decoration:none">
+                <svg viewBox="0 0 20 20" style="width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.6"><path d="M4 3h3l1.5 4-2 1.5a11 11 0 005.5 5.5l1.5-2 4 1.5v3a1.5 1.5 0 01-1.6 1.5A15 15 0 013 4.6 1.5 1.5 0 014 3z"/></svg>
+              </a>
             </div>
           </div>
         </div>
+
+        <!-- ============ MAIN GRID: tabs + timeline / stat cards ============ -->
+        <div style="display:grid;grid-template-columns:1fr 300px;gap:18px;align-items:start" class="reported-detail-grid">
+
+          <div>
+            <!-- ---- No reports on file: clean message, no button ---- -->
+            <div th:if="${#lists.isEmpty(reportTimeline)}"
+                 style="background:#f7f8f9;border:1px solid #e5e7eb;border-radius:12px;padding:28px;text-align:center">
+              <svg viewBox="0 0 20 20" style="width:28px;height:28px;stroke:#9aa1a9;fill:none;stroke-width:1.4;margin-bottom:8px"><circle cx="10" cy="10" r="7.5"/><path d="M10 6.5v4l2.5 1.5"/></svg>
+              <p style="margin:0;font-size:14.5px;font-weight:600;color:#444">No reports for this property</p>
+              <p style="margin:6px 0 0;font-size:13px;color:var(--muted)">This listing has no complaints on file. There's nothing to warn the landlord about yet.</p>
+            </div>
+
+            <!-- ---- Has reports: warning card + timeline + action ---- -->
+            <div th:unless="${#lists.isEmpty(reportTimeline)}" id="rd-panel-warning">
+              <div style="background:#fff8f6;border:1px solid #f7c9c0;border-radius:12px;padding:18px;margin-bottom:18px">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="width:20px;height:20px;border-radius:50%;background:#e5453b;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">!</span>
+                  <strong style="font-size:15px" th:text="${reportTimeline[0].reason} ?: 'Reported Issue'">Reported Maintenance Failure</strong>
+                </div>
+                <p style="margin:10px 0 0;font-size:13.5px;color:#5c4a46;line-height:1.6"
+                   th:text="${reportTimeline[0].description}">
+                  Description of the issue.
+                </p>
+              </div>
+
+              <div class="panel" style="margin-bottom:18px">
+                <div class="panel-header">
+                                    <span class="panel-title" style="display:flex;align-items:center;gap:6px">
+                                        <svg viewBox="0 0 20 20" style="width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.6"><circle cx="10" cy="10" r="7.5"/><path d="M10 5.5v5l3.5 2"/></svg>
+                                        Report Timeline
+                                    </span>
+                </div>
+                <div style="padding:6px 18px 18px">
+                  <div th:each="report, iter : ${reportTimeline}"
+                       style="display:flex;gap:14px;padding:12px 0;border-bottom:1px solid #f3f3f3">
+                    <div style="font-size:12.5px;color:var(--muted);white-space:nowrap;min-width:100px"
+                         th:text="${report.reportedAt} ?: 'Undated'">12 Oct 2023</div>
+                    <div style="font-size:13.5px">
+                      <span th:text="${iter.index == 0} ? 'Initial report filed by ' : 'Follow-up report filed by '">Initial report filed by</span>
+                      <strong th:text="${report.filedByLabel}">Student ID: 21804423</strong>
+                      <span th:if="${report.description}" style="display:block;color:#666;margin-top:2px" th:text="${report.description}">Details</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <form th:action="@{/admin/warn-landlord-for-listing/{id}(id=${property.propertyID})}" method="post">
+                <button type="submit" class="btn btn-primary"
+                        style="background:#1a9b5b;border-color:#1a9b5b;color:#fff;padding:12px 22px;border-radius:8px;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:8px;cursor:pointer">
+                  <svg viewBox="0 0 20 20" style="width:14px;height:14px;fill:#fff"><path d="M3 4l14 6-14 6V4z"/></svg>
+                  Send Official Warning
+                </button>
+              </form>
+              <p style="margin:8px 0 0;font-size:12px;color:var(--muted)">
+                Sends an official warning to the landlord's notification dashboard. The complainer's identity is never included.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ RIGHT RAIL: compliance / property health / suspension preview ============ -->
+          <div style="display:flex;flex-direction:column;gap:16px">
+
+            <div class="panel" style="padding:16px">
+              <div style="font-weight:700;font-size:13px;color:#1a9b5b;margin-bottom:8px">Bursary Compliance</div>
+              <p style="margin:0;font-size:13px;color:var(--muted);line-height:1.6">
+                <span th:if="${property.capacity} != null" th:text="'This property houses up to ' + ${property.capacity} + ' students.'">This property houses students.</span>
+                A suspension will require immediate alternative placement protocols for any affected students.
+              </p>
+            </div>
+
+            <div class="panel" style="padding:16px">
+              <div style="font-weight:700;font-size:13px;margin-bottom:10px">Property Health</div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <span style="font-size:13px;color:var(--muted)">Total Reports (30d)</span>
+                <strong style="font-size:15px;color:#c62828" th:text="${reportsLast30Days}">0</strong>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <span style="font-size:13px;color:var(--muted)">Average Rating</span>
+                <strong style="font-size:15px" th:text="${property.rating != null ? property.rating + ' / 5.0' : 'No ratings yet'}">0 / 5.0</strong>
+              </div>
+              <div style="height:6px;background:#f0f0f0;border-radius:999px;margin-top:10px;overflow:hidden">
+                <div style="height:100%;background:#c62828;border-radius:999px"
+                     th:style="'height:100%;background:#c62828;border-radius:999px;width:' + (${reportsLast30Days} != null ? (${reportsLast30Days} * 8) : 0) + '%'"></div>
+              </div>
+            </div>
+
+            <div class="panel" style="padding:16px">
+              <div style="font-weight:700;font-size:13px;margin-bottom:10px">Listing Actions</div>
+              <p style="margin:0 0 12px;font-size:12.5px;color:var(--muted);line-height:1.5">
+                Suspending hides this listing from students immediately but can be reversed. Removing deletes it permanently.
+              </p>
+              <form th:action="@{/admin/suspend-listing/{id}(id=${property.propertyID})}" method="post"
+                    onsubmit="return confirm('Suspend this listing? It will be hidden from students immediately.');"
+                    style="margin-bottom:8px">
+                <button type="submit"
+                        style="width:100%;background:#fff;border:1px solid #e5a300;color:#8a5a00;padding:10px 0;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">
+                  Suspend Listing
+                </button>
+              </form>
+              <form th:action="@{/admin/remove-listing/{id}(id=${property.propertyID})}" method="post"
+                    onsubmit="return confirm('Permanently remove this listing? This cannot be undone.');">
+                <button type="submit"
+                        style="width:100%;background:#fff;border:1px solid #f0b4b0;color:#c62828;padding:10px 0;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">
+                  Remove Listing Permanently
+                </button>
+              </form>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ============ PAGINATION: page through the reported queue without going back to the list ============ -->
+        <div th:if="${reportedQueue != null and #lists.size(reportedQueue) > 1}"
+             style="display:flex;justify-content:center;align-items:center;gap:6px;margin-top:32px;padding-top:20px;border-top:1px solid #eee">
+
+          <a th:if="${prevReportedId != null}" th:href="@{/admin/reported-listing/{id}(id=${prevReportedId})}"
+             style="width:32px;height:32px;border:1px solid #e5e7eb;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#555;text-decoration:none">
+            <svg viewBox="0 0 20 20" style="width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2"><path d="M12 4l-6 6 6 6"/></svg>
+          </a>
+          <span th:if="${prevReportedId == null}"
+                style="width:32px;height:32px;border:1px solid #f0f0f0;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#ccc">
+                        <svg viewBox="0 0 20 20" style="width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2"><path d="M12 4l-6 6 6 6"/></svg>
+                    </span>
+
+          <a th:each="p, iter : ${reportedQueue}" th:href="@{/admin/reported-listing/{id}(id=${p.propertyID})}"
+             th:text="${iter.index + 1}"
+             th:style="${iter.index == currentQueueIndex}
+                                    ? 'width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:13px;font-weight:700;background:#1a9b5b;color:#fff'
+                                    : 'width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb;color:#555'">1</a>
+
+          <a th:if="${nextReportedId != null}" th:href="@{/admin/reported-listing/{id}(id=${nextReportedId})}"
+             style="width:32px;height:32px;border:1px solid #e5e7eb;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#555;text-decoration:none">
+            <svg viewBox="0 0 20 20" style="width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2"><path d="M8 4l6 6-6 6"/></svg>
+          </a>
+          <span th:if="${nextReportedId == null}"
+                style="width:32px;height:32px;border:1px solid #f0f0f0;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#ccc">
+                        <svg viewBox="0 0 20 20" style="width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2"><path d="M8 4l6 6-6 6"/></svg>
+                    </span>
+        </div>
+
       </div>
     </div>
   </div>
 </div>
-<div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null)}"></div>
+
 </body>
 </html>

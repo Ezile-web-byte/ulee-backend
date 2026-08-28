@@ -30,7 +30,6 @@ import java.security.Principal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import com.ulee.ulee_backend.repository.PropertyImageRepository;
 
 @Controller
@@ -128,9 +127,27 @@ public class PropertyController {
         return view;
     }
 
-    // Homepage — browse-first entry point, no login wall
+    // Homepage — browse-first entry point for anonymous visitors; logged-in
+    // users are routed to their own dashboard so a stray click on "/" (logo,
+    // bookmark, browser home, etc.) never dumps an admin or landlord onto the
+    // student dashboard. Role strings are the same three used everywhere else
+    // ("STUDENT", "LANDLORD", "ADMIN" — see User.role), so this mirrors
+    // whatever roleBasedSuccessHandler does on login.
     @GetMapping("/")
-    public String home() {
+    public String home(Principal principal) {
+        if (principal == null) {
+            return "redirect:/student-dashboard";
+        }
+
+        User currentUser = getCurrentUser(principal);
+        String role = currentUser.getRole();
+
+        if ("ADMIN".equalsIgnoreCase(role)) {
+            return "redirect:/admin-index";
+        }
+        if ("LANDLORD".equalsIgnoreCase(role)) {
+            return "redirect:/landlord-index";
+        }
         return "redirect:/student-dashboard";
     }
 
@@ -1036,3 +1053,4 @@ public class PropertyController {
     }
 
 }
+

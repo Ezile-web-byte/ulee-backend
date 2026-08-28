@@ -5,41 +5,54 @@
   Speak with AI — reusable floating chat widget.
 
   Usage (Property_Detail_Page — Property_Context):
-    <div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(${property.propertyID}, ${property.title})}"></div>
+    Build a plain comma-joined features string first (amenities + special
+    features), then pass it along with the property's own fields:
+
+    <div th:with="propertyFeatures=${
+             (amenities != null and !amenities.isEmpty() ? #strings.listJoin(amenities.![name], ', ') : '')
+             + (features != null and !features.isEmpty()
+                 ? ((amenities != null and !amenities.isEmpty()) ? ', ' : '') + #strings.listJoin(features.![name], ', ')
+                 : '')
+         }"
+         th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(
+             ${property.propertyID}, ${property.title},
+             ${property.address + ', ' + property.city}, ${property.commuteType},
+             ${propertyFeatures})}">
+    </div>
 
   Usage (any other page — General_Context):
-    <div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null)}"></div>
+    <div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null, null, null, null)}"></div>
 
   Requires (link once per page, alongside this include):
     <link rel="stylesheet" href="/speak-with-ai.css">
     <script src="/speak-with-ai-logic.js" defer></script>
     <script src="/speak-with-ai.js" defer></script>
 -->
-<div th:fragment="speakWithAiWidget(propertyId, propertyTitle)"
+<div th:fragment="speakWithAiWidget(propertyId, propertyTitle, propertyAddress, propertyCommuteType, propertyFeatures)"
      class="swai-root"
      id="swai-root"
-     th:attr="data-property-id=${propertyId},data-property-title=${propertyTitle}">
+     th:attr="data-property-id=${propertyId},data-property-title=${propertyTitle},data-property-address=${propertyAddress},data-property-commute-type=${propertyCommuteType},data-property-features=${propertyFeatures}">
 
-  <button type="button" id="swai-icon" class="swai-icon" aria-label="Open chat assistant" aria-expanded="false">
-    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
-    </svg>
-  </button>
+    <button type="button" id="swai-icon" class="swai-icon" aria-label="Open chat assistant" aria-expanded="false">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+        </svg>
+    </button>
 
-  <section id="swai-panel" class="swai-panel" hidden aria-hidden="true" role="dialog" aria-label="Chat assistant">
-    <header class="swai-panel-header">
-      <span class="swai-title" id="swai-title">Assistant</span>
-      <button type="button" id="swai-close" class="swai-close" aria-label="Close chat">&times;</button>
-    </header>
+    <section id="swai-panel" class="swai-panel" hidden aria-hidden="true" role="dialog" aria-label="Chat assistant">
+        <header class="swai-panel-header">
+            <span class="swai-title" id="swai-title">Assistant</span>
+            <button type="button" id="swai-close" class="swai-close" aria-label="Close chat">&times;</button>
+        </header>
 
-    <div id="swai-history" class="swai-history" aria-live="polite"></div>
+        <div id="swai-history" class="swai-history" aria-live="polite"></div>
 
-    <form id="swai-form" class="swai-form">
-      <input id="swai-input" class="swai-input" type="text" autocomplete="off"
-             placeholder="Type a message…" aria-label="Message input" />
-      <button type="submit" class="swai-send" aria-label="Send message">Send</button>
-    </form>
-  </section>
+        <form id="swai-form" class="swai-form">
+            <input id="swai-input" class="swai-input" type="text" autocomplete="off"
+                   placeholder="Type a message…" aria-label="Message input" />
+            <button type="submit" class="swai-send" aria-label="Send message">Send</button>
+        </form>
+    </section>
 </div>
 </body>
 </html>

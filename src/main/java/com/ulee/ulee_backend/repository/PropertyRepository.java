@@ -8,6 +8,7 @@ import java.util.List;
 
 public interface PropertyRepository extends JpaRepository<Property, Integer> {
     List<Property> findByStatus(String status);
+    List<Property> findByStatusIn(List<String> statuses);
     List<Property> findByIsReportedTrue();
     List<Property> findByIsAvailableTrue();
 

@@ -2,33 +2,249 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ULEE — Approved Properties</title>
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/admin-style.css">
+  <script src="/admin-script.js" defer></script>
 </head>
 <body>
+
 <div class="shell">
+
+  <!-- ============ SIDEBAR (same as Dashboard, for consistent navigation) ============ -->
+  <div th:replace="~{fragments/admin-sidebar :: sidebar('approved-properties')}"></div>
+
   <div class="main">
-    <header class="topbar"><div class="topbar-title">Approved Properties</div></header>
+
+    <!-- ============ TOPBAR — search, notifications, help, log out ============ -->
+    <header class="topbar">
+      <div class="topbar-title" id="topbar-title">Approved Properties</div>
+
+      <div style="flex:1;max-width:420px;margin:0 24px;position:relative">
+        <svg viewBox="0 0 20 20" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;stroke:#9aa1a9;fill:none;stroke-width:1.6">
+          <circle cx="9" cy="9" r="6"/><path d="M14 14l4 4"/>
+        </svg>
+        <input type="text" id="searchInput" th:value="${search}" placeholder="Search approved properties…"
+               onkeydown="if(event.key==='Enter'){applyFilters();}"
+               style="width:100%;padding:9px 12px 9px 34px;border:1px solid #e5e7eb;border-radius:8px;font-family:inherit;font-size:14px" />
+      </div>
+
+      <div class="notif-wrap">
+        <button class="icon-btn" title="Notifications">
+          <svg viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3l-1.5 2.5h15L16 11V8a6 6 0 00-6-6zM8 16a2 2 0 004 0"/></svg>
+        </button>
+        <div class="notif-dot" th:if="${totalReported != null and totalReported > 0}"></div>
+      </div>
+
+      <button class="icon-btn" title="Help">
+        <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7.5"/><path d="M7.8 7.8a2.2 2.2 0 1 1 3.4 1.8c-.7.5-1.2 1-1.2 2M10 14.2h.01"/></svg>
+      </button>
+
+      <button class="logout-btn" onclick="alert('Logging out…')">
+        <svg viewBox="0 0 20 20"><path d="M13 3h4v14h-4M9 14l4-4-4-4M13 10H5"/></svg>
+        <span>Log out</span>
+      </button>
+    </header>
+
     <div class="content">
-      <div class="section active">
-        <div class="stats">
+
+      <div class="section active" id="sec-approved-properties">
+
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap;gap:12px">
+          <div>
+            <h2 style="margin:0 0 4px;font-size:22px">Approved Properties</h2>
+            <p style="margin:0;color:var(--muted)">Manage and edit all university-accredited student residences.</p>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;position:relative">
+            <!-- Picking a year re-sorts the grid so that year's properties (by availableFrom) show first -->
+            <label style="font-size:14px;color:var(--muted);display:flex;align-items:center;gap:6px">
+              Academic Year:
+              <select onchange="window.location.href='/admin/approved-properties?academicYear='+this.value"
+                      style="border:1px solid #e5e7eb;border-radius:8px;padding:9px 14px;font-size:14px;font-family:inherit;cursor:pointer;color:#1a1a1a">
+                <option th:each="yr : ${academicYearOptions}"
+                        th:value="${yr}"
+                        th:text="${yr} + '/' + ${#numbers.formatInteger((yr+1) % 100, 2)}"
+                        th:selected="${yr == selectedAcademicYear}">2025/26</option>
+              </select>
+            </label>
+            <button id="filterToggleBtn" type="button" onclick="toggleFilterPanel()"
+                    style="background:#1a9b5b;border:1px solid #1a9b5b;color:#fff;border-radius:8px;padding:9px 16px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px">
+              <svg viewBox="0 0 20 20" style="width:14px;height:14px;stroke:#fff;fill:none;stroke-width:1.6"><path d="M3 5h14M6 10h8M9 15h2"/></svg>
+              Filter
+            </button>
+
+            <!-- Filter panel: city, price range, bedrooms -->
+            <div id="filterPanel" style="display:none;position:absolute;top:44px;right:0;z-index:20;background:#fff;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.08);padding:16px;width:260px">
+              <label style="display:block;font-size:12px;font-weight:600;color:#555;margin-bottom:4px">City</label>
+              <select id="cityFilter" style="width:100%;padding:7px 8px;border:1px solid #e5e7eb;border-radius:6px;margin-bottom:12px;font-family:inherit;font-size:13px">
+                <option value="">All cities</option>
+                <option th:each="c : ${cityOptions}" th:value="${c}" th:text="${c}"
+                        th:selected="${selectedCity != null and selectedCity.equalsIgnoreCase(c)}">City</option>
+              </select>
+
+              <label style="display:block;font-size:12px;font-weight:600;color:#555;margin-bottom:4px">Price range (R)</label>
+              <div style="display:flex;gap:8px;margin-bottom:12px">
+                <input type="number" id="minPriceFilter" th:value="${minPrice}" placeholder="Min"
+                       style="width:50%;padding:7px 8px;border:1px solid #e5e7eb;border-radius:6px;font-family:inherit;font-size:13px" />
+                <input type="number" id="maxPriceFilter" th:value="${maxPrice}" placeholder="Max"
+                       style="width:50%;padding:7px 8px;border:1px solid #e5e7eb;border-radius:6px;font-family:inherit;font-size:13px" />
+              </div>
+
+              <label style="display:block;font-size:12px;font-weight:600;color:#555;margin-bottom:4px">Bedrooms</label>
+              <select id="bedroomsFilter" style="width:100%;padding:7px 8px;border:1px solid #e5e7eb;border-radius:6px;margin-bottom:14px;font-family:inherit;font-size:13px">
+                <option value="">Any</option>
+                <option th:each="n : ${#numbers.sequence(1, 5)}" th:value="${n}" th:text="${n}"
+                        th:selected="${bedrooms != null and bedrooms == n}">1</option>
+              </select>
+
+              <div style="display:flex;gap:8px">
+                <button type="button" onclick="applyFilters()"
+                        style="flex:1;background:#1a9b5b;border:1px solid #1a9b5b;color:#fff;border-radius:6px;padding:8px 0;font-size:13px;font-weight:600;cursor:pointer">Apply</button>
+                <a href="/admin/approved-properties"
+                   style="flex:1;text-align:center;border:1px solid #e5e7eb;color:#555;border-radius:6px;padding:8px 0;font-size:13px;text-decoration:none">Clear</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p th:if="${search != null and !search.isEmpty()} or ${selectedCity != null and !selectedCity.isEmpty()} or ${minPrice != null} or ${maxPrice != null} or ${bedrooms != null}"
+           style="margin:0 0 16px;font-size:13px;color:var(--muted)"
+           th:text="${#lists.size(approvedProperties)} + ' result(s) match your filters'">0 results</p>
+
+
+        <div class="stats" style="grid-template-columns:repeat(2,minmax(200px,1fr));max-width:560px">
           <div class="stat-card">
+            <div class="stat-top">
+              <div class="stat-icon" style="background:#edfaf4">
+                <svg viewBox="0 0 20 20" style="stroke:#1a9b5b"><path d="M3 7l7-4 7 4v9H3V7z"/><path d="M8 11h4v5H8z"/></svg>
+              </div>
+            </div>
             <div class="stat-num" th:text="${totalApproved}">0</div>
             <div class="stat-label">Total Approved</div>
+            <div style="font-size:12px;color:#1a9b5b;margin-top:2px" th:text="'+' + ${approvedThisMonth} + ' this month'">+0 this month</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-top">
+              <div class="stat-icon" style="background:#edfaf4">
+                <svg viewBox="0 0 20 20" style="stroke:#1a9b5b"><circle cx="10" cy="10" r="7"/><path d="M10 6v4l3 2"/></svg>
+              </div>
+            </div>
+            <div class="stat-num" th:text="${#numbers.formatDecimal(occupancyRate, 1, 1)} + '%'">0%</div>
+            <div class="stat-label">Occupancy Rate</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">Applicants vs. capacity</div>
           </div>
         </div>
-        <div class="review-grid">
-          <div class="review-card" th:each="property : ${approvedProperties}">
-            <div class="review-name" th:text="${property.title}">Name</div>
-            <div class="review-listing" th:text="${property.city} + ' · R' + ${property.rent} + '/mo'">Details</div>
-            <a th:href="@{/admin/listing/{id}(id=${property.propertyID})}" class="btn btn-primary" style="display:inline-block;margin-top:10px">View Details</a>
+
+        <!-- ============ PROPERTY CARDS ============ -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;margin-top:22px">
+
+          <div class="property-card" style="border:1px solid #eee;border-radius:12px;overflow:hidden;background:#fff"
+               th:each="prop : ${approvedProperties}">
+
+            <!-- Clicking the photo opens the full listing detail (all info + all photos) -->
+            <a th:href="@{/admin/listing/{id}(id=${prop.propertyID})}" style="display:block;position:relative;text-decoration:none">
+              <img th:if="${prop.mainImageUrl} != null" th:src="${prop.mainImageUrl}"
+                   style="width:100%;height:150px;object-fit:cover;display:block" />
+              <div th:if="${prop.mainImageUrl} == null"
+                   style="width:100%;height:150px;background:#eee"></div>
+
+              <!-- Decorative blue accent glow behind the APPROVED badge -->
+              <span style="position:absolute;top:4px;left:2px;width:96px;height:36px;background:radial-gradient(circle at 30% 50%, rgba(37,99,235,0.55), rgba(37,99,235,0) 70%);filter:blur(7px);z-index:1;border-radius:999px;pointer-events:none"></span>
+
+              <span style="position:absolute;top:10px;left:10px;z-index:2;background:#1a9b5b;color:#fff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;display:flex;align-items:center;gap:4px">
+                                <svg viewBox="0 0 20 20" style="width:10px;height:10px;fill:#fff"><path d="M4 10l4 4 8-8"/></svg>
+                                APPROVED
+                            </span>
+
+              <span th:if="${prop.distanceFromUniversity} != null"
+                    style="position:absolute;top:10px;right:10px;z-index:2;background:rgba(255,255,255,0.92);color:#333;font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px"
+                    th:text="${prop.distanceFromUniversity} + 'km to NMU'">0.0km to NMU</span>
+            </a>
+
+            <div style="padding:14px">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+                <a th:href="@{/admin/listing/{id}(id=${prop.propertyID})}"
+                   th:text="${prop.title}"
+                   style="font-weight:600;font-size:15px;color:#1a1a1a;text-decoration:none">Property Name</a>
+                <span th:if="${prop.rent} != null" style="font-weight:700;color:#1a9b5b;white-space:nowrap"
+                      th:text="'R' + ${prop.rent}">R0</span>
+              </div>
+              <div style="color:var(--muted);font-size:13px;margin-top:4px" th:text="${prop.city}">City</div>
+
+              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
+                                <span th:if="${prop.type} != null" th:text="${#strings.toUpperCase(prop.type)}"
+                                      style="background:#f2f2f2;color:#555;font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px">TYPE</span>
+                <span th:each="amenity : ${prop.amenities}" th:text="${#strings.toUpperCase(amenity.name)}"
+                      style="background:#f2f2f2;color:#555;font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px">AMENITY</span>
+              </div>
+
+              <!-- Report status: always takes you straight into this property's own
+                   Reported page — never the general queue — so "Review Report" from
+                   Approved Properties lands exactly where the admin expects. -->
+              <a th:href="@{/admin/reported-listing/{id}(id=${prop.propertyID})}"
+                 style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px;background:#1a9b5b;color:#fff;border-radius:8px;padding:9px 0;font-size:13px;font-weight:600;text-decoration:none">
+                <svg viewBox="0 0 20 20" style="width:13px;height:13px;fill:#fff"><path d="M5 2h10v16l-5-3-5 3V2z"/></svg>
+                Review Report
+              </a>
+            </div>
           </div>
+
         </div>
-        <p th:if="${#lists.isEmpty(approvedProperties)}" style="padding:22px;color:var(--muted)">No approved properties yet.</p>
+
+        <p th:if="${#lists.isEmpty(approvedProperties)}" style="padding:22px;color:var(--muted);text-align:center">
+          No approved properties yet.
+        </p>
+
       </div>
+
     </div>
   </div>
 </div>
+
+<script>
+  function toggleFilterPanel() {
+    var panel = document.getElementById('filterPanel');
+    panel.style.display = (panel.style.display === 'none' || !panel.style.display) ? 'block' : 'none';
+  }
+
+  function applyFilters() {
+    var params = new URLSearchParams();
+
+    var search = document.getElementById('searchInput').value.trim();
+    if (search) params.set('search', search);
+
+    var city = document.getElementById('cityFilter').value;
+    if (city) params.set('city', city);
+
+    var minPrice = document.getElementById('minPriceFilter').value;
+    if (minPrice) params.set('minPrice', minPrice);
+
+    var maxPrice = document.getElementById('maxPriceFilter').value;
+    if (maxPrice) params.set('maxPrice', maxPrice);
+
+    var bedrooms = document.getElementById('bedroomsFilter').value;
+    if (bedrooms) params.set('bedrooms', bedrooms);
+
+    // Preserve the currently-selected academic year, if any, so applying
+    // filters doesn't reset it back to the default
+    var currentYear = new URLSearchParams(window.location.search).get('academicYear');
+    if (currentYear) params.set('academicYear', currentYear);
+
+    var query = params.toString();
+    window.location.href = '/admin/approved-properties' + (query ? '?' + query : '');
+  }
+
+  // Close the filter panel when clicking outside it
+  document.addEventListener('click', function (e) {
+    var panel = document.getElementById('filterPanel');
+    var btn = document.getElementById('filterToggleBtn');
+    if (panel && panel.style.display === 'block' && !panel.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
+      panel.style.display = 'none';
+    }
+  });
+</script>
+
 </body>
 </html>

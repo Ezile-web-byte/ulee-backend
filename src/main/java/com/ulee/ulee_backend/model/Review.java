@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "reviews")
+@Table(name = "review")
 public class Review {
 
     @Id
@@ -27,6 +27,11 @@ public class Review {
     private Integer studyAreaRating;
     private Integer yearOfStudy;
     private String residencyStatus; // "Current" or "Past"
+
+    // Moderation flag for the admin Reviews page: a review can be flagged
+    // as reported (e.g. abusive, off-topic) and an admin can mark it
+    // resolved once handled. Defaults to false — a review starts "Clean".
+    private Boolean isReported = false;
 
     public Integer getReviewID() { return reviewID; }
     public void setReviewID(Integer reviewID) { this.reviewID = reviewID; }
@@ -63,4 +68,7 @@ public class Review {
 
     public String getResidencyStatus() { return residencyStatus; }
     public void setResidencyStatus(String residencyStatus) { this.residencyStatus = residencyStatus; }
+
+    public Boolean getIsReported() { return isReported; }
+    public void setIsReported(Boolean isReported) { this.isReported = isReported; }
 }
