@@ -1,82 +1,222 @@
-/* ============================================================
-   Review feature styles
-   Append to landlord-style.css, or link this file after it on
-   my-property-reviews.html and edit-property.html.
-   Uses the hero design system fonts (Plus Jakarta Sans / Hanken
-   Grotesk) and the dark teal accent (no purple) shared across
-   the app.
-   ============================================================ */
+/* ==================== TOPBAR TITLE + SUBTITLE ==================== */
 
-.review-group {
-    margin-bottom: 32px;
-}
-
-.review-group-header {
+.topbar-title-group {
     display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    margin-bottom: 14px;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
 }
 
-.review-group-title {
-    font-family: 'Plus Jakarta Sans', sans-serif;
+.topbar-title {
+    margin: 0;
+}
+
+.topbar-subtitle {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--on-surface-variant);
+}
+
+/* ==================== REVIEW SUMMARY GRID (list page) ==================== */
+
+.review-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.review-summary-card {
+    display: block;
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.review-summary-card:hover {
+    box-shadow: var(--shadow-floating);
+    border-color: var(--accent-border);
+    transform: translateY(-3px);
+}
+
+.review-summary-media {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: var(--surface-container-low);
+}
+
+.review-summary-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.review-summary-body {
+    padding: 16px 18px 18px;
+}
+
+.review-summary-title {
+    font-family: var(--font-display);
+    font-size: 16px;
     font-weight: 700;
-    font-size: 20px;
-    color: #1a1a1a;
+    margin: 0 0 4px;
+    color: var(--on-surface);
 }
 
-.review-group-meta {
+.review-summary-address {
+    font-size: 12.5px;
+    color: var(--on-surface-variant);
+    margin: 0 0 10px;
+}
+
+.review-summary-rating {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-family: 'Hanken Grotesk', sans-serif;
-    font-size: 13px;
-    color: #6b7280;
 }
 
-.review-group-meta .stars {
-    color: hsl(38, 92%, 50%);
+.review-summary-stars {
+    color: var(--accent-yellow);
+    font-size: 13px;
     letter-spacing: 1px;
 }
 
-.review-list {
+.review-summary-count {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--on-surface-variant);
+}
+
+.review-summary-empty {
+    font-size: 12.5px;
+    color: var(--outline);
+    margin: 0;
+}
+
+/* ==================== RATING OVERVIEW (detail page) ==================== */
+
+.rating-overview {
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-lg);
+    padding: 24px 28px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-sm);
+}
+
+.rating-overview-score {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.rating-overview-number {
+    font-family: var(--font-display);
+    font-size: 40px;
+    font-weight: 800;
+    color: var(--on-surface);
+}
+
+.rating-overview-outof {
+    font-size: 16px;
+    color: var(--on-surface-variant);
+    font-weight: 600;
+}
+
+.rating-overview-stars-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 6px 0 20px;
+}
+
+.rating-overview-count {
+    font-size: 13px;
+    color: var(--on-surface-variant);
+    font-weight: 500;
+}
+
+.rating-bars {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
+    max-width: 480px;
+}
+
+.rating-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.rating-bar-label {
+    width: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--on-surface-variant);
+}
+
+.rating-bar-track {
+    flex: 1;
+    height: 6px;
+    background: var(--surface-container-low);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.rating-bar-fill {
+    height: 100%;
+    background: var(--primary-dark);
+    border-radius: var(--radius-full);
+}
+
+.rating-bar-pct {
+    width: 34px;
+    font-size: 12px;
+    color: var(--on-surface-variant);
+    text-align: right;
+}
+
+/* ==================== REVIEW LIST GRID (detail page) ==================== */
+
+.review-list-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
 }
 
 .review-card {
-    background: #fff;
-    border: 1px solid #e8e8ee;
-    border-radius: 14px;
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-md);
     padding: 18px 20px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    box-shadow: var(--shadow-sm);
 }
 
 .review-card-header {
     display: flex;
     align-items: flex-start;
     gap: 12px;
+    margin-bottom: 10px;
 }
 
 .review-avatar {
-    flex-shrink: 0;
     width: 36px;
     height: 36px;
-    border-radius: 50%;
+    border-radius: var(--radius-full);
+    background: var(--primary-tint);
+    color: var(--primary-dark);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'Hanken Grotesk', sans-serif;
+    font-family: var(--font-display);
     font-weight: 700;
-    font-size: 13px;
-    color: hsl(180, 67%, 28%);
-    background: hsl(180, 67%, 90%);
-}
-
-.review-avatar--alt {
-    color: hsl(180, 67%, 36%);
-    background: hsl(180, 67%, 96%);
+    font-size: 12.5px;
+    flex-shrink: 0;
 }
 
 .review-identity {
@@ -85,82 +225,174 @@
 }
 
 .review-name {
-    font-family: 'Hanken Grotesk', sans-serif;
+    font-size: 13.5px;
     font-weight: 700;
-    font-size: 14px;
-    color: #1a1a2e;
+    color: var(--on-surface);
 }
 
 .review-role {
-    font-family: 'Hanken Grotesk', sans-serif;
-    font-size: 12.5px;
-    color: #8b8b96;
-    margin-top: 1px;
+    font-size: 11.5px;
+    color: var(--on-surface-variant);
 }
 
 .review-rating-date {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 3px;
+    gap: 2px;
     flex-shrink: 0;
 }
 
 .review-stars {
-    color: hsl(38, 92%, 50%);
-    font-size: 13px;
+    color: var(--accent-yellow);
+    font-size: 12px;
     letter-spacing: 1px;
 }
-
-.review-date {
-    font-family: 'Hanken Grotesk', sans-serif;
-    font-size: 11.5px;
-    color: #9a9aa5;
+.rating-overview-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 40px;
 }
 
-.review-comment {
-    font-family: 'Hanken Grotesk', sans-serif;
-    font-size: 14px;
-    line-height: 1.55;
-    color: #3a3a45;
-    margin: 12px 0 12px 48px;
+.rating-overview-left {
+    min-width: 160px;
 }
 
-.review-footer {
+.rating-bars {
+    flex: 1;
+}
+
+.review-card-footer {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-left: 48px;
+    margin-top: 12px;
     padding-top: 10px;
-    border-top: 1px solid #f0f0f4;
+    border-top: 1px solid var(--surface-container-low);
 }
 
 .review-helpful {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 6px;
-    font-family: 'Hanken Grotesk', sans-serif;
-    font-size: 12.5px;
+    gap: 5px;
+    font-size: 12px;
     font-weight: 600;
-    color: hsl(180, 67%, 36%);
+    color: var(--primary-dark);
+    cursor: default;
 }
 
 .review-flag {
-    color: #c4c4cc;
+    color: var(--outline);
+    cursor: default;
+}
+
+.review-date {
+    font-size: 11px;
+    color: var(--outline);
+}
+
+.review-comment {
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--on-surface-variant);
+    margin: 0;
+}
+
+/* ==================== REVIEW RESPONSE (landlord reply) ==================== */
+
+.review-response {
+    margin-top: 12px;
+    padding: 12px 14px;
+    background: var(--surface-container-low);
+    border-left: 3px solid var(--primary-dark);
+    border-radius: var(--radius-sm);
+}
+
+.review-response-label {
+    margin: 0 0 4px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--primary-dark);
+}
+
+.review-response-text {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--on-surface);
+}
+
+.review-respond-btn,
+.review-response-edit-btn {
+    margin-top: 10px;
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--primary-dark);
     cursor: pointer;
 }
 
-.review-empty {
-    font-family: 'Hanken Grotesk', sans-serif;
-    font-size: 13.5px;
-    color: #9a9aa5;
-    font-style: italic;
-    padding: 8px 0 0 2px;
+.review-response-form {
+    display: none;
+    margin-top: 12px;
 }
 
-.reviews-empty-state {
+.review-response-form.is-open {
+    display: block;
+}
+
+.review-response-form textarea {
+    width: 100%;
+    min-height: 70px;
+    resize: vertical;
+    font-family: inherit;
+    font-size: 13px;
+    padding: 10px 12px;
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-sm);
+    box-sizing: border-box;
+}
+
+.review-response-form-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+/* ==================== SHARED / EXISTING ==================== */
+
+.review-empty {
+    font-size: 13.5px;
+    color: var(--on-surface-variant);
+    margin: 0;
+    padding: 10px 0 2px;
+}
+
+.reviews-empty-state,
+.filter-empty-state {
     text-align: center;
     padding: 60px 20px;
-    font-family: 'Hanken Grotesk', sans-serif;
-    color: #8b8b96;
+    color: var(--on-surface-variant);
+    background: var(--surface-container-lowest);
+    border: 2px dashed var(--outline-variant);
+    border-radius: var(--radius-lg);
+}
+
+.reviews-empty-state h3 {
+    font-family: var(--font-display);
+    color: var(--on-surface);
+    margin: 0 0 6px;
+}
+
+@media (max-width: 1024px) {
+    .review-summary-grid { grid-template-columns: repeat(2, 1fr); }
+    .review-list-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 720px) {
+    .review-summary-grid { grid-template-columns: 1fr; }
 }

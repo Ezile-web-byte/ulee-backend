@@ -4,13 +4,16 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "review")
+@Table(name = "reviews")
 public class Review {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer reviewID;
-
+    private String landlordResponse;
+    private LocalDateTime responseDate;
+    private Boolean isReported;
+    private String reportReason;
     private Integer studentID;
     private Integer propertyID;
     private Integer rating;
@@ -27,11 +30,6 @@ public class Review {
     private Integer studyAreaRating;
     private Integer yearOfStudy;
     private String residencyStatus; // "Current" or "Past"
-
-    // Moderation flag for the admin Reviews page: a review can be flagged
-    // as reported (e.g. abusive, off-topic) and an admin can mark it
-    // resolved once handled. Defaults to false — a review starts "Clean".
-    private Boolean isReported = false;
 
     public Integer getReviewID() { return reviewID; }
     public void setReviewID(Integer reviewID) { this.reviewID = reviewID; }
@@ -68,7 +66,15 @@ public class Review {
 
     public String getResidencyStatus() { return residencyStatus; }
     public void setResidencyStatus(String residencyStatus) { this.residencyStatus = residencyStatus; }
+    public String getLandlordResponse() { return landlordResponse; }
+    public void setLandlordResponse(String landlordResponse) { this.landlordResponse = landlordResponse; }
+
+    public LocalDateTime getResponseDate() { return responseDate; }
+    public void setResponseDate(LocalDateTime responseDate) { this.responseDate = responseDate; }
 
     public Boolean getIsReported() { return isReported; }
     public void setIsReported(Boolean isReported) { this.isReported = isReported; }
+
+    public String getReportReason() { return reportReason; }
+    public void setReportReason(String reportReason) { this.reportReason = reportReason; }
 }

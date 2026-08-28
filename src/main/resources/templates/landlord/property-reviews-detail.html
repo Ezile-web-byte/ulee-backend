@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title th:text="${property.title} + ' | Reviews | ULEE'">Reviews | ULEE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Hanken+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/landlord-style.css">
+  <link rel="stylesheet" href="/landlord-reviews.css">
+  <style>
+    .review-switcher-row {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .property-switcher-select {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--on-surface-variant);
+      font-size: 13px;
+      background: var(--surface-container-lowest);
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--outline-variant);
+    }
+    .property-switcher-select select {
+      border: none;
+      background: transparent;
+      color: var(--on-surface);
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .review-next-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--outline-variant);
+      background: var(--surface-container-lowest);
+      color: var(--on-surface-variant);
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+    .review-next-btn:hover {
+      background: var(--surface-tint);
+      color: var(--primary-dark);
+      border-color: var(--accent-border);
+    }
+    .rating-metrics-bar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+    .rating-metric-card {
+      background: var(--surface-container-lowest);
+      border: 1px solid var(--outline-variant);
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      box-shadow: var(--shadow-sm);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .rating-metric-card:hover {
+      box-shadow: var(--shadow-surface);
+      border-color: var(--accent-border);
+    }
+    .rating-metric-card--active {
+      border-color: var(--primary-dark);
+      box-shadow: 0 0 0 2px var(--primary-tint);
+    }
+    .rating-metric-label {
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--outline);
+      margin: 0 0 8px;
+    }
+    .rating-metric-value {
+      font-family: var(--font-display);
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--on-surface);
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+    .rating-metric-value .unit {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--on-surface-variant);
+    }
+    .rating-metric-stars {
+      display: block;
+      color: var(--accent-yellow);
+      font-size: 13px;
+      letter-spacing: 1px;
+      margin-top: 4px;
+    }
+    .rating-metric-card--good .rating-metric-value { color: var(--primary-dark); }
+    .rating-metric-card--poor .rating-metric-value { color: var(--alert); }
+
+    .property-name-heading {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 22px;
+      color: var(--on-surface);
+      margin: 0 0 20px;
+    }
+
+    /* ── Reported review styling ── */
+    .review-card {
+      position: relative;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+    .review-card--reported {
+      border-left: 4px solid var(--alert);
+      background: #fdf5f5;
+    }
+    .review-reported-badge {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      background: var(--alert);
+      color: #fff;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+    }
+    .review-resolve-btn {
+      background: var(--primary-dark);
+      color: #fff;
+      border: none;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+    }
+    .review-resolve-btn:hover { background: var(--primary); }
+
+    /* ── Pagination ── */
+    .review-pagination {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--outline-variant);
+    }
+    .review-pagination-count {
+      font-size: 12.5px;
+      color: var(--outline);
+    }
+    .review-pagination-pages {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .review-page-btn {
+      min-width: 30px;
+      height: 30px;
+      padding: 0 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      background: transparent;
+      color: var(--on-surface-variant);
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .review-page-btn:hover { background: var(--surface-container-low); }
+    .review-page-btn--active {
+      background: var(--primary-dark);
+      color: #fff;
+    }
+    .review-page-btn--active:hover { background: var(--primary-dark); }
+  </style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-name">ULEE</span>
+      <span class="brand-sub">The Future of Student Living</span>
+    </div>
+
+    <nav class="nav-list">
+      <a th:href="@{/landlord-index}" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>
+        <span>My Properties</span>
+      </a>
+      <a th:href="@{/manage-applications}" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M8 3h8a2 2 0 0 1 2 2v14l-6-3-6 3V5a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        <span>Applications</span>
+      </a>
+      <a th:href="@{/my-property-reviews}" class="nav-item active">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M12 3.5 14.4 9l6 .6-4.5 4 1.4 5.9L12 16.6 6.7 19.5l1.4-5.9-4.5-4 6-.6L12 3.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        <span>Reviews</span>
+      </a>
+    </nav>
+  </aside>
+
+  <main class="main">
+
+    <header class="topbar">
+      <div class="topbar-title-group">
+        <h1 class="topbar-title">My Property Reviews</h1>
+      </div>
+      <div class="avatar-initials" th:text="${userInitials != null ? userInitials : 'EH'}">EH</div>
+    </header>
+
+    <div class="page-body">
+
+      <h2 class="property-name-heading" th:text="${property.title}">Ivana</h2>
+
+      <section class="review-switcher-row" aria-label="Switch property">
+        <label class="property-switcher-select">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M4 21V9l8-6 8 6v12h-5v-7h-6v7H4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+          <select id="propertySwitcher" aria-label="Jump to another property's reviews">
+            <option value="" selected>All Properties</option>
+            <option th:each="p : ${eligibleProperties}"
+                    th:value="${p.propertyID}"
+                    th:text="${p.title}">Property Name</option>
+          </select>
+        </label>
+        <a class="review-next-btn" th:href="@{/property-reviews/{id}(id=${nextPropertyId})}" aria-label="Next property">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </section>
+
+      <section class="rating-metrics-bar" aria-label="Rating summary">
+        <div class="rating-metric-card" data-rating-filter="all">
+          <p class="rating-metric-label" th:text="${property.title} + ' Average'">Property Average</p>
+          <div class="rating-metric-value">
+            <span th:text="${#numbers.formatDecimal(averageRating,1,1)}">4.2</span>
+            <span class="unit">/ 5.0</span>
+          </div>
+          <span class="rating-metric-stars"
+                th:with="fullStars=${T(java.lang.Math).round(averageRating)}"
+                th:text="${'★'.repeat(fullStars)} + ${'☆'.repeat(5 - fullStars)}">★★★★☆</span>
+        </div>
+
+        <div class="rating-metric-card rating-metric-card--good" data-rating-filter="high">
+          <p class="rating-metric-label">High Ratings</p>
+          <div class="rating-metric-value">
+            <span th:text="${highRatingsCount}">25</span>
+          </div>
+        </div>
+
+        <div class="rating-metric-card rating-metric-card--poor" data-rating-filter="poor">
+          <p class="rating-metric-label">Poor Ratings</p>
+          <div class="rating-metric-value">
+            <span th:text="${poorRatingsCount}">2</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="review-list-grid" id="reviewListGrid" th:if="${reviewCount > 0}">
+        <div th:each="review : ${reviews}"
+             class="review-card-wrap"
+             th:attr="data-rating=${review.rating}, data-date=${#temporals.formatISO(review.reviewDate)}">
+          <div th:replace="~{fragments/review-card :: reviewCard(${review})}"></div>
+        </div>
+      </section>
+
+      <!-- Pagination — only shown once there's more than one page -->
+      <div class="review-pagination" th:if="${reviewCount > 0 and totalPages > 1}">
+        <span class="review-pagination-count"
+              th:text="'Showing ' + ${fromIndex} + '-' + ${toIndex} + ' of ' + ${totalItems} + ' reviews'">
+            Showing 1-6 of 12 reviews
+        </span>
+        <div class="review-pagination-pages">
+          <a th:each="pageNum : ${pageNumbers}"
+             th:href="@{/property-reviews/{id}(id=${property.propertyID}, page=${pageNum})}"
+             th:text="${pageNum + 1}"
+             class="review-page-btn"
+             th:classappend="${pageNum == currentPage} ? 'review-page-btn--active'">1</a>
+        </div>
+      </div>
+
+      <p class="review-empty" th:unless="${reviewCount > 0}">
+        No reviews yet for this property.
+      </p>
+
+      <div id="reviewSortEmptyState" class="filter-empty-state" style="display:none;">
+        No reviews match this filter.
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="/landlord-script.js"></script>
+<script src="/js/landlord-review-detail.js"></script>
+</body>
+</html>
