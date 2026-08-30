@@ -1,0 +1,133 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Widen coordinate column precision in `database/ulee_database.sql`": [
+      {
+        "executionId": "f947320f-3e37-415d-8c97-d52a671c9d86",
+        "chatSessionId": "sess_4d2b87ca-1722-43c5-9236-d1d817f2727c",
+        "timestamp": 1787478054016
+      },
+      {
+        "executionId": "f947320f-3e37-415d-8c97-d52a671c9d86",
+        "chatSessionId": "sess_4d2b87ca-1722-43c5-9236-d1d817f2727c",
+        "timestamp": 1787478068755
+      },
+      {
+        "executionId": "f947320f-3e37-415d-8c97-d52a671c9d86",
+        "chatSessionId": "sess_4d2b87ca-1722-43c5-9236-d1d817f2727c",
+        "timestamp": 1787478154199
+      }
+    ],
+    "1.2 Add the three Summerstrand `UPDATE` statements in `database/ulee_database.sql`": [
+      {
+        "executionId": "f947320f-3e37-415d-8c97-d52a671c9d86",
+        "chatSessionId": "sess_4d2b87ca-1722-43c5-9236-d1d817f2727c",
+        "timestamp": 1787478054882
+      },
+      {
+        "executionId": "f947320f-3e37-415d-8c97-d52a671c9d86",
+        "chatSessionId": "sess_4d2b87ca-1722-43c5-9236-d1d817f2727c",
+        "timestamp": 1787478160533
+      },
+      {
+        "executionId": "f947320f-3e37-415d-8c97-d52a671c9d86",
+        "chatSessionId": "sess_4d2b87ca-1722-43c5-9236-d1d817f2727c",
+        "timestamp": 1787478303348
+      }
+    ],
+    "2.1 Add Leaflet.js + OpenStreetMap CDN assets to the page `<head>`": [
+      {
+        "executionId": "f947320f-3e37-415d-8c97-d52a671c9d86",
+        "chatSessionId": "sess_4d2b87ca-1722-43c5-9236-d1d817f2727c",
+        "timestamp": 1787478055719
+      },
+      {
+        "executionId": "f947320f-3e37-415d-8c97-d52a671c9d86",
+        "chatSessionId": "sess_4d2b87ca-1722-43c5-9236-d1d817f2727c",
+        "timestamp": 1787478069701
+      },
+      {
+        "executionId": "f947320f-3e37-415d-8c97-d52a671c9d86",
+        "chatSessionId": "sess_4d2b87ca-1722-43c5-9236-d1d817f2727c",
+        "timestamp": 1787478154782
+      }
+    ],
+    "2.2 Add the map card CSS inside the existing `<style>` block": [
+      {
+        "executionId": "f947320f-3e37-415d-8c97-d52a671c9d86",
+        "chatSessionId": "sess_4d2b87ca-1722-43c5-9236-d1d817f2727c",
+        "timestamp": 1787478055862
+      },
+      {
+        "executionId": "f947320f-3e37-415d-8c97-d52a671c9d86",
+        "chatSessionId": "sess_4d2b87ca-1722-43c5-9236-d1d817f2727c",
+        "timestamp": 1787478160870
+      },
+      {
+        "executionId": "f947320f-3e37-415d-8c97-d52a671c9d86",
+        "chatSessionId": "sess_4d2b87ca-1722-43c5-9236-d1d817f2727c",
+        "timestamp": 1787478304759
+      }
+    ],
+    "2.3 Add the Thymeleaf-guarded map card below the address": [
+      {
+        "executionId": "f947320f-3e37-415d-8c97-d52a671c9d86",
+        "chatSessionId": "sess_4d2b87ca-1722-43c5-9236-d1d817f2727c",
+        "timestamp": 1787478056018
+      },
+      {
+        "executionId": "f947320f-3e37-415d-8c97-d52a671c9d86",
+        "chatSessionId": "sess_4d2b87ca-1722-43c5-9236-d1d817f2727c",
+        "timestamp": 1787478312782
+      },
+      {
+        "executionId": "f947320f-3e37-415d-8c97-d52a671c9d86",
+        "chatSessionId": "sess_4d2b87ca-1722-43c5-9236-d1d817f2727c",
+        "timestamp": 1787478491340
+      }
+    ],
+    "2.4 Add the Leaflet init script before `</body>`": [
+      {
+        "executionId": "f947320f-3e37-415d-8c97-d52a671c9d86",
+        "chatSessionId": "sess_4d2b87ca-1722-43c5-9236-d1d817f2727c",
+        "timestamp": 1787478056167
+      },
+      {
+        "executionId": "f947320f-3e37-415d-8c97-d52a671c9d86",
+        "chatSessionId": "sess_4d2b87ca-1722-43c5-9236-d1d817f2727c",
+        "timestamp": 1787478513537
+      },
+      {
+        "executionId": "f947320f-3e37-415d-8c97-d52a671c9d86",
+        "chatSessionId": "sess_4d2b87ca-1722-43c5-9236-d1d817f2727c",
+        "timestamp": 1787478761164
+      }
+    ],
+    "3. Manual verification checklist (visual — no automated tests)": [
+      {
+        "executionId": "f947320f-3e37-415d-8c97-d52a671c9d86",
+        "chatSessionId": "sess_4d2b87ca-1722-43c5-9236-d1d817f2727c",
+        "timestamp": 1787478056387
+      },
+      {
+        "executionId": "f947320f-3e37-415d-8c97-d52a671c9d86",
+        "chatSessionId": "sess_4d2b87ca-1722-43c5-9236-d1d817f2727c",
+        "timestamp": 1787478767461
+      }
+    ],
+    "1. Update the seed SQL: coordinate precision + Summerstrand seed data": [
+      {
+        "executionId": "f947320f-3e37-415d-8c97-d52a671c9d86",
+        "chatSessionId": "sess_4d2b87ca-1722-43c5-9236-d1d817f2727c",
+        "timestamp": 1787478305876
+      }
+    ],
+    "2. Add the map to `property-detail.html`": [
+      {
+        "executionId": "f947320f-3e37-415d-8c97-d52a671c9d86",
+        "chatSessionId": "sess_4d2b87ca-1722-43c5-9236-d1d817f2727c",
+        "timestamp": 1787478761353
+      }
+    ]
+  }
+}

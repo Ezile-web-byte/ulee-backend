@@ -82,6 +82,10 @@
             border-radius: var(--hero-radius-glass);
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
             padding: 20px;
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            cursor: pointer;
         }
 
         .property-title {
@@ -114,6 +118,17 @@
             padding: 4px 12px;
             margin: 0;
         }
+
+        .empty-state {
+            background: #ffffff;
+            border-radius: var(--hero-radius-glass);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+            padding: 40px 24px;
+            text-align: center;
+            font-family: 'Hanken Grotesk', sans-serif;
+            color: #555;
+            font-size: 15px;
+        }
     </style>
     <link rel="stylesheet" href="/speak-with-ai.css">
     <script src="/speak-with-ai-logic.js" defer></script>
@@ -130,12 +145,21 @@
     </form>
 
     <div class="results-grid">
-        <div class="property-card" th:each="property : ${properties}">
+        <a class="property-card" th:each="property : ${properties}" th:href="@{/property/{id}(id=${property.propertyID})}">
             <h3 class="property-title" th:text="${property.title}">Property Title</h3>
             <p class="property-city" th:text="${property.city}">City</p>
             <p class="property-beds" th:text="${property.bedrooms} + ' bed'">Bedrooms</p>
             <p class="property-rent" th:text="'R' + ${property.rent} + ' / month'">Rent</p>
-        </div>
+        </a>
+    </div>
+
+    <div class="empty-state" th:if="${#lists.isEmpty(properties)}">
+        <p th:if="${param.location != null and not #strings.isEmpty(param.location[0])}">
+            No properties found in "<span th:text="${param.location[0]}"></span>". Try a different area, or clear your search to see everything available.
+        </p>
+        <p th:unless="${param.location != null and not #strings.isEmpty(param.location[0])}">
+            No properties match your search. Try adjusting the filters above.
+        </p>
     </div>
 </div>
 <div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null)}"></div>

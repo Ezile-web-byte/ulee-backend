@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saved Properties – ULEE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <link rel="stylesheet" href="/speak-with-ai.css">
+    <script src="/speak-with-ai-logic.js" defer></script>
+    <script src="/speak-with-ai.js" defer></script>
+    <link rel="stylesheet" href="/ulee-toast.css">
+    <script src="/ulee-toast.js" defer></script>
+
+    <style>
+        :root {
+            --ulee-teal: #006078;
+            --ulee-yellow: #FFDC68;
+            --ulee-yellow-hover: #F8CF4F;
+            --ulee-dark-teal: #004A5E;
+            --ulee-text: #17313A;
+            --ulee-muted: #6E7D83;
+            --ulee-background: #F7F9FA;
+            --ulee-border: #DCE5E8;
+            --ulee-white: #FFFFFF;
+            --hero-yellow: #ffe170;
+            --hero-on-yellow: #221b00;
+            --hero-radius-glass: 16px;
+            --hero-radius-pill: 999px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Hanken Grotesk', sans-serif;
+            background: var(--ulee-background);
+            color: var(--ulee-text);
+        }
+
+        .topbar {
+            height: 76px;
+            background: var(--ulee-white);
+            border-bottom: 1px solid var(--ulee-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 68px;
+        }
+
+        .brand {
+            display: flex;
+            flex-direction: column;
+            line-height: 1;
+            gap: 3px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+        }
+
+        .brand:hover {
+            opacity: 0.85;
+        }
+
+        .brand-mark {
+            position: relative;
+            display: inline-block;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: var(--ulee-dark-teal);
+        }
+
+        .brand-mark::after {
+            content: '';
+            position: absolute;
+            top: -3px;
+            right: -9px;
+            width: 9px;
+            height: 9px;
+            background: var(--ulee-yellow);
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+        }
+
+        .brand-tagline {
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--ulee-muted);
+        }
+
+        .back-link {
+            color: var(--ulee-teal);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .page {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 52px 28px 90px;
+        }
+
+        h1 {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 800;
+            font-size: 28px;
+            margin: 0 0 28px;
+            color: var(--ulee-dark-teal);
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 20px;
+        }
+
+        .property-card {
+            background: #ffffff;
+            border-radius: var(--hero-radius-glass);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            padding: 20px;
+        }
+
+        .property-title {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 700;
+            font-size: 18px;
+            margin: 0 0 6px;
+        }
+
+        .property-city {
+            font-family: 'Hanken Grotesk', sans-serif;
+            color: #666;
+            margin: 0 0 4px;
+        }
+
+        .property-beds {
+            font-family: 'Hanken Grotesk', sans-serif;
+            color: #666;
+            margin: 0 0 10px;
+        }
+
+        .property-rent {
+            display: inline-block;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 700;
+            font-size: 13px;
+            background: var(--hero-yellow);
+            color: var(--hero-on-yellow);
+            border-radius: var(--hero-radius-pill);
+            padding: 4px 12px;
+            margin: 0;
+        }
+
+        .unsave-btn {
+            font-family: 'Hanken Grotesk', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            background: transparent;
+            color: var(--ulee-muted);
+            border: 1px solid var(--ulee-border);
+            border-radius: var(--hero-radius-pill);
+            padding: 6px 14px;
+            cursor: pointer;
+            transition: color .15s ease, border-color .15s ease, background .15s ease;
+        }
+
+        .unsave-btn:hover {
+            color: #A83232;
+            border-color: #F0C6C6;
+            background: #FBEAEA;
+        }
+
+        .empty-state {
+            background: var(--ulee-white);
+            border: 1px solid var(--ulee-border);
+            border-radius: 18px;
+            padding: 65px 28px;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(0, 73, 94, 0.05);
+        }
+
+        .empty-icon {
+            width: 52px;
+            height: 52px;
+            margin: 0 auto 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: var(--ulee-yellow);
+            color: var(--ulee-dark-teal);
+            font-size: 24px;
+            font-weight: 800;
+        }
+
+        .empty-state h2 {
+            margin: 0 0 9px;
+            color: var(--ulee-dark-teal);
+            font-size: 22px;
+        }
+
+        .empty-state p {
+            margin: 0 0 18px;
+            color: var(--ulee-muted);
+            line-height: 1.6;
+        }
+
+        @media (max-width: 760px) {
+            .topbar {
+                padding: 0 20px;
+            }
+
+            .page {
+                padding: 34px 16px 70px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header class="topbar">
+    <a class="brand" th:href="@{/student-dashboard}">
+        <span class="brand-mark">ULEE</span>
+        <span class="brand-tagline">Student Living</span>
+    </a>
+    <a class="back-link" th:href="@{/student-dashboard}">Browse Properties</a>
+</header>
+
+<main class="page">
+
+    <h1>Saved Properties</h1>
+
+    <div class="results-grid" th:if="${not #lists.isEmpty(properties)}">
+        <div class="property-card" th:each="property : ${properties}">
+            <a th:href="@{/property/{id}(id=${property.propertyID})}" style="display:block; text-decoration:none; color:inherit;">
+                <h3 class="property-title" th:text="${property.title}">Property Title</h3>
+                <p class="property-city" th:text="${property.city}">City</p>
+                <p class="property-beds" th:text="${property.bedrooms} + ' bed'">Bedrooms</p>
+                <p class="property-rent" th:text="'R' + ${property.rent} + ' / month'">Rent</p>
+            </a>
+            <form th:action="@{/favorite/{id}(id=${property.propertyID})}" method="post" style="margin-top: 12px;" data-loading-text="Removing...">
+                <input type="hidden" name="returnTo" value="/saved-properties" />
+                <button type="submit" class="unsave-btn">Remove from saved</button>
+            </form>
+        </div>
+    </div>
+
+    <section class="empty-state" th:if="${#lists.isEmpty(properties)}">
+        <div class="empty-icon">🤍</div>
+        <h2>No saved properties yet</h2>
+        <p>Tap the heart icon on any property to save it here for later.</p>
+        <a class="back-link" th:href="@{/student-dashboard}">Browse Properties</a>
+    </section>
+
+</main>
+
+<div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null)}"></div>
+
+</body>
+</html>

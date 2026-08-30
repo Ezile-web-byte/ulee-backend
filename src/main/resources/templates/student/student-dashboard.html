@@ -107,18 +107,43 @@
         @media (prefers-reduced-motion: reduce) {
             .hero-ken-burns { animation: none; }
         }
+
+        /* ULEE brand mark — clickable logo with integrated pin accent */
+        .ulee-brand-link { text-decoration: none; cursor: pointer; transition: opacity 0.2s ease; }
+        .ulee-brand-link:hover { opacity: 0.85; }
+        .ulee-brand-mark { position: relative; display: inline-block; }
+        .ulee-brand-mark::after {
+            content: '';
+            position: absolute;
+            top: -3px; right: -9px;
+            width: 9px; height: 9px;
+            background: #ffe170;
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+        }
     </style>
     <link rel="stylesheet" href="/speak-with-ai.css">
     <script src="/speak-with-ai-logic.js" defer></script>
     <script src="/speak-with-ai.js" defer></script>
+    <link rel="stylesheet" href="/ulee-toast.css">
+    <script src="/ulee-toast.js" defer></script>
 </head>
 <body class="bg-background text-on-surface font-body-md overflow-x-hidden">
+
+<div th:if="${param.loginRequired != null}" class="bg-tertiary-fixed text-on-tertiary-fixed text-center py-sm px-md font-label-bold text-sm">
+    Please log in to view that page.
+    <button type="button" id="dismissLoginBanner" class="ml-md underline">Dismiss</button>
+</div>
 
 <!-- Top Navigation Bar -->
 <nav class="bg-surface/90 dark:bg-surface-dim/90 backdrop-blur-md docked full-width top-0 sticky z-50 shadow-[0px_4px_20px_rgba(20,117,146,0.08)]">
     <div class="flex justify-between items-center w-full px-margin-desktop py-base max-w-7xl mx-auto">
         <div class="flex items-center gap-md">
-            <span class="font-display-lg text-display-lg font-extrabold text-primary tracking-tight">ULEE</span>
+            <a href="/student-dashboard" class="ulee-brand-link flex flex-col leading-none">
+                <span class="ulee-brand-mark font-display-lg text-display-lg font-extrabold text-primary tracking-tight">ULEE</span>
+                <span class="text-[9px] font-bold uppercase tracking-[0.12em] text-on-surface-variant mt-0.5">Student Living</span>
+            </a>
         </div>
         <div class="hidden md:flex items-center gap-lg">
             <a class="font-label-bold text-label-bold text-primary border-b-2 border-tertiary-fixed pb-1" href="/student-dashboard">Properties</a>
@@ -127,8 +152,26 @@
             <a class="font-label-bold text-label-bold text-on-surface-variant hover:text-primary transition-colors" href="#">Contact</a>
         </div>
         <div class="flex items-center gap-md">
-            <button type="button" id="openLoginBtn" class="hidden md:block text-on-surface-variant font-label-bold hover:text-primary transition-colors">Login</button>
-            <a href="#apply" class="bg-tertiary-fixed text-on-tertiary-fixed px-md py-sm rounded-full font-label-bold hover:bg-tertiary-container hover:text-on-tertiary-container active:scale-95 transition-all duration-200">
+            <button type="button" id="openLoginBtn" th:unless="${isLoggedIn}" class="hidden md:block text-on-surface-variant font-label-bold hover:text-primary transition-colors">Login</button>
+
+            <div class="relative hidden md:block" th:if="${isLoggedIn}" id="userMenuWrap">
+                <button type="button" id="userMenuBtn" class="flex items-center gap-xs text-on-surface-variant font-label-bold hover:text-primary transition-colors" aria-expanded="false">
+                    <span class="material-symbols-outlined text-[20px]">account_circle</span>
+                    <span th:text="'Hi, ' + ${currentUserFirstName}">Hi, Student</span>
+                    <span class="material-symbols-outlined text-[16px]">expand_more</span>
+                </button>
+                <div id="userMenuDropdown" class="hidden absolute right-0 mt-xs w-56 bg-white rounded-xl shadow-lg border border-outline-variant/30 py-xs z-50">
+                    <a href="/my-dashboard" class="block px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors">My Dashboard</a>
+                    <a href="/my-applications" class="block px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors">My Applications</a>
+                    <a href="/saved-properties" class="block px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors">Saved Properties</a>
+                    <div class="border-t border-outline-variant/30 my-xs"></div>
+                    <form th:action="@{/logout}" method="post">
+                        <button type="submit" class="w-full text-left px-md py-sm text-sm text-error hover:bg-surface-container-low transition-colors">Logout</button>
+                    </form>
+                </div>
+            </div>
+
+            <a href="#apply" th:unless="${isLoggedIn}" class="bg-tertiary-fixed text-on-tertiary-fixed px-md py-sm rounded-full font-label-bold hover:bg-tertiary-container hover:text-on-tertiary-container active:scale-95 transition-all duration-200">
                 Apply Now
             </a>
         </div>
@@ -156,12 +199,7 @@
                     <span class="material-symbols-outlined text-tertiary-fixed">location_on</span>
                     <div class="flex flex-col w-full">
                         <span class="text-[10px] uppercase font-bold text-white/60 tracking-wider">Location</span>
-                        <select name="location" class="bg-transparent text-white font-label-bold border-none p-0 focus:ring-0 w-full">
-                            <option class="text-on-surface" value="">Any location</option>
-                            <option class="text-on-surface" value="Summerstrand">Summerstrand</option>
-                            <option class="text-on-surface" value="Humewood">Humewood</option>
-                            <option class="text-on-surface" value="Central">Central</option>
-                        </select>
+                        <input type="text" name="location" placeholder="Search by location..." class="bg-transparent text-white font-label-bold border-none p-0 focus:ring-0 w-full placeholder:text-white/50" />
                     </div>
                 </div>
                 <div class="w-px h-8 bg-white/20 hidden md:block"></div>
@@ -242,8 +280,9 @@
                     <span class="bg-primary-fixed/30 text-on-primary-fixed-variant px-sm py-xs rounded-lg text-label-sm flex items-center gap-xs" th:if="${property.studyFriendly}">📚 Study Friendly</span>
                 </div>
                 <div class="flex items-center gap-sm">
-                    <form th:action="@{/favorite/{id}(id=${property.propertyID})}" method="post" class="inline">
-                        <button type="submit" class="save-btn w-10 h-10 rounded-full border-2 border-primary text-primary flex items-center justify-center hover:bg-primary hover:text-white u-transition" title="Save">🤍</button>
+                    <form th:action="@{/favorite/{id}(id=${property.propertyID})}" method="post" class="inline" data-loading-text="...">
+                        <button type="submit" class="save-btn w-10 h-10 rounded-full border-2 border-primary text-primary flex items-center justify-center hover:bg-primary hover:text-white u-transition" title="Save"
+                                th:text="${savedPropertyIds != null and savedPropertyIds.contains(property.propertyID)} ? '❤️' : '🤍'">🤍</button>
                     </form>
                     <a th:href="@{/property/{id}(id=${property.propertyID})}" class="flex-1 text-center py-md border-2 border-primary text-primary rounded-xl font-label-bold hover:bg-primary hover:text-white u-transition">
                         View room
@@ -352,7 +391,7 @@
 </section>
 
 <!-- CTA Banner -->
-<section class="relative py-xl overflow-hidden" id="apply">
+<section class="relative py-xl overflow-hidden" id="apply" th:unless="${isLoggedIn}">
     <div class="absolute inset-0 z-0">
         <div class="w-full h-full bg-cover bg-center" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAleO-PUvb3OxTSPbRp2NEDIVd6ln3jHd_uVkTpAd4cBzi0SpFfh14VDbF3WLkiWb3w9isODifqI-YLuq_1hTkjjF-sB_5GDGmdz8z_iLqYL-m3pZh6zPJ9Jm0db5DssosozIZoulizYCfIHj0nwMIh7G9OWGmkDgm7TpCIg6LEbx4TOhTRFu2q1MGkk_GOkvtyZV6JgVAphhMZWOgrgecwPbpWcHLs4aYSlw6OCZL-xIda8qsShnpi')"></div>
         <div class="absolute inset-0 bg-primary/60 backdrop-blur-[2px]"></div>
@@ -387,6 +426,7 @@
             <ul class="space-y-xs">
                 <li><a class="text-surface-variant/80 hover:text-surface-bright u-transition" href="/student-dashboard">All Residences</a></li>
                 <li><a class="text-surface-variant/80 hover:text-surface-bright u-transition" href="/my-applications">My Applications</a></li>
+                <li><a class="text-surface-variant/80 hover:text-surface-bright u-transition" href="/saved-properties">Saved Properties</a></li>
             </ul>
         </div>
         <div class="space-y-md">
@@ -431,6 +471,32 @@
     document.getElementById('openLoginBtnCta')?.addEventListener('click', () => loginOverlay.classList.add('open'));
     document.getElementById('closeLoginBtn')?.addEventListener('click', () => loginOverlay.classList.remove('open'));
     loginOverlay.addEventListener('click', (e) => { if (e.target === loginOverlay) loginOverlay.classList.remove('open'); });
+
+    // ── Auto-prompt login when redirected here because a page required it ──
+    document.getElementById('dismissLoginBanner')?.addEventListener('click', (e) => {
+        e.target.closest('div').remove();
+    });
+    if (new URLSearchParams(window.location.search).get('loginRequired') === 'true') {
+        loginOverlay.classList.add('open');
+    }
+
+    // ── User menu dropdown (only present when logged in) ──
+    const userMenuBtn = document.getElementById('userMenuBtn');
+    const userMenuDropdown = document.getElementById('userMenuDropdown');
+    if (userMenuBtn && userMenuDropdown) {
+        userMenuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = !userMenuDropdown.classList.contains('hidden');
+            userMenuDropdown.classList.toggle('hidden', isOpen);
+            userMenuBtn.setAttribute('aria-expanded', String(!isOpen));
+        });
+        document.addEventListener('click', (e) => {
+            if (!document.getElementById('userMenuWrap').contains(e.target)) {
+                userMenuDropdown.classList.add('hidden');
+                userMenuBtn.setAttribute('aria-expanded', 'false');
+            }
+        });
+    }
 
     // ── Room type tab filtering ──
     const tabs = document.querySelectorAll('.filter-tab');

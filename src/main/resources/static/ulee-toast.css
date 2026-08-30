@@ -1,0 +1,45 @@
+.ulee-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: #1a1a1a;
+  color: #ffffff;
+  padding: 12px 22px;
+  border-radius: 999px;
+  font-family: 'Hanken Grotesk', 'Sora', Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  opacity: 0;
+  z-index: 2000;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.ulee-toast-show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.ulee-toast-success {
+  background: #1a7a3c;
+}
+
+.ulee-toast-info {
+  background: #2d3748;
+}
+
+@media (max-width: 480px) {
+  .ulee-toast {
+    left: 16px;
+    right: 16px;
+    transform: translateY(20px);
+    text-align: center;
+    white-space: normal;
+  }
+  .ulee-toast-show {
+    transform: translateY(0);
+  }
+}

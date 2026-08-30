@@ -8,6 +8,11 @@
     <link rel="stylesheet" href="/speak-with-ai.css">
     <script src="/speak-with-ai-logic.js" defer></script>
     <script src="/speak-with-ai.js" defer></script>
+    <link rel="stylesheet" href="/ulee-toast.css">
+    <script src="/ulee-toast.js" defer></script>
+    <!-- Leaflet (OpenStreetMap) — no API key required -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <style>
         :root {
             --primary:        hsl(180, 67%, 47%);
@@ -433,6 +438,35 @@
             .detail-topbar { padding: 1rem 1.25rem; }
             .detail-img-wrap { height: 280px; }
         }
+
+        /* === Location Map Card (A104) === */
+        .detail-map-card {
+            grid-column: 1 / -1;
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            padding: 28px;
+        }
+
+        .detail-map-card h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 18px;
+            margin-bottom: 16px;
+        }
+
+        #propertyMap {
+            height: 400px;
+            width: 100%;
+            border-radius: var(--radius);
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .map-unavailable {
+            font-size: 14px;
+            color: var(--muted);
+            margin-top: 12px;
+        }
     </style>
 </head>
 <body>
@@ -475,9 +509,18 @@
             <small>/ month</small>
         </div>
 
-        <form th:action="@{/apply/{id}(id=${property.propertyID})}" method="post">
+        <p th:if="${param.error != null and param.error[0] == 'document-required'}"
+           style="text-align:center; color:#dc2626; font-weight:500; padding:8px 0; font-size:14px;">
+            ⚠ A supporting document is required to apply for this property.
+        </p>
+        <form th:action="@{/apply/{id}(id=${property.propertyID})}" method="post" enctype="multipart/form-data" th:unless="${hasApplied}" data-loading-text="Applying...">
+            <label style="display:block; margin-bottom:8px; font-size:14px; color:#555;">Upload supporting document *</label>
+            <input type="file" name="document" required accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" />
             <button type="submit" class="apply-btn">Apply for this Property</button>
         </form>
+        <p th:if="${hasApplied}" style="text-align:center; color:#16a34a; font-weight:600; padding:13px 0;">
+            &#10003; You've already applied for this property
+        </p>
 
         <div class="detail-specs">
             <div class="spec-item">
@@ -505,6 +548,15 @@
                 <span class="spec-value" th:text="'R' + ${property.deposit}">-</span>
             </div>
         </div>
+    </div>
+
+    <!-- A104: Location Map (only rendered when coordinates are non-null) -->
+    <div class="detail-map-card" th:if="${property.latitude != null and property.longitude != null}">
+        <h2>Location</h2>
+        <div id="propertyMap" th:attr="data-lat=${property.latitude}, data-lng=${property.longitude}"></div>
+        <p id="mapUnavailable" class="map-unavailable" style="display:none;">
+            Map is currently unavailable. Address: <span th:text="${property.address}">—</span>
+        </p>
     </div>
 
     <div class="detail-description">
@@ -584,6 +636,49 @@
             thumb.classList.add('active');
         });
     });
+</script>
+
+<!-- A104: Leaflet map initialization -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var el = document.getElementById('propertyMap');
+    if (!el) { return; }
+
+    var lat = parseFloat(el.getAttribute('data-lat'));
+    var lng = parseFloat(el.getAttribute('data-lng'));
+    var fallback = document.getElementById('mapUnavailable');
+
+    function showUnavailable() {
+        if (fallback) { fallback.style.display = 'block'; }
+        el.style.display = 'none';
+    }
+
+    if (typeof L === 'undefined' || isNaN(lat) || isNaN(lng)) {
+        showUnavailable();
+        return;
+    }
+
+    try {
+        var map = L.map('propertyMap').setView([lat, lng], 15);
+        var loaded = false;
+        var tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        });
+        tiles.on('load', function () { loaded = true; });
+        tiles.addTo(map);
+        L.marker([lat, lng]).addTo(map);
+
+        setTimeout(function () {
+            if (!loaded) {
+                if (fallback) { fallback.style.display = 'block'; }
+            }
+            map.invalidateSize();
+        }, 10000);
+    } catch (e) {
+        showUnavailable();
+    }
+});
 </script>
 
 <div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(${property.propertyID}, ${property.title})}"></div>

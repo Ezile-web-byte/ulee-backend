@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="/speak-with-ai.css">
     <script src="/speak-with-ai-logic.js" defer></script>
     <script src="/speak-with-ai.js" defer></script>
+    <link rel="stylesheet" href="/ulee-toast.css">
+    <script src="/ulee-toast.js" defer></script>
 
     <style>
         :root {
@@ -44,11 +46,47 @@
         }
 
         .brand {
-            color: var(--ulee-teal);
+            display: flex;
+            flex-direction: column;
+            line-height: 1;
+            gap: 3px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+        }
+
+        .brand:hover {
+            opacity: 0.85;
+        }
+
+        .brand-mark {
+            position: relative;
+            display: inline-block;
             font-size: 22px;
             font-weight: 800;
-            letter-spacing: -0.5px;
-            text-decoration: none;
+            letter-spacing: -0.02em;
+            color: var(--ulee-dark-teal);
+        }
+
+        .brand-mark::after {
+            content: '';
+            position: absolute;
+            top: -3px;
+            right: -9px;
+            width: 9px;
+            height: 9px;
+            background: var(--ulee-yellow);
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+        }
+
+        .brand-tagline {
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--ulee-muted);
         }
 
         .back-link {
@@ -330,7 +368,10 @@
 <body>
 
 <header class="topbar">
-    <a class="brand" th:href="@{/student-dashboard}">ULEE</a>
+    <a class="brand" th:href="@{/student-dashboard}">
+        <span class="brand-mark">ULEE</span>
+        <span class="brand-tagline">Student Living</span>
+    </a>
     <a class="back-link" th:href="@{/student-dashboard}">Browse Properties</a>
 </header>
 
@@ -356,8 +397,8 @@
                         Application #1
                     </p>
                     <h2 class="property-id"
-                        th:text="'Property ID: ' + ${app.propertyID}">
-                        Property ID: 1
+                        th:text="${propertyNames[app.propertyID]} ?: ('Property #' + ${app.propertyID})">
+                        The Dunes
                     </h2>
                 </div>
 
@@ -389,9 +430,11 @@
             <div class="actions">
 
                 <form class="document-form"
+                      th:if="${#strings.equalsIgnoreCase(app.status, 'Accepted')}"
                       th:action="@{/submit-documents/{id}(id=${app.applicationID})}"
                       method="post"
-                      enctype="multipart/form-data">
+                      enctype="multipart/form-data"
+                      data-loading-text="Uploading...">
 
                     <input type="file" name="file" required>
 
@@ -400,8 +443,15 @@
                     </button>
                 </form>
 
+                <p th:unless="${#strings.equalsIgnoreCase(app.status, 'Accepted')}"
+                   style="font-size: 13px; color: var(--ulee-muted); margin: 0;">
+                    Document upload becomes available once this application is accepted.
+                </p>
+
                 <form th:action="@{/cancel-application/{id}(id=${app.applicationID})}"
-                      method="post">
+                      method="post"
+                      data-loading-text="Cancelling..."
+                      onsubmit="return confirm('Are you sure you want to cancel this application? This action cannot be undone.');">
 
                     <button type="submit" class="danger-button">
                         Cancel Application

@@ -77,6 +77,11 @@ public class PropertyController {
         return property;
     }
 
+    // Null-safe, case-insensitive "contains" check used by searchProperties().
+    private boolean containsIgnoreCase(String value, String needle) {
+        return value != null && value.toLowerCase().contains(needle);
+    }
+
     // Generates the semester-start options for the "Available From" dropdown:
     // Jan and July of each year, spanning one year back (so an already-set past
     // date still shows correctly) through three years ahead.
@@ -128,6 +133,40 @@ public class PropertyController {
         return view;
     }
 
+    // Personalized student dashboard — quick stats + previews
+    @GetMapping("/my-dashboard")
+    public String viewMyDashboard(Model model, Principal principal) {
+        if (principal == null) {
+            return "redirect:/student-dashboard";
+        }
+        User currentUser = getCurrentUser(principal);
+        if (!"STUDENT".equalsIgnoreCase(currentUser.getRole())) {
+            return "redirect:/student-dashboard";
+        }
+
+        Integer studentID = currentUser.getUserID();
+
+        // Saved properties (up to 3 for preview)
+        List<Integer> savedIds = savedPropertyRepository.findByStudentID(studentID).stream()
+                .map(SavedProperty::getPropertyID)
+                .collect(Collectors.toList());
+        List<Property> savedProperties = propertyRepository.findAllById(savedIds);
+        model.addAttribute("savedCount", savedProperties.size());
+        model.addAttribute("savedPreview", savedProperties.stream().limit(3).collect(Collectors.toList()));
+
+        // Applications
+        List<Application> applications = applicationRepository.findByStudentID(studentID);
+        long pendingCount = applications.stream().filter(a -> "Pending".equalsIgnoreCase(a.getStatus())).count();
+        long acceptedCount = applications.stream().filter(a -> "Accepted".equalsIgnoreCase(a.getStatus())).count();
+        model.addAttribute("pendingCount", pendingCount);
+        model.addAttribute("acceptedCount", acceptedCount);
+        model.addAttribute("applicationsPreview", applications.stream().limit(3).collect(Collectors.toList()));
+
+        model.addAttribute("currentUserFirstName", currentUser.getFirstName());
+
+        return "student/my-dashboard";
+    }
+
     // Homepage — browse-first entry point, no login wall
     @GetMapping("/")
     public String home() {
@@ -135,8 +174,29 @@ public class PropertyController {
     }
 
     @GetMapping("/student-dashboard")
-    public String viewStudentDashboard(Model model) {
+    public String viewStudentDashboard(Model model, Principal principal) {
         model.addAttribute("properties", propertyRepository.findByIsAvailableTrue());
+
+        boolean isLoggedIn = false;
+
+        // Logged-in students see filled hearts on properties they've already
+        // saved, and the top nav shows their name instead of a Login button;
+        // logged-out visitors and non-students simply get none of that, which
+        // the template treats as "not logged in as a student".
+        if (principal != null) {
+            User currentUser = getCurrentUser(principal);
+            if ("STUDENT".equalsIgnoreCase(currentUser.getRole())) {
+                isLoggedIn = true;
+                model.addAttribute("currentUserFirstName", currentUser.getFirstName());
+
+                Set<Integer> savedPropertyIds = savedPropertyRepository.findByStudentID(currentUser.getUserID()).stream()
+                        .map(SavedProperty::getPropertyID)
+                        .collect(Collectors.toSet());
+                model.addAttribute("savedPropertyIds", savedPropertyIds);
+            }
+        }
+        model.addAttribute("isLoggedIn", isLoggedIn);
+
         return "student/student-dashboard";
     }
 
@@ -426,6 +486,7 @@ public class PropertyController {
         boolean isStudent = false;
         boolean alreadyReviewed = false;
         boolean canWriteReview = false;
+        boolean hasApplied = false;
         if (principal != null) {
             User currentUser = getCurrentUser(principal);
             isStudent = "STUDENT".equalsIgnoreCase(currentUser.getRole());
@@ -436,6 +497,7 @@ public class PropertyController {
                 alreadyReviewed = reviewRepository
                         .findByStudentIDAndPropertyID(currentUser.getUserID(), id).isPresent();
                 canWriteReview = hasAcceptedApplication && !alreadyReviewed;
+                hasApplied = !applicationRepository.findByStudentIDAndPropertyID(currentUser.getUserID(), id).isEmpty();
             }
         }
 
@@ -451,6 +513,7 @@ public class PropertyController {
         model.addAttribute("isStudent", isStudent);
         model.addAttribute("alreadyReviewed", alreadyReviewed);
         model.addAttribute("canWriteReview", canWriteReview);
+        model.addAttribute("hasApplied", hasApplied);
         return "property-detail";
     }
 
@@ -518,18 +581,61 @@ public class PropertyController {
     @GetMapping("/search")
     public String searchProperties(
             @RequestParam(required = false) String query,
-            @RequestParam(required = false) java.math.BigDecimal maxRent,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) Integer minBedrooms,
+            @RequestParam(required = false) String maxRent,
             Model model) {
 
-        if (maxRent != null) {
-            model.addAttribute("properties",
-                    propertyRepository.findByIsAvailableTrueAndRentLessThanEqual(maxRent));
-        } else if (query != null && !query.isBlank()) {
-            model.addAttribute("properties",
-                    propertyRepository.findByIsAvailableTrueAndTitleContainingIgnoreCaseOrIsAvailableTrueAndCityContainingIgnoreCase(query, query));
-        } else {
-            model.addAttribute("properties", propertyRepository.findByIsAvailableTrue());
+        // Start from every available property, then narrow down by whichever
+        // filters were actually submitted, combined with AND logic.
+        List<Property> results = propertyRepository.findByIsAvailableTrue();
+
+        if (query != null && !query.isBlank()) {
+            String q = query.trim().toLowerCase();
+            results = results.stream()
+                    .filter(p -> containsIgnoreCase(p.getTitle(), q) || containsIgnoreCase(p.getCity(), q))
+                    .collect(Collectors.toList());
         }
+
+        // Matches city, suburb, address, AND title — not just city — so a search
+        // like "Dunes" finds "The Dunes" (a property title) even though its
+        // city/suburb value is "Summerstrand", while a search like
+        // "Summerstrand" still matches by suburb/city as before. This fixes the
+        // bug where searching a real area name that only appears in a listing's
+        // title returned zero results.
+        if (location != null && !location.isBlank()) {
+            String loc = location.trim().toLowerCase();
+            results = results.stream()
+                    .filter(p -> containsIgnoreCase(p.getCity(), loc)
+                            || containsIgnoreCase(p.getSuburb(), loc)
+                            || containsIgnoreCase(p.getAddress(), loc)
+                            || containsIgnoreCase(p.getTitle(), loc))
+                    .collect(Collectors.toList());
+        }
+
+        if (minBedrooms != null) {
+            results = results.stream()
+                    .filter(p -> p.getBedrooms() != null && p.getBedrooms() >= minBedrooms)
+                    .collect(Collectors.toList());
+        }
+
+        // maxRent is read as a String (not BigDecimal) so submitting the filter
+        // bar with an empty "Max rent" field doesn't throw a 400 during Spring's
+        // type conversion before any filtering even runs — this was the actual
+        // bug behind "the price filter isn't working".
+        if (maxRent != null && !maxRent.isBlank()) {
+            try {
+                java.math.BigDecimal max = new java.math.BigDecimal(maxRent.trim());
+                results = results.stream()
+                        .filter(p -> p.getRent() != null && p.getRent().compareTo(max) <= 0)
+                        .collect(Collectors.toList());
+            } catch (NumberFormatException ignored) {
+                // Non-numeric input in the max-rent field — ignore that filter
+                // rather than failing the whole search.
+            }
+        }
+
+        model.addAttribute("properties", results);
         return "properties";
     }
 
@@ -777,46 +883,162 @@ public class PropertyController {
         return "redirect:/manage-applications";
     }
 
-    // A105 — Apply to Residence
+    // A105 — Apply to Residence (document required at application time)
     @PostMapping("/apply/{propertyId}")
-    public String applyToProperty(@PathVariable Integer propertyId, Principal principal) {
+    public String applyToProperty(@PathVariable Integer propertyId,
+                                  @RequestParam(value = "document", required = false) MultipartFile document,
+                                  Principal principal) throws IOException {
         Integer studentID = getCurrentUser(principal).getUserID();
 
+        // Prevent duplicate applications: if this student already has ANY
+        // application for this property (regardless of status), don't create
+        // another one — just redirect silently to My Applications. This fixes
+        // the bug where clicking Apply twice or refreshing the redirect page
+        // would pile up ghost duplicate rows in the database.
+        //
+        // One-time cleanup SQL for existing duplicates (run once in Workbench):
+        // DELETE a FROM application a
+        // INNER JOIN application b ON a.studentID = b.studentID AND a.propertyID = b.propertyID AND a.applicationID > b.applicationID;
+        List<Application> existing = applicationRepository.findByStudentIDAndPropertyID(studentID, propertyId);
+        if (!existing.isEmpty()) {
+            return "redirect:/my-applications";
+        }
+
+        // Validate document: reject without persisting if missing/empty
+        if (document == null || document.isEmpty()) {
+            return "redirect:/property/" + propertyId + "?error=document-required";
+        }
+
+        // Persist the Application (status Pending)
         Application application = new Application();
         application.setStudentID(studentID);
         application.setPropertyID(propertyId);
         application.setStatus("Pending");
         application.setApplicationDate(java.time.LocalDateTime.now());
         applicationRepository.save(application);
-        return "redirect:/my-applications";
+
+        // Store the document — reusing the exact pattern from submitDocuments
+        Path uploadPath = Paths.get(uploadDir);
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
+
+        String uniqueFileName = application.getApplicationID() + "_" + System.currentTimeMillis() + "_" + document.getOriginalFilename();
+        Path filePath = uploadPath.resolve(uniqueFileName);
+        Files.copy(document.getInputStream(), filePath);
+
+        ApplicationDocument doc = new ApplicationDocument();
+        doc.setApplicationID(application.getApplicationID());
+        doc.setFileName(document.getOriginalFilename());
+        doc.setFilePath(filePath.toString());
+        doc.setUploadedAt(java.time.LocalDateTime.now());
+        applicationDocumentRepository.save(doc);
+
+        return "redirect:/my-applications?toast=applied";
     }
 
     // A200 — View Applications
     @GetMapping("/my-applications")
     public String viewApplications(Model model, Principal principal) {
+        if (principal == null) {
+            return "redirect:/?loginRequired=true";
+        }
         var currentUser = getCurrentUser(principal);
-        model.addAttribute("applications", applicationRepository.findByStudentID(currentUser.getUserID()));
+        List<Application> applications = applicationRepository.findByStudentID(currentUser.getUserID());
+        model.addAttribute("applications", applications);
         model.addAttribute("currentUserName", currentUser.getFirstName());
+
+        // Build property name lookup so the template can show accommodation names
+        List<Integer> propertyIds = applications.stream()
+                .map(Application::getPropertyID)
+                .collect(Collectors.toList());
+        Map<Integer, String> propertyNames = propertyRepository.findAllById(propertyIds).stream()
+                .collect(Collectors.toMap(Property::getPropertyID, Property::getTitle, (a, b) -> a));
+        model.addAttribute("propertyNames", propertyNames);
+
         return "my-applications";
     }
 
     // A202 — Cancel Application
     @PostMapping("/cancel-application/{applicationId}")
     public String cancelApplication(@PathVariable Integer applicationId) {
-        applicationRepository.deleteById(applicationId);
-        return "redirect:/my-applications";
+        try {
+            // Delete any submitted documents for this application first — the
+            // applicationdocument table has a foreign key on applicationID, so
+            // deleting the parent application row while child document rows
+            // still reference it can throw a constraint violation (this was
+            // likely the root cause of the 500 error on Cancel).
+            List<ApplicationDocument> documents = applicationDocumentRepository.findByApplicationID(applicationId);
+            if (!documents.isEmpty()) {
+                applicationDocumentRepository.deleteAll(documents);
+            }
+
+            // Only delete if it still exists — deleteById() throws
+            // EmptyResultDataAccessException (also a 500) if the row is already
+            // gone, e.g. from a double-click or a stale page.
+            if (applicationRepository.existsById(applicationId)) {
+                applicationRepository.deleteById(applicationId);
+            }
+        } catch (Exception e) {
+            // Cancelling an application must never crash the page — if anything
+            // unexpected happens, log it and still send the student back to
+            // their applications list instead of a 500 error.
+            System.err.println("Failed to cancel application " + applicationId + ": " + e.getMessage());
+        }
+        return "redirect:/my-applications?toast=cancelled";
     }
 
     @PostMapping("/favorite/{propertyId}")
-    public String addFavorite(@PathVariable Integer propertyId, Principal principal) {
+    public String addFavorite(@PathVariable Integer propertyId,
+                               @RequestParam(required = false) String returnTo,
+                               Principal principal) {
         Integer studentID = getCurrentUser(principal).getUserID();
 
-        SavedProperty saved = new SavedProperty();
-        saved.setStudentID(studentID);
-        saved.setPropertyID(propertyId);
-        saved.setSavedStatus(true);
-        savedPropertyRepository.save(saved);
-        return "redirect:/student-dashboard";
+        // Toggle: if this student already saved this property, unsave it
+        // (delete the row) instead of inserting a duplicate; otherwise save it.
+        // wasSaved tracks which branch ran so the redirect's toast flag matches
+        // what actually happened.
+        java.util.concurrent.atomic.AtomicBoolean wasSaved = new java.util.concurrent.atomic.AtomicBoolean(false);
+        savedPropertyRepository.findByStudentIDAndPropertyID(studentID, propertyId)
+                .ifPresentOrElse(
+                        existing -> savedPropertyRepository.delete(existing),
+                        () -> {
+                            SavedProperty saved = new SavedProperty();
+                            saved.setStudentID(studentID);
+                            saved.setPropertyID(propertyId);
+                            saved.setSavedStatus(true);
+                            savedPropertyRepository.save(saved);
+                            wasSaved.set(true);
+                        }
+                );
+
+        // Only redirect back to one of the two pages that actually render this
+        // heart/save button, to avoid an open-redirect via a tampered form field.
+        String safeReturnTo = "/saved-properties".equals(returnTo) ? "/saved-properties" : "/student-dashboard";
+        String toastFlag = wasSaved.get() ? "saved" : "unsaved";
+        return "redirect:" + safeReturnTo + (safeReturnTo.contains("?") ? "&" : "?") + "toast=" + toastFlag;
+    }
+
+    // View Saved Properties — students only; lists everything the current
+    // student has hearted via /favorite/{propertyId}, reusing the existing
+    // property detail route so clicking through works exactly like every
+    // other property card in the app.
+    @GetMapping("/saved-properties")
+    public String viewSavedProperties(Model model, Principal principal) {
+        if (principal == null) {
+            return "redirect:/?loginRequired=true";
+        }
+        User currentUser = getCurrentUser(principal);
+        if (!"STUDENT".equalsIgnoreCase(currentUser.getRole())) {
+            return "redirect:/";
+        }
+
+        List<Integer> savedPropertyIds = savedPropertyRepository.findByStudentID(currentUser.getUserID()).stream()
+                .map(SavedProperty::getPropertyID)
+                .collect(Collectors.toList());
+
+        model.addAttribute("properties", propertyRepository.findAllById(savedPropertyIds));
+        return "saved-properties";
     }
 
     // A500 — show the dedicated "Write a Review" page.
@@ -899,6 +1121,18 @@ public class PropertyController {
     // A201 — Submit Documents
     @PostMapping("/submit-documents/{applicationId}")
     public String submitDocuments(@PathVariable Integer applicationId, @RequestParam("file") MultipartFile file) throws IOException {
+        if (file == null || file.isEmpty()) {
+            return "redirect:/my-applications";
+        }
+
+        // Documents may only be submitted once the landlord has accepted the
+        // application — reject the request server-side too, since the UI hiding
+        // the upload form is not real enforcement on its own (a direct POST
+        // could bypass it).
+        Application application = applicationRepository.findById(applicationId).orElse(null);
+        if (application == null || !"Accepted".equalsIgnoreCase(application.getStatus())) {
+            return "redirect:/my-applications";
+        }
 
         Path uploadPath = Paths.get(uploadDir);
         if (!Files.exists(uploadPath)) {
@@ -917,7 +1151,7 @@ public class PropertyController {
         doc.setUploadedAt(java.time.LocalDateTime.now());
         applicationDocumentRepository.save(doc);
 
-        return "redirect:/my-applications";
+        return "redirect:/my-applications?toast=document-submitted";
     }
 
     // C100 — show the blank "List a New Property" form

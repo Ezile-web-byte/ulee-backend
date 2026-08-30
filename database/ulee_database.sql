@@ -515,6 +515,16 @@ VALUES
      NULL, NULL, 'Single Room', 1, 1, NULL, 1, 1, 1,
      CURDATE(), NULL, NULL, 0, b'0', NULL, 'Active');
 
+-- A104: widen coordinate precision from decimal(38,2) to 6 fractional digits (R1.3–1.5)
+ALTER TABLE `property`
+    MODIFY COLUMN `latitude`  decimal(9,6) DEFAULT NULL,
+    MODIFY COLUMN `longitude` decimal(9,6) DEFAULT NULL;
+
+-- A104: seed real Summerstrand coordinates for the three demo properties (R4.1–4.4)
+UPDATE `property` SET `latitude` = -34.009800, `longitude` = 25.673500 WHERE `propertyID` = 1; -- The Dunes
+UPDATE `property` SET `latitude` = -34.005500, `longitude` = 25.666000 WHERE `propertyID` = 2; -- The Gomery
+UPDATE `property` SET `latitude` = -34.013500, `longitude` = 25.679500 WHERE `propertyID` = 3; -- The admiralty
+
 -- ─────────────────────────────────────────────
 -- 4. PROPERTY IMAGES — main.png first (isMain = 1), rest in displayOrder
 --    URLs point to the uploads folder exactly as it exists in your project
