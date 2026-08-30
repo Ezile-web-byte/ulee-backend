@@ -12,6 +12,11 @@ public class Landlord {
     private String companyName;
     private Integer propertiesCount;
 
+    // Admin-granted trust flag — shown as the "Accredited" stat on the
+    // Review Properties dashboard. Defaults to false for new landlords;
+    // an admin flips this on once they've verified the landlord.
+    private Boolean verified = false;
+
     public Integer getLandlordID() { return landlordID; }
     public void setLandlordID(Integer landlordID) { this.landlordID = landlordID; }
 
@@ -20,4 +25,7 @@ public class Landlord {
 
     public Integer getPropertiesCount() { return propertiesCount; }
     public void setPropertiesCount(Integer propertiesCount) { this.propertiesCount = propertiesCount; }
+
+    public Boolean getVerified() { return verified; }
+    public void setVerified(Boolean verified) { this.verified = verified; }
 }

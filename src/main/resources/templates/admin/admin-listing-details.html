@@ -5,12 +5,13 @@
     <title th:text="'ULEE — ' + ${property.title}">ULEE — Listing Detail</title>
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/admin-style.css">
-    <link rel="stylesheet" href="/speak-with-ai.css">
-    <script src="/speak-with-ai-logic.js" defer></script>
-    <script src="/speak-with-ai.js" defer></script>
+    <script src="/admin-script.js" defer></script>
 </head>
 <body>
 <div class="shell">
+
+    <div th:replace="~{fragments/admin-sidebar :: sidebar('listings')}"></div>
+
     <div class="main">
         <header class="topbar">
             <div class="topbar-title">Listing Detail <span th:text="'— ' + ${property.title}">— Property Name</span></div>
@@ -47,11 +48,12 @@
                         <div th:if="${not #lists.isEmpty(images)}">
                             <img id="mainListingImg" th:src="@{${images[0].url}}" alt="Property photo"
                                  style="width:100%;max-height:360px;object-fit:cover;border-radius:10px;display:block" />
-                            <div th:if="${images.size() > 1}" style="display:flex;gap:8px;margin-top:8px;overflow-x:auto">
-                                <img th:each="img, iter : ${images}" th:src="@{${img.url}}" alt="Thumbnail"
-                                     th:classappend="${iter.index == 0} ? 'active-thumb' : ''"
-                                     style="width:76px;height:58px;object-fit:cover;border-radius:6px;cursor:pointer;flex-shrink:0;border:2px solid transparent;opacity:0.75"
-                                     onclick="document.getElementById('mainListingImg').src=this.src;
+                            <div th:if="${images.size() > 1}"
+                                 class="thumb-row"
+                                 style="display:flex;gap:8px;margin-top:8px;overflow-x:auto">                                                                                                                                                             <img th:each="img, iter : ${images}" th:src="@{${img.url}}" alt="Thumbnail"
+                                                                                                                                                                                                                                                               th:classappend="${iter.index == 0} ? 'active-thumb' : ''"
+                                                                                                                                                                                                                                                               style="width:76px;height:58px;object-fit:cover;border-radius:6px;cursor:pointer;flex-shrink:0;border:2px solid transparent;opacity:0.75"
+                                                                                                                                                                                                                                                               onclick="document.getElementById('mainListingImg').src=this.src;
                                               document.querySelectorAll('.thumb-row img').forEach(t=>{t.style.opacity='0.75';t.style.borderColor='transparent'});
                                               this.style.opacity='1';this.style.borderColor='#14b8a6';" />
                             </div>
@@ -122,17 +124,22 @@
                             <p th:if="${property.amenities == null or #lists.isEmpty(property.amenities)}">No amenities specified</p>
                         </div>
 
-                        <!-- B100 — Approve/Reject actions directly from the detail page -->
+                        <!-- B100 — Approve/Reject only offered while the listing isn't already Approved -->
                         <div style="display:flex;gap:10px">
-                            <form th:action="@{/admin/approve-listing/{id}(id=${property.propertyID})}" method="post">
-                                <button type="submit" class="btn btn-primary" style="padding:9px 22px;font-size:13px;border-radius:8px">Approve</button>
-                            </form>
-                            <form th:action="@{/admin/reject-listing/{id}(id=${property.propertyID})}" method="post"
-                                  onsubmit="return confirm('Reject this listing?');">
-                                <button type="submit" class="btn btn-danger" style="padding:9px 22px;font-size:13px;border-radius:8px">Reject</button>
-                            </form>
-                            <a href="/admin-index" class="btn btn-view" style="padding:9px 22px;font-size:13px;border-radius:8px;text-decoration:none">Back</a>
-                        </div>
+                            <div th:if="${property.status != 'Approved'}" style="display:flex;gap:10px">
+                                <form th:action="@{/admin/approve-listing/{id}(id=${property.propertyID})}" method="post">
+                                    <button type="submit" class="btn btn-primary" style="padding:9px 22px;font-size:13px;border-radius:8px">Approve</button>
+                                </form>
+                                <form th:if="${property.status != 'Rejected'}" th:action="@{/admin/reject-listing/{id}(id=${property.propertyID})}" method="post"
+                                      onsubmit="return confirm('Reject this listing?');">
+                                    <button type="submit" class="btn btn-danger" style="padding:9px 22px;font-size:13px;border-radius:8px">Reject</button>
+                                </form>
+                            </div>
+                            <a href="/admin-index#review-properties"
+                               class="btn btn-view"
+                               style="padding:9px 22px;font-size:13px;border-radius:8px;text-decoration:none">
+                                Back
+                            </a>                        </div>
 
                     </div>
                 </div>
@@ -166,6 +173,5 @@
         </div>
     </div>
 </div>
-<div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null)}"></div>
 </body>
 </html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--
+  Landlord notification bell. This is where official warnings show up
+  (issue #4/#6) — "Dear [Landlord], this serves as an official warning…"
+  with the complaints attached and the complainer's identity left out.
+
+  HOW TO USE:
+  Paste this one line wherever your topbar/header currently is on the
+  landlord dashboard (and any other landlord page you want the bell on):
+
+    <div th:replace="~{fragments/landlord-notifications :: bell}"></div>
+
+  That's it — no controller changes needed. It talks to
+  NotificationController (/landlord/notifications) on its own using the
+  logged-in session, so it works on any landlord page without that page's
+  controller adding anything to the Model.
+
+  It reuses your existing .icon-btn / .notif-wrap / .notif-dot class names
+  so it matches the look of the bell already used on the admin side.
+-->
+<div th:fragment="bell" class="notif-wrap" id="landlordNotifWrap" style="position:relative">
+    <button class="icon-btn" id="landlordNotifBtn" title="Notifications" type="button">
+        <svg viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3l-1.5 2.5h15L16 11V8a6 6 0 00-6-6zM8 16a2 2 0 004 0"/></svg>
+    </button>
+    <div class="notif-dot" id="landlordNotifDot" style="display:none"></div>
+
+    <div id="landlordNotifDropdown" style="display:none;position:absolute;top:calc(100% + 10px);right:0;width:360px;max-height:420px;overflow-y:auto;background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,0.14);z-index:50">
+
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #f0f0f0">
+            <strong style="font-size:14px">Notifications</strong>
+            <button type="button" id="landlordNotifMarkAll"
+                    style="background:none;border:none;color:#1a9b5b;font-size:12px;font-weight:600;cursor:pointer;padding:0">
+                Mark all as read
+            </button>
+        </div>
+
+        <div id="landlordNotifList"></div>
+
+        <div id="landlordNotifEmpty" style="display:none;padding:28px 16px;text-align:center;color:#9aa1a9;font-size:13px">
+            No notifications yet.
+        </div>
+    </div>
+</div>
+
+<script th:inline="none">
+    (function () {
+        var btn = document.getElementById('landlordNotifBtn');
+        var dot = document.getElementById('landlordNotifDot');
+        var dropdown = document.getElementById('landlordNotifDropdown');
+        var list = document.getElementById('landlordNotifList');
+        var empty = document.getElementById('landlordNotifEmpty');
+        var markAllBtn = document.getElementById('landlordNotifMarkAll');
+
+        if (!btn) return;
+
+        function escapeHtml(str) {
+            var div = document.createElement('div');
+            div.textContent = str == null ? '' : str;
+            return div.innerHTML;
+        }
+
+        function renderNotifications(data) {
+            var notifications = data.notifications || [];
+            dot.style.display = data.unreadCount > 0 ? 'block' : 'none';
+
+            if (notifications.length === 0) {
+                list.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+            empty.style.display = 'none';
+
+            list.innerHTML = notifications.map(function (n) {
+                var unreadStyle = n.isRead ? '' : 'background:#f4faf7;';
+                return '' +
+                    '<div class="landlord-notif-row" data-id="' + n.id + '" ' +
+                    'style="padding:14px 16px;border-bottom:1px solid #f5f5f5;cursor:pointer;' + unreadStyle + '">' +
+                    '  <div style="display:flex;align-items:flex-start;gap:8px">' +
+                    '    <div style="flex:1">' +
+                    '      <div style="font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:3px">' + escapeHtml(n.title) + '</div>' +
+                    '      <div style="font-size:12.5px;color:#555;line-height:1.5;white-space:pre-line">' + escapeHtml(n.message) + '</div>' +
+                    '      <div style="font-size:11px;color:#9aa1a9;margin-top:6px">' + escapeHtml(n.createdAt) + '</div>' +
+                    '    </div>' +
+                    (n.isRead ? '' : '<span style="width:8px;height:8px;border-radius:50%;background:#1a9b5b;flex-shrink:0;margin-top:4px"></span>') +
+                    '  </div>' +
+                    '</div>';
+            }).join('');
+
+            Array.prototype.forEach.call(list.querySelectorAll('.landlord-notif-row'), function (row) {
+                row.addEventListener('click', function () {
+                    var id = row.getAttribute('data-id');
+                    fetch('/landlord/notifications/' + id + '/read', { method: 'POST' })
+                        .then(function () { loadNotifications(); });
+                });
+            });
+        }
+
+        function loadNotifications() {
+            fetch('/landlord/notifications')
+                .then(function (res) { return res.ok ? res.json() : { notifications: [], unreadCount: 0 }; })
+                .then(renderNotifications)
+                .catch(function () { /* fail quietly — bell just shows no unread dot */ });
+        }
+
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            var isOpen = dropdown.style.display === 'block';
+            dropdown.style.display = isOpen ? 'none' : 'block';
+            if (!isOpen) loadNotifications();
+        });
+
+        markAllBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            fetch('/landlord/notifications/read-all', { method: 'POST' })
+                .then(function () { loadNotifications(); });
+        });
+
+        document.addEventListener('click', function (e) {
+            if (dropdown.style.display === 'block' && !dropdown.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+
+        // Poll every 60s so the dot updates even if the landlord never opens the dropdown
+        loadNotifications();
+        setInterval(loadNotifications, 60000);
+    })();
+</script>
+
+</body>
+</html>
