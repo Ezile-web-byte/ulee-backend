@@ -9,4 +9,5 @@ public interface ApplicationDocumentRepository extends JpaRepository<Application
 
     List<ApplicationDocument> findByApplicationID(Integer applicationID);
 
+
 }

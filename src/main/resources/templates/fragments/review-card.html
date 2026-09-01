@@ -27,10 +27,27 @@
         Great place to stay, very close to campus.
     </p>
 
+    <!-- Existing reply, shown read-only above the form so the landlord can
+         see what they already said before editing it. -->
     <div class="review-response" th:if="${review.landlordResponse != null and !review.landlordResponse.isEmpty()}">
-        <p class="review-response-label">Landlord Reply</p>
+        <p class="review-response-label">Your Reply</p>
         <p class="review-response-text" th:text="${review.landlordResponse}">Thanks for staying with us!</p>
     </div>
+
+    <!-- Reply form — always available, whether replying for the first time
+         or editing an existing reply (respondToReview overwrites, it
+         doesn't thread). Collapsed behind a toggle so cards stay compact
+         when nothing needs typing. -->
+    <details class="review-reply-details">
+        <summary class="review-reply-toggle"
+                 th:text="${review.landlordResponse != null and !review.landlordResponse.isEmpty()} ? 'Edit reply' : 'Reply to this review'">Reply to this review</summary>
+        <form th:action="@{/respond-to-review/{id}(id=${review.reviewID})}" method="post" class="review-reply-form">
+            <textarea name="response" class="review-reply-input" rows="3"
+                      placeholder="Write a reply the student will see..."
+                      th:text="${review.landlordResponse}"></textarea>
+            <button type="submit" class="review-reply-submit">Post Reply</button>
+        </form>
+    </details>
 
     <div class="review-card-footer">
         <span class="review-helpful">

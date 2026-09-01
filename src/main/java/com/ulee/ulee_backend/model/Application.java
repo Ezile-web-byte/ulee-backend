@@ -15,6 +15,9 @@ public class Application {
     private Integer propertyID;
     private String status;
     private LocalDateTime applicationDate;
+    private String fundingStatus;
+    private String messageToLandlord;
+    private Boolean landlordResponded;
 
 
     public Integer getApplicationID() { return applicationID; }
@@ -31,4 +34,13 @@ public class Application {
 
     public LocalDateTime getApplicationDate() { return applicationDate; }
     public void setApplicationDate(LocalDateTime applicationDate) { this.applicationDate = applicationDate; }
+
+    public String getFundingStatus() { return fundingStatus; }
+    public void setFundingStatus(String fundingStatus) { this.fundingStatus = fundingStatus; }
+
+    public String getMessageToLandlord() { return messageToLandlord; }
+    public void setMessageToLandlord(String messageToLandlord) { this.messageToLandlord = messageToLandlord; }
+
+    public Boolean getLandlordResponded() { return landlordResponded; }
+    public void setLandlordResponded(Boolean landlordResponded) { this.landlordResponded = landlordResponded; }
 }

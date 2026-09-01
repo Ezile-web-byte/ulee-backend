@@ -396,3 +396,68 @@
 @media (max-width: 720px) {
     .review-summary-grid { grid-template-columns: 1fr; }
 }
+
+/* ============================================================
+   Landlord reply form on review cards.
+   Append this block to the end of landlord-reviews.css.
+   ============================================================ */
+
+.review-reply-details {
+    margin-top: 10px;
+}
+
+.review-reply-toggle {
+    cursor: pointer;
+    list-style: none;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--primary-dark, #004a5e);
+    display: inline-block;
+}
+
+.review-reply-toggle::-webkit-details-marker {
+    display: none;
+}
+
+.review-reply-toggle:hover {
+    text-decoration: underline;
+}
+
+.review-reply-form {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.review-reply-input {
+    width: 100%;
+    resize: vertical;
+    font-family: inherit;
+    font-size: 13px;
+    padding: 10px 12px;
+    border: 1.5px solid var(--outline-variant, #ddd);
+    border-radius: var(--radius-sm, 8px);
+    color: var(--on-surface, #1a1a1a);
+    outline: none;
+}
+
+.review-reply-input:focus {
+    border-color: var(--primary, #005b74);
+}
+
+.review-reply-submit {
+    align-self: flex-start;
+    background: var(--primary-dark, #004a5e);
+    color: #fff;
+    border: none;
+    font-size: 12.5px;
+    font-weight: 700;
+    padding: 8px 18px;
+    border-radius: var(--radius-sm, 8px);
+    cursor: pointer;
+}
+
+.review-reply-submit:hover {
+    background: var(--primary, #005b74);
+}

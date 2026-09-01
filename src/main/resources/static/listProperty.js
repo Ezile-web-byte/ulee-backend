@@ -98,6 +98,14 @@ function renderStepContent() {
                   <span class="hint-text">Shared bedroom arrangement</span>
                 </span>
               </label>
+              <label class="tile-option ${state.type === 'Commune' ? 'selected' : ''}" onclick="selectTile(this, 'type')">
+                <input type="radio" name="type" value="Commune" ${state.type === 'Commune' ? 'checked' : ''} />
+                <span class="tile-icon">🏠</span>
+                <span class="tile-text">
+                  <span class="tile-title">Commune</span>
+                  <span class="hint-text">Shared house, typically 4-5 students</span>
+                </span>
+              </label>
             </div>
           </div>
           <div class="field f-col-2">
@@ -497,6 +505,41 @@ function prepareFormForSubmit(form) {
     form.appendChild(hiddenImagesInput);
   }
   hiddenImagesInput.files = dataTransfer.files;
+}
+// Shows the newly chosen cover photo immediately, before Save is clicked.
+function previewCoverImage(input) {
+  const container = document.getElementById('coverImagePreview');
+  if (!container) return;
+  container.innerHTML = '';
+  if (input.files && input.files[0]) {
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(input.files[0]);
+    img.style.width = '140px';
+    img.style.height = '140px';
+    img.style.objectFit = 'cover';
+    img.style.borderRadius = '8px';
+    img.style.border = '1.5px solid var(--border)';
+    container.appendChild(img);
+  }
+}
+
+// Shows thumbnails for every newly chosen additional photo immediately.
+function previewAdditionalImages(input) {
+  const container = document.getElementById('additionalImagesPreview');
+  if (!container) return;
+  container.innerHTML = '';
+  if (input.files) {
+    Array.from(input.files).forEach(file => {
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(file);
+      img.style.width = '80px';
+      img.style.height = '80px';
+      img.style.objectFit = 'cover';
+      img.style.borderRadius = '8px';
+      img.style.border = '1.5px solid var(--border)';
+      container.appendChild(img);
+    });
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

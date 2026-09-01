@@ -265,7 +265,7 @@
                     <a th:href="@{/property/{id}(id=${property.propertyID})}">
                         <h3 class="font-headline-sm text-headline-sm text-on-surface" th:text="${property.title}">Room Title</h3>
                         <p class="text-on-surface-variant font-label-bold flex items-center gap-xs">
-                            <span class="material-symbols-outlined text-[16px]">location_on</span> <span th:text="${property.city}">Location</span>
+                            <span class="material-symbols-outlined text-[16px]">location_on</span> <span th:text="${property.suburb} + ', ' + ${property.city}">Location</span>
                         </p>
                     </a>
                     <div class="text-right flex flex-col items-end gap-xs">

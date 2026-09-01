@@ -24,7 +24,7 @@ public interface PropertyRepository extends JpaRepository<Property, Integer> {
 
     List<Property> findByLandlordID(Integer landlordID);
 
-    // ── Public-visibility queries, keyed off status = "Approved" instead of
+    // ── Public-visibility queries, keyed off status = "Active" instead of
     //    isAvailable, so flipping the status column alone is enough to make
     //    a property go live for students. ──
     List<Property> findByStatusAndRentLessThanEqual(String status, BigDecimal rent);
@@ -35,7 +35,7 @@ public interface PropertyRepository extends JpaRepository<Property, Integer> {
 
     // Convenience overload matching the controller's current call shape
     // (always searches "Approved" properties).
-    default List<Property> searchApproved(String query) {
-        return searchByStatusAndKeyword("Approved", query);
+    default List<Property> searchActive(String query) {
+        return searchByStatusAndKeyword("Active", query);
     }
 }

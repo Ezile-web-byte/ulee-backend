@@ -35,10 +35,16 @@
         /* ── Property switcher + prev/next arrows — same pattern as Reviews ── */
         .app-switcher-row {
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .app-switcher-controls {
+            display: flex;
             align-items: center;
             gap: 10px;
-            margin-bottom: 16px;
         }
         .app-property-select {
             display: flex;
@@ -83,45 +89,7 @@
             font-weight: 800;
             font-size: 22px;
             color: var(--on-surface);
-            margin: 0 0 20px;
-        }
-
-        /* ── Click-to-expand student info panel ── */
-        .student-details summary {
-            cursor: pointer;
-            list-style: none;
-        }
-        .student-details summary::-webkit-details-marker {
-            display: none;
-        }
-        .student-details summary::after {
-            content: "▾";
-            display: inline-block;
-            margin-left: 8px;
-            font-size: 10px;
-            color: var(--outline);
-            vertical-align: middle;
-        }
-        .student-details[open] summary::after {
-            content: "▴";
-        }
-        .student-info-panel {
-            margin-top: 10px;
-            background: var(--surface-container-low);
-            border-radius: var(--radius-sm);
-            padding: 10px 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-        .student-info-row {
-            font-size: 12px;
-            color: var(--on-surface-variant);
             margin: 0;
-        }
-        .student-info-row strong {
-            color: var(--on-surface);
-            font-weight: 700;
         }
     </style>
 </head>
@@ -162,27 +130,30 @@
 
         <div class="page-body">
 
-            <h2 class="property-name-heading" th:text="${property.title}">Property Name</h2>
-
             <section class="app-switcher-row" aria-label="Switch property">
-                <!-- NEW: back arrow — walks eligibleProperties backward
-                     (wraps to the last property), mirroring the forward
-                     "next" arrow on the right of the switcher. -->
-                <a class="app-next-btn" th:href="@{/property-applications/{id}(id=${previousPropertyId})}" aria-label="Previous property">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </a>
-                <label class="app-property-select">
-                    <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M4 21V9l8-6 8 6v12h-5v-7h-6v7H4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-                    <select id="propertySwitcher" aria-label="Jump to another property's applications">
-                        <option value="" selected>All Properties</option>
-                        <option th:each="p : ${eligibleProperties}"
-                                th:value="${p.propertyID}"
-                                th:text="${p.title}">Property Name</option>
-                    </select>
-                </label>
-                <a class="app-next-btn" th:href="@{/property-applications/{id}(id=${nextPropertyId})}" aria-label="Next property">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </a>
+                <h2 class="property-name-heading">
+                    <span th:text="${property.title}">Property Name</span>
+                </h2>
+                <div class="app-switcher-controls">
+                    <!-- Back arrow — walks eligibleProperties backward (wraps to
+                         the last property), mirroring the forward "next" arrow
+                         on the right of the switcher. -->
+                    <a class="app-next-btn" th:href="@{/property-applications/{id}(id=${previousPropertyId})}" aria-label="Previous property">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </a>
+                    <label class="app-property-select">
+                        <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M4 21V9l8-6 8 6v12h-5v-7h-6v7H4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+                        <select id="propertySwitcher" aria-label="Jump to another property's applications">
+                            <option value="" selected>All Properties</option>
+                            <option th:each="p : ${eligibleProperties}"
+                                    th:value="${p.propertyID}"
+                                    th:text="${p.title}">Property Name</option>
+                        </select>
+                    </label>
+                    <a class="app-next-btn" th:href="@{/property-applications/{id}(id=${nextPropertyId})}" aria-label="Next property">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </a>
+                </div>
             </section>
 
             <!-- Summary stats — Pending % and Accepted %, both scoped to
@@ -223,94 +194,95 @@
                     </div>
                 </div>
 
-                <table class="app-table">
-                    <thead>
-                    <tr>
-                        <th>Student Info</th>
-                        <th>Property &amp; Room</th>
-                        <th>Date Applied</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-
-                    <tr th:each="row : ${applications}">
-                        <td>
-                            <!-- Student identity is always visible; year of
-                                 study / funding only reveal on click, via a
-                                 native <details> disclosure — no JS needed. -->
-                            <details class="student-details">
-                                <summary class="student-cell">
-                                    <div class="student-avatar" th:text="${row.studentInitials}">SM</div>
-                                    <div>
-                                        <p class="student-name" th:text="${row.studentName}">Sipho Mabuza</p>
-                                        <p class="student-uni">Nelson Mandela University</p>
-                                    </div>
-                                </summary>
-                                <div class="student-info-panel">
-                                    <p class="student-info-row">
-                                        <strong>Year of study:</strong>
-                                        <span th:text="${row.yearOfStudy != null ? row.yearOfStudy : 'Not specified'}">2</span>
-                                    </p>
-                                    <p class="student-info-row">
-                                        <strong>Funding:</strong>
-                                        <span th:text="${row.fundingStatus != null and !row.fundingStatus.isEmpty() ? row.fundingStatus : 'Not specified'}">Self-Paying</span>
-                                    </p>
-                                    <p class="student-info-row" th:if="${row.budgetMin != null or row.budgetMax != null}">
-                                        <strong>Budget:</strong>
-                                        <span th:text="${(row.budgetMin != null ? 'R' + row.budgetMin : '?') + ' – ' + (row.budgetMax != null ? 'R' + row.budgetMax : '?')}">R3000 – R5000</span>
-                                    </p>
-                                    <p class="student-info-row" th:if="${row.housingPreferences != null and !row.housingPreferences.isEmpty()}">
-                                        <strong>Looking for:</strong>
-                                        <span th:text="${row.housingPreferences}">Quiet, close to campus</span>
+                <!-- Card-per-application layout: full-width, stacked, with
+                     Accept / Reject / Respond built into each card. -->
+                <div class="applications-card-list">
+                    <div class="application-card" th:each="row : ${applications}">
+                        <div class="application-card-header">
+                            <div class="student-cell">
+                                <div class="student-avatar" th:text="${row.studentInitials}">SM</div>
+                                <div>
+                                    <p class="student-name" th:text="${row.studentName}">Sipho Mabuza</p>
+                                    <p class="student-uni" th:if="${row.yearOfStudy != null}">
+                                        Year <span th:text="${row.yearOfStudy}">2</span>
                                     </p>
                                 </div>
-                            </details>
-                        </td>
-                        <td>
-                            <p class="property-name" th:text="${row.propertyName}">ULEE Gqeberha North</p>
-                            <p class="property-room" th:text="${row.roomType}">Studio Apartment</p>
-                            <p class="property-room" th:text="${row.propertyAddress}" th:if="${row.propertyAddress != null and !row.propertyAddress.isEmpty()}">Summerstrand</p>
-                        </td>
-                        <td>
-                            <p class="date-applied"
-                               th:text="${#temporals.format(row.applicationDate, 'MMM d, yyyy')}">Oct 24, 2023</p>
-                            <p class="time-applied"
-                               th:text="${#temporals.format(row.applicationDate, 'HH:mm')}">14:20</p>
-                        </td>
-                        <td>
-                <span class="status-pill"
-                      th:classappend="${row.status == 'Pending'} ? 'status-pill--pending' : (${row.status == 'Rejected'} ? 'status-pill--rejected' : (${row.status == 'Accepted'} ? 'status-pill--accepted' : 'status-pill--verifying'))"
-                      th:text="${row.status}">Pending</span>
-                        </td>
-                        <td>
-                            <div class="row-actions" th:if="${row.status != 'Rejected'}">
-                                <form th:action="@{/update-application-status/{id}(id=${row.applicationID})}" method="post" class="inline-form">
-                                    <input type="hidden" name="status" value="Accepted" />
-                                    <button class="btn-accept" type="submit"
-                                            th:disabled="${row.status != 'Accepted' and acceptedCount >= capacity}"
-                                            th:title="${row.status != 'Accepted' and acceptedCount >= capacity} ? 'This property is at full capacity' : ''">
-                                        <svg viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2"/></svg>
-                                        Accept
-                                    </button>
-                                </form>
-                                <form th:action="@{/update-application-status/{id}(id=${row.applicationID})}" method="post" class="inline-form">
-                                    <input type="hidden" name="status" value="Rejected" />
-                                    <button class="btn-reject" type="submit" aria-label="Reject application">
-                                        <svg viewBox="0 0 24 24" fill="none"><path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                                    </button>
-                                </form>
                             </div>
+                            <span class="status-pill"
+                                  th:classappend="${row.status == 'Pending'} ? 'status-pill--pending' : (${row.status == 'Rejected'} ? 'status-pill--rejected' : (${row.status == 'Accepted'} ? 'status-pill--accepted' : 'status-pill--verifying'))"
+                                  th:text="${row.status}">Pending</span>
+                        </div>
+
+                        <div class="application-card-body">
+                            <p class="application-meta">
+                                <strong th:text="${row.propertyName}">Property</strong> — <span th:text="${row.roomType}">Room type</span>
+                                <span th:if="${row.propertyAddress != null and !row.propertyAddress.isEmpty()}"> · <span th:text="${row.propertyAddress}">Address</span></span>
+                            </p>
+                            <p class="application-meta">
+                                Applied <span th:text="${#temporals.format(row.applicationDate, 'MMM d, yyyy')}">Oct 24, 2023</span>
+                                at <span th:text="${#temporals.format(row.applicationDate, 'HH:mm')}">14:20</span>
+                            </p>
+                            <p class="application-meta" th:if="${row.fundingStatus != null and !row.fundingStatus.isEmpty()}">
+                                <strong>Funding:</strong> <span th:text="${row.fundingStatus}">Self-Paying</span>
+                            </p>
+                            <div class="application-message" th:if="${row.messageToLandlord != null and !row.messageToLandlord.isEmpty()}">
+                                <p class="application-message-label">Message to you</p>
+                                <p class="application-message-text" th:text="${row.messageToLandlord}">Message text</p>
+                            </div>
+
+                            <div class="application-documents" th:if="${row.documents != null and !row.documents.isEmpty()}">
+                                <p class="application-message-label">Documents</p>
+                                <div class="document-chip-list">
+                                    <a class="document-chip"
+                                       th:each="doc : ${row.documents}"
+                                       th:href="@{/download-application-document/{id}(id=${doc.documentID})}"
+                                       target="_blank">
+                                        <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M14 2v6h6" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+                                        <span th:text="${doc.fileName}">document.pdf</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="application-card-actions">
+                            <form th:if="${row.status != 'Rejected'}"
+                                  th:action="@{/update-application-status/{id}(id=${row.applicationID})}" method="post" class="inline-form">
+                                <input type="hidden" name="status" value="Accepted" />
+                                <button class="btn-accept" type="submit"
+                                        th:disabled="${row.status != 'Accepted' and acceptedCount >= capacity}"
+                                        th:title="${row.status != 'Accepted' and acceptedCount >= capacity} ? 'This property is at full capacity' : ''">
+                                    <svg viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2"/></svg>
+                                    Accept
+                                </button>
+                            </form>
                             <form th:if="${row.status == 'Rejected'}"
                                   th:action="@{/update-application-status/{id}(id=${row.applicationID})}" method="post" class="inline-form">
                                 <input type="hidden" name="status" value="Pending" />
                                 <button class="btn-reexamine" type="submit">Re-examine</button>
                             </form>
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
+
+                            <div class="action-right-group">
+                                <form th:if="${row.status != 'Rejected'}"
+                                      th:action="@{/update-application-status/{id}(id=${row.applicationID})}" method="post" class="inline-form">
+                                    <input type="hidden" name="status" value="Rejected" />
+                                    <button class="btn-reject" type="submit">
+                                        <svg viewBox="0 0 24 24" fill="none"><path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                        Reject
+                                    </button>
+                                </form>
+
+                                <!-- Opens the student's email client client-side (JS below),
+                                     then marks landlordResponded=true server-side. Nothing is
+                                     sent or stored by the app itself. -->
+                                <form th:action="@{/mark-application-responded/{id}(id=${row.applicationID})}" method="post"
+                                      class="inline-form respond-form"
+                                      th:attr="data-email=${row.studentEmail}, data-subject='Regarding your application for ' + ${row.propertyName}">
+                                    <button class="btn-respond" type="submit" th:text="${row.landlordResponded} ? '✓ Responded' : 'Respond'">Respond</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <div class="filter-empty-state" th:if="${applicationCount == 0}">
@@ -342,6 +314,20 @@
         if (this.value) {
             window.location.href = '/property-applications/' + this.value;
         }
+    });
+</script>
+
+<script>
+    // "Respond" opens the landlord's email client addressed to the student,
+    // then lets the form submit normally to record that they followed up.
+    document.querySelectorAll('.respond-form').forEach(form => {
+        form.addEventListener('submit', function () {
+            const email = this.dataset.email;
+            const subject = this.dataset.subject;
+            if (email) {
+                window.open('mailto:' + email + '?subject=' + encodeURIComponent(subject), '_blank');
+            }
+        });
     });
 </script>
 

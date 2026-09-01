@@ -163,6 +163,14 @@
                   <span class="hint-text">Shared bedroom arrangement</span>
                 </span>
                             </label>
+                            <label class="tile-option" th:classappend="${property.type == 'Commune'} ? 'selected'" onclick="selectEditTile(this, 'type')">
+                                <input type="radio" name="type" value="Commune" th:checked="${property.type == 'Commune'}" />
+                                <span class="tile-icon">🏠</span>
+                                <span class="tile-text">
+                  <span class="tile-title">Commune</span>
+                  <span class="hint-text">Shared house, typically 4-5 students</span>
+                </span>
+                            </label>
                         </div>
                     </div>
                     <div class="field f-col-2">
@@ -299,8 +307,15 @@
 
                 <div class="f-grid">
                     <div class="field f-col-2">
-                        <label>Add Photos</label>
-                        <input type="file" name="images" multiple accept="image/*" />
+                        <label>Replace Cover Photo (Main Display Image)</label>
+                        <input type="file" id="coverImageInput" name="coverImage" accept="image/*" onchange="previewCoverImage(this)" />
+                        <div id="coverImagePreview" style="margin-top:10px;"></div>
+                        <p class="hint-text">Only upload here if you want to change the main photo. Leave empty to keep your current one.</p>
+                    </div>
+                    <div class="field f-col-2" style="margin-top:16px;">
+                        <label>Add More Photos</label>
+                        <input type="file" id="additionalImagesInput" name="images" multiple accept="image/*" onchange="previewAdditionalImages(this)" />
+                        <div id="additionalImagesPreview" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;"></div>
                     </div>
                 </div>
             </div>
