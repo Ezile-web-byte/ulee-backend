@@ -68,7 +68,7 @@ public class SecurityConfig {
                     .findFirst()
                     .map(a -> switch (a.getAuthority()) {
                         case "ROLE_LANDLORD" -> "/landlord-index";
-                        case "ROLE_ADMIN" -> "/admin-dashboard";
+                        case "ROLE_ADMIN" -> "/admin-index";   // <-- changed from /admin-dashboard
                         default -> "/student-dashboard";
                     })
                     .orElse("/student-dashboard");
@@ -76,3 +76,4 @@ public class SecurityConfig {
         };
     }
 }
+

@@ -71,7 +71,9 @@ public class AdminController {
     }
 
     @GetMapping("/admin/listings")
-    public String viewAllListings(Model model, @RequestParam(required = false) String search) {
+    public String viewAllListings(Model model,
+                                  @RequestParam(required = false) String search,
+                                  @RequestParam(required = false) String status) {
         List<Property> allProperties = propertyRepository.findAll();
 
         String searchLower = search != null ? search.trim().toLowerCase() : null;
@@ -81,6 +83,12 @@ public class AdminController {
                         || (p.getTitle() != null && p.getTitle().toLowerCase().contains(searchLower))
                         || (p.getAddress() != null && p.getAddress().toLowerCase().contains(searchLower))
                         || (p.getSuburb() != null && p.getSuburb().toLowerCase().contains(searchLower)))
+                // Status filter for the dropdown next to the search bar. "Approved" also
+                // matches properties stored as "Active", mirroring the badge logic in
+                // admin-listings.html which displays both under the same green badge.
+                .filter(p -> status == null || status.isBlank()
+                        || status.equalsIgnoreCase(p.getStatus())
+                        || (status.equalsIgnoreCase("Approved") && "Active".equalsIgnoreCase(p.getStatus())))
                 .collect(Collectors.toList());
 
         // Number of students who applied to each property, for the "Applicants" column
@@ -92,6 +100,7 @@ public class AdminController {
         model.addAttribute("totalListings", allProperties.size());
         model.addAttribute("applicationCounts", applicationCounts);
         model.addAttribute("search", search);
+        model.addAttribute("status", status);
         addSidebarCounts(model);
         return "admin/admin-listings";
     }
@@ -197,7 +206,7 @@ public class AdminController {
                                          @RequestParam(required = false) String city,
                                          @RequestParam(required = false) java.math.BigDecimal minPrice,
                                          @RequestParam(required = false) java.math.BigDecimal maxPrice,
-                                         @RequestParam(required = false) Integer bedrooms,
+                                         @RequestParam(required = false) String type,
                                          @RequestParam(required = false) Integer academicYear) {
 
         List<Property> allApproved = propertyRepository.findByStatusIn(List.of("Approved", "Active"));
@@ -219,7 +228,11 @@ public class AdminController {
                 .filter(p -> city == null || city.isBlank() || city.equalsIgnoreCase(p.getCity()))
                 .filter(p -> minPrice == null || (p.getRent() != null && p.getRent().compareTo(minPrice) >= 0))
                 .filter(p -> maxPrice == null || (p.getRent() != null && p.getRent().compareTo(maxPrice) <= 0))
-                .filter(p -> bedrooms == null || (p.getBedrooms() != null && p.getBedrooms().intValue() == bedrooms))
+                // "Single" matches types like "Single Room", "Sharing" matches anything
+                // containing "shared" (e.g. "Shared House", "Shared Apartment"). Loose
+                // substring match since property.type is free text, not an enum.
+                .filter(p -> type == null || type.isBlank()
+                        || (p.getType() != null && matchesTypeFilter(p.getType(), type)))
                 .collect(Collectors.toList());
 
         // Selecting an academic year bumps properties available that year to the
@@ -261,12 +274,28 @@ public class AdminController {
         model.addAttribute("selectedCity", city);
         model.addAttribute("minPrice", minPrice);
         model.addAttribute("maxPrice", maxPrice);
-        model.addAttribute("bedrooms", bedrooms);
+        model.addAttribute("selectedType", type);
         model.addAttribute("totalListings", propertyRepository.findAll().size());
         model.addAttribute("academicYearOptions", academicYearOptions);
         model.addAttribute("selectedAcademicYear", selectedYear != null ? selectedYear : currentYear);
         addSidebarCounts(model);
         return "admin/admin-approved-properties";
+    }
+
+    /**
+     * Matches a property's free-text "type" field against the Single/Sharing
+     * filter option. "Single" matches types like "Single Room"; "Sharing"
+     * matches anything with "shared" in it (e.g. "Shared House").
+     */
+    private boolean matchesTypeFilter(String propertyType, String filterValue) {
+        String typeLower = propertyType.toLowerCase();
+        if ("Single".equalsIgnoreCase(filterValue)) {
+            return typeLower.contains("single");
+        }
+        if ("Sharing".equalsIgnoreCase(filterValue)) {
+            return typeLower.contains("shar");
+        }
+        return true;
     }
 
     @PostMapping("/admin/approve-listing/{id}")
@@ -479,6 +508,7 @@ public class AdminController {
         model.addAttribute("currentQueueIndex", currentIndex);
         model.addAttribute("prevReportedId", prevId);
         model.addAttribute("nextReportedId", nextId);
+        model.addAttribute("isFlagged", Boolean.TRUE.equals(property.getIsReported()));
         addSidebarCounts(model);
         return "admin/admin-reported-listing-detail";
     }
@@ -545,9 +575,16 @@ public class AdminController {
         int current = landlordUser.getWarningCount() != null ? landlordUser.getWarningCount() : 0;
         landlordUser.setWarningCount(current + 1);
         userRepository.save(landlordUser);
+
+        // Warning sent = this report is considered handled, so it drops off
+        // the Reported queue (same as suspend/remove).
+        property.setIsReported(false);
+        property.setReportReason(null);
+        propertyRepository.save(property);
+
         redirectAttributes.addFlashAttribute("actionMessage",
                 "Official warning sent to " + safeName(landlordUser) + "'s notifications (warning #" + (current + 1) + ")");
-        return "redirect:/admin/reported-listing/" + propertyId;
+        return "redirect:/admin/reported-listings";
     }
 
     @PostMapping("/admin/suspend-listing/{id}")
@@ -560,9 +597,33 @@ public class AdminController {
         Property property = propertyOpt.get();
         property.setStatus("Suspended");
         property.setIsAvailable(false);
+        property.setIsReported(false);
+        property.setReportReason(null);
         propertyRepository.save(property);
         redirectAttributes.addFlashAttribute("actionMessage", "Suspended \"" + property.getTitle() + "\"");
         return "redirect:/admin/reported-listings";
+    }
+
+    @PostMapping("/admin/unsuspend-listing/{id}")
+    public String unsuspendListing(@PathVariable Integer id, RedirectAttributes redirectAttributes) {
+        Optional<Property> propertyOpt = propertyRepository.findById(id);
+        if (propertyOpt.isEmpty()) {
+            redirectAttributes.addFlashAttribute("actionError", "Listing #" + id + " could not be found.");
+            return "redirect:/admin/listings";
+        }
+        Property property = propertyOpt.get();
+        if (!"Suspended".equals(property.getStatus())) {
+            redirectAttributes.addFlashAttribute("actionError", "\"" + property.getTitle() + "\" is not currently suspended.");
+            return "redirect:/admin/listings";
+        }
+        // Back to Approved (not "Active") — Approved is the same status used
+        // for a normal listing that's been through moderation once already;
+        // it will re-appear on /admin/approved-properties immediately.
+        property.setStatus("Approved");
+        property.setIsAvailable(true);
+        propertyRepository.save(property);
+        redirectAttributes.addFlashAttribute("actionMessage", "Unsuspended \"" + property.getTitle() + "\" — it's live again");
+        return "redirect:/admin/listings";
     }
 
     @PostMapping("/admin/remove-listing/{id}")
@@ -578,12 +639,18 @@ public class AdminController {
             reportRepository.deleteAll(reportRepository.findByPropertyIDOrderByReportedAtAsc(id));
             reviewRepository.deleteAll(reviewRepository.findByPropertyID(id));
             propertyImageRepository.deleteAll(propertyImageRepository.findByPropertyID(id));
-            // add applicationRepository / savedPropertyRepository cleanup here too if those repos exist
+
+            // Applications reference propertyID with a FK constraint, so these
+            // must go before the property row itself or the delete fails
+            // silently into the catch block below (this was the actual bug —
+            // Arteria Parktown had a Pending application from the seed data,
+            // which blocked deletion every time).
+            applicationRepository.deleteAll(applicationRepository.findByPropertyIDIn(List.of(id)));
 
             propertyRepository.deleteById(id);
             redirectAttributes.addFlashAttribute("actionMessage", "Removed listing \"" + title + "\"");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("actionError", "Could not remove \"" + title + "\": it has related records (reports, reviews, or applications) that must be cleared first.");
+            redirectAttributes.addFlashAttribute("actionError", "Could not remove \"" + title + "\": " + e.getMessage());
         }
 
         return "redirect:/admin/reported-listings";
@@ -715,7 +782,9 @@ public class AdminController {
     }
 
     @GetMapping("/admin/listing/{id}")
-    public String viewListingDetail(@PathVariable Integer id, Model model) {
+    public String viewListingDetail(@PathVariable Integer id,
+                                    @RequestParam(required = false) String from,
+                                    Model model) {
         Optional<Property> propertyOpt = propertyRepository.findById(id);
 
         if (propertyOpt.isEmpty()) {
@@ -734,8 +803,27 @@ public class AdminController {
         model.addAttribute("validationIssues", validationIssues);
         model.addAttribute("isValid", validationIssues.isEmpty());
         model.addAttribute("totalListings", propertyRepository.findAll().size());
+        model.addAttribute("backUrl", resolveBackUrl(from));
         addSidebarCounts(model);
         return "admin/admin-listing-details";
+    }
+
+    /**
+     * Maps the "from" query param (set by whichever page linked into this
+     * detail view) back to that page's URL, so the Back button returns the
+     * admin to where they actually came from instead of always going to
+     * Review Properties. Defaults to Listings, since that's this page's own
+     * sidebar section.
+     */
+    private String resolveBackUrl(String from) {
+        if (from == null) return "/admin/listings";
+        switch (from) {
+            case "pending": return "/admin-index#review-properties";
+            case "approved": return "/admin/approved-properties";
+            case "reported": return "/admin/reported-listings";
+            case "listings": return "/admin/listings";
+            default: return "/admin/listings";
+        }
     }
 
     /** Joins address, suburb, city into one display line, skipping any that are blank. */
@@ -886,6 +974,3 @@ public class AdminController {
     }
 
 }
-
-
-

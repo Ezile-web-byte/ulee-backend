@@ -562,8 +562,9 @@ public class PropertyController {
         model.addAttribute("property", property);
         model.addAttribute("reviews", reviewRepository.findByPropertyID(id));
         model.addAttribute("vrImages", propertyImageRepository.findByPropertyIDAndIsVRTrue(id));
-        return "property-detail";
+        return "student/property-detail";
     }
+
 
     // Public search — same LIVE_STATUS rule as the student dashboard, so
     // search never surfaces a Pending/Draft/Inactive property.

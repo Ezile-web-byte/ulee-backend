@@ -26,9 +26,10 @@
                             <span class="panel-title" th:text="${property.title}">Listing Name</span>
                             <span class="panel-sub" th:text="${property.address} + ', ' + ${property.city}">Address</span>
                         </div>
-                        <span th:if="${property.status == 'Approved'}" class="badge badge-green"><span class="badge-dot"></span>Approved</span>
+                        <span th:if="${property.status == 'Approved' or property.status == 'Active'}" class="badge badge-green"><span class="badge-dot"></span>Approved</span>
                         <span th:if="${property.status == 'Pending' or property.status == null}" class="badge badge-amber"><span class="badge-dot"></span>Pending</span>
                         <span th:if="${property.status == 'Rejected'}" class="badge badge-red"><span class="badge-dot"></span>Rejected</span>
+                        <span th:if="${property.status == 'Suspended'}" class="badge badge-red"><span class="badge-dot"></span>Suspended</span>
                     </div>
 
                     <div style="padding:22px;display:flex;flex-direction:column;gap:18px">
@@ -50,10 +51,11 @@
                                  style="width:100%;max-height:360px;object-fit:cover;border-radius:10px;display:block" />
                             <div th:if="${images.size() > 1}"
                                  class="thumb-row"
-                                 style="display:flex;gap:8px;margin-top:8px;overflow-x:auto">                                                                                                                                                             <img th:each="img, iter : ${images}" th:src="@{${img.url}}" alt="Thumbnail"
-                                                                                                                                                                                                                                                               th:classappend="${iter.index == 0} ? 'active-thumb' : ''"
-                                                                                                                                                                                                                                                               style="width:76px;height:58px;object-fit:cover;border-radius:6px;cursor:pointer;flex-shrink:0;border:2px solid transparent;opacity:0.75"
-                                                                                                                                                                                                                                                               onclick="document.getElementById('mainListingImg').src=this.src;
+                                 style="display:flex;gap:8px;margin-top:8px;overflow-x:auto">
+                                <img th:each="img, iter : ${images}" th:src="@{${img.url}}" alt="Thumbnail"
+                                     th:classappend="${iter.index == 0} ? 'active-thumb' : ''"
+                                     style="width:76px;height:58px;object-fit:cover;border-radius:6px;cursor:pointer;flex-shrink:0;border:2px solid transparent;opacity:0.75"
+                                     onclick="document.getElementById('mainListingImg').src=this.src;
                                               document.querySelectorAll('.thumb-row img').forEach(t=>{t.style.opacity='0.75';t.style.borderColor='transparent'});
                                               this.style.opacity='1';this.style.borderColor='#14b8a6';" />
                             </div>
@@ -124,22 +126,25 @@
                             <p th:if="${property.amenities == null or #lists.isEmpty(property.amenities)}">No amenities specified</p>
                         </div>
 
-                        <!-- B100 — Approve/Reject only offered while the listing isn't already Approved -->
+                        <!-- B100 — Approve/Reject only offered while the listing is still Pending.
+                             "Approved" and "Active" both count as already-moderated, same as everywhere
+                             else in the admin controller, so neither shows these buttons. -->
                         <div style="display:flex;gap:10px">
-                            <div th:if="${property.status != 'Approved'}" style="display:flex;gap:10px">
+                            <div th:if="${property.status == 'Pending' or property.status == null}" style="display:flex;gap:10px">
                                 <form th:action="@{/admin/approve-listing/{id}(id=${property.propertyID})}" method="post">
                                     <button type="submit" class="btn btn-primary" style="padding:9px 22px;font-size:13px;border-radius:8px">Approve</button>
                                 </form>
-                                <form th:if="${property.status != 'Rejected'}" th:action="@{/admin/reject-listing/{id}(id=${property.propertyID})}" method="post"
+                                <form th:action="@{/admin/reject-listing/{id}(id=${property.propertyID})}" method="post"
                                       onsubmit="return confirm('Reject this listing?');">
                                     <button type="submit" class="btn btn-danger" style="padding:9px 22px;font-size:13px;border-radius:8px">Reject</button>
                                 </form>
                             </div>
-                            <a href="/admin-index#review-properties"
+                            <a th:href="${backUrl}"
                                class="btn btn-view"
                                style="padding:9px 22px;font-size:13px;border-radius:8px;text-decoration:none">
                                 Back
-                            </a>                        </div>
+                            </a>
+                        </div>
 
                     </div>
                 </div>
