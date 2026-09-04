@@ -675,8 +675,7 @@ public class PropertyController {
                 .map(Application::getPropertyID)
                 .collect(Collectors.toSet());
 
-        List<Property> eligibleProperties = allMyProperties.stream()
-                .filter(p -> LIVE_STATUS.equals(p.getStatus()) && propertyIdsWithAcceptedStudents.contains(p.getPropertyID()))
+        List<Property> eligibleProperties = findLiveOwnedProperties(landlordID).stream()
                 .sorted((a, b) -> a.getTitle().compareToIgnoreCase(b.getTitle()))
                 .collect(Collectors.toList());
 

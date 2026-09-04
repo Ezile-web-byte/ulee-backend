@@ -28,6 +28,7 @@ public class SecurityConfig {
                                 "/", "/student-dashboard", "/property/**", "/search",
                                 "/register", "/login",
                                 "/images/**", "/*.css", "/*.js",
+                                "/*.png", "/*.jpg", "/*.jpeg", "/*.svg", "/*.gif", "/*.webp",
                                 "/login-style.css", "/login-script.js",
                                 "/student-style.css", "/student-script.js",
                                 "/static/**", "/uploads/**"

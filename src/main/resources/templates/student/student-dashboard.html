@@ -95,6 +95,10 @@
         #loginModalOverlay { display: none; }
         #loginModalOverlay.open { display: flex; }
 
+        /* Forgot password modal */
+        #forgotPasswordOverlay { display: none; }
+        #forgotPasswordOverlay.open { display: flex; }
+
         /* Hero background Ken Burns effect */
         @keyframes heroKenBurns {
             0% { transform: scale(1.05) translate(0, 0); }
@@ -456,10 +460,34 @@
                 <label class="text-[11px] uppercase font-bold text-on-surface-variant tracking-wider">Password</label>
                 <input type="password" name="password" class="w-full mt-xs border border-outline-variant rounded-lg px-md py-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="Enter your password" required/>
             </div>
+            <p class="text-right -mt-sm">
+                <button type="button" id="openForgotPasswordBtn" class="text-xs text-primary font-bold hover:underline">Forgot password?</button>
+            </p>
             <button type="submit" class="w-full bg-primary text-white py-sm rounded-full font-label-bold hover:bg-primary-container transition-colors">Log in</button>
         </form>
         <p class="text-center text-sm text-on-surface-variant mt-md">
             No account? <a href="/register" class="text-primary font-bold hover:underline">Register</a>
+        </p>
+    </div>
+</div>
+
+<!-- ── FORGOT PASSWORD MODAL — collects email, backend emails a reset LINK (never the raw password) ── -->
+<div id="forgotPasswordOverlay" class="fixed inset-0 z-[1000] items-center justify-center bg-black/50 backdrop-blur-sm px-margin-mobile">
+    <div class="bg-white w-full max-w-md rounded-[24px] p-xl relative">
+        <button type="button" id="closeForgotPasswordBtn" aria-label="Close" class="absolute top-md right-md text-on-surface-variant hover:text-primary">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+        <h2 class="font-headline-sm text-headline-sm text-on-surface mb-xs">Reset your password</h2>
+        <p class="text-sm text-on-surface-variant mb-md">Enter your email and we'll send you a link to set a new password.</p>
+        <form th:action="@{/forgot-password}" method="post" class="space-y-md" id="forgotPasswordForm">
+            <div>
+                <label class="text-[11px] uppercase font-bold text-on-surface-variant tracking-wider">Email</label>
+                <input type="email" name="email" class="w-full mt-xs border border-outline-variant rounded-lg px-md py-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="e.g. s227676637@mandela.ac.za" required/>
+            </div>
+            <button type="submit" class="w-full bg-primary text-white py-sm rounded-full font-label-bold hover:bg-primary-container transition-colors">Send reset link</button>
+        </form>
+        <p id="forgotPasswordConfirmation" class="hidden text-sm text-on-surface-variant mt-md text-center">
+            If that email is registered, a reset link is on its way. Check your inbox.
         </p>
     </div>
 </div>
@@ -472,11 +500,36 @@
     document.getElementById('closeLoginBtn')?.addEventListener('click', () => loginOverlay.classList.remove('open'));
     loginOverlay.addEventListener('click', (e) => { if (e.target === loginOverlay) loginOverlay.classList.remove('open'); });
 
+    // ── Forgot password modal ──
+    const forgotOverlay = document.getElementById('forgotPasswordOverlay');
+    document.getElementById('openForgotPasswordBtn')?.addEventListener('click', () => {
+        loginOverlay.classList.remove('open');
+        forgotOverlay.classList.add('open');
+    });
+    document.getElementById('closeForgotPasswordBtn')?.addEventListener('click', () => forgotOverlay.classList.remove('open'));
+    forgotOverlay.addEventListener('click', (e) => { if (e.target === forgotOverlay) forgotOverlay.classList.remove('open'); });
+
+    // Show a simple confirmation instead of navigating away — swap for a redirect if your
+    // /forgot-password endpoint renders its own confirmation page instead.
+    document.getElementById('forgotPasswordForm')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const form = e.target;
+        fetch(form.action, { method: 'POST', body: new FormData(form) })
+            .finally(() => {
+                form.classList.add('hidden');
+                document.getElementById('forgotPasswordConfirmation').classList.remove('hidden');
+            });
+    });
+
     // ── Auto-prompt login when redirected here because a page required it ──
     document.getElementById('dismissLoginBanner')?.addEventListener('click', (e) => {
         e.target.closest('div').remove();
     });
     if (new URLSearchParams(window.location.search).get('loginRequired') === 'true') {
+        loginOverlay.classList.add('open');
+    }
+    // ── Open login modal when redirected here from the register page ──
+    if (new URLSearchParams(window.location.search).get('openLogin') === 'true') {
         loginOverlay.classList.add('open');
     }
 
@@ -533,7 +586,7 @@
     });
 </script>
 
-<div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null)}"></div>
+<div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null,null,null,null)}"></div>
 
 </body>
 </html>

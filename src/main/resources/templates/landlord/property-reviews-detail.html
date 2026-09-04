@@ -11,10 +11,16 @@
   <style>
     .review-switcher-row {
       display: flex;
-      justify-content: flex-end;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .review-switcher-controls {
+      display: flex;
       align-items: center;
       gap: 10px;
-      margin-bottom: 16px;
     }
     .property-switcher-select {
       display: flex;
@@ -113,7 +119,7 @@
       font-weight: 800;
       font-size: 22px;
       color: var(--on-surface);
-      margin: 0 0 20px;
+      margin: 0;
     }
 
     /* ── Reported review styling ── */
@@ -229,21 +235,24 @@
 
     <div class="page-body">
 
-      <h2 class="property-name-heading" th:text="${property.title}">Ivana</h2>
-
       <section class="review-switcher-row" aria-label="Switch property">
-        <label class="property-switcher-select">
-          <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M4 21V9l8-6 8 6v12h-5v-7h-6v7H4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-          <select id="propertySwitcher" aria-label="Jump to another property's reviews">
-            <option value="" selected>All Properties</option>
-            <option th:each="p : ${eligibleProperties}"
-                    th:value="${p.propertyID}"
-                    th:text="${p.title}">Property Name</option>
-          </select>
-        </label>
-        <a class="review-next-btn" th:href="@{/property-reviews/{id}(id=${nextPropertyId})}" aria-label="Next property">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </a>
+        <h2 class="property-name-heading">
+          <span th:text="${property.title}">Ivana</span>
+        </h2>
+        <div class="review-switcher-controls">
+          <label class="property-switcher-select">
+            <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M4 21V9l8-6 8 6v12h-5v-7h-6v7H4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+            <select id="propertySwitcher" aria-label="Jump to another property's reviews">
+              <option value="" selected>All Properties</option>
+              <option th:each="p : ${eligibleProperties}"
+                      th:value="${p.propertyID}"
+                      th:text="${p.title}">Property Name</option>
+            </select>
+          </label>
+          <a class="review-next-btn" th:href="@{/property-reviews/{id}(id=${nextPropertyId})}" aria-label="Next property">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        </div>
       </section>
 
       <section class="rating-metrics-bar" aria-label="Rating summary">

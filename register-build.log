@@ -1,0 +1,11 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -----------------------< com.ulee:ulee-backend >------------------------
+[INFO] Building  0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.5.0:clean (default-clean) @ ulee-backend ---
+[INFO] Deleting C:\Users\Ezile\Downloads\2026\unakho\ulee-backend\target
+Terminate batch job (Y/N)? Terminate batch job (Y/N)? 
+^C

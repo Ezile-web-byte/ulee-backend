@@ -71,10 +71,16 @@ function updateEditNavButtons() {
 // toggle is required for the visual state to update.
 function selectEditTile(element, fieldName) {
   const container = element.closest('.tile-selector');
-  container.querySelectorAll('.tile-option').forEach(el => el.classList.remove('selected'));
+  container.querySelectorAll('.tile-option').forEach(el => {
+    el.classList.remove('selected');
+    el.style.borderColor = '';
+    el.style.background = '';
+  });
   element.classList.add('selected');
+  element.style.borderColor = '#005b74';
+  element.style.background = '#eaf6f8';
   const input = element.querySelector('input');
-  input.checked = true;
+  if (input) input.checked = true;
   if (editCurrentStep === 0) renderReviewSummary();
 }
 

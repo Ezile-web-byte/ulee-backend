@@ -86,6 +86,15 @@
            here without touching the shared class. */
         #reviewSummaryBody .review-row { cursor: pointer; transition: background 0.15s ease; }
         #reviewSummaryBody .review-row:hover { background: var(--pl2); }
+
+
+         .btn-primary, .btn-outline, .btn-delete {
+             padding: 14px 28px;
+             font-size: 15px;
+             font-weight: 700;
+             min-width: 160px;
+         }
+
     </style>
 </head>
 <body>
@@ -327,66 +336,70 @@
         <!-- Save actions — always visible regardless of which step is showing,
              so changes made across any steps you visited save together, from
              wherever you currently are. -->
-        <div class="actions-bar">
-            <div class="btn-group-right">
-                <button type="submit" formnovalidate class="btn btn-outline"
-                        onclick="document.getElementById('formAction').value='draft';">Save Draft</button>
-                <button type="submit" class="btn btn-primary"
-                        onclick="document.getElementById('formAction').value='update';">Save Changes</button>
-            </div>
-        </div>
-    </form>
-
-    <!-- Deactivate: separate form so it isn't nested inside the edit form above -->
-    <form th:action="@{/toggle-property-status/{id}(id=${property.propertyID})}"
-          method="post"
-          th:attr="onsubmit=|return confirm('Deactivate &quot;${#strings.escapeJavaScript(property.title)}&quot;? It will stop showing to students until you reactivate it.');|"
-          class="side-card">
-        <input type="hidden" name="isAvailable" value="false" />
-        <button type="submit" class="btn btn-delete">Deactivate Property</button>
-    </form>
-
-    <!-- Special features -->
-    <div class="side-card">
-        <h2>Special Features</h2>
-        <p class="hint-text">Highlight anything extra this place offers — a study hub, a braai area, a game room — each with its own photos.</p>
-
-        <p class="no-features" th:if="${features.isEmpty()}">No special features added yet.</p>
-
-        <div class="feature-card" th:each="feature : ${features}">
-            <div class="feature-card-header">
-                <div>
-                    <div class="feature-name" th:text="${feature.name}">Feature name</div>
-                    <div class="feature-desc" th:if="${feature.description}" th:text="${feature.description}">Description</div>
-                </div>
-                <form th:action="@{/delete-property-feature/{featureId}(featureId=${feature.featureID})}"
-                      method="post"
-                      onsubmit="return confirm('Remove this feature?');">
-                    <button type="submit" class="feature-delete-btn">Remove</button>
-                </form>
-            </div>
-            <div class="feature-photos" th:if="${feature.images != null and !feature.images.isEmpty()}">
-                <img th:each="img : ${feature.images}" th:src="${img.url}" alt="Feature photo" />
-            </div>
+        <div class="actions-bar" style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+            <button type="submit" formnovalidate class="btn btn-outline"
+                    style="flex:1;"
+                    onclick="document.getElementById('formAction').value='draft';">Save Draft</button>
+            <button type="submit"
+                    class="btn btn-outline"
+                    style="flex:1; color:#b91c1c; border-color:#b91c1c;"
+                    th:formaction="@{/toggle-property-status/{id}(id=${property.propertyID})}"
+                    formmethod="post"
+                    formnovalidate
+                    th:attr="onclick=|return confirm('Deactivate &quot;${#strings.escapeJavaScript(property.title)}&quot;? It will stop showing to students until you reactivate it.');|">Delete</button>
         </div>
 
-        <form class="add-feature-form" th:action="@{/add-property-feature/{propertyId}(propertyId=${property.propertyID})}"
-              method="post" enctype="multipart/form-data">
-            <div class="field">
-                <label>Feature Name</label>
-                <input type="text" name="name" placeholder="e.g. Study Hub" required />
-            </div>
-            <div class="field">
-                <label>Description (optional)</label>
-                <input type="text" name="description" placeholder="A quiet, well-lit space for group study" />
-            </div>
-            <div class="field">
-                <label>Photos (optional)</label>
-                <input type="file" name="images" multiple accept="image/*" />
-            </div>
-            <button type="submit" class="btn btn-primary" style="align-self: flex-start;">Add Feature</button>
-        </form>
-    </div>
+    </form>
+
+    <!-- Standalone Save Changes button. Color is set with inline styles
+         (not a shared class) so nothing else on the page — like .side-card's
+         white background — can ever override it, on hover or otherwise. -->
+    <button type="submit" form="editPropertyForm"
+            style="width:100%; text-align:center; padding:18px 0; font-size:16px; font-weight:700; cursor:pointer; background:#0f8a8a; color:#fff; border:none; border-radius:12px; margin-top:24px;"
+            onclick="document.getElementById('formAction').value='update';">Save Changes</button>
+
+
+<!--    &lt;!&ndash; Special features &ndash;&gt;-->
+<!--    <div class="side-card">-->
+<!--        <h2>Special Features</h2>-->
+<!--        <p class="hint-text">Highlight anything extra this place offers — a study hub, a braai area, a game room — each with its own photos.</p>-->
+
+<!--        <p class="no-features" th:if="${features.isEmpty()}">No special features added yet.</p>-->
+
+<!--        <div class="feature-card" th:each="feature : ${features}">-->
+<!--            <div class="feature-card-header">-->
+<!--                <div>-->
+<!--                    <div class="feature-name" th:text="${feature.name}">Feature name</div>-->
+<!--                    <div class="feature-desc" th:if="${feature.description}" th:text="${feature.description}">Description</div>-->
+<!--                </div>-->
+<!--                <form th:action="@{/delete-property-feature/{featureId}(featureId=${feature.featureID})}"-->
+<!--                      method="post"-->
+<!--                      onsubmit="return confirm('Remove this feature?');">-->
+<!--                    <button type="submit" class="feature-delete-btn">Remove</button>-->
+<!--                </form>-->
+<!--            </div>-->
+<!--            <div class="feature-photos" th:if="${feature.images != null and !feature.images.isEmpty()}">-->
+<!--                <img th:each="img : ${feature.images}" th:src="${img.url}" alt="Feature photo" />-->
+<!--            </div>-->
+<!--        </div>-->
+
+<!--        <form class="add-feature-form" th:action="@{/add-property-feature/{propertyId}(propertyId=${property.propertyID})}"-->
+<!--              method="post" enctype="multipart/form-data">-->
+<!--            <div class="field">-->
+<!--                <label>Feature Name</label>-->
+<!--                <input type="text" name="name" placeholder="e.g. Study Hub" required />-->
+<!--            </div>-->
+<!--            <div class="field">-->
+<!--                <label>Description (optional)</label>-->
+<!--                <input type="text" name="description" placeholder="A quiet, well-lit space for group study" />-->
+<!--            </div>-->
+<!--            <div class="field">-->
+<!--                <label>Photos (optional)</label>-->
+<!--                <input type="file" name="images" multiple accept="image/*" />-->
+<!--            </div>-->
+<!--            <button type="submit" class="btn btn-primary" style="align-self: flex-start;">Add Feature</button>-->
+<!--        </form>-->
+<!--    </div>-->
 
 </main>
 

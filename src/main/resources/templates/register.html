@@ -1,178 +1,236 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>Register – ULEE</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed": "#bbeaff",
+                        "tertiary": "#705d00",
+                        "on-tertiary-container": "#4c3f00",
+                        "on-primary-fixed-variant": "#004d62",
+                        "surface-container-highest": "#e1e3e4",
+                        "primary-container": "#147592",
+                        "inverse-primary": "#82d1f1",
+                        "surface": "#f8f9fa",
+                        "on-secondary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "primary": "#005b74",
+                        "surface-variant": "#e1e3e4",
+                        "surface-container-high": "#e7e8e9",
+                        "on-secondary-fixed-variant": "#572d9a",
+                        "secondary": "#6f47b4",
+                        "tertiary-fixed-dim": "#e5c542",
+                        "on-secondary-fixed": "#260058",
+                        "secondary-container": "#b78eff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#544600",
+                        "on-primary-container": "#d9f2ff",
+                        "on-tertiary-fixed": "#221b00",
+                        "surface-bright": "#f8f9fa",
+                        "tertiary-fixed": "#ffe170",
+                        "surface-dim": "#d9dadb",
+                        "secondary-fixed": "#ebdcff",
+                        "inverse-on-surface": "#f0f1f2",
+                        "on-background": "#191c1d",
+                        "primary-fixed-dim": "#82d1f1",
+                        "outline": "#6f787d",
+                        "on-primary-fixed": "#001f29",
+                        "on-primary": "#ffffff",
+                        "on-surface": "#191c1d",
+                        "inverse-surface": "#2e3132",
+                        "tertiary-container": "#c8a927",
+                        "outline-variant": "#bec8cd",
+                        "secondary-fixed-dim": "#d4bbff",
+                        "on-surface-variant": "#3f484d",
+                        "background": "#f8f9fa",
+                        "surface-container-low": "#f3f4f5",
+                        "error": "#ba1a1a",
+                        "on-secondary-container": "#491c8c",
+                        "on-tertiary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "surface-tint": "#006782",
+                        "surface-container": "#edeeef",
+                        "error-container": "#ffdad6"
+                    },
+                    "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                    "spacing": {
+                        "sm": "12px", "lg": "48px", "margin-mobile": "16px", "xl": "80px",
+                        "base": "8px", "gutter": "24px", "md": "24px", "margin-desktop": "64px", "xs": "4px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Plus Jakarta Sans"], "label-sm": ["Hanken Grotesk"],
+                        "body-md": ["Hanken Grotesk"], "headline-sm": ["Plus Jakarta Sans"],
+                        "body-lg": ["Hanken Grotesk"], "headline-md": ["Plus Jakarta Sans"], "label-bold": ["Hanken Grotesk"]
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        :root {
-            --yellow: #ffe170;
-            --yellow-hover: #e6c95a;
-            --on-yellow: #221b00;
-            --text: #ffffff;
-            --muted: rgba(255, 255, 255, 0.75);
-            --white: #ffffff;
-            --border: rgba(255, 255, 255, 0.2);
-            --shadow-lg: 0 20px 60px rgba(0,0,0,0.25);
-            --radius: 16px;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
 
-        body {
-            font-family: 'Hanken Grotesk', sans-serif;
-            color: var(--text);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-            background:
-                    linear-gradient(rgba(0,20,20,0.45), rgba(0,20,20,0.45)),
-                    url('https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1400&q=80') center/cover no-repeat;
+        @keyframes heroKenBurns {
+            0% { transform: scale(1.05) translate(0, 0); }
+            100% { transform: scale(1.15) translate(-1.5%, -1%); }
+        }
+        .hero-ken-burns {
+            animation: heroKenBurns 28s ease-in-out infinite alternate;
+            will-change: transform;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .hero-ken-burns { animation: none; }
         }
 
-        .card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-lg);
-            padding: 36px 34px;
-            width: 100%;
-            max-width: 420px;
+        .ulee-brand-link { text-decoration: none; cursor: pointer; transition: opacity 0.2s ease; }
+        .ulee-brand-link:hover { opacity: 0.85; }
+        .ulee-brand-mark { position: relative; display: inline-block; }
+        .ulee-brand-mark::after {
+            content: '';
+            position: absolute;
+            top: -3px; right: -9px;
+            width: 9px; height: 9px;
+            background: #ffe170;
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.15);
         }
-
-        .logo { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 26px; font-weight: 800; margin-bottom: 2px; }
-        .tagline { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
-
-        .role-toggle {
-            display: flex; background: rgba(255, 255, 255, 0.08); border-radius: 999px;
-            padding: 4px; margin-bottom: 22px;
-        }
-        .role-btn {
-            flex: 1; text-align: center; padding: 9px 0; border: none; border-radius: 999px;
-            background: transparent; color: var(--muted); font-family: 'Hanken Grotesk', sans-serif;
-            font-size: 13px; font-weight: 600; cursor: pointer; transition: background .2s, color .2s;
-        }
-        .role-btn.active { background: #ffe170; color: var(--on-yellow); }
-
-        .field { margin-bottom: 14px; }
-        .field label {
-            display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
-            text-transform: uppercase; color: var(--text); margin-bottom: 6px;
-        }
-        .field input {
-            width: 100%; font-family: 'Hanken Grotesk', sans-serif; font-size: 14px;
-            padding: 11px 14px; border: 1px solid var(--border); border-radius: 10px;
-            background: rgba(255, 255, 255, 0.08); color: var(--white); outline: none;
-            transition: border-color .2s, background .2s;
-        }
-        .field input:focus { border-color: var(--yellow); background: rgba(255, 255, 255, 0.14); }
-        .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
         .role-fields { display: none; }
         .role-fields.visible { display: block; }
-
-        .error-msg {
-            background: rgba(200, 40, 40, 0.35); color: #ffffff;
-            font-size: 12.5px; padding: 10px 14px; border-radius: 8px; margin-bottom: 16px;
-        }
-
-        .submit-btn {
-            width: 100%; background: #ffe170; color: var(--on-yellow); border: none;
-            border-radius: 999px; padding: 13px; font-family: 'Hanken Grotesk', sans-serif;
-            font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 6px;
-            transition: background .2s;
-        }
-        .submit-btn:hover { background: var(--yellow-hover); }
-
-        .login-link { text-align: center; font-size: 12.5px; color: var(--muted); margin-top: 18px; }
-        .login-link a { color: #ffe170; font-weight: 600; text-decoration: none; }
     </style>
     <link rel="stylesheet" href="/speak-with-ai.css">
     <script src="/speak-with-ai-logic.js" defer></script>
     <script src="/speak-with-ai.js" defer></script>
 </head>
-<body>
+<body class="bg-background text-on-surface font-body-md overflow-x-hidden">
 
-<div class="card">
-    <div class="logo">ULEE</div>
-    <div class="tagline">The Future Of Student Living</div>
-
-    <div th:if="${error}" class="error-msg" th:text="${error}">Error message</div>
-
-    <div class="role-toggle">
-        <button type="button" class="role-btn" id="studentToggle" onclick="setRole('student')">I'm a Student</button>
-        <button type="button" class="role-btn" id="landlordToggle" onclick="setRole('landlord')">I'm a Landlord</button>
+<!-- ── Real dashboard nav + hero, dimmed behind the register card — same treatment as the login modal ── -->
+<nav class="bg-surface/90 backdrop-blur-md w-full top-0 sticky z-0 shadow-[0px_4px_20px_rgba(20,117,146,0.08)]">
+    <div class="flex justify-between items-center w-full px-margin-desktop py-base max-w-7xl mx-auto">
+        <div class="flex items-center gap-md">
+            <a href="/student-dashboard" class="ulee-brand-link flex flex-col leading-none">
+                <span class="ulee-brand-mark font-display-lg text-display-lg font-extrabold text-primary tracking-tight">ULEE</span>
+                <span class="text-[9px] font-bold uppercase tracking-[0.12em] text-on-surface-variant mt-0.5">Student Living</span>
+            </a>
+        </div>
+        <div class="hidden md:flex items-center gap-lg">
+            <a class="font-label-bold text-label-bold text-primary border-b-2 border-tertiary-fixed pb-1" href="/student-dashboard">Properties</a>
+            <a class="font-label-bold text-label-bold text-on-surface-variant" href="/student-dashboard#life-at-ulee">Life at ULEE</a>
+            <a class="font-label-bold text-label-bold text-on-surface-variant" href="#">About Us</a>
+            <a class="font-label-bold text-label-bold text-on-surface-variant" href="#">Contact</a>
+        </div>
+        <div class="flex items-center gap-md">
+            <span class="hidden md:block text-on-surface-variant font-label-bold">Login</span>
+            <span class="bg-tertiary-fixed text-on-tertiary-fixed px-md py-sm rounded-full font-label-bold">Apply Now</span>
+        </div>
     </div>
+</nav>
 
-    <form action="/register" method="post">
-        <input type="hidden" name="role" id="roleInput" value="student" />
-
-        <div class="row-2">
-            <div class="field">
-                <label>First Name</label>
-                <input type="text" name="firstName" required />
-            </div>
-            <div class="field">
-                <label>Last Name</label>
-                <input type="text" name="lastName" required />
-            </div>
-        </div>
-
-        <div class="field">
-            <label>Email</label>
-            <input type="email" name="email" placeholder="e.g. s227676637@mandela.ac.za" required />
-        </div>
-
-        <div class="field">
-            <label>Password</label>
-            <input type="password" name="password" required />
-        </div>
-
-        <div class="row-2">
-            <div class="field">
-                <label>Date of Birth</label>
-                <input type="date" name="dateOfBirth" />
-            </div>
-            <div class="field">
-                <label>Phone</label>
-                <input type="text" name="phone" placeholder="e.g. 0821234567" />
-            </div>
-        </div>
-
-        <!-- Student-only fields -->
-        <div id="studentFields" class="role-fields visible">
-            <div class="field">
-                <label>Year of Study</label>
-                <input type="number" name="yearOfStudy" min="1" max="7" />
-            </div>
-            <div class="row-2">
-                <div class="field">
-                    <label>Budget Min (R)</label>
-                    <input type="number" name="budgetMin" step="0.01" />
-                </div>
-                <div class="field">
-                    <label>Budget Max (R)</label>
-                    <input type="number" name="budgetMax" step="0.01" />
+<header class="relative w-full h-[85vh] flex items-center overflow-hidden z-0">
+    <div class="absolute inset-0 z-0">
+        <div class="w-full h-full bg-cover bg-center scale-105 hero-ken-burns" style="background-image: url('/uploads/student-background.png')"></div>
+        <div class="absolute inset-0 bg-gradient-to-r from-primary/80 to-transparent"></div>
+    </div>
+    <div class="relative z-10 w-full max-w-7xl mx-auto px-margin-desktop">
+        <div class="max-w-2xl space-y-md">
+            <h1 class="font-display-lg text-display-lg font-extrabold text-white leading-tight">
+                The Future of <span class="text-tertiary-fixed">Student Living</span> in Gqeberha
+            </h1>
+            <p class="text-body-lg font-body-lg text-white/90 max-w-lg">
+                Premium living designed for the ambitious. Search real, available rooms from landlords near your campus.
+            </p>
+            <div class="bg-white/10 backdrop-blur-xl p-base rounded-2xl flex items-center gap-xs mt-lg border border-white/20 max-w-xl">
+                <span class="material-symbols-outlined text-tertiary-fixed">location_on</span>
+                <div class="flex flex-col w-full">
+                    <span class="text-[10px] uppercase font-bold text-white/60 tracking-wider">Location</span>
+                    <span class="text-white/50 font-label-bold">Search by location...</span>
                 </div>
             </div>
         </div>
+    </div>
+</header>
 
-        <!-- Landlord-only fields -->
-        <div id="landlordFields" class="role-fields">
-            <div class="field">
-                <label>Company Name</label>
-                <input type="text" name="companyName" />
-            </div>
+<!-- Dim overlay to match the login modal's backdrop treatment -->
+<div class="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"></div>
+
+<!-- ── Register card — same white card, rounded-2xl, and layout as the login modal ── -->
+<div class="fixed inset-0 z-50 flex items-start justify-center px-margin-mobile pt-16 pb-lg overflow-y-auto">
+    <div class="bg-white w-full max-w-lg rounded-[24px] px-xl pt-lg pb-xl">
+        <a href="/student-dashboard" class="ulee-brand-link font-display-lg text-2xl font-extrabold text-primary block mb-1">ULEE</a>
+        <p class="text-sm text-on-surface-variant mb-md">The Future Of Student Living</p>
+
+        <div th:if="${error}" class="bg-error-container text-on-error-container text-sm px-md py-sm rounded-lg mb-md" th:text="${error}">Error message</div>
+
+        <div class="flex bg-surface-container-low rounded-full p-1 mb-md">
+            <button type="button" id="studentToggle" onclick="setRole('student')"
+                    class="flex-1 py-sm rounded-full font-label-bold text-sm transition-colors">I'm a Student</button>
+            <button type="button" id="landlordToggle" onclick="setRole('landlord')"
+                    class="flex-1 py-sm rounded-full font-label-bold text-sm transition-colors">I'm a Landlord</button>
         </div>
 
-        <button type="submit" class="submit-btn">Create Account</button>
-    </form>
+        <form th:action="@{/register}" method="post" class="space-y-md" autocomplete="off">
+            <input type="hidden" name="role" id="roleInput" th:value="${role != null ? role : 'student'}" value="student"/>
 
-    <div class="login-link">
-        Already have an account? <a href="/login">Log in</a>
+            <div class="grid grid-cols-2 gap-sm">
+                <div>
+                    <label class="text-[11px] uppercase font-bold text-on-surface-variant tracking-wider">First Name</label>
+                    <input type="text" name="firstName" autocomplete="off" required class="w-full mt-xs border border-outline-variant rounded-lg px-md py-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none"/>
+                </div>
+                <div>
+                    <label class="text-[11px] uppercase font-bold text-on-surface-variant tracking-wider">Last Name</label>
+                    <input type="text" name="lastName" autocomplete="off" required class="w-full mt-xs border border-outline-variant rounded-lg px-md py-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none"/>
+                </div>
+            </div>
+
+            <div>
+                <label class="text-[11px] uppercase font-bold text-on-surface-variant tracking-wider">Email</label>
+                <input type="email" name="email" autocomplete="off" placeholder="e.g. s227676637@mandela.ac.za" required class="w-full mt-xs border border-outline-variant rounded-lg px-md py-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none"/>
+            </div>
+
+            <div>
+                <label class="text-[11px] uppercase font-bold text-on-surface-variant tracking-wider">Password</label>
+                <input type="password" name="password" autocomplete="new-password" required class="w-full mt-xs border border-outline-variant rounded-lg px-md py-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none"/>
+            </div>
+
+            <div class="grid grid-cols-2 gap-sm">
+                <div>
+                    <label class="text-[11px] uppercase font-bold text-on-surface-variant tracking-wider">Date of Birth</label>
+                    <input type="date" name="dateOfBirth" autocomplete="off" class="w-full mt-xs border border-outline-variant rounded-lg px-md py-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none"/>
+                </div>
+                <div>
+                    <label class="text-[11px] uppercase font-bold text-on-surface-variant tracking-wider">Phone</label>
+                    <input type="text" name="phone" autocomplete="off" placeholder="e.g. 0821234567" class="w-full mt-xs border border-outline-variant rounded-lg px-md py-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none"/>
+                </div>
+            </div>
+
+            <!-- Student-only fields. Kept intentionally short: budget, funding
+                 status, and housing preferences are collected later, when the
+                 student actually applies to a property — not at signup. -->
+            <div id="studentFields" class="role-fields visible">
+                <label class="text-[11px] uppercase font-bold text-on-surface-variant tracking-wider">Year of Study</label>
+                <input type="number" name="yearOfStudy" min="1" max="7" class="w-full mt-xs border border-outline-variant rounded-lg px-md py-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none"/>
+            </div>
+
+            <!-- Landlord-only fields -->
+            <div id="landlordFields" class="role-fields">
+                <label class="text-[11px] uppercase font-bold text-on-surface-variant tracking-wider">Company Name</label>
+                <input type="text" name="companyName" class="w-full mt-xs border border-outline-variant rounded-lg px-md py-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none"/>
+            </div>
+
+            <button type="submit" class="w-full bg-primary text-white py-sm rounded-full font-label-bold hover:bg-primary-container transition-colors">Create Account</button>
+        </form>
+
+        <p class="text-center text-sm text-on-surface-variant mt-md">
+            Already have an account? <a href="/student-dashboard?openLogin=true" class="text-primary font-bold hover:underline">Log in</a>
+        </p>
     </div>
 </div>
 
@@ -180,16 +238,28 @@
     function setRole(role) {
         document.getElementById('roleInput').value = role;
 
-        document.getElementById('studentToggle').classList.toggle('active', role === 'student');
-        document.getElementById('landlordToggle').classList.toggle('active', role === 'landlord');
+        const studentBtn = document.getElementById('studentToggle');
+        const landlordBtn = document.getElementById('landlordToggle');
+        const activeClasses = ['bg-tertiary-fixed', 'text-on-tertiary-fixed'];
+        const inactiveClasses = ['text-on-surface-variant'];
+
+        studentBtn.classList.remove(...activeClasses, ...inactiveClasses);
+        landlordBtn.classList.remove(...activeClasses, ...inactiveClasses);
+
+        if (role === 'student') {
+            studentBtn.classList.add(...activeClasses);
+            landlordBtn.classList.add(...inactiveClasses);
+        } else {
+            landlordBtn.classList.add(...activeClasses);
+            studentBtn.classList.add(...inactiveClasses);
+        }
 
         document.getElementById('studentFields').classList.toggle('visible', role === 'student');
         document.getElementById('landlordFields').classList.toggle('visible', role === 'landlord');
     }
-    // default state on load
-    setRole('student');
+    setRole(document.getElementById('roleInput').value || 'student');
 </script>
 
-<div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null)}"></div>
+<div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null, null, null, null)}"></div>
 </body>
 </html>
