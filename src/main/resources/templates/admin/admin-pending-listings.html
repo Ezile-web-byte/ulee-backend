@@ -80,7 +80,7 @@
                             <td><span class="badge badge-amber"><span class="badge-dot"></span>Pending</span></td>
                             <td>
                                 <div class="btn-group">
-                                    <a th:href="@{/admin/listing/{id}(id=${row.property.propertyID})}" class="btn btn-view">Review</a>
+                                    <a th:href="@{/admin/listing/{id}(id=${row.property.propertyID},from='pending')}" class="btn btn-view">Review</a>
                                     <form th:action="@{/admin/approve-listing/{id}(id=${row.property.propertyID})}" method="post" style="display:inline">
                                         <button type="submit" class="btn btn-primary" style="background-color:#2e7d32;border-color:#2e7d32;color:#fff">Approve</button>
                                     </form>
@@ -109,7 +109,7 @@
                                class="btn btn-view">Prev</a>
                             <span style="padding:8px 12px" th:text="'Page ' + ${currentPage} + ' of ' + ${totalPages}">Page 1 of 3</span>
                             <a th:if="${currentPage < totalPages}"
-                                th:href="@{/admin/pending-listings(page=${currentPage + 1}, search=${search}, academicYear=${selectedAcademicYear})}"
+                               th:href="@{/admin/pending-listings(page=${currentPage + 1}, search=${search}, academicYear=${selectedAcademicYear})}"
                                class="btn btn-view">Next</a>
                         </div>
                     </div>

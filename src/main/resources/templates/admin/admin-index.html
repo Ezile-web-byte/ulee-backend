@@ -252,7 +252,10 @@
                                       style="display:inline-block;width:40px;height:40px;background:#eee;border-radius:8px"></span>
                             </td>
                             <td>
-                                <a th:href="@{/admin/listing/{id}(id=${prop.propertyID})}" th:text="${prop.title}">Property Name</a>
+                                <!-- FIX: without from='pending' here, resolveBackUrl(from)
+                                     falls through to its default (/admin/listings) since
+                                     from arrives as null — Back wouldn't return here. -->
+                                <a th:href="@{/admin/listing/{id}(id=${prop.propertyID}, from='pending')}" th:text="${prop.title}">Property Name</a>
                             </td>
                             <td th:text="${landlordLookup.get(prop.landlordID) != null
                                             ? (landlordLookup.get(prop.landlordID).firstName + ' ' + landlordLookup.get(prop.landlordID).lastName)

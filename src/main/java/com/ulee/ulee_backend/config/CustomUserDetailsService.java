@@ -19,10 +19,18 @@ public class CustomUserDetailsService implements UserDetailsService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("No account found for " + email));
 
+        String role = user.getRole();
+        if (role == null || role.isBlank()) {
+            throw new UsernameNotFoundException("User " + email + " has no role assigned");
+        }
+
         return org.springframework.security.core.userdetails.User.builder()
                 .username(user.getEmail())
-                .password(user.getPassword()) // must already be BCrypt-hashed
-                .authorities(List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + user.getRole())))
+                .password(user.getPassword())
+                .authorities(List.of(
+                        new org.springframework.security.core.authority.SimpleGrantedAuthority(
+                                "ROLE_" + role.trim().toUpperCase())
+                ))
                 .disabled(user.getIsActive() != null && !user.getIsActive())
                 .build();
     }

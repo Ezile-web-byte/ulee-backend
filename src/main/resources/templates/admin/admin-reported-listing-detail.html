@@ -94,7 +94,22 @@
 
             <!-- ---- Has reports: warning card + timeline + action ---- -->
             <div th:unless="${#lists.isEmpty(reportTimeline)}" id="rd-panel-warning">
-              <div style="background:#fff8f6;border:1px solid #f7c9c0;border-radius:12px;padding:18px;margin-bottom:18px">
+
+              <!-- Resolved: this property isn't currently flagged (warned/suspended
+                   already, or manually cleared), even though history exists below. -->
+              <div th:unless="${isFlagged}"
+                   style="background:#e8f5e9;border:1px solid #a5d6a7;border-radius:12px;padding:18px;margin-bottom:18px;display:flex;align-items:center;gap:10px">
+                <span style="width:20px;height:20px;border-radius:50%;background:#2e7d32;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">✓</span>
+                <div>
+                  <strong style="font-size:14.5px;color:#2e7d32">This report has already been handled</strong>
+                  <p style="margin:4px 0 0;font-size:13px;color:#4b5f4c">
+                    The listing is no longer flagged. The complaint history below is kept for reference only — no further action is needed unless a new report comes in.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Active: still flagged, needs admin action -->
+              <div th:if="${isFlagged}" style="background:#fff8f6;border:1px solid #f7c9c0;border-radius:12px;padding:18px;margin-bottom:18px">
                 <div style="display:flex;align-items:center;gap:8px">
                   <span style="width:20px;height:20px;border-radius:50%;background:#e5453b;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">!</span>
                   <strong style="font-size:15px" th:text="${reportTimeline[0].reason} ?: 'Reported Issue'">Reported Maintenance Failure</strong>
@@ -126,16 +141,18 @@
                 </div>
               </div>
 
-              <form th:action="@{/admin/warn-landlord-for-listing/{id}(id=${property.propertyID})}" method="post">
-                <button type="submit" class="btn btn-primary"
-                        style="background:#1a9b5b;border-color:#1a9b5b;color:#fff;padding:12px 22px;border-radius:8px;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:8px;cursor:pointer">
-                  <svg viewBox="0 0 20 20" style="width:14px;height:14px;fill:#fff"><path d="M3 4l14 6-14 6V4z"/></svg>
-                  Send Official Warning
-                </button>
-              </form>
-              <p style="margin:8px 0 0;font-size:12px;color:var(--muted)">
-                Sends an official warning to the landlord's notification dashboard. The complainer's identity is never included.
-              </p>
+              <div th:if="${isFlagged}">
+                <form th:action="@{/admin/warn-landlord-for-listing/{id}(id=${property.propertyID})}" method="post">
+                  <button type="submit" class="btn btn-primary"
+                          style="background:#1a9b5b;border-color:#1a9b5b;color:#fff;padding:12px 22px;border-radius:8px;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:8px;cursor:pointer">
+                    <svg viewBox="0 0 20 20" style="width:14px;height:14px;fill:#fff"><path d="M3 4l14 6-14 6V4z"/></svg>
+                    Send Official Warning
+                  </button>
+                </form>
+                <p style="margin:8px 0 0;font-size:12px;color:var(--muted)">
+                  Sends an official warning to the landlord's notification dashboard. The complainer's identity is never included.
+                </p>
+              </div>
             </div>
           </div>
 
@@ -166,7 +183,7 @@
               </div>
             </div>
 
-            <div class="panel" style="padding:16px">
+            <div class="panel" style="padding:16px" th:if="${isFlagged}">
               <div style="font-weight:700;font-size:13px;margin-bottom:10px">Listing Actions</div>
               <p style="margin:0 0 12px;font-size:12.5px;color:var(--muted);line-height:1.5">
                 Suspending hides this listing from students immediately but can be reversed. Removing deletes it permanently.

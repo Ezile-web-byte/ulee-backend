@@ -45,8 +45,17 @@
       <span class="nav-item-label">Dashboard</span>
     </div>
 
+    <!--
+      FIX: previously linked to /admin/pending-listings, a separate
+      standalone page that AdminController's resolveBackUrl() doesn't
+      target for the "pending" case (it returns /admin-index#review-properties).
+      That mismatch was the whole "Review Properties looks different
+      depending on how I got here" bug. Now this matches resolveBackUrl,
+      so every path (sidebar click, Back button, Quick Actions card)
+      lands on the same page.
+    -->
     <div class="nav-item" th:classappend="${active == 'review-properties'} ? ' active'"
-         data-section="review-properties" data-label="Review Properties" onclick="window.location.href='/admin/pending-listings'">
+         data-section="review-properties" data-label="Review Properties" onclick="window.location.href='/admin-index#review-properties'">
       <svg class="nav-icon" viewBox="0 0 20 20"><path d="M3 5h14M3 10h14M3 15h10"/></svg>
       <span class="nav-item-label">Review Properties</span>
       <span class="nav-badge" th:text="${totalPending} ?: 0">0</span>
