@@ -29,6 +29,7 @@ import java.nio.file.Paths;
 import java.security.Principal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.ulee.ulee_backend.repository.PropertyImageRepository;
@@ -197,7 +198,7 @@ public class PropertyController {
     // up, just grouped under "Other Areas" at the end, so nothing silently
     // disappears from the dashboard.
     @GetMapping("/student-dashboard")
-    public String viewStudentDashboard(Model model) {
+    public String viewStudentDashboard(Model model, Principal principal) {
         List<Property> allProperties = propertyRepository.findByStatus(LIVE_STATUS);
 
         List<String> categoryOrder = List.of(
@@ -222,6 +223,19 @@ public class PropertyController {
 
         model.addAttribute("categorizedProperties", categorizedProperties);
         model.addAttribute("properties", allProperties);
+
+        // Browsing is public, but a logged-in student sees their name in the
+        // nav and which properties they've already saved (heart icon state).
+        boolean isLoggedIn = principal != null;
+        model.addAttribute("isLoggedIn", isLoggedIn);
+        if (isLoggedIn) {
+            User currentUser = getCurrentUser(principal);
+            model.addAttribute("currentUserFirstName", currentUser.getFirstName());
+            Set<Integer> savedPropertyIds = savedPropertyRepository.findByStudentID(currentUser.getUserID()).stream()
+                    .map(SavedProperty::getPropertyID)
+                    .collect(Collectors.toSet());
+            model.addAttribute("savedPropertyIds", savedPropertyIds);
+        }
         return "student/student-dashboard";
     }
 
@@ -556,34 +570,113 @@ public class PropertyController {
     // Public property detail page — anyone can view (no ownership check),
     // since this is what a student clicks into from the dashboard.
     @GetMapping("/property/{id}")
-    public String viewPropertyDetail(@PathVariable Integer id, Model model) {
+    public String viewPropertyDetail(@PathVariable Integer id, Model model, Principal principal) {
         Property property = propertyRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Property not found with id: " + id));
+
         model.addAttribute("property", property);
         model.addAttribute("reviews", reviewRepository.findByPropertyID(id));
         model.addAttribute("vrImages", propertyImageRepository.findByPropertyIDAndIsVRTrue(id));
+
+        // The template also reads these — without them, expressions like
+        // ${images[0].url} or ${amenities.isEmpty()} throw on a null model
+        // attribute, which is what was crashing every property page.
+        model.addAttribute("images", propertyImageRepository.findByPropertyID(id));
+        model.addAttribute("amenities", property.getAmenities());
+        model.addAttribute("features", propertyFeatureRepository.findByPropertyID(id));
+
+        boolean isLoggedIn = principal != null;
+        boolean isStudent = false;
+        boolean hasApplied = false;
+        boolean alreadyReviewed = false;
+        boolean canWriteReview = false;
+
+        if (isLoggedIn) {
+            User currentUser = getCurrentUser(principal);
+            isStudent = "STUDENT".equalsIgnoreCase(currentUser.getRole());
+
+            if (isStudent) {
+                Integer studentID = currentUser.getUserID();
+                hasApplied = applicationRepository.existsByStudentIDAndPropertyID(studentID, id);
+                alreadyReviewed = reviewRepository.findByStudentIDAndPropertyID(studentID, id).isPresent();
+
+                boolean isAccepted = applicationRepository.findByStudentIDAndPropertyID(studentID, id).stream()
+                        .anyMatch(a -> "Accepted".equalsIgnoreCase(a.getStatus()));
+                canWriteReview = isAccepted && !alreadyReviewed;
+            }
+        }
+
+        model.addAttribute("isLoggedIn", isLoggedIn);
+        model.addAttribute("isStudent", isStudent);
+        model.addAttribute("hasApplied", hasApplied);
+        model.addAttribute("alreadyReviewed", alreadyReviewed);
+        model.addAttribute("canWriteReview", canWriteReview);
+
         return "student/property-detail";
     }
 
 
     // Public search — same LIVE_STATUS rule as the student dashboard, so
     // search never surfaces a Pending/Draft/Inactive property.
+    //
+    // FIX: previously only read "query" and "maxRent", and the two lived in
+    // mutually-exclusive if/else branches — "location" and "type" (sent by
+    // the dashboard's hero search form) and "minBedrooms" (sent by the
+    // properties-page filter bar) were silently ignored, and query+maxRent
+    // together never combined. This now starts from every LIVE_STATUS
+    // property and ANDs together whichever of the five criteria were
+    // actually submitted, in-memory — the small in-memory filter is
+    // reasonable at this data size and reuses the existing visibility list
+    // instead of adding a new query DSL. It also returns the view that
+    // actually exists (student/properties), not the absent root "properties".
     @GetMapping("/search")
     public String searchProperties(
             @RequestParam(required = false) String query,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) Integer minBedrooms,
             @RequestParam(required = false) java.math.BigDecimal maxRent,
             Model model) {
 
-        if (maxRent != null) {
-            model.addAttribute("properties",
-                    propertyRepository.findByStatusAndRentLessThanEqual(LIVE_STATUS, maxRent));
-        } else if (query != null && !query.isBlank()) {
-            model.addAttribute("properties",
-                    propertyRepository.searchActive(query));
-        } else {
-            model.addAttribute("properties", propertyRepository.findByStatus(LIVE_STATUS));
+        List<Property> results = propertyRepository.findByStatus(LIVE_STATUS);
+
+        if (query != null && !query.isBlank()) {
+            String needle = query.trim().toLowerCase();
+            results = results.stream()
+                    .filter(p -> (p.getTitle() != null && p.getTitle().toLowerCase().contains(needle))
+                            || (p.getCity() != null && p.getCity().toLowerCase().contains(needle)))
+                    .collect(Collectors.toList());
         }
-        return "properties";
+
+        if (location != null && !location.isBlank()) {
+            String needle = location.trim().toLowerCase();
+            results = results.stream()
+                    .filter(p -> (p.getSuburb() != null && p.getSuburb().toLowerCase().contains(needle))
+                            || (p.getCity() != null && p.getCity().toLowerCase().contains(needle))
+                            || (p.getAddress() != null && p.getAddress().toLowerCase().contains(needle)))
+                    .collect(Collectors.toList());
+        }
+
+        if (type != null && !type.isBlank()) {
+            results = results.stream()
+                    .filter(p -> p.getType() != null && p.getType().equalsIgnoreCase(type.trim()))
+                    .collect(Collectors.toList());
+        }
+
+        if (minBedrooms != null) {
+            results = results.stream()
+                    .filter(p -> p.getBedrooms() != null && p.getBedrooms() >= minBedrooms)
+                    .collect(Collectors.toList());
+        }
+
+        if (maxRent != null) {
+            results = results.stream()
+                    .filter(p -> p.getRent() != null && p.getRent().compareTo(maxRent) <= 0)
+                    .collect(Collectors.toList());
+        }
+
+        model.addAttribute("properties", results);
+        return "student/properties";
     }
 
     // ============================================================
@@ -1165,28 +1258,105 @@ public class PropertyController {
     // A200 — View Applications (student's own)
     @GetMapping("/my-applications")
     public String viewApplications(Model model, Principal principal) {
-        Integer studentID = getCurrentUser(principal).getUserID();
-        model.addAttribute("applications", applicationRepository.findByStudentID(studentID));
-        return "my-applications";
+        User currentUser = getCurrentUser(principal);
+        Integer studentID = currentUser.getUserID();
+
+        List<Application> applications = applicationRepository.findByStudentID(studentID);
+
+        // Template shows each application under its property's title
+        // (falling back to "Property #N" if a property was since removed).
+        List<Integer> propertyIds = applications.stream()
+                .map(Application::getPropertyID)
+                .collect(Collectors.toList());
+        Map<Integer, String> propertyNames = propertyRepository.findAllById(propertyIds).stream()
+                .collect(Collectors.toMap(Property::getPropertyID, Property::getTitle));
+
+        model.addAttribute("applications", applications);
+        model.addAttribute("propertyNames", propertyNames);
+        model.addAttribute("currentUserName", currentUser.getFirstName());
+        return "student/my-applications";
     }
 
-    // A202 — Cancel Application
+    // A202 — Cancel Application. Only the owning student can cancel their
+    // own application — without this check, any authenticated student
+    // could delete another student's application just by guessing its ID.
+    //
+    // Documents must go first: application_document.applicationID has a FK
+    // constraint back to application with no ON DELETE CASCADE, so deleting
+    // an Application that still has a submitted document (a normal case —
+    // apply -> accepted -> submit document -> cancel) throws a
+    // DataIntegrityViolationException and crashes the request. Each
+    // document's file on disk is also removed so cancelling doesn't leave
+    // orphaned uploads behind; a missing/already-gone file is logged and
+    // skipped rather than failing the whole cancellation.
     @PostMapping("/cancel-application/{applicationId}")
-    public String cancelApplication(@PathVariable Integer applicationId) {
+    public String cancelApplication(@PathVariable Integer applicationId, Principal principal) {
+        Integer studentID = getCurrentUser(principal).getUserID();
+
+        Application application = applicationRepository.findById(applicationId).orElse(null);
+        if (application == null || !application.getStudentID().equals(studentID)) {
+            return "redirect:/my-applications";
+        }
+
+        List<ApplicationDocument> documents = applicationDocumentRepository.findByApplicationID(applicationId);
+        for (ApplicationDocument document : documents) {
+            if (document.getFilePath() != null) {
+                try {
+                    Files.deleteIfExists(Paths.get(document.getFilePath()));
+                } catch (IOException e) {
+                    // Don't let a stray/locked file block the cancellation —
+                    // the DB rows are still the source of truth.
+                }
+            }
+        }
+        applicationDocumentRepository.deleteAll(documents);
+
         applicationRepository.deleteById(applicationId);
         return "redirect:/my-applications";
     }
 
+    // Toggles a saved property: inserts the relationship if it doesn't
+    // already exist for this student+property pair, removes it if it does.
+    // Only a fixed set of return pages is honored, so this can't be used as
+    // an open redirect.
+    private static final Set<String> ALLOWED_FAVORITE_RETURNS =
+            Set.of("/student-dashboard", "/saved-properties", "/my-dashboard");
+
     @PostMapping("/favorite/{propertyId}")
-    public String addFavorite(@PathVariable Integer propertyId, Principal principal) {
+    public String addFavorite(@PathVariable Integer propertyId,
+                               @RequestParam(required = false) String returnTo,
+                               Principal principal) {
         Integer studentID = getCurrentUser(principal).getUserID();
 
-        SavedProperty saved = new SavedProperty();
-        saved.setStudentID(studentID);
-        saved.setPropertyID(propertyId);
-        saved.setSavedStatus(true);
-        savedPropertyRepository.save(saved);
-        return "redirect:/student-dashboard";
+        Optional<SavedProperty> existing =
+                savedPropertyRepository.findByStudentIDAndPropertyID(studentID, propertyId);
+        if (existing.isPresent()) {
+            savedPropertyRepository.delete(existing.get());
+        } else {
+            SavedProperty saved = new SavedProperty();
+            saved.setStudentID(studentID);
+            saved.setPropertyID(propertyId);
+            saved.setSavedStatus(true);
+            savedPropertyRepository.save(saved);
+        }
+
+        String destination = (returnTo != null && ALLOWED_FAVORITE_RETURNS.contains(returnTo))
+                ? returnTo
+                : "/student-dashboard";
+        return "redirect:" + destination;
+    }
+
+    // Saved Properties page — every property this student has saved.
+    @GetMapping("/saved-properties")
+    public String viewSavedProperties(Model model, Principal principal) {
+        Integer studentID = getCurrentUser(principal).getUserID();
+
+        List<Integer> savedPropertyIds = savedPropertyRepository.findByStudentID(studentID).stream()
+                .map(SavedProperty::getPropertyID)
+                .collect(Collectors.toList());
+
+        model.addAttribute("properties", propertyRepository.findAllById(savedPropertyIds));
+        return "saved-properties";
     }
 
     // A500 — Write Review and Rating

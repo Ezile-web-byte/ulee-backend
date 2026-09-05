@@ -20,11 +20,16 @@
 
       <div id="toast" class="sa-toast"></div>
 
+      <p th:if="${param.error != null}"
+         style="text-align:center; color:#dc2626; font-weight:500; padding:8px 0; font-size:14px;">
+        Incorrect email or password. Please try again.
+      </p>
+
       <!-- Log In Panel -->
       <div id="panel-login" class="sa-panel active">
         <div class="sa-field">
-          <label class="sa-label">Username</label>
-          <input class="sa-input" type="text" placeholder="e.g. s227676637" id="login-user" />
+          <label class="sa-label">Email</label>
+          <input class="sa-input" type="email" placeholder="e.g. s227676637@mandela.ac.za" id="login-email" />
         </div>
         <div class="sa-field">
           <label class="sa-label">Password</label>
@@ -48,10 +53,11 @@
         <div class="sa-divider"><hr><span>or</span><hr></div>
         <button class="sa-btn-secondary" onclick="switchPanel('register')">Create a new account</button>
         <p style="margin-top: 0.75rem; text-align: center; font-size: 12px; color: #444; line-height: 1.5;">
-          Are you a Landlord or Admin?
-          <a href="landlord.html#register" style="color: var(--yellow-hover); text-decoration: underline; text-underline-offset: 2px;">Sign up</a>
-          or
-          <a href="landlord.html#login" style="color: var(--yellow-hover); text-decoration: underline; text-underline-offset: 2px;">Log in</a>.
+          Are you a Landlord? Use the same email and password
+          <a href="#" onclick="switchPanel('login'); return false;" style="color: var(--yellow-hover); text-decoration: underline; text-underline-offset: 2px;">Log in</a>
+          here, or
+          <a th:href="@{/register(role='landlord')}" style="color: var(--yellow-hover); text-decoration: underline; text-underline-offset: 2px;">sign up</a>
+          as a Landlord.
         </p>
       </div>
 
@@ -96,11 +102,11 @@
       <!-- Forgot Password Panel -->
       <div id="panel-forgot" class="sa-panel">
         <p style="font-size: 14px; color: #777; margin-bottom: 1.25rem; line-height: 1.6;">
-          Enter your username or email and we'll send you a reset link.
+          Enter your email and we'll send you a reset link.
         </p>
         <div class="sa-field">
-          <label class="sa-label">Username or email</label>
-          <input class="sa-input" type="text" placeholder="your username or email" id="forgot-val" />
+          <label class="sa-label">Email</label>
+          <input class="sa-input" type="email" placeholder="e.g. s227676637@mandela.ac.za" id="forgot-email" />
         </div>
         <button class="sa-btn-primary" onclick="handleForgot()">Send reset link</button>
         <div class="sa-divider"><hr><span></span><hr></div>
@@ -108,6 +114,6 @@
       </div>
     </div>
   </div>
-  <div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null)}"></div>
+  <div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null, null, null, null)}"></div>
 </body>
 </html>

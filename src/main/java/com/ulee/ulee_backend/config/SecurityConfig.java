@@ -49,7 +49,10 @@ public class SecurityConfig {
                 .formLogin(form -> form
                         .loginProcessingUrl("/login")     // where the login form POSTs to
                         .successHandler(roleBasedSuccessHandler())
-                        .failureUrl("/?loginError=true")
+                        // Send failures back to the real /login page (not "/", which immediately
+                        // redirects to /student-dashboard and drops the query param, silently
+                        // swallowing the error).
+                        .failureUrl("/login?error=true")
                         .permitAll()
                 )
                 .logout(logout -> logout

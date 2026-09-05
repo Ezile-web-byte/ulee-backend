@@ -16,7 +16,11 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        User user = userRepository.findByEmail(email)
+        // Login is by email only (Spring Security's "username" parameter carries the email
+        // value). Normalize the same way registration stores it, so case/whitespace
+        // differences at the login form don't cause a valid account to be rejected.
+        String normalizedEmail = email == null ? "" : email.trim().toLowerCase();
+        User user = userRepository.findByEmail(normalizedEmail)
                 .orElseThrow(() -> new UsernameNotFoundException("No account found for " + email));
 
         String role = user.getRole();

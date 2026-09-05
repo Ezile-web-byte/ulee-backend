@@ -69,6 +69,11 @@ function handleLogin() {
     return;
   }
 
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showToast('Please enter a valid email address.', 'info');
+    return;
+  }
+
   // Build and submit a real form POST to Spring Security's /login endpoint,
   // since this page has no native <form> wrapper around these inputs.
   const form = document.createElement('form');
