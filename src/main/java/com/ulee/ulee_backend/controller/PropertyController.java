@@ -197,7 +197,7 @@ public class PropertyController {
     // up, just grouped under "Other Areas" at the end, so nothing silently
     // disappears from the dashboard.
     @GetMapping("/student-dashboard")
-    public String viewStudentDashboard(Model model) {
+    public String viewStudentDashboard(Model model, Principal principal) {
         List<Property> allProperties = propertyRepository.findByStatus(LIVE_STATUS);
 
         List<String> categoryOrder = List.of(
@@ -222,6 +222,32 @@ public class PropertyController {
 
         model.addAttribute("categorizedProperties", categorizedProperties);
         model.addAttribute("properties", allProperties);
+
+        // NEW — the navbar's Login button / user-menu switch (and the saved-
+        // heart state on each room card) both depend on these being set.
+        // Previously they never were, so isLoggedIn was always null/falsy
+        // and the Login button showed regardless of session state.
+        boolean isLoggedIn = principal != null;
+        model.addAttribute("isLoggedIn", isLoggedIn);
+
+        if (isLoggedIn) {
+            User currentUser = getCurrentUser(principal);
+            model.addAttribute("currentUserFirstName", currentUser.getFirstName());
+
+            // Same two-letter pattern used on the landlord dashboard's
+            // avatar-initials badge (toReviewRowView uses the same logic).
+            String initials = ("" + currentUser.getFirstName().charAt(0)
+                    + (currentUser.getLastName() != null && !currentUser.getLastName().isBlank()
+                    ? currentUser.getLastName().charAt(0) : "")).toUpperCase();
+            model.addAttribute("userInitials", initials);
+
+            Integer studentID = currentUser.getUserID();
+            Set<Integer> savedPropertyIds = savedPropertyRepository.findByStudentID(studentID).stream()
+                    .map(SavedProperty::getPropertyID)
+                    .collect(Collectors.toSet());
+            model.addAttribute("savedPropertyIds", savedPropertyIds);
+        }
+
         return "student/student-dashboard";
     }
 
@@ -450,8 +476,8 @@ public class PropertyController {
         // form), with a query flag so the dashboard's toast knows which
         // message to show.
         return isDraft
-                ? "redirect:/landlord-index?draftSaved=true"
-                : "redirect:/landlord-index?updated=true";
+                ? "redirect:/landlord-index?toast=draft-saved"
+                : "redirect:/landlord-index?toast=updated";
     }
 
     // Removes a single photo from a property.
@@ -543,6 +569,8 @@ public class PropertyController {
         Integer landlordID = getCurrentUser(principal).getUserID();
         Property property = getOwnedProperty(id, landlordID);
 
+        boolean wasReactivated = Boolean.TRUE.equals(isAvailable) && DEACTIVATED_STATUS.equals(property.getStatus());
+
         if (Boolean.FALSE.equals(isAvailable)) {
             property.setStatus(DEACTIVATED_STATUS);
         } else if (DEACTIVATED_STATUS.equals(property.getStatus())) {
@@ -550,18 +578,83 @@ public class PropertyController {
         }
         property.setIsAvailable(isAvailable);
         propertyRepository.save(property);
-        return "redirect:/landlord-index";
+
+        return Boolean.FALSE.equals(isAvailable)
+                ? "redirect:/landlord-index?toast=deactivated"
+                : wasReactivated
+                ? "redirect:/landlord-index?toast=reactivated"
+                : "redirect:/landlord-index";
     }
 
-    // Public property detail page — anyone can view (no ownership check),
-    // since this is what a student clicks into from the dashboard.
+
+    // FIX: this previously only passed "property", "reviews", and
+    // "vrImages" to the template — meaning the image gallery, amenities,
+    // and special features sections all rendered blank regardless of what
+    // was actually on file, since the template variables they depend on
+    // ("images", "amenitiesByCategory", "features") were never populated.
     @GetMapping("/property/{id}")
-    public String viewPropertyDetail(@PathVariable Integer id, Model model) {
+    public String viewPropertyDetail(@PathVariable Integer id, Model model, Principal principal) {
         Property property = propertyRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Property not found with id: " + id));
+
+        List<PropertyImage> propertyImages = propertyImageRepository.findByPropertyID(id).stream()
+                .sorted((a, b) -> {
+                    Integer orderA = a.getDisplayOrder() != null ? a.getDisplayOrder() : 0;
+                    Integer orderB = b.getDisplayOrder() != null ? b.getDisplayOrder() : 0;
+                    return orderA.compareTo(orderB);
+                })
+                .collect(Collectors.toList());
+
+        // Fetch raw reviews ONCE — used both to build the display rows AND to
+        // check whether the current student has already left one (Review has
+        // studentID; ReviewRowView doesn't need to).
+        List<Review> rawReviews = reviewRepository.findByPropertyID(id);
+        List<ReviewRowView> propertyReviews = rawReviews.stream()
+                .map(this::toReviewRowView)
+                .collect(Collectors.toList());
+
+        boolean isLoggedIn = principal != null;
+        boolean isStudent = false;
+        boolean hasApplied = false;
+        boolean alreadyReviewed = false;
+        boolean canWriteReview = false;
+        User currentUser = null;
+        Student studentProfile = null;
+
+        if (isLoggedIn) {
+            currentUser = getCurrentUser(principal);
+            isStudent = "STUDENT".equalsIgnoreCase(currentUser.getRole());
+
+            if (isStudent) {
+                Integer studentID = currentUser.getUserID();
+                hasApplied = applicationRepository.existsByStudentIDAndPropertyID(studentID, id);
+                studentProfile = studentRepository.findById(studentID).orElse(null);
+
+                alreadyReviewed = rawReviews.stream()
+                        .anyMatch(r -> studentID.equals(r.getStudentID()));
+
+                // Can only review once you have an ACCEPTED application for
+                // THIS property, and haven't already reviewed it.
+                boolean hasAcceptedApplication = applicationRepository.findByStudentID(studentID).stream()
+                        .anyMatch(a -> id.equals(a.getPropertyID()) && "Accepted".equalsIgnoreCase(a.getStatus()));
+                canWriteReview = hasAcceptedApplication && !alreadyReviewed;
+            }
+        }
+
         model.addAttribute("property", property);
-        model.addAttribute("reviews", reviewRepository.findByPropertyID(id));
+        model.addAttribute("images", propertyImages);
+        model.addAttribute("amenityCategoryViews", buildAmenityCategoryViews(property));
+        model.addAttribute("features", propertyFeatureRepository.findByPropertyID(id));
+        model.addAttribute("reviews", propertyReviews);
         model.addAttribute("vrImages", propertyImageRepository.findByPropertyIDAndIsVRTrue(id));
+
+        model.addAttribute("isLoggedIn", isLoggedIn);
+        model.addAttribute("isStudent", isStudent);
+        model.addAttribute("hasApplied", hasApplied);
+        model.addAttribute("alreadyReviewed", alreadyReviewed);
+        model.addAttribute("canWriteReview", canWriteReview);
+        model.addAttribute("currentUser", currentUser);
+        model.addAttribute("studentProfile", studentProfile);
         return "student/property-detail";
     }
 
@@ -1140,17 +1233,54 @@ public class PropertyController {
     // Student-side endpoints
     // ============================================================
 
-    // A105 — Apply to Residence
     @PostMapping("/apply/{propertyId}")
-    public String applyToProperty(@PathVariable Integer propertyId, Principal principal) {
+    public String applyToProperty(
+            @PathVariable Integer propertyId,
+            @RequestParam(required = false) Integer yearOfStudy,
+            @RequestParam(required = false) String fundingStatus,
+            @RequestParam(required = false) String messageToLandlord,
+            @RequestParam(value = "documents", required = false) MultipartFile documents,
+            Principal principal) throws IOException {
+        // NOTE: kept as required = false (rather than true) deliberately —
+        // Spring's required=true throws a MissingServletRequestPartException
+        // BEFORE this method body runs, which bypasses the friendly
+        // redirect below and shows a raw 400 error page instead. The
+        // explicit null/empty check further down gives the student the
+        // same "attach your documents" message as every other validation
+        // error on this form, instead of a different failure mode just for
+        // this one field.
+
         Integer studentID = getCurrentUser(principal).getUserID();
 
-        // One application per student per property — if they've already
-        // applied (in any status, including Rejected/Accepted), don't let a
-        // second one through. The my-applications page shows a toast for
-        // this exact query flag.
+        // One application per student per property — enforced here regardless
+        // of what the UI already hides, since a resubmitted/replayed form
+        // should never be able to slip a second row in.
         if (applicationRepository.existsByStudentIDAndPropertyID(studentID, propertyId)) {
-            return "redirect:/my-applications?alreadyApplied=true";
+            return "redirect:/property/" + propertyId + "?applyError=already-applied";
+        }
+
+        // Documents are now compulsory — a student cannot submit an
+        // application without attaching the required zip of supporting
+        // documents (proof of acceptance, transcript, proof of funding, ID).
+        if (documents == null || documents.isEmpty()) {
+            return "redirect:/property/" + propertyId + "?applyError=missing-file";
+        }
+        String filename = documents.getOriginalFilename();
+        if (filename == null || !filename.toLowerCase().endsWith(".zip")) {
+            return "redirect:/property/" + propertyId + "?applyError=invalid-file";
+        }
+
+        // Year of study lives on the student's PROFILE (not per-application) —
+        // this is the same field the landlord's Applications view reads via
+        // ApplicationRowView.yearOfStudy, so it has to land here for that to work.
+        if (yearOfStudy != null) {
+            Student studentProfile = studentRepository.findById(studentID).orElseGet(() -> {
+                Student s = new Student();
+                s.setStudentID(studentID);
+                return s;
+            });
+            studentProfile.setYearOfStudy(yearOfStudy);
+            studentRepository.save(studentProfile);
         }
 
         Application application = new Application();
@@ -1158,8 +1288,37 @@ public class PropertyController {
         application.setPropertyID(propertyId);
         application.setStatus("Pending");
         application.setApplicationDate(java.time.LocalDateTime.now());
-        applicationRepository.save(application);
-        return "redirect:/my-applications";
+        application.setFundingStatus(fundingStatus);
+        application.setMessageToLandlord(messageToLandlord);
+        Application savedApplication = applicationRepository.save(application);
+
+        // Reuses the exact same storage pattern as /submit-documents so the
+        // landlord's existing document-download wiring (ApplicationDocumentRepository)
+        // needs zero changes to pick this up. documents is now guaranteed
+        // non-null/non-empty by the check above.
+        Path uploadPath = Paths.get(uploadDir);
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
+
+        String uniqueFileName = savedApplication.getApplicationID() + "_" + System.currentTimeMillis()
+                + "_" + documents.getOriginalFilename();
+        Path filePath = uploadPath.resolve(uniqueFileName);
+        Files.copy(documents.getInputStream(), filePath);
+
+        ApplicationDocument doc = new ApplicationDocument();
+        doc.setApplicationID(savedApplication.getApplicationID());
+        doc.setFileName(documents.getOriginalFilename());
+        doc.setFilePath(filePath.toString());
+        doc.setUploadedAt(java.time.LocalDateTime.now());
+        applicationDocumentRepository.save(doc);
+
+        // Redirects back to the property page (not the broken /my-applications
+        // view — that template moved to templates/student/ during the reorg
+        // and this route hasn't been updated to match). Uses ?toast=applied
+        // so the shared toast.js picks it up and shows "✓ Application submitted!"
+        // automatically.
+        return "redirect:/property/" + propertyId + "?toast=applied";
     }
 
     // A200 — View Applications (student's own)
@@ -1167,7 +1326,10 @@ public class PropertyController {
     public String viewApplications(Model model, Principal principal) {
         Integer studentID = getCurrentUser(principal).getUserID();
         model.addAttribute("applications", applicationRepository.findByStudentID(studentID));
-        return "my-applications";
+        // FIX: this template was moved to templates/student/my-applications.html
+        // during the frontend reorg — returning "my-applications" here throws
+        // Thymeleaf's TemplateInputException ("template might not exist").
+        return "student/my-applications";
     }
 
     // A202 — Cancel Application
@@ -1228,6 +1390,74 @@ public class PropertyController {
 
         return "redirect:/my-applications";
     }
+
+    // Category icon lookup — plain Java, not Thymeleaf ternaries, so there's
+// no parser depth limit and it's trivial to extend with new categories.
+    private String resolveCategoryIcon(String category) {
+        String c = category == null ? "" : category.toLowerCase();
+        if (c.contains("facilit")) return "🏢";
+        if (c.contains("secur")) return "🔒";
+        if (c.contains("util")) return "💡";
+        if (c.contains("outdoor")) return "🌳";
+        if (c.contains("kitchen")) return "🍳";
+        if (c.contains("bathroom")) return "🚿";
+        if (c.contains("laundry")) return "🧺";
+        if (c.contains("internet") || c.contains("connectiv")) return "📶";
+        if (c.contains("room")) return "🛏️";
+        return "🏷️";
+    }
+
+    // Per-amenity icon lookup — same reasoning as above.
+    private String resolveAmenityIcon(String name) {
+        String n = name == null ? "" : name.toLowerCase();
+        if (n.contains("wifi") || n.contains("internet")) return "📶";
+        if (n.contains("parking")) return "🅿️";
+        if (n.contains("security") || n.contains("guard") || n.contains("cctv")) return "🔒";
+        if (n.contains("pool")) return "🏊";
+        if (n.contains("gym")) return "🏋️";
+        if (n.contains("laundry")) return "🧺";
+        if (n.contains("kitchen")) return "🍳";
+        if (n.contains("study") || n.contains("desk")) return "📚";
+        if (n.contains("shuttle") || n.contains("transport")) return "🚌";
+        if (n.contains("power") || n.contains("backup") || n.contains("generator")) return "🔋";
+        if (n.contains("water")) return "🚿";
+        if (n.contains("furnish")) return "🛋️";
+        if (n.contains("wardrobe")) return "🚪";
+        if (n.contains("tv") || n.contains("flatscreen")) return "📺";
+        return "✓";
+    }
+
+    // Builds the display-ready category → items structure the template
+// iterates over. Replaces the old amenitiesByCategory Map<String,List<Amenity>>
+// + inline ternary icon lookups.
+    private List<AmenityCategoryView> buildAmenityCategoryViews(Property property) {
+        if (property.getAmenities() == null || property.getAmenities().isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        Map<String, List<Amenity>> grouped = property.getAmenities().stream()
+                .collect(Collectors.groupingBy(Amenity::getCategory, LinkedHashMap::new, Collectors.toList()));
+
+        List<AmenityCategoryView> result = new ArrayList<>();
+        for (Map.Entry<String, List<Amenity>> entry : grouped.entrySet()) {
+            AmenityCategoryView catView = new AmenityCategoryView();
+            catView.setCategoryName(entry.getKey());
+            catView.setCategoryIcon(resolveCategoryIcon(entry.getKey()));
+
+            List<AmenityItemView> items = new ArrayList<>();
+            for (Amenity amenity : entry.getValue()) {
+                AmenityItemView item = new AmenityItemView();
+                item.setName(amenity.getName());
+                item.setIcon(resolveAmenityIcon(amenity.getName()));
+                items.add(item);
+            }
+            catView.setItems(items);
+            result.add(catView);
+        }
+        return result;
+    }
+
+
 
     // ============================================================
     // C100 — List a New Property (creation wizard)

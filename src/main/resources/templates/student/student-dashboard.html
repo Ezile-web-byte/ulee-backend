@@ -126,6 +126,10 @@
             transform: rotate(-45deg);
             box-shadow: 0 1px 2px rgba(0,0,0,0.15);
         }
+
+        /* Location dropdown (hero search) */
+        #locationDropdownPanel { display: none; }
+        #locationDropdownPanel.open { display: block; }
     </style>
     <link rel="stylesheet" href="/speak-with-ai.css">
     <script src="/speak-with-ai-logic.js" defer></script>
@@ -159,8 +163,8 @@
             <button type="button" id="openLoginBtn" th:unless="${isLoggedIn}" class="hidden md:block text-on-surface-variant font-label-bold hover:text-primary transition-colors">Login</button>
 
             <div class="relative hidden md:block" th:if="${isLoggedIn}" id="userMenuWrap">
-                <button type="button" id="userMenuBtn" class="flex items-center gap-xs text-on-surface-variant font-label-bold hover:text-primary transition-colors" aria-expanded="false">
-                    <span class="material-symbols-outlined text-[20px]">account_circle</span>
+                <button type="button" id="userMenuBtn" class="flex items-center gap-sm text-on-surface-variant font-label-bold hover:text-primary transition-colors" aria-expanded="false">
+                    <div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-xs uppercase" th:text="${userInitials != null ? userInitials : 'ST'}">ST</div>
                     <span th:text="'Hi, ' + ${currentUserFirstName}">Hi, Student</span>
                     <span class="material-symbols-outlined text-[16px]">expand_more</span>
                 </button>
@@ -198,12 +202,28 @@
             </p>
 
             <!-- Hero Search Bar -->
-            <form class="bg-white/10 backdrop-blur-xl p-base rounded-2xl flex flex-col md:flex-row items-stretch md:items-center gap-xs mt-lg border border-white/20" action="/search" method="get">
-                <div class="flex-1 px-md py-sm flex items-center gap-sm">
+            <form id="heroSearchForm" class="bg-white/10 backdrop-blur-xl p-base rounded-2xl flex flex-col md:flex-row items-stretch md:items-center gap-xs mt-lg border border-white/20" action="/search" method="get">
+                <!-- Location: was a free-text input; now a dropdown of the real, known
+                     locations so users pick a value that actually matches a property's
+                     suburb instead of typing something that matches nothing. -->
+                <div class="flex-1 px-md py-sm flex items-center gap-sm relative" id="locationFieldWrap">
                     <span class="material-symbols-outlined text-tertiary-fixed">location_on</span>
                     <div class="flex flex-col w-full">
                         <span class="text-[10px] uppercase font-bold text-white/60 tracking-wider">Location</span>
-                        <input type="text" name="location" placeholder="Search by location..." class="bg-transparent text-white font-label-bold border-none p-0 focus:ring-0 w-full placeholder:text-white/50" />
+                        <button type="button" id="locationDropdownBtn" class="bg-transparent font-label-bold border-none p-0 focus:ring-0 w-full flex items-center justify-between text-left">
+                            <span id="locationDropdownLabel" class="text-white/50">Any location</span>
+                            <span class="material-symbols-outlined text-white/60 text-[18px]">expand_more</span>
+                        </button>
+                    </div>
+                    <input type="hidden" name="location" id="locationHiddenInput" value="" />
+
+                    <div id="locationDropdownPanel" class="absolute left-0 top-full mt-xs w-56 bg-white rounded-xl shadow-lg border border-outline-variant/30 py-xs z-50">
+                        <button type="button" class="location-option w-full text-left px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors" data-location="">Any location</button>
+                        <button type="button" class="location-option w-full text-left px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors" data-location="Summerstrand">Summerstrand</button>
+                        <button type="button" class="location-option w-full text-left px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors" data-location="Humewood">Humewood</button>
+                        <button type="button" class="location-option w-full text-left px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors" data-location="Town">Town</button>
+                        <button type="button" class="location-option w-full text-left px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors" data-location="Central">Central</button>
+                        <button type="button" class="location-option w-full text-left px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors" data-location="Pier 14">Pier 14</button>
                     </div>
                 </div>
                 <div class="w-px h-8 bg-white/20 hidden md:block"></div>
@@ -211,11 +231,15 @@
                     <span class="material-symbols-outlined text-tertiary-fixed">bed</span>
                     <div class="flex flex-col w-full">
                         <span class="text-[10px] uppercase font-bold text-white/60 tracking-wider">Room Type</span>
+                        <!-- FIX: values now match the real DB `type` column values
+                             (Single Room / Commune / Sharing) instead of the old
+                             Studio/Shared Apartment placeholders that never matched
+                             anything in the database. -->
                         <select name="type" id="heroTypeSelect" class="bg-transparent text-white font-label-bold border-none p-0 focus:ring-0 w-full">
                             <option class="text-on-surface" value="">Any type</option>
-                            <option class="text-on-surface" value="Studio Apartment">COmmune Apartment</option>
                             <option class="text-on-surface" value="Single Room">Single Room</option>
-                            <option class="text-on-surface" value="Shared Apartment">Sharing Room</option>
+                            <option class="text-on-surface" value="Commune">Commune</option>
+                            <option class="text-on-surface" value="Sharing">Sharing</option>
                         </select>
                     </div>
                 </div>
@@ -243,18 +267,33 @@
             <h2 class="font-headline-md text-headline-md text-on-surface">Find Your Perfect Fit</h2>
         </div>
         <!-- Filters/Tabs -->
+        <!-- FIX: data-type values now match the real DB `type` column values.
+             Previously "Studio Apartment" and "Shared Apartment" matched
+             nothing (real values are "Commune" and "Sharing"), so only
+             "Single Room" ever worked. -->
         <div class="flex items-center gap-base bg-surface-container-low p-xs rounded-full overflow-x-auto hide-scrollbar" id="typeTabs">
             <button type="button" class="filter-tab active px-md py-sm rounded-full font-label-bold whitespace-nowrap u-transition" data-type="all">All Rooms</button>
             <button type="button" class="filter-tab px-md py-sm rounded-full font-label-bold whitespace-nowrap u-transition" data-type="Single Room">Single Rooms</button>
-            <button type="button" class="filter-tab px-md py-sm rounded-full font-label-bold whitespace-nowrap u-transition" data-type="Studio Apartment">Studios</button>
-            <button type="button" class="filter-tab px-md py-sm rounded-full font-label-bold whitespace-nowrap u-transition" data-type="Shared Apartment">Shared</button>
+            <button type="button" class="filter-tab px-md py-sm rounded-full font-label-bold whitespace-nowrap u-transition" data-type="Commune">Commune</button>
+            <button type="button" class="filter-tab px-md py-sm rounded-full font-label-bold whitespace-nowrap u-transition" data-type="Sharing">Sharing</button>
         </div>
+    </div>
+
+    <!-- Active-location chip: shows which location is currently filtering the grid below,
+         with a one-click way to clear it. Hidden while "Any location" is selected. -->
+    <div id="activeLocationChip" class="hidden items-center gap-xs mb-md">
+        <span class="text-sm text-on-surface-variant">Showing:</span>
+        <span class="inline-flex items-center gap-xs bg-primary-fixed/30 text-on-primary-fixed-variant px-md py-xs rounded-full text-sm font-label-bold">
+            <span id="activeLocationChipText">Location</span>
+            <button type="button" id="clearLocationChipBtn" class="material-symbols-outlined text-[16px] leading-none">close</button>
+        </span>
     </div>
 
     <!-- Room Grid — real properties from the backend -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter" id="roomGrid">
         <div class="room-card is-visible bg-white rounded-[24px] overflow-hidden border border-outline-variant/30 u-shadow-card u-transition hover:-translate-y-2 group"
-             th:each="property : ${properties}" th:attr="data-type=${property.type}">
+             th:each="property : ${properties}" th:attr="data-type=${property.type},data-suburb=${property.suburb}"
+             th:with="facilityAmenity=${property.amenities != null ? property.amenities.^[category == 'Facilities'] : null}">
             <a th:href="@{/property/{id}(id=${property.propertyID})}" class="block">
                 <div class="relative aspect-[4/3]">
                     <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="/student-image1.png" th:src="${property.mainImageUrl} ?: '/student-image1.png'" th:alt="${property.title}"/>
@@ -277,11 +316,19 @@
                         <p class="text-[10px] text-on-surface-variant uppercase">per month</p>
                     </div>
                 </div>
+                <!-- REPLACED: bed/bath/furnished/study-friendly badges swapped for
+                     commute type, room type, and one ticked Facilities amenity
+                     (nothing shown if no Facilities amenity is ticked). -->
                 <div class="flex gap-sm flex-wrap">
-                    <span class="bg-primary-fixed/30 text-on-primary-fixed-variant px-sm py-xs rounded-lg text-label-sm flex items-center gap-xs" th:text="${property.bedrooms} + ' bed'">Beds</span>
-                    <span class="bg-primary-fixed/30 text-on-primary-fixed-variant px-sm py-xs rounded-lg text-label-sm flex items-center gap-xs" th:text="${property.bathrooms} + ' bath'">Baths</span>
-                    <span class="bg-primary-fixed/30 text-on-primary-fixed-variant px-sm py-xs rounded-lg text-label-sm flex items-center gap-xs" th:if="${property.furnished}">🛋️ Furnished</span>
-                    <span class="bg-primary-fixed/30 text-on-primary-fixed-variant px-sm py-xs rounded-lg text-label-sm flex items-center gap-xs" th:if="${property.studyFriendly}">📚 Study Friendly</span>
+                    <span class="bg-primary-fixed/30 text-on-primary-fixed-variant px-sm py-xs rounded-lg text-label-sm flex items-center gap-xs"
+                          th:if="${property.commuteType != null and !property.commuteType.isEmpty()}"
+                          th:text="${property.commuteType}">Shuttle required</span>
+                    <span class="bg-primary-fixed/30 text-on-primary-fixed-variant px-sm py-xs rounded-lg text-label-sm flex items-center gap-xs"
+                          th:if="${property.type != null and !property.type.isEmpty()}"
+                          th:text="${property.type}">Single Room</span>
+                    <span class="bg-primary-fixed/30 text-on-primary-fixed-variant px-sm py-xs rounded-lg text-label-sm flex items-center gap-xs"
+                          th:if="${facilityAmenity != null}"
+                          th:text="${facilityAmenity.name}">Facility</span>
                 </div>
                 <div class="flex items-center gap-sm">
                     <form th:action="@{/favorite/{id}(id=${property.propertyID})}" method="post" class="inline" data-loading-text="...">
@@ -300,6 +347,11 @@
             No rooms match right now — check back soon or try a different search.
         </p>
     </div>
+
+    <!-- Shown by JS when a location/type combination matches zero cards -->
+    <p id="noFilterMatches" class="hidden col-span-full text-center text-on-surface-variant py-xl">
+        No rooms match that location and room type yet — try a different combination.
+    </p>
 </section>
 
 <!-- Explore Residences Section (Bento Style) -->
@@ -554,20 +606,94 @@
         });
     }
 
-    // ── Room type tab filtering ──
+    // ── Location dropdown + combined location/type filtering ──
+    // Everything here runs entirely client-side: no navigation to /search,
+    // which is also what removes the empty-location 500 for this flow.
     const tabs = document.querySelectorAll('.filter-tab');
-    const cards = document.querySelectorAll('.room-card');
+    const locationBtn = document.getElementById('locationDropdownBtn');
+    const locationPanel = document.getElementById('locationDropdownPanel');
+    const locationLabel = document.getElementById('locationDropdownLabel');
+    const locationHidden = document.getElementById('locationHiddenInput');
+    const activeLocationChip = document.getElementById('activeLocationChip');
+    const activeLocationChipText = document.getElementById('activeLocationChipText');
+    const noFilterMatches = document.getElementById('noFilterMatches');
+
+    function applyFilters() {
+        const activeTab = document.querySelector('.filter-tab.active');
+        const type = activeTab ? activeTab.dataset.type : 'all';
+        const location = locationHidden.value;
+        let visibleCount = 0;
+
+        document.querySelectorAll('.room-card').forEach(card => {
+            const typeMatch = type === 'all' || card.dataset.type === type;
+            const locationMatch = !location || card.dataset.suburb === location;
+            const show = typeMatch && locationMatch;
+            card.classList.toggle('is-visible', show);
+            if (show) visibleCount++;
+        });
+
+        noFilterMatches.classList.toggle('hidden', visibleCount !== 0);
+
+        if (location) {
+            activeLocationChipText.textContent = location;
+            activeLocationChip.classList.remove('hidden');
+            activeLocationChip.classList.add('flex');
+        } else {
+            activeLocationChip.classList.add('hidden');
+            activeLocationChip.classList.remove('flex');
+        }
+    }
+
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
             tabs.forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
             const type = tab.dataset.type;
-            cards.forEach(card => {
-                const match = type === 'all' || card.dataset.type === type;
-                card.classList.toggle('is-visible', match);
-            });
             document.getElementById('heroTypeSelect').value = type === 'all' ? '' : type;
+            applyFilters();
         });
+    });
+
+    locationBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        locationPanel.classList.toggle('open');
+    });
+
+    document.querySelectorAll('.location-option').forEach(opt => {
+        opt.addEventListener('click', () => {
+            const val = opt.dataset.location;
+            locationHidden.value = val;
+            locationLabel.textContent = val || 'Any location';
+            locationLabel.classList.toggle('text-white/50', !val);
+            locationLabel.classList.toggle('text-white', !!val);
+            locationPanel.classList.remove('open');
+            applyFilters();
+        });
+    });
+
+    document.addEventListener('click', (e) => {
+        if (locationPanel && !locationPanel.contains(e.target) && e.target !== locationBtn) {
+            locationPanel.classList.remove('open');
+        }
+    });
+
+    document.getElementById('clearLocationChipBtn')?.addEventListener('click', () => {
+        locationHidden.value = '';
+        locationLabel.textContent = 'Any location';
+        locationLabel.classList.add('text-white/50');
+        locationLabel.classList.remove('text-white');
+        applyFilters();
+    });
+
+    // Hero "Search" button: filter the grid below and scroll to it,
+    // instead of navigating to /search (which is what produced the
+    // Whitelabel 500 on an empty location).
+    document.getElementById('heroSearchForm')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const typeVal = document.getElementById('heroTypeSelect').value;
+        tabs.forEach(t => t.classList.toggle('active', t.dataset.type === (typeVal || 'all')));
+        applyFilters();
+        document.getElementById('properties')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
     // ── AI search shortcut in hero ──
