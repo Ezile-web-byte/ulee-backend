@@ -1141,3 +1141,66 @@ button, select { font-family: inherit; }
   background: var(--surface-container-lowest);
   border-bottom: 1px solid var(--outline-variant);
 }
+
+/* ==================== VALIDATION / CONFIRMATION MODAL ==================== */
+
+.validation-modal-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.validation-modal-backdrop.show {
+  display: flex;
+}
+
+.validation-modal-card {
+  background: var(--surface-container-lowest);
+  border-radius: var(--radius-lg);
+  padding: 32px 28px;
+  max-width: 380px;
+  width: 90%;
+  text-align: center;
+  box-shadow: var(--shadow-floating);
+  font-family: var(--font-body);
+}
+
+.validation-modal-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+}
+
+.validation-modal-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--on-surface);
+  margin: 0 0 8px;
+}
+
+.validation-modal-body {
+  font-size: 14px;
+  color: var(--on-surface-variant);
+  margin: 0 0 24px;
+  line-height: 1.5;
+}
+
+.validation-modal-ok {
+  background: var(--primary-dark);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 12px 28px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.validation-modal-ok:hover {
+  background: var(--primary);
+}

@@ -88,12 +88,12 @@
         #reviewSummaryBody .review-row:hover { background: var(--pl2); }
 
 
-         .btn-primary, .btn-outline, .btn-delete {
-             padding: 14px 28px;
-             font-size: 15px;
-             font-weight: 700;
-             min-width: 160px;
-         }
+        .btn-primary, .btn-outline, .btn-delete {
+            padding: 14px 28px;
+            font-size: 15px;
+            font-weight: 700;
+            min-width: 160px;
+        }
 
     </style>
 </head>
@@ -343,7 +343,7 @@
             <button type="submit"
                     class="btn btn-outline"
                     style="flex:1; color:#b91c1c; border-color:#b91c1c;"
-                    th:formaction="@{/toggle-property-status/{id}(id=${property.propertyID})}"
+                    th:formaction="@{/toggle-property-status/{id}(id=${property.propertyID}, isAvailable=false)}"
                     formmethod="post"
                     formnovalidate
                     th:attr="onclick=|return confirm('Deactivate &quot;${#strings.escapeJavaScript(property.title)}&quot;? It will stop showing to students until you reactivate it.');|">Delete</button>
@@ -359,47 +359,47 @@
             onclick="document.getElementById('formAction').value='update';">Save Changes</button>
 
 
-<!--    &lt;!&ndash; Special features &ndash;&gt;-->
-<!--    <div class="side-card">-->
-<!--        <h2>Special Features</h2>-->
-<!--        <p class="hint-text">Highlight anything extra this place offers — a study hub, a braai area, a game room — each with its own photos.</p>-->
+    <!--    &lt;!&ndash; Special features &ndash;&gt;-->
+    <!--    <div class="side-card">-->
+    <!--        <h2>Special Features</h2>-->
+    <!--        <p class="hint-text">Highlight anything extra this place offers — a study hub, a braai area, a game room — each with its own photos.</p>-->
 
-<!--        <p class="no-features" th:if="${features.isEmpty()}">No special features added yet.</p>-->
+    <!--        <p class="no-features" th:if="${features.isEmpty()}">No special features added yet.</p>-->
 
-<!--        <div class="feature-card" th:each="feature : ${features}">-->
-<!--            <div class="feature-card-header">-->
-<!--                <div>-->
-<!--                    <div class="feature-name" th:text="${feature.name}">Feature name</div>-->
-<!--                    <div class="feature-desc" th:if="${feature.description}" th:text="${feature.description}">Description</div>-->
-<!--                </div>-->
-<!--                <form th:action="@{/delete-property-feature/{featureId}(featureId=${feature.featureID})}"-->
-<!--                      method="post"-->
-<!--                      onsubmit="return confirm('Remove this feature?');">-->
-<!--                    <button type="submit" class="feature-delete-btn">Remove</button>-->
-<!--                </form>-->
-<!--            </div>-->
-<!--            <div class="feature-photos" th:if="${feature.images != null and !feature.images.isEmpty()}">-->
-<!--                <img th:each="img : ${feature.images}" th:src="${img.url}" alt="Feature photo" />-->
-<!--            </div>-->
-<!--        </div>-->
+    <!--        <div class="feature-card" th:each="feature : ${features}">-->
+    <!--            <div class="feature-card-header">-->
+    <!--                <div>-->
+    <!--                    <div class="feature-name" th:text="${feature.name}">Feature name</div>-->
+    <!--                    <div class="feature-desc" th:if="${feature.description}" th:text="${feature.description}">Description</div>-->
+    <!--                </div>-->
+    <!--                <form th:action="@{/delete-property-feature/{featureId}(featureId=${feature.featureID})}"-->
+    <!--                      method="post"-->
+    <!--                      onsubmit="return confirm('Remove this feature?');">-->
+    <!--                    <button type="submit" class="feature-delete-btn">Remove</button>-->
+    <!--                </form>-->
+    <!--            </div>-->
+    <!--            <div class="feature-photos" th:if="${feature.images != null and !feature.images.isEmpty()}">-->
+    <!--                <img th:each="img : ${feature.images}" th:src="${img.url}" alt="Feature photo" />-->
+    <!--            </div>-->
+    <!--        </div>-->
 
-<!--        <form class="add-feature-form" th:action="@{/add-property-feature/{propertyId}(propertyId=${property.propertyID})}"-->
-<!--              method="post" enctype="multipart/form-data">-->
-<!--            <div class="field">-->
-<!--                <label>Feature Name</label>-->
-<!--                <input type="text" name="name" placeholder="e.g. Study Hub" required />-->
-<!--            </div>-->
-<!--            <div class="field">-->
-<!--                <label>Description (optional)</label>-->
-<!--                <input type="text" name="description" placeholder="A quiet, well-lit space for group study" />-->
-<!--            </div>-->
-<!--            <div class="field">-->
-<!--                <label>Photos (optional)</label>-->
-<!--                <input type="file" name="images" multiple accept="image/*" />-->
-<!--            </div>-->
-<!--            <button type="submit" class="btn btn-primary" style="align-self: flex-start;">Add Feature</button>-->
-<!--        </form>-->
-<!--    </div>-->
+    <!--        <form class="add-feature-form" th:action="@{/add-property-feature/{propertyId}(propertyId=${property.propertyID})}"-->
+    <!--              method="post" enctype="multipart/form-data">-->
+    <!--            <div class="field">-->
+    <!--                <label>Feature Name</label>-->
+    <!--                <input type="text" name="name" placeholder="e.g. Study Hub" required />-->
+    <!--            </div>-->
+    <!--            <div class="field">-->
+    <!--                <label>Description (optional)</label>-->
+    <!--                <input type="text" name="description" placeholder="A quiet, well-lit space for group study" />-->
+    <!--            </div>-->
+    <!--            <div class="field">-->
+    <!--                <label>Photos (optional)</label>-->
+    <!--                <input type="file" name="images" multiple accept="image/*" />-->
+    <!--            </div>-->
+    <!--            <button type="submit" class="btn btn-primary" style="align-self: flex-start;">Add Feature</button>-->
+    <!--        </form>-->
+    <!--    </div>-->
 
 </main>
 

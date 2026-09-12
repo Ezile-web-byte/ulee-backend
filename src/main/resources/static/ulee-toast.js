@@ -8,7 +8,12 @@
     cancelled: { text: '✓ Application has been cancelled successfully.', type: 'info' },
     'document-submitted': { text: '✓ Document submitted!', type: 'success' },
     saved: { text: '❤️ Saved to your favorites', type: 'success' },
-    unsaved: { text: 'Removed from saved properties', type: 'info' }
+    unsaved: { text: 'Removed from saved properties', type: 'info' },
+    deactivated: { text: '✓ Property deactivated — hidden from students.', type: 'info' },
+    reactivated: { text: '✓ Property reactivated — visible to students again.', type: 'success' },
+    updated: { text: '✓ Changes saved.', type: 'success' },
+    'draft-saved': { text: '✓ Draft saved.', type: 'success' },
+    added: { text: '✓ Property submitted — pending admin approval.', type: 'success' }
   };
 
   function showToast(message, type) {
