@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--
+  Shared admin notification bell — same pattern as
+  fragments/landlord-notifications.html: talks to its own controller
+  endpoints, tracks read/unread persistently (adminnotificationreads table),
+  and polls every 60s. No model attributes needed from the page's own
+  controller method — works on any admin page with just this one line.
+
+  Usage from any admin template:
+    <div th:replace="~{fragments/notification-bell :: bell}"></div>
+
+  Backed by (AdminController.java):
+    GET  /admin/notifications             -> { notifications: [...], unreadCount }
+    POST /admin/notifications/{id}/read
+    POST /admin/notifications/read-all
+
+  It reuses your existing .icon-btn / .notif-wrap / .notif-dot class names
+  so it matches the look of the bell already used on the landlord side.
+
+  FIX: the <script> block that wires up clicks and calls loadNotifications()
+  used to sit as a SIBLING after this fragment's closing </div>, instead of
+  nested inside it. th:fragment only pulls in the element it's attached to
+  (plus everything nested inside that element) — anything after it in the
+  same file, even in the same fragment file, gets left behind entirely when
+  referenced via th:replace. That meant every page using this fragment got
+  the bell icon and dropdown markup, but the script that actually makes it
+  do anything never rendered at all: no click handler, no fetch call, no
+  console error either, since the code simply wasn't there to run. Moving
+  the script inside the fragment div (as its last child) fixes this for
+  every page that includes this fragment.
+-->
+<div th:fragment="bell" class="notif-wrap" id="adminNotifWrap" style="position:relative">
+    <button class="icon-btn" id="adminNotifBtn" title="Notifications" type="button">
+        <svg viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3l-1.5 2.5h15L16 11V8a6 6 0 00-6-6zM8 16a2 2 0 004 0"/></svg>
+    </button>
+    <div class="notif-dot" id="adminNotifDot" style="display:none"></div>
+
+    <div id="adminNotifDropdown" style="display:none;position:absolute;top:calc(100% + 10px);right:0;width:360px;max-height:420px;overflow-y:auto;background:var(--white,#fff);border:1px solid var(--border,#e5e7eb);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,0.14);z-index:60">
+
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border,#f0f0f0)">
+            <strong style="font-size:14px">Notifications</strong>
+            <button type="button" id="adminNotifMarkAll"
+                    style="background:none;border:none;color:var(--p,#006078);font-size:12px;font-weight:600;cursor:pointer;padding:0">
+                Mark all as read
+            </button>
+        </div>
+
+        <div id="adminNotifList"></div>
+
+        <div id="adminNotifEmpty" style="display:none;padding:28px 16px;text-align:center;color:var(--muted,#6E7D83);font-size:13px">
+            No new notifications
+        </div>
+    </div>
+
+    <script th:inline="none">
+        (function () {
+            var btn = document.getElementById('adminNotifBtn');
+            var dot = document.getElementById('adminNotifDot');
+            var dropdown = document.getElementById('adminNotifDropdown');
+            var list = document.getElementById('adminNotifList');
+            var empty = document.getElementById('adminNotifEmpty');
+            var markAllBtn = document.getElementById('adminNotifMarkAll');
+
+            // Guard against double-wiring if this fragment is ever accidentally
+            // included twice on one page.
+            if (!btn || btn.dataset.wired === '1') return;
+            btn.dataset.wired = '1';
+
+            var rootStyles = getComputedStyle(document.documentElement);
+            function cssVar(name, fallback) {
+                var v = rootStyles.getPropertyValue(name);
+                return v && v.trim() ? v.trim() : fallback;
+            }
+
+            var ICONS = {
+                listing: { bg: cssVar('--info-bg', '#eef4ff'), stroke: cssVar('--info', '#4a7cdc'), path: '<path d="M3 8l7-5 7 5v9H3V8z"/><path d="M8 17v-5h4v5"/>' },
+                report:  { bg: cssVar('--danger-bg', '#fdecec'), stroke: cssVar('--danger', '#ba1a1a'), path: '<path d="M10 2.5l8 14h-16z"/><path d="M10 8v3.2M10 14.2h.01"/>' },
+                warning: { bg: cssVar('--warn-bg', '#fff8ed'), stroke: cssVar('--warn', '#c47d0c'), path: '<circle cx="10" cy="10" r="7.2"/><path d="M10 6.5v4M10 13.5h.01"/>' }
+            };
+
+            function escapeHtml(str) {
+                var div = document.createElement('div');
+                div.textContent = str == null ? '' : str;
+                return div.innerHTML;
+            }
+
+            function iconFor(type) {
+                var icon = ICONS[type] || { bg: '#f2f2f2', stroke: '#888', path: '' };
+                return '<span style="flex-shrink:0;width:32px;height:32px;border-radius:8px;background:' + icon.bg + ';display:flex;align-items:center;justify-content:center">' +
+                    '<svg viewBox="0 0 20 20" style="width:15px;height:15px;stroke:' + icon.stroke + ';fill:none;stroke-width:1.6">' + icon.path + '</svg>' +
+                    '</span>';
+            }
+
+            function renderNotifications(data) {
+                var notifications = data.notifications || [];
+                dot.style.display = data.unreadCount > 0 ? 'block' : 'none';
+
+                if (notifications.length === 0) {
+                    list.innerHTML = '';
+                    empty.style.display = 'block';
+                    return;
+                }
+                empty.style.display = 'none';
+
+                list.innerHTML = notifications.map(function (n) {
+                    var unreadStyle = n.read ? '' : 'background:' + cssVar('--pp', '#f0f7f9') + ';';
+                    var href = n.link ? n.link : '#';
+                    return '' +
+                        '<a class="admin-notif-row" data-id="' + n.id + '" href="' + href + '" ' +
+                        'style="display:flex;gap:10px;padding:12px 16px;border-bottom:1px solid ' + cssVar('--border', '#f5f5f5') + ';text-decoration:none;color:inherit;' + unreadStyle + '">' +
+                        iconFor(n.type) +
+                        '  <span style="min-width:0;flex:1">' +
+                        '    <span style="display:block;font-size:13px;color:' + cssVar('--text', '#17313A') + ';line-height:1.35">' + escapeHtml(n.message) + '</span>' +
+                        '    <span style="display:block;font-size:11.5px;color:' + cssVar('--muted', '#6E7D83') + ';margin-top:3px">' + escapeHtml(n.timeDisplay) + '</span>' +
+                        '  </span>' +
+                        (n.read ? '' : '<span style="width:8px;height:8px;border-radius:50%;background:' + cssVar('--p', '#006078') + ';flex-shrink:0;margin-top:4px"></span>') +
+                        '</a>';
+                }).join('');
+
+                Array.prototype.forEach.call(list.querySelectorAll('.admin-notif-row'), function (row) {
+                    row.addEventListener('click', function () {
+                        var id = row.getAttribute('data-id');
+                        // Not preventing default — the row is a real link, so
+                        // this fires alongside normal navigation to the listing/report.
+                        fetch('/admin/notifications/' + id + '/read', { method: 'POST' })
+                            .then(function () { loadNotifications(); });
+                    });
+                });
+            }
+
+            function loadNotifications() {
+                fetch('/admin/notifications')
+                    .then(function (res) { return res.ok ? res.json() : { notifications: [], unreadCount: 0 }; })
+                    .then(renderNotifications)
+                    .catch(function () { /* fail quietly — bell just shows no unread dot */ });
+            }
+
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                var isOpen = dropdown.style.display === 'block';
+                dropdown.style.display = isOpen ? 'none' : 'block';
+                if (!isOpen) loadNotifications();
+            });
+
+            markAllBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                fetch('/admin/notifications/read-all', { method: 'POST' })
+                    .then(function () { loadNotifications(); });
+            });
+
+            document.addEventListener('click', function (e) {
+                if (dropdown.style.display === 'block' && !dropdown.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
+                    dropdown.style.display = 'none';
+                }
+            });
+
+            // Poll every 60s, same as the landlord bell, so the dot updates even
+            // if the admin never opens the dropdown.
+            loadNotifications();
+            setInterval(loadNotifications, 60000);
+        })();
+    </script>
+</div>
+
+</body>
+</html>

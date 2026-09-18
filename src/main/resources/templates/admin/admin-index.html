@@ -12,19 +12,35 @@
 
 <div class="shell">
 
-    <div th:replace="~{fragments/admin-sidebar :: sidebar('dashboard')}"></div>
+    <!-- FIX: was hardcoded sidebar('dashboard'), which meant the sidebar
+         highlight always showed Dashboard no matter which tab was actually
+         active. Now it uses the same ${activeSection} the controller already
+         computes (dashboard | review-properties), so the sidebar highlight
+         matches whichever tab is really showing. -->
+    <div th:replace="~{fragments/admin-sidebar :: sidebar(${activeSection})}"></div>
 
     <div class="main">
 
         <header class="topbar">
-            <div class="topbar-title" id="topbar-title">Dashboard <span>— Overview</span></div>
-            <div class="notif-wrap">
-                <button class="icon-btn" title="Notifications">
-                    <svg viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3l-1.5 2.5h15L16 11V8a6 6 0 00-6-6zM8 16a2 2 0 004 0"/></svg>
-                </button>
-                <div class="notif-dot" th:if="${totalPending > 0 or totalReported > 0}"></div>
+            <!-- FIX: was hardcoded "Dashboard — Overview" text, so the heading
+                 never changed even when Review Properties was the active tab.
+                 Now it switches based on ${activeSection}, same source of
+                 truth as the sidebar highlight and the section toggle below. -->
+            <div class="topbar-title" id="topbar-title">
+                <th:block th:if="${activeSection == 'review-properties'}">Review Properties <span>— Pending Listings</span></th:block>
+                <th:block th:unless="${activeSection == 'review-properties'}">Dashboard <span>— Overview</span></th:block>
             </div>
-            <button class="logout-btn" onclick="alert('Logging out…')">
+            <div th:replace="~{fragments/notification-bell :: bell}"></div>
+            <!--
+              FIX: was onclick="alert('Logging out…')" — a fake placeholder
+              that never actually logged anyone out (same issue Reviews and
+              Reported Listings had). The admin-sidebar fragment above
+              already defines confirmAdminLogout() — it opens the same
+              styled "Log out of ULEE?" confirmation used by the sidebar's
+              admin chip and submits the real /logout form on confirm — so
+              this now calls that instead of the fake alert.
+            -->
+            <button class="logout-btn" onclick="confirmAdminLogout()">
                 <svg viewBox="0 0 20 20"><path d="M13 3h4v14h-4M9 14l4-4-4-4M13 10H5"/></svg>
                 <span>Log out</span>
             </button>
@@ -37,7 +53,174 @@
             <div th:if="${actionError}" style="margin:16px 0;padding:12px 16px;border-radius:8px;background:#fdecec;color:#b3261e;" th:text="${actionError}"></div>
 
             <!-- ============ DASHBOARD (overview only — no per-listing review table here) ============ -->
-            <div class="section active" id="sec-dashboard">
+            <!-- FIX: which tab shows is now decided server-side via ${activeSection}
+                 instead of hardcoding "active" here and patching it with JS after
+                 load — that JS/#hash approach was unreliable after a form submit. -->
+            <div class="section" th:classappend="${activeSection == 'dashboard'} ? ' active'" id="sec-dashboard">
+
+                <!-- Greeting header — name hardcoded to match the sidebar
+                     footer's existing hardcoded "Sarah Admin"; greeting and
+                     date are both real, computed server-side. -->
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;flex-wrap:wrap;gap:12px">
+                    <div>
+                        <h2 th:text="${greeting} + ', ' + (${adminName} ?: 'Admin')">Good morning, Sarah</h2>
+                        <p style="margin:0;color:var(--muted)" th:text="${todayDisplay} + ' — here\'s what needs attention.'">Today — here's what needs attention.</p>
+                    </div>
+                </div>
+
+                <!-- Hero carousel: 4 slides — the 2 most recent pending listings
+                     (real photos/data), a landlord-verification notice (real
+                     count), and a static branding slide. Slides are toggled by
+                     JS at the bottom of this section; only one has class
+                     "hero-slide-active" at a time. -->
+                <div class="hero-carousel" style="position:relative;border-radius:16px;overflow:hidden;min-height:360px;margin-bottom:20px">
+
+                    <!-- Slides 1 & 2: latest pending listings, real photo as background -->
+                    <div th:each="prop, iter : ${latestPendingForHero}"
+                         th:id="'hero-slide-' + ${iter.index}"
+                         class="hero-slide" th:classappend="${iter.index == 0} ? ' hero-slide-active'"
+                         th:style="'display:none;position:relative;padding:28px;min-height:360px;flex-direction:column;justify-content:center;color:#fff;background-size:cover;background-position:center;background-image:linear-gradient(90deg, rgba(10,10,10,0.75), rgba(10,10,10,0.25)), url(' + (${prop.mainImageUrl} != null ? prop.mainImageUrl : '/uploads/dashboardpicture/hero1.png') + ')'">
+
+                        <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.12);font-size:11px;font-weight:700;letter-spacing:.06em;padding:5px 12px;border-radius:999px;text-transform:uppercase;width:fit-content;margin-bottom:14px">
+                            <svg viewBox="0 0 20 20" style="width:10px;height:10px;fill:#ffe170"><path d="M10 2l2.3 4.7 5.2.8-3.8 3.7.9 5.2L10 14l-4.6 2.4.9-5.2L2.5 7.5l5.2-.8z"/></svg>
+                            Featured Listing
+                        </span>
+
+                        <h1 style="margin:0 0 8px;font-size:30px;font-weight:700;max-width:520px" th:text="${prop.title}">Property Title</h1>
+                        <p style="margin:0 0 18px;max-width:440px;color:rgba(255,255,255,0.8);font-size:14px">
+                            Recently submitted — awaiting your review.
+                        </p>
+
+                        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                            <div style="background:rgba(0,0,0,0.4);border-radius:10px;padding:9px 16px">
+                                <div style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,0.6)">Rent</div>
+                                <div style="font-size:17px;font-weight:700" th:text="'R' + (${prop.rent} ?: 'N/A') + ' / mo'">R0 / mo</div>
+                            </div>
+                            <div style="background:rgba(0,0,0,0.4);border-radius:10px;padding:9px 16px">
+                                <div style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,0.6)">Applicants</div>
+                                <div style="font-size:17px;font-weight:700" th:text="${heroApplicantCounts.get(prop.propertyID) != null ? heroApplicantCounts.get(prop.propertyID) : 0}">0</div>
+                            </div>
+                            <div style="background:rgba(0,0,0,0.4);border-radius:10px;padding:9px 16px">
+                                <div style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,0.6)">Rating</div>
+                                <div style="font-size:17px;font-weight:700" th:text="${prop.rating} ?: 'N/A'">N/A</div>
+                            </div>
+                            <a th:href="@{/admin/listing/{id}(id=${prop.propertyID},from='pending')}"
+                               style="background:#ffe170;color:#221b00;font-weight:700;padding:11px 22px;border-radius:10px;text-decoration:none;display:inline-flex;align-items:center;gap:6px;margin-left:auto">
+                                Review listing
+                                <svg viewBox="0 0 20 20" style="width:14px;height:14px;stroke:#221b00;fill:none;stroke-width:2"><path d="M7 4l6 6-6 6"/></svg>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Slide 3: reported listings notice — real count, links to
+                         a page with actual working actions (Warn Landlord,
+                         Suspend, Remove), unlike the landlord-verification
+                         idea this replaced (no verify action exists anywhere
+                         in this app). -->
+                    <div id="hero-slide-2" class="hero-slide"
+                         th:classappend="${#lists.isEmpty(latestPendingForHero)} ? ' hero-slide-active'"
+                         style="display:none;position:relative;padding:28px;min-height:360px;flex-direction:column;justify-content:center;color:#fff;background:linear-gradient(90deg, rgba(10,10,10,0.75), rgba(10,10,10,0.25)), url('/uploads/dashboardpicture/hero2.png');background-size:cover;background-position:center">
+
+                        <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.12);font-size:11px;font-weight:700;letter-spacing:.06em;padding:5px 12px;border-radius:999px;text-transform:uppercase;width:fit-content;margin-bottom:14px">
+                            <svg viewBox="0 0 20 20" style="width:10px;height:10px;fill:#ffe170"><path d="M10 3l7 14H3L10 3z"/><path d="M10 9v4M10 15h.01"/></svg>
+                            Admin Notice
+                        </span>
+
+                        <h1 style="margin:0 0 8px;font-size:28px;font-weight:700;max-width:520px"
+                            th:text="${totalReported} + ' reported listing' + (${totalReported} == 1 ? '' : 's') + ' need' + (${totalReported} == 1 ? 's' : '') + ' action'">0 reported listings need action</h1>
+                        <p style="margin:0 0 18px;max-width:460px;color:rgba(255,255,255,0.8);font-size:14px">
+                            These listings have been flagged by students. Review each one to warn the landlord, suspend, or remove it.
+                        </p>
+
+                        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                            <div style="background:rgba(0,0,0,0.4);border-radius:10px;padding:9px 16px">
+                                <div style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,0.6)">Reported</div>
+                                <div style="font-size:20px;font-weight:700" th:text="${totalReported}">0</div>
+                            </div>
+                            <a href="/admin/reported-listings" style="background:#ffe170;color:#221b00;font-weight:700;padding:11px 22px;border-radius:10px;text-decoration:none;display:inline-flex;align-items:center;gap:6px">
+                                Open Reported Listings
+                                <svg viewBox="0 0 20 20" style="width:14px;height:14px;stroke:#221b00;fill:none;stroke-width:2"><path d="M7 4l6 6-6 6"/></svg>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Slide 4: static branding slide -->
+                    <div id="hero-slide-3" class="hero-slide"
+                         style="display:none;position:relative;padding:28px;min-height:360px;flex-direction:column;justify-content:center;color:#fff;background:linear-gradient(90deg, rgba(10,10,10,0.75), rgba(10,10,10,0.25)), url('/uploads/dashboardpicture/hero3.png');background-size:cover;background-position:center">
+
+                        <!-- Urgent alert bar — only shows when there's actually something urgent -->
+                        <div th:if="${totalPending > 0 or totalReported > 0}"
+                             style="position:absolute;top:0;left:0;right:0;background:rgba(0,0,0,0.35);padding:8px 20px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px">
+                            <span>⚠</span>
+                            <span th:if="${totalPending > 0}" th:text="${totalPending} + ' propert' + (${totalPending} == 1 ? 'y' : 'ies') + ' awaiting review'">0 awaiting review</span>
+                            <span th:if="${totalPending > 0 and totalReported > 0}">&amp;</span>
+                            <span th:if="${totalReported > 0}" th:text="${totalReported} + ' reported listing' + (${totalReported} == 1 ? '' : 's')">0 reported</span>
+                            <a href="/admin-index?section=review-properties" style="margin-left:auto;color:#ffe170;text-decoration:none;font-weight:700">Review Queue →</a>
+                        </div>
+
+                        <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.12);font-size:11px;font-weight:700;letter-spacing:.06em;padding:5px 12px;border-radius:999px;text-transform:uppercase;width:fit-content;margin-bottom:14px">
+                            <span style="width:6px;height:6px;border-radius:50%;background:#1a9b5b"></span>
+                            Student Community Hub
+                        </span>
+
+                        <h1 style="margin:0 0 8px;font-size:32px;font-weight:700;max-width:520px">Central Living &amp; Academic Quarters</h1>
+                        <p style="margin:0 0 18px;max-width:480px;color:rgba(255,255,255,0.75);font-size:14px">
+                            Modern co-working spaces, study lounges and sustainable resident buildings designed for academic excellence and collaborative living.
+                        </p>
+
+                        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                            <div style="background:rgba(255,255,255,0.1);border-radius:10px;padding:10px 18px">
+                                <div style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,0.6)">Campus Network</div>
+                                <div style="font-size:20px;font-weight:700" th:text="${totalListings} + ' Residences'">0 Residences</div>
+                            </div>
+                            <a href="/admin/listings" style="background:#ffe170;color:#221b00;font-weight:700;padding:11px 22px;border-radius:10px;text-decoration:none;display:inline-flex;align-items:center;gap:6px">
+                                View Network
+                                <svg viewBox="0 0 20 20" style="width:14px;height:14px;stroke:#221b00;fill:none;stroke-width:2"><path d="M7 4l6 6-6 6"/></svg>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Prev/next arrows -->
+                    <button type="button" onclick="heroSlidePrev()"
+                            style="position:absolute;left:14px;bottom:14px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.2);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:5">
+                        <svg viewBox="0 0 20 20" style="width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2"><path d="M12 4l-6 6 6 6"/></svg>
+                    </button>
+                    <button type="button" onclick="heroSlideNext()"
+                            style="position:absolute;left:54px;bottom:14px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.2);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:5">
+                        <svg viewBox="0 0 20 20" style="width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2"><path d="M8 4l6 6-6 6"/></svg>
+                    </button>
+
+                    <!-- Dot indicators -->
+                    <div id="heroDots" style="position:absolute;left:96px;bottom:22px;display:flex;gap:6px;z-index:5"></div>
+                </div>
+
+                <script>
+                    // Simple 4-slide carousel: exactly one .hero-slide has
+                    // display:block at a time, tracked by heroSlideIndex.
+                    var heroSlideIndex = 0;
+                    function heroSlideCount() {
+                        return document.querySelectorAll('.hero-slide').length;
+                    }
+                    function heroShowSlide(index) {
+                        var slides = document.querySelectorAll('.hero-slide');
+                        if (!slides.length) return;
+                        heroSlideIndex = ((index % slides.length) + slides.length) % slides.length;
+                        slides.forEach(function (s, i) { s.style.display = (i === heroSlideIndex) ? 'flex' : 'none'; });
+                        var dots = document.getElementById('heroDots');
+                        if (dots) {
+                            dots.innerHTML = '';
+                            slides.forEach(function (s, i) {
+                                var dot = document.createElement('span');
+                                dot.style.cssText = 'width:7px;height:7px;border-radius:50%;cursor:pointer;background:' + (i === heroSlideIndex ? '#ffe170' : 'rgba(255,255,255,0.4)');
+                                dot.onclick = function () { heroShowSlide(i); };
+                                dots.appendChild(dot);
+                            });
+                        }
+                    }
+                    function heroSlideNext() { heroShowSlide(heroSlideIndex + 1); }
+                    function heroSlidePrev() { heroShowSlide(heroSlideIndex - 1); }
+                    document.addEventListener('DOMContentLoaded', function () { heroShowSlide(0); });
+                </script>
 
                 <div class="stats">
                     <div class="stat-card">
@@ -68,49 +251,22 @@
                         </div>
                         <div class="stat-num" th:text="${totalListings}">0</div>
                         <div class="stat-label">Total Listings</div>
+                        <div style="font-size:12px;color:var(--ulee-teal, #0f9e94);margin-top:2px" th:text="'+' + ${listingsThisMonth} + ' this month'">+0 this month</div>
                     </div>
 
                     <div class="stat-card">
                         <div class="stat-top">
-                            <div class="stat-icon" style="background:#edfaf4">
-                                <svg viewBox="0 0 20 20" style="stroke:#1a9b5b"><path d="M4 10l4 4 8-8"/></svg>
+                            <div class="stat-icon" style="background:#e6f7f5">
+                                <svg viewBox="0 0 20 20" style="stroke:#0f9e94"><path d="M4 10l4 4 8-8"/></svg>
                             </div>
                         </div>
                         <div class="stat-num" th:text="${totalApproved}">0</div>
                         <div class="stat-label">Approved</div>
+                        <div style="font-size:12px;color:var(--ulee-teal, #0f9e94);margin-top:2px" th:text="'+' + ${approvedThisMonth} + ' this month'">+0 this month</div>
                     </div>
                 </div>
 
-                <!-- Quick actions — jump straight into the section that needs attention -->
-                <div class="panel" style="margin-bottom:20px">
-                    <div class="panel-header">
-                        <div><span class="panel-title">Quick Actions</span></div>
-                    </div>
-                    <div style="display:flex;flex-wrap:wrap;gap:12px;padding:18px">
-                        <div style="flex:1 1 200px;border:1px solid #eee;border-radius:10px;padding:14px;cursor:pointer"
-                             onclick="document.querySelector('.nav-item[data-section=review-properties]').click()">
-                            <div style="font-weight:600">Review Properties</div>
-                            <div style="color:var(--muted);font-size:13px" th:text="${totalPending} + ' awaiting review'">0 awaiting review</div>
-                        </div>
-                        <div style="flex:1 1 200px;border:1px solid #eee;border-radius:10px;padding:14px;cursor:pointer"
-                             onclick="window.location.href='/admin/reported-listings'">
-                            <div style="font-weight:600">Reported Listings</div>
-                            <div style="color:var(--muted);font-size:13px" th:text="${totalReported} + ' flagged'">0 flagged</div>
-                        </div>
-                        <div style="flex:1 1 200px;border:1px solid #eee;border-radius:10px;padding:14px;cursor:pointer"
-                             onclick="window.location.href='/admin/manage-users'">
-                            <div style="font-weight:600">Manage Users</div>
-                            <div style="color:var(--muted);font-size:13px">View &amp; manage accounts</div>
-                        </div>
-                        <div style="flex:1 1 200px;border:1px solid #eee;border-radius:10px;padding:14px;cursor:pointer"
-                             onclick="window.location.href='/admin/listings'">
-                            <div style="font-weight:600">All Listings</div>
-                            <div style="color:var(--muted);font-size:13px" th:text="${totalListings} + ' total'">0 total</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:20px;align-items:start">
+                <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:20px;align-items:start;margin-top:20px">
 
                     <!-- Listings trend chart. Backend supplies two parallel lists:
                          monthlyLabels: List<String>, monthlyCounts: List<Long>  (last 6 months, oldest first) -->
@@ -135,38 +291,133 @@
                         /*]]>*/
                     </script>
 
-                    <!-- Recent activity feed. Backend supplies a model attribute:
-                         recentActivity: List<{ message: String, timestamp: String }> -->
-                    <div class="panel">
+                    <!-- Listing Status donut — real counts, built with a plain
+                         SVG conic-style ring (stacked stroke-dasharray arcs)
+                         so no chart library is needed.
+                         FIX: was green/amber/red (#1a9b5b / #f5b83d / #e85555),
+                         which didn't match anything else on the dashboard's
+                         chart palette. All three segments — plus the legend
+                         dots and the bar chart below — now use one teal-based
+                         palette (#0f9e94 / #4fc3c0 / #a7e0dd) instead. -->
+                    <div class="panel" th:with="donutTotal=${totalApproved + totalPending + totalReported}">
                         <div class="panel-header">
-                            <div><span class="panel-title">Recent Activity</span></div>
+                            <div><span class="panel-title">Listing Status</span></div>
                         </div>
-                        <div style="padding:6px 0">
-                            <div th:each="activity : ${recentActivity}"
-                                 style="padding:12px 18px;border-bottom:1px solid #f2f2f2">
-                                <div th:text="${activity.message}" style="font-size:14px">Activity description</div>
-                                <div th:text="${activity.timestamp}" style="color:var(--muted);font-size:12px;margin-top:2px">Just now</div>
+                        <div style="display:flex;align-items:center;gap:20px;padding:18px;flex-wrap:wrap">
+                            <div style="position:relative;width:120px;height:120px;flex-shrink:0">
+                                <svg viewBox="0 0 36 36" style="width:120px;height:120px;transform:rotate(-90deg)">
+                                    <circle cx="18" cy="18" r="15.5" fill="none" stroke="#f0f0f0" stroke-width="4"></circle>
+                                    <circle cx="18" cy="18" r="15.5" fill="none" stroke="#0f9e94" stroke-width="4"
+                                            th:stroke-dasharray="${donutTotal > 0 ? (totalApproved * 97.4 / donutTotal) : 0} + ' 97.4'"></circle>
+                                    <circle cx="18" cy="18" r="15.5" fill="none" stroke="#4fc3c0" stroke-width="4"
+                                            th:stroke-dasharray="${donutTotal > 0 ? (totalPending * 97.4 / donutTotal) : 0} + ' 97.4'"
+                                            th:stroke-dashoffset="${donutTotal > 0 ? -(totalApproved * 97.4 / donutTotal) : 0}"></circle>
+                                    <circle cx="18" cy="18" r="15.5" fill="none" stroke="#a7e0dd" stroke-width="4"
+                                            th:stroke-dasharray="${donutTotal > 0 ? (totalReported * 97.4 / donutTotal) : 0} + ' 97.4'"
+                                            th:stroke-dashoffset="${donutTotal > 0 ? -((totalApproved + totalPending) * 97.4 / donutTotal) : 0}"></circle>
+                                </svg>
+                                <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+                                    <div style="font-size:22px;font-weight:700" th:text="${donutTotal}">0</div>
+                                    <div style="font-size:10px;color:var(--muted)">total</div>
+                                </div>
                             </div>
-                            <p th:if="${recentActivity == null or #lists.isEmpty(recentActivity)}"
-                               style="color:var(--muted);text-align:center;padding:30px 18px">
-                                No recent activity to show.
-                            </p>
+                            <div style="display:flex;flex-direction:column;gap:10px;font-size:13px">
+                                <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:#0f9e94"></span>Approved <strong style="margin-left:auto" th:text="${totalApproved}">0</strong></div>
+                                <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:#4fc3c0"></span>Pending <strong style="margin-left:auto" th:text="${totalPending}">0</strong></div>
+                                <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:#a7e0dd"></span>Flagged <strong style="margin-left:auto" th:text="${totalReported}">0</strong></div>
+                            </div>
                         </div>
                     </div>
 
                 </div>
 
+                <!-- Quick actions — jump straight into the section that needs attention -->
+                <div class="panel" style="margin-top:20px">
+                    <div class="panel-header">
+                        <div><span class="panel-title">Quick Actions</span></div>
+                    </div>
+                    <div style="display:flex;flex-wrap:wrap;gap:12px;padding:18px">
+                        <div style="flex:1 1 200px;border:1px solid #eee;border-radius:10px;padding:14px;cursor:pointer"
+                             onclick="window.location.href='/admin-index?section=review-properties'">
+                            <div style="font-weight:600">Review Properties</div>
+                            <div style="color:var(--muted);font-size:13px" th:text="${totalPending} + ' awaiting review'">0 awaiting review</div>
+                        </div>
+                        <div style="flex:1 1 200px;border:1px solid #eee;border-radius:10px;padding:14px;cursor:pointer"
+                             onclick="window.location.href='/admin/reported-listings'">
+                            <div style="font-weight:600">Reported Listings</div>
+                            <div style="color:var(--muted);font-size:13px" th:text="${totalReported} + ' flagged'">0 flagged</div>
+                        </div>
+                        <div style="flex:1 1 200px;border:1px solid #eee;border-radius:10px;padding:14px;cursor:pointer"
+                             onclick="window.location.href='/admin/manage-users'">
+                            <div style="font-weight:600">Manage Users</div>
+                            <div style="color:var(--muted);font-size:13px">View &amp; manage accounts</div>
+                        </div>
+                        <div style="flex:1 1 200px;border:1px solid #eee;border-radius:10px;padding:14px;cursor:pointer"
+                             onclick="window.location.href='/admin/listings'">
+                            <div style="font-weight:600">All Listings</div>
+                            <div style="color:var(--muted);font-size:13px" th:text="${totalListings} + ' total'">0 total</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent activity feed. Backend now supplies REAL logged admin
+                     actions (see AdminController.logActivity / buildRecentActivity),
+                     not a guess based on which property was touched most recently:
+                     recentActivity: List<{ message, timestamp, action, tone, initials }>
+                     - message:   e.g. 'Approved "Hlomane Riverside House"', 'Warned John Smith (warning #2)'
+                     - action:    the raw action key, e.g. "Approved", "Warned landlord", "Deleted"
+                     - tone:      "positive" | "negative" | "warning" | "neutral" — pick the badge color
+                     - initials:  the admin who performed the action, not the property -->
+                <div class="panel" style="margin-top:20px">
+                    <div class="panel-header">
+                        <div><span class="panel-title">Recent Activity</span></div>
+                        <a href="/admin/activity-log" class="see-all">View all</a>
+                    </div>
+                    <div style="padding:6px 0">
+                        <div th:each="activity : ${recentActivity}"
+                             style="display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid #f2f2f2">
+                            <div style="width:32px;height:32px;border-radius:50%;background:var(--pl);color:var(--pdp);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0"
+                                 th:text="${activity.initials}">??</div>
+                            <div style="flex:1;min-width:0">
+                                <div th:text="${activity.message}" style="font-size:14px">Activity description</div>
+                                <div th:text="${activity.timestamp}" style="color:var(--muted);font-size:12px;margin-top:2px">Just now</div>
+                            </div>
+                            <!--
+                              FIX: badge color used to be matched against
+                              property STATUS strings (Approved/Pending/
+                              Rejected). This feed now shows admin ACTIONS
+                              instead, so the badge keys off activity.tone
+                              (positive/negative/warning/neutral) that the
+                              controller already computed, and the label
+                              shown is the action itself.
+                            -->
+                            <span class="badge"
+                                  th:classappend="${activity.tone == 'positive'} ? 'badge-green' : (${activity.tone == 'negative'} ? 'badge-red' : (${activity.tone == 'warning'} ? 'badge-amber' : 'badge-blue'))"
+                                  th:text="${activity.action}">Action</span>
+                        </div>
+                        <p th:if="${recentActivity == null or #lists.isEmpty(recentActivity)}"
+                           style="color:var(--muted);text-align:center;padding:30px 18px">
+                            No recent activity to show.
+                        </p>
+                    </div>
+                </div>
+
             </div>
 
             <!-- ============ REVIEW PROPERTIES (the pending-listings queue lives here now) ============ -->
-            <div class="section" id="sec-review-properties">
+            <div class="section" th:classappend="${activeSection == 'review-properties'} ? ' active'" id="sec-review-properties">
 
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px;flex-wrap:wrap">
                     <div>
                         <h2 style="margin:0 0 4px;font-size:22px;font-weight:700;color:#1a1a1a">Review Properties</h2>
                         <p style="margin:0;color:var(--muted);font-size:14px">Manage and verify new property submissions for the academic year.</p>
                     </div>
-                    <form id="reviewYearFilterForm" action="/admin-index#review-properties" method="get" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                    <!-- FIX: action is now plain /admin-index (no #hash — that was the
+                         unreliable part). A hidden "section" field tells the server
+                         which tab to render active on the response, so filtering no
+                         longer bounces back to the Dashboard tab. -->
+                    <form id="reviewYearFilterForm" action="/admin-index" method="get" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;position:relative">
+                        <input type="hidden" name="section" value="review-properties" />
                         <div style="position:relative">
                             <svg viewBox="0 0 20 20" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:14px;height:14px;stroke:#9aa1a9;fill:none;stroke-width:1.6">
                                 <circle cx="9" cy="9" r="6"/><path d="M14 14l4 4"/>
@@ -183,11 +434,47 @@
                                     th:text="${year} + ' Academic Year'"
                                     th:selected="${selectedAcademicYear != null and selectedAcademicYear == year}">2026 Academic Year</option>
                         </select>
-                        <button type="submit" class="btn btn-primary"
-                                style="padding:9px 20px;border-radius:8px;font-size:14px;display:inline-flex;align-items:center;gap:6px">
-                            <svg viewBox="0 0 20 20" style="width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8"><path d="M3 4h14l-5.5 7v5l-3 1.5v-6.5L3 4z"/></svg>
-                            Filter All
+
+                        <!-- "Filter" now opens a dropdown panel (City / Price range / Type),
+                             matching the same panel pattern used on Approved Properties.
+                             Search + Academic Year stay as always-visible fields above;
+                             this panel adds the extra criteria. All fields submit together
+                             as one form since they share the form's action/section. -->
+                        <button id="reviewFilterToggleBtn" type="button" onclick="toggleReviewFilterPanel()"
+                                style="background:#ffe170;border:1px solid #ffe170;color:#221b00;border-radius:8px;padding:9px 16px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px">
+                            <svg viewBox="0 0 20 20" style="width:14px;height:14px;stroke:#221b00;fill:none;stroke-width:1.6"><path d="M3 5h14M6 10h8M9 15h2"/></svg>
+                            Filter
                         </button>
+
+                        <div id="reviewFilterPanel" style="display:none;position:absolute;top:44px;right:0;z-index:20;background:#fff;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.08);padding:16px;width:260px">
+                            <label style="display:block;font-size:12px;font-weight:600;color:#555;margin-bottom:4px">City</label>
+                            <select name="city" style="width:100%;padding:7px 8px;border:1px solid #e5e7eb;border-radius:6px;margin-bottom:12px;font-family:inherit;font-size:13px">
+                                <option value="">All cities</option>
+                                <option th:each="c : ${cityOptions}" th:value="${c}" th:text="${c}"
+                                        th:selected="${selectedCity != null and selectedCity.equalsIgnoreCase(c)}">City</option>
+                            </select>
+
+                            <label style="display:block;font-size:12px;font-weight:600;color:#555;margin-bottom:4px">Price range (R)</label>
+                            <div style="display:flex;gap:8px;margin-bottom:12px">
+                                <input type="number" name="minPrice" th:value="${minPrice}" placeholder="Min"
+                                       style="width:50%;padding:7px 8px;border:1px solid #e5e7eb;border-radius:6px;font-family:inherit;font-size:13px" />
+                                <input type="number" name="maxPrice" th:value="${maxPrice}" placeholder="Max"
+                                       style="width:50%;padding:7px 8px;border:1px solid #e5e7eb;border-radius:6px;font-family:inherit;font-size:13px" />
+                            </div>
+
+                            <label style="display:block;font-size:12px;font-weight:600;color:#555;margin-bottom:4px">Type</label>
+                            <select name="type" style="width:100%;padding:7px 8px;border:1px solid #e5e7eb;border-radius:6px;margin-bottom:14px;font-family:inherit;font-size:13px">
+                                <option value="" th:selected="${selectedType == null or selectedType.isEmpty()}">Any</option>
+                                <option value="Single" th:selected="${selectedType == 'Single'}">Single</option>
+                                <option value="Sharing" th:selected="${selectedType == 'Sharing'}">Sharing</option>
+                            </select>
+
+                            <div style="display:flex;gap:8px">
+                                <button type="submit" style="flex:1;background:#006078;border:1px solid #006078;color:#fff;border-radius:6px;padding:8px 0;font-size:13px;font-weight:600;cursor:pointer">Apply</button>
+                                <a href="/admin-index?section=review-properties"
+                                   style="flex:1;text-align:center;border:1px solid #e5e7eb;color:#555;border-radius:6px;padding:8px 0;font-size:13px;text-decoration:none">Clear</a>
+                            </div>
+                        </div>
                     </form>
                 </div>
 
@@ -265,11 +552,11 @@
                             <td th:text="${prop.status}">Status</td>
                             <td>
                                 <form th:action="@{/admin/approve-listing/{id}(id=${prop.propertyID})}" method="post" style="display:inline">
-                                    <button type="submit" style="background-color:#2e7d32;border:1px solid #2e7d32;color:#fff;border-radius:6px;padding:6px 12px;cursor:pointer">Approve</button>
+                                    <button type="submit" style="background-color:#edfaf4;border:1px solid #b8e6cd;color:#1a9b5b;border-radius:999px;padding:6px 14px;font-weight:600;cursor:pointer">Approve</button>
                                 </form>
                                 <form th:action="@{/admin/reject-listing/{id}(id=${prop.propertyID})}" method="post" style="display:inline"
                                       onsubmit="return confirm('Reject this listing?');">
-                                    <button type="submit" style="background-color:#c62828;border:1px solid #c62828;color:#fff;border-radius:6px;padding:6px 12px;cursor:pointer;margin-left:6px">Reject</button>
+                                    <button type="submit" style="background-color:#fdecec;border:1px solid #f3c9c9;color:#ba1a1a;border-radius:999px;padding:6px 14px;font-weight:600;cursor:pointer;margin-left:6px">Reject</button>
                                 </form>
                             </td>
                         </tr>
@@ -287,9 +574,29 @@
 </div>
 
 <script>
+    // Toggle the Review Properties filter panel (City / Price range / Type),
+    // same open/close pattern as the Approved Properties filter panel.
+    function toggleReviewFilterPanel() {
+        var panel = document.getElementById('reviewFilterPanel');
+        if (!panel) return;
+        panel.style.display = (panel.style.display === 'none' || !panel.style.display) ? 'block' : 'none';
+    }
+
+    document.addEventListener('click', function (e) {
+        var panel = document.getElementById('reviewFilterPanel');
+        var btn = document.getElementById('reviewFilterToggleBtn');
+        if (panel && panel.style.display === 'block' && !panel.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
+            panel.style.display = 'none';
+        }
+    });
+</script>
+
+<script>
     // Renders the Listings Trend as simple CSS bars from ULEE_monthlyLabels /
     // ULEE_monthlyCounts (inlined by Thymeleaf further up the page). No
     // external library or network access required, so it always renders.
+    // FIX: bar color changed from green (#1a9b5b) to the same teal
+    // (#0f9e94) used everywhere else on this dashboard's charts.
     document.addEventListener('DOMContentLoaded', function () {
         var container = document.getElementById('listingsTrendChart');
         if (!container) return;
@@ -309,7 +616,7 @@
             countLabel.style.cssText = 'font-size:12px;font-weight:600;color:#333';
 
             var bar = document.createElement('div');
-            bar.style.cssText = 'width:100%;max-width:36px;background:#1a9b5b;border-radius:6px 6px 0 0;height:' + Math.max(barHeightPct, 3) + '%;transition:height 0.3s ease';
+            bar.style.cssText = 'width:100%;max-width:36px;background:#0f9e94;border-radius:6px 6px 0 0;height:' + Math.max(barHeightPct, 3) + '%;transition:height 0.3s ease';
 
             var monthLabel = document.createElement('div');
             monthLabel.textContent = label;

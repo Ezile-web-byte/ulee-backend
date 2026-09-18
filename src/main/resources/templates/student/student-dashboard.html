@@ -99,6 +99,10 @@
         #forgotPasswordOverlay { display: none; }
         #forgotPasswordOverlay.open { display: flex; }
 
+        /* Logout confirmation modal */
+        #logoutConfirmOverlay { display: none; }
+        #logoutConfirmOverlay.open { display: flex; }
+
         /* Hero background Ken Burns effect */
         @keyframes heroKenBurns {
             0% { transform: scale(1.05) translate(0, 0); }
@@ -173,8 +177,8 @@
                     <a href="/my-applications" class="block px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors">My Applications</a>
                     <a href="/saved-properties" class="block px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors">Saved Properties</a>
                     <div class="border-t border-outline-variant/30 my-xs"></div>
-                    <form th:action="@{/logout}" method="post">
-                        <button type="submit" class="w-full text-left px-md py-sm text-sm text-error hover:bg-surface-container-low transition-colors">Logout</button>
+                    <form id="logoutForm" th:action="@{/logout}" method="post">
+                        <button type="button" onclick="openLogoutConfirm()" class="w-full text-left px-md py-sm text-sm text-error hover:bg-surface-container-low transition-colors">Logout</button>
                     </form>
                 </div>
             </div>
@@ -336,7 +340,7 @@
                                 th:text="${savedPropertyIds != null and savedPropertyIds.contains(property.propertyID)} ? '❤️' : '🤍'">🤍</button>
                     </form>
                     <a th:href="@{/property/{id}(id=${property.propertyID})}" class="flex-1 text-center py-md border-2 border-primary text-primary rounded-xl font-label-bold hover:bg-primary hover:text-white u-transition">
-                        View room
+                        View Property
                     </a>
                 </div>
             </div>
@@ -547,6 +551,21 @@
     </div>
 </div>
 
+<!-- ── LOGOUT CONFIRMATION MODAL — opened from the "Logout" item in the user menu; only submits /logout if the student confirms ── -->
+<div id="logoutConfirmOverlay" class="fixed inset-0 z-[1001] items-center justify-center bg-black/50 backdrop-blur-sm px-margin-mobile">
+    <div class="bg-white w-full max-w-sm rounded-[24px] p-xl relative text-center">
+        <div class="w-14 h-14 mx-auto mb-md rounded-full bg-error-container flex items-center justify-center">
+            <span class="material-symbols-outlined text-error text-[26px]">logout</span>
+        </div>
+        <h2 class="font-headline-sm text-headline-sm text-on-surface mb-xs">Log out of ULEE?</h2>
+        <p class="text-sm text-on-surface-variant mb-lg">You'll need to log in again to view your dashboard, applications and saved rooms.</p>
+        <div class="flex items-center gap-sm">
+            <button type="button" id="closeLogoutConfirmBtn" class="flex-1 py-sm rounded-full font-label-bold border border-outline-variant text-on-surface hover:bg-surface-container-low transition-colors">Cancel</button>
+            <button type="button" id="confirmLogoutBtn" class="flex-1 py-sm rounded-full font-label-bold bg-error text-on-error hover:opacity-90 transition-opacity">Log out</button>
+        </div>
+    </div>
+</div>
+
 <script>
     // ── Login modal ──
     const loginOverlay = document.getElementById('loginModalOverlay');
@@ -575,6 +594,20 @@
                 document.getElementById('forgotPasswordConfirmation').classList.remove('hidden');
             });
     });
+
+    // ── Logout confirmation modal ──
+    // Opened from the "Logout" item in the user dropdown (see openLogoutConfirm() call
+    // above); only the real #logoutForm — which posts to /logout — gets submitted, and
+    // only once the student actually clicks "Log out" here.
+    const logoutConfirmOverlay = document.getElementById('logoutConfirmOverlay');
+    function openLogoutConfirm() {
+        userMenuDropdown?.classList.add('hidden'); // close the account dropdown behind it
+        logoutConfirmOverlay.classList.add('open');
+    }
+    document.getElementById('closeLogoutConfirmBtn')?.addEventListener('click', () => logoutConfirmOverlay.classList.remove('open'));
+    document.getElementById('confirmLogoutBtn')?.addEventListener('click', () => document.getElementById('logoutForm').submit());
+    logoutConfirmOverlay.addEventListener('click', (e) => { if (e.target === logoutConfirmOverlay) logoutConfirmOverlay.classList.remove('open'); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') logoutConfirmOverlay.classList.remove('open'); });
 
     // ── Auto-prompt login when redirected here because a page required it ──
     document.getElementById('dismissLoginBanner')?.addEventListener('click', (e) => {

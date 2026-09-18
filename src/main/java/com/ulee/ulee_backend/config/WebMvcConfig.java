@@ -13,12 +13,17 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // Normalize to a proper file:// URL regardless of OS path separators
-        String normalized = uploadDir.replace("\\", "/");
-        if (!normalized.endsWith("/")) {
-            normalized += "/";
+        // Build a proper file:// URL via File.toURI() instead of hand-assembling
+        // the string. This matters because paths containing spaces (e.g. a
+        // Windows username like "unakho gadavu") are NOT valid raw file: URLs —
+        // "file:///C:/Users/unakho gadavu/..." silently fails to resolve and
+        // every image 404s. File.toURI() percent-encodes the space (%20)
+        // correctly and also normalizes \ vs / automatically.
+        java.io.File dir = new java.io.File(uploadDir);
+        String location = dir.toURI().toString();
+        if (!location.endsWith("/")) {
+            location += "/";
         }
-        String location = "file:///" + normalized;
 
         // Checks the external upload folder first (new landlord-uploaded photos),
         // then falls back to the bundled classpath location (original seed images

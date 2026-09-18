@@ -21,7 +21,7 @@
           <svg viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3l-1.5 2.5h15L16 11V8a6 6 0 00-6-6zM8 16a2 2 0 004 0"/></svg>
         </button>
       </div>
-      <button class="logout-btn" onclick="alert('Logging out…')">
+      <button class="logout-btn" onclick="confirmAdminLogout()">
         <svg viewBox="0 0 20 20"><path d="M13 3h4v14h-4M9 14l4-4-4-4M13 10H5"/></svg>
         <span>Log out</span>
       </button>
@@ -35,8 +35,8 @@
           Back to Reported Listings
         </a>
 
-        <div th:if="${actionMessage}" style="background:#e8f5e9;border:1px solid #81c784;border-radius:8px;padding:12px 18px;margin-bottom:16px">
-          <strong style="color:#2e7d32" th:text="${actionMessage}">Success</strong>
+        <div th:if="${actionMessage}" style="background:#e3eef1;border:1px solid #a9c9d1;border-radius:8px;padding:12px 18px;margin-bottom:16px">
+          <strong style="color:#006078" th:text="${actionMessage}">Success</strong>
         </div>
         <div th:if="${actionError}" style="background:#ffebee;border:1px solid #ef5350;border-radius:8px;padding:12px 18px;margin-bottom:16px">
           <strong style="color:#c62828" th:text="${actionError}">Error</strong>
@@ -52,8 +52,8 @@
           <div style="flex:1;min-width:220px">
             <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
               <h2 style="margin:0;font-size:22px" th:text="${property.title}">Property Name</h2>
-              <span th:if="${landlordVerified}" class="badge badge-green" style="white-space:nowrap">
-                                <span class="badge-dot"></span>NSFAS Accredited
+              <span th:if="${landlordVerified}" style="white-space:nowrap;background:#e3eef1;color:#006078;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:5px">
+                                <span style="width:6px;height:6px;border-radius:50%;background:#006078;display:inline-block"></span>NSFAS Accredited
                             </span>
             </div>
             <p style="margin:6px 0 14px;color:var(--muted);font-size:13.5px;display:flex;align-items:center;gap:5px">
@@ -62,20 +62,43 @@
             </p>
 
             <div style="display:flex;align-items:center;gap:10px">
-              <div style="width:34px;height:34px;border-radius:50%;background:#e6f6ec;color:#1a9b5b;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px"
+              <div style="width:34px;height:34px;border-radius:50%;background:#e3eef1;color:#006078;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px"
                    th:text="${landlord != null} ? ${#strings.substring(landlord.firstName,0,1)} + ${#strings.substring(landlord.lastName,0,1)} : '?'">JS</div>
               <div>
                 <div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em">Landlord</div>
                 <div style="font-weight:600;font-size:14px" th:text="${landlord != null} ? (${landlord.firstName} + ' ' + ${landlord.lastName}) : ('Landlord #' + ${property.landlordID})">Landlord Name</div>
               </div>
-              <a th:if="${landlord != null}" th:href="'mailto:' + ${landlord.email}"
-                 style="margin-left:8px;width:32px;height:32px;border:1px solid #e5e7eb;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#555;text-decoration:none">
-                <svg viewBox="0 0 20 20" style="width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.6"><path d="M3 5h14v10H3V5zM3 5l7 6 7-6"/></svg>
-              </a>
-              <a th:if="${landlord != null and landlord.phone != null}" th:href="'tel:' + ${landlord.phone}"
-                 style="width:32px;height:32px;border:1px solid #e5e7eb;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#555;text-decoration:none">
-                <svg viewBox="0 0 20 20" style="width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.6"><path d="M4 3h3l1.5 4-2 1.5a11 11 0 005.5 5.5l1.5-2 4 1.5v3a1.5 1.5 0 01-1.6 1.5A15 15 0 013 4.6 1.5 1.5 0 014 3z"/></svg>
-              </a>
+
+              <!-- Contact icons: clicking no longer jumps straight to a mailto/tel
+                   link. It opens a small dark popover showing the actual address/
+                   number as text (with the value itself still clickable to email
+                   or call), so the admin can see who they're contacting before
+                   leaving the page. -->
+              <div th:if="${landlord != null}" style="position:relative;margin-left:8px">
+                <a href="#" class="contact-icon-btn" onclick="toggleContactTip(event, 'emailTip')"
+                   style="width:32px;height:32px;border:1px solid #e5e7eb;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#555;text-decoration:none">
+                  <svg viewBox="0 0 20 20" style="width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.6"><path d="M3 5h14v10H3V5zM3 5l7 6 7-6"/></svg>
+                </a>
+                <div id="emailTip" class="ulee-contact-tip" style="display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#fff;color:#1a1a1a;font-size:12px;font-weight:600;padding:7px 12px;border-radius:6px;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,0.15);border:1px solid #eee;z-index:50">
+                  <a th:if="${landlord.email != null}" th:href="'mailto:' + ${landlord.email}" th:text="${landlord.email}"
+                     style="color:#006078;text-decoration:none">email@example.com</a>
+                  <span th:if="${landlord.email == null}">No email on file</span>
+                  <div style="position:absolute;top:100%;left:50%;transform:translateX(-50%);width:0;height:0;border:5px solid transparent;border-top-color:#fff"></div>
+                  <div style="position:absolute;top:calc(100% + 1px);left:50%;transform:translateX(-50%);width:0;height:0;border:6px solid transparent;border-top-color:#eee;z-index:-1"></div>
+                </div>
+              </div>
+
+              <div th:if="${landlord != null and landlord.phone != null}" style="position:relative">
+                <a href="#" class="contact-icon-btn" onclick="toggleContactTip(event, 'phoneTip')"
+                   style="width:32px;height:32px;border:1px solid #e5e7eb;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#555;text-decoration:none">
+                  <svg viewBox="0 0 20 20" style="width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.6"><path d="M4 3h3l1.5 4-2 1.5a11 11 0 005.5 5.5l1.5-2 4 1.5v3a1.5 1.5 0 01-1.6 1.5A15 15 0 013 4.6 1.5 1.5 0 014 3z"/></svg>
+                </a>
+                <div id="phoneTip" class="ulee-contact-tip" style="display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#fff;color:#1a1a1a;font-size:12px;font-weight:600;padding:7px 12px;border-radius:6px;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,0.15);border:1px solid #eee;z-index:50">
+                  <a th:href="'tel:' + ${landlord.phone}" th:text="${landlord.phone}" style="color:#006078;text-decoration:none">000 000 0000</a>
+                  <div style="position:absolute;top:100%;left:50%;transform:translateX(-50%);width:0;height:0;border:5px solid transparent;border-top-color:#fff"></div>
+                  <div style="position:absolute;top:calc(100% + 1px);left:50%;transform:translateX(-50%);width:0;height:0;border:6px solid transparent;border-top-color:#eee;z-index:-1"></div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -98,11 +121,11 @@
               <!-- Resolved: this property isn't currently flagged (warned/suspended
                    already, or manually cleared), even though history exists below. -->
               <div th:unless="${isFlagged}"
-                   style="background:#e8f5e9;border:1px solid #a5d6a7;border-radius:12px;padding:18px;margin-bottom:18px;display:flex;align-items:center;gap:10px">
-                <span style="width:20px;height:20px;border-radius:50%;background:#2e7d32;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">✓</span>
+                   style="background:#e3eef1;border:1px solid #a9c9d1;border-radius:12px;padding:18px;margin-bottom:18px;display:flex;align-items:center;gap:10px">
+                <span style="width:20px;height:20px;border-radius:50%;background:#006078;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">✓</span>
                 <div>
-                  <strong style="font-size:14.5px;color:#2e7d32">This report has already been handled</strong>
-                  <p style="margin:4px 0 0;font-size:13px;color:#4b5f4c">
+                  <strong style="font-size:14.5px;color:#006078">This report has already been handled</strong>
+                  <p style="margin:4px 0 0;font-size:13px;color:#4b5760">
                     The listing is no longer flagged. The complaint history below is kept for reference only — no further action is needed unless a new report comes in.
                   </p>
                 </div>
@@ -134,7 +157,7 @@
                          th:text="${report.reportedAt} ?: 'Undated'">12 Oct 2023</div>
                     <div style="font-size:13.5px">
                       <span th:text="${iter.index == 0} ? 'Initial report filed by ' : 'Follow-up report filed by '">Initial report filed by</span>
-                      <strong th:text="${report.filedByLabel}">Student ID: 21804423</strong>
+                      <strong th:text="${reporterNames.get(report.studentID)} ?: ${report.filedByLabel}">Student Name</strong>
                       <span th:if="${report.description}" style="display:block;color:#666;margin-top:2px" th:text="${report.description}">Details</span>
                     </div>
                   </div>
@@ -144,7 +167,7 @@
               <div th:if="${isFlagged}">
                 <form th:action="@{/admin/warn-landlord-for-listing/{id}(id=${property.propertyID})}" method="post">
                   <button type="submit" class="btn btn-primary"
-                          style="background:#1a9b5b;border-color:#1a9b5b;color:#fff;padding:12px 22px;border-radius:8px;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:8px;cursor:pointer">
+                          style="background:#006078;border-color:#006078;color:#fff;padding:12px 22px;border-radius:8px;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:8px;cursor:pointer">
                     <svg viewBox="0 0 20 20" style="width:14px;height:14px;fill:#fff"><path d="M3 4l14 6-14 6V4z"/></svg>
                     Send Official Warning
                   </button>
@@ -160,7 +183,7 @@
           <div style="display:flex;flex-direction:column;gap:16px">
 
             <div class="panel" style="padding:16px">
-              <div style="font-weight:700;font-size:13px;color:#1a9b5b;margin-bottom:8px">Bursary Compliance</div>
+              <div style="font-weight:700;font-size:13px;color:#006078;margin-bottom:8px">Bursary Compliance</div>
               <p style="margin:0;font-size:13px;color:var(--muted);line-height:1.6">
                 <span th:if="${property.capacity} != null" th:text="'This property houses up to ' + ${property.capacity} + ' students.'">This property houses students.</span>
                 A suspension will require immediate alternative placement protocols for any affected students.
@@ -171,15 +194,15 @@
               <div style="font-weight:700;font-size:13px;margin-bottom:10px">Property Health</div>
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
                 <span style="font-size:13px;color:var(--muted)">Total Reports (30d)</span>
-                <strong style="font-size:15px;color:#c62828" th:text="${reportsLast30Days}">0</strong>
+                <strong style="font-size:15px;color:#c47d0c" th:text="${reportsLast30Days}">0</strong>
               </div>
               <div style="display:flex;justify-content:space-between;align-items:center">
                 <span style="font-size:13px;color:var(--muted)">Average Rating</span>
                 <strong style="font-size:15px" th:text="${property.rating != null ? property.rating + ' / 5.0' : 'No ratings yet'}">0 / 5.0</strong>
               </div>
               <div style="height:6px;background:#f0f0f0;border-radius:999px;margin-top:10px;overflow:hidden">
-                <div style="height:100%;background:#c62828;border-radius:999px"
-                     th:style="'height:100%;background:#c62828;border-radius:999px;width:' + (${reportsLast30Days} != null ? (${reportsLast30Days} * 8) : 0) + '%'"></div>
+                <div style="height:100%;background:#f5c344;border-radius:999px"
+                     th:style="'height:100%;background:#f5c344;border-radius:999px;width:' + (${reportsLast30Days} != null ? (${reportsLast30Days} * 8) : 0) + '%'"></div>
               </div>
             </div>
 
@@ -224,7 +247,7 @@
           <a th:each="p, iter : ${reportedQueue}" th:href="@{/admin/reported-listing/{id}(id=${p.propertyID})}"
              th:text="${iter.index + 1}"
              th:style="${iter.index == currentQueueIndex}
-                                    ? 'width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:13px;font-weight:700;background:#1a9b5b;color:#fff'
+                                    ? 'width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:13px;font-weight:700;background:#006078;color:#fff'
                                     : 'width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb;color:#555'">1</a>
 
           <a th:if="${nextReportedId != null}" th:href="@{/admin/reported-listing/{id}(id=${nextReportedId})}"
@@ -241,6 +264,30 @@
     </div>
   </div>
 </div>
+
+<script>
+  // Clicking a contact icon toggles a small popover (see .ulee-contact-tip
+  // elements above) showing the actual email/phone as text, instead of
+  // silently jumping straight to a mailto:/tel: link. The value inside the
+  // popover is still a real mailto:/tel: link, so clicking IT still opens
+  // the mail/phone app — the icon click just reveals what you're about to
+  // contact first.
+  function toggleContactTip(event, tipId) {
+    event.preventDefault();
+    event.stopPropagation();
+    document.querySelectorAll('.ulee-contact-tip').forEach(function (tip) {
+      if (tip.id !== tipId) tip.style.display = 'none';
+    });
+    var target = document.getElementById(tipId);
+    if (!target) return;
+    target.style.display = (target.style.display === 'none' || !target.style.display) ? 'block' : 'none';
+  }
+
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('.ulee-contact-tip') || e.target.closest('.contact-icon-btn')) return;
+    document.querySelectorAll('.ulee-contact-tip').forEach(function (tip) { tip.style.display = 'none'; });
+  });
+</script>
 
 </body>
 </html>

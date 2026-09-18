@@ -19,104 +19,283 @@
   page already calls addSidebarCounts(model), so these are always present.
   If a badge attribute happens to be missing on some page, Thymeleaf's ?:
   falls back to 0 instead of throwing.
+
+  adminName / adminInitials come from AdminController.addCurrentAdmin(), a
+  @ModelAttribute method that runs before every request in that controller
+  and resolves the actual logged-in user — so this fragment now shows
+  whoever is really signed in instead of a hardcoded "Sarah Admin".
 -->
 <aside class="sidebar" id="sidebar" th:fragment="sidebar(active)">
-  <div class="logo">
-    <div class="logo-mark">
-      <div class="logo-icon">
-        <svg viewBox="0 0 20 20"><path d="M10 2L3 7v11h14V7L10 2zm0 2.6 5 3.5V16H5V8.1l5-3.5zM8 10h4v6H8z"/></svg>
-      </div>
-      <div class="logo-text">
-        <div class="logo-name">ULEE</div>
-        <div class="logo-tag">The future of Student Living</div>
-      </div>
+    <div class="logo">
+        <div class="logo-mark">
+            <div class="logo-icon">
+                <svg viewBox="0 0 20 20"><path d="M10 2L3 7v11h14V7L10 2zm0 2.6 5 3.5V16H5V8.1l5-3.5zM8 10h4v6H8z"/></svg>
+            </div>
+            <div class="logo-text">
+                <div class="logo-name">ULEE</div>
+                <div class="logo-tag">The future of Student Living</div>
+            </div>
+        </div>
+        <button class="sidebar-toggle" id="sidebar-toggle" title="Toggle sidebar">
+            <svg viewBox="0 0 20 20"><path d="M12 4l-6 6 6 6"/></svg>
+        </button>
     </div>
-    <button class="sidebar-toggle" id="sidebar-toggle" title="Toggle sidebar">
-      <svg viewBox="0 0 20 20"><path d="M12 4l-6 6 6 6"/></svg>
-    </button>
-  </div>
 
-  <nav class="nav">
-    <div class="nav-label">Main</div>
+    <nav class="nav">
+        <div class="nav-label">Main</div>
 
-    <div class="nav-item" th:classappend="${active == 'dashboard'} ? ' active'"
-         data-section="dashboard" data-label="Dashboard" onclick="window.location.href='/admin-index'">
-      <svg class="nav-icon" viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="11" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="11" width="6" height="6" rx="1.5"/><rect x="11" y="11" width="6" height="6" rx="1.5"/></svg>
-      <span class="nav-item-label">Dashboard</span>
+        <div class="nav-item" th:classappend="${active == 'dashboard'} ? ' active'"
+             data-section="dashboard" data-label="Dashboard" onclick="window.location.href='/admin-index'">
+            <svg class="nav-icon" viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="11" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="11" width="6" height="6" rx="1.5"/><rect x="11" y="11" width="6" height="6" rx="1.5"/></svg>
+            <span class="nav-item-label">Dashboard</span>
+        </div>
+
+        <!--
+          FIX: previously linked to /admin-index#review-properties. The #hash
+          approach relied on client-side JS to detect the hash and toggle which
+          tab was shown, which turned out to be unreliable — especially once the
+          Filter All form also needed to land back on this tab after a normal
+          GET submit. Now this uses a plain ?section=review-properties query
+          param, which the /admin-index controller reads directly and uses to
+          decide the active tab server-side before the page ever renders — no
+          client-side hash-detection step required, and it works the same way
+          whether you got here via this sidebar link or via the Filter All form.
+        -->
+        <div class="nav-item" th:classappend="${active == 'review-properties'} ? ' active'"
+             data-section="review-properties" data-label="Review Properties" onclick="window.location.href='/admin-index?section=review-properties'">
+            <svg class="nav-icon" viewBox="0 0 20 20"><path d="M3 5h14M3 10h14M3 15h10"/></svg>
+            <span class="nav-item-label">Review Properties</span>
+            <span class="nav-badge" th:text="${totalPending} ?: 0">0</span>
+        </div>
+
+        <div class="nav-item" th:classappend="${active == 'approved-properties'} ? ' active'"
+             data-section="approved-properties" data-label="Approved Properties" onclick="window.location.href='/admin/approved-properties'">
+            <svg class="nav-icon" viewBox="0 0 20 20"><path d="M4 10l4 4 8-8"/></svg>
+            <span class="nav-item-label">Approved Properties</span>
+        </div>
+
+        <div class="nav-item" th:classappend="${active == 'listings'} ? ' active'"
+             data-section="listings" data-label="Listings" onclick="window.location.href='/admin/listings'">
+            <svg class="nav-icon" viewBox="0 0 20 20"><path d="M3 5h14M3 10h14M3 15h10"/></svg>
+            <span class="nav-item-label">Listings</span>
+            <span class="nav-badge" th:text="${totalListings} ?: 0">0</span>
+        </div>
+
+        <div class="nav-item" th:classappend="${active == 'users'} ? ' active'"
+             data-section="users" data-label="Users" onclick="window.location.href='/admin/manage-users'">
+            <svg class="nav-icon" viewBox="0 0 20 20"><circle cx="8" cy="7" r="3"/><path d="M2 17c0-3.3 2.7-6 6-6"/><circle cx="15" cy="9" r="2.5"/><path d="M11 17c0-2.2 1.8-4 4-4s4 1.8 4 4"/></svg>
+            <span class="nav-item-label">Users</span>
+        </div>
+
+        <div class="nav-label">Moderation</div>
+
+        <div class="nav-item" th:classappend="${active == 'reviews'} ? ' active'"
+             data-section="reviews" data-label="Reviews" onclick="window.location.href='/admin/reviews'">
+            <svg class="nav-icon" viewBox="0 0 20 20"><path d="M10 2l2.3 4.7 5.2.8-3.8 3.7.9 5.2L10 14l-4.6 2.4.9-5.2L2.5 7.5l5.2-.8z"/></svg>
+            <span class="nav-item-label">Reviews</span>
+            <span class="nav-badge" th:text="${totalReviews} ?: 0">0</span>
+        </div>
+
+        <!-- Reported: clicking this always goes straight to the Reported list,
+             from anywhere in the admin panel (issue #2, "you can just go
+             directly to reported"). -->
+        <div class="nav-item" th:classappend="${active == 'reported'} ? ' active'"
+             data-section="reported" data-label="Reported" onclick="window.location.href='/admin/reported-listings'">
+            <svg class="nav-icon" viewBox="0 0 20 20"><path d="M10 3l7 14H3L10 3z"/><path d="M10 9v4M10 15h.01"/></svg>
+            <span class="nav-item-label">Reported</span>
+            <span class="nav-badge" th:text="${totalReported} ?: 0">0</span>
+        </div>
+
+        <div class="nav-label">System</div>
+
+        <div class="nav-item" th:classappend="${active == 'settings'} ? ' active'"
+             data-section="settings" data-label="Settings" onclick="window.location.href='/admin/settings'">
+            <svg class="nav-icon" viewBox="0 0 20 20"><circle cx="10" cy="10" r="2.5"/><path d="M10 3v2M10 15v2M3 10h2M15 10h2M5.1 5.1l1.4 1.4M13.5 13.5l1.4 1.4M5.1 14.9l1.4-1.4M13.5 6.5l1.4-1.4"/></svg>
+            <span class="nav-item-label">Settings</span>
+        </div>
+    </nav>
+
+    <div class="sidebar-footer">
+        <!--
+          Clicking the admin chip now opens the same "are you sure you want to
+          log out" confirmation used by the topbar Log out button (see
+          confirmAdminLogout() below), instead of doing nothing.
+        -->
+        <div class="admin-chip" role="button" tabindex="0" title="Log out"
+             onclick="confirmAdminLogout()"
+             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();confirmAdminLogout();}">
+            <div class="avatar" th:text="${adminInitials} ?: 'AD'">SA</div>
+            <div class="admin-info">
+                <div class="admin-name" th:text="${adminName} ?: 'Admin'">Sarah Admin</div>
+                <div class="admin-role">Admin</div>
+            </div>
+        </div>
     </div>
 
     <!--
-      FIX: previously linked to /admin/pending-listings, a separate
-      standalone page that AdminController's resolveBackUrl() doesn't
-      target for the "pending" case (it returns /admin-index#review-properties).
-      That mismatch was the whole "Review Properties looks different
-      depending on how I got here" bug. Now this matches resolveBackUrl,
-      so every path (sidebar click, Back button, Quick Actions card)
-      lands on the same page.
+      Shared logout confirmation popup + the real logout submission.
+
+      FIX: this used to sit AFTER </aside>, as a sibling of the fragment root
+      instead of inside it. Thymeleaf's th:replace only pulls in the element
+      carrying th:fragment plus its descendants — anything outside <aside>
+      was silently dropped whenever a page did
+      th:replace="~{fragments/admin-sidebar :: sidebar(...)}", so
+      confirmAdminLogout() never existed on the rendered page and both the
+      topbar button and this chip did nothing. Moving it inside <aside> fixes
+      that; position:fixed still makes it cover the full viewport regardless
+      of where it sits in the DOM.
+
+      The form posts to Spring Security's default /logout endpoint. The CSRF
+      input only renders if CSRF protection is enabled (Spring adds `_csrf`
+      to the model automatically in that case), so this works whether or not
+      CSRF is on.
+
+      NOTE: where the browser lands *after* logout is controlled by
+      `.logoutSuccessUrl(...)` in the Spring Security config, not by this
+      fragment.
     -->
-    <div class="nav-item" th:classappend="${active == 'review-properties'} ? ' active'"
-         data-section="review-properties" data-label="Review Properties" onclick="window.location.href='/admin-index#review-properties'">
-      <svg class="nav-icon" viewBox="0 0 20 20"><path d="M3 5h14M3 10h14M3 15h10"/></svg>
-      <span class="nav-item-label">Review Properties</span>
-      <span class="nav-badge" th:text="${totalPending} ?: 0">0</span>
+    <form id="uleeLogoutForm" th:action="@{/logout}" method="post" style="display:none">
+        <input th:if="${_csrf}" type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+    </form>
+
+    <div class="ulee-logout-overlay" id="uleeLogoutOverlay" aria-hidden="true">
+        <div class="ulee-logout-modal" role="alertdialog" aria-modal="true" aria-labelledby="uleeLogoutTitle">
+            <div class="ulee-logout-icon">
+                <svg viewBox="0 0 20 20"><path d="M13 3h4v14h-4M9 14l4-4-4-4M13 10H5"/></svg>
+            </div>
+            <h3 id="uleeLogoutTitle" class="ulee-logout-title">Log out of ULEE?</h3>
+            <p class="ulee-logout-text">You'll need to sign in again to access the admin dashboard.</p>
+            <div class="ulee-logout-actions">
+                <button type="button" class="ulee-logout-btn ulee-logout-cancel" onclick="cancelAdminLogout()">Cancel</button>
+                <button type="button" class="ulee-logout-btn ulee-logout-confirm" onclick="doAdminLogout()">Log out</button>
+            </div>
+        </div>
     </div>
 
-    <div class="nav-item" th:classappend="${active == 'approved-properties'} ? ' active'"
-         data-section="approved-properties" data-label="Approved Properties" onclick="window.location.href='/admin/approved-properties'">
-      <svg class="nav-icon" viewBox="0 0 20 20"><path d="M4 10l4 4 8-8"/></svg>
-      <span class="nav-item-label">Approved Properties</span>
-    </div>
+    <style>
+        .admin-chip { cursor: pointer; }
 
-    <div class="nav-item" th:classappend="${active == 'listings'} ? ' active'"
-         data-section="listings" data-label="Listings" onclick="window.location.href='/admin/listings'">
-      <svg class="nav-icon" viewBox="0 0 20 20"><path d="M3 5h14M3 10h14M3 15h10"/></svg>
-      <span class="nav-item-label">Listings</span>
-      <span class="nav-badge" th:text="${totalListings} ?: 0">0</span>
-    </div>
+        .ulee-logout-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 12, 15, 0.55);
+            backdrop-filter: blur(2px);
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity .18s ease;
+        }
+        .ulee-logout-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+        .ulee-logout-modal {
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 32px 30px 26px;
+            width: 100%;
+            max-width: 340px;
+            text-align: center;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.28);
+            transform: translateY(14px) scale(.97);
+            transition: transform .18s ease;
+            font-family: 'Sora', sans-serif;
+        }
+        .ulee-logout-overlay.active .ulee-logout-modal {
+            transform: translateY(0) scale(1);
+        }
+        .ulee-logout-icon {
+            width: 52px;
+            height: 52px;
+            margin: 0 auto 16px;
+            border-radius: 50%;
+            background: #fdecec;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .ulee-logout-icon svg {
+            width: 24px;
+            height: 24px;
+            fill: none;
+            stroke: #d93025;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .ulee-logout-title {
+            margin: 0 0 8px;
+            font-size: 18px;
+            font-weight: 700;
+            color: #17181c;
+        }
+        .ulee-logout-text {
+            margin: 0 0 24px;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #6b7280;
+        }
+        .ulee-logout-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .ulee-logout-btn {
+            flex: 1;
+            padding: 11px 0;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: opacity .15s ease, background .15s ease;
+        }
+        .ulee-logout-cancel {
+            background: #f3f4f6;
+            color: #374151;
+        }
+        .ulee-logout-cancel:hover { background: #e9eaed; }
+        .ulee-logout-confirm {
+            background: #d93025;
+            color: #fff;
+        }
+        .ulee-logout-confirm:hover { opacity: .92; }
+    </style>
 
-    <div class="nav-item" th:classappend="${active == 'users'} ? ' active'"
-         data-section="users" data-label="Users" onclick="window.location.href='/admin/manage-users'">
-      <svg class="nav-icon" viewBox="0 0 20 20"><circle cx="8" cy="7" r="3"/><path d="M2 17c0-3.3 2.7-6 6-6"/><circle cx="15" cy="9" r="2.5"/><path d="M11 17c0-2.2 1.8-4 4-4s4 1.8 4 4"/></svg>
-      <span class="nav-item-label">Users</span>
-    </div>
+    <script>
+        function confirmAdminLogout() {
+            var overlay = document.getElementById('uleeLogoutOverlay');
+            if (!overlay) return;
+            overlay.setAttribute('aria-hidden', 'false');
+            overlay.classList.add('active');
+        }
 
-    <div class="nav-label">Moderation</div>
+        function cancelAdminLogout() {
+            var overlay = document.getElementById('uleeLogoutOverlay');
+            if (!overlay) return;
+            overlay.classList.remove('active');
+            overlay.setAttribute('aria-hidden', 'true');
+        }
 
-    <div class="nav-item" th:classappend="${active == 'reviews'} ? ' active'"
-         data-section="reviews" data-label="Reviews" onclick="window.location.href='/admin/reviews'">
-      <svg class="nav-icon" viewBox="0 0 20 20"><path d="M10 2l2.3 4.7 5.2.8-3.8 3.7.9 5.2L10 14l-4.6 2.4.9-5.2L2.5 7.5l5.2-.8z"/></svg>
-      <span class="nav-item-label">Reviews</span>
-      <span class="nav-badge" th:text="${totalReviews} ?: 0">0</span>
-    </div>
+        function doAdminLogout() {
+            var form = document.getElementById('uleeLogoutForm');
+            if (form) form.submit();
+        }
 
-    <!-- Reported: clicking this always goes straight to the Reported list,
-         from anywhere in the admin panel (issue #2, "you can just go
-         directly to reported"). -->
-    <div class="nav-item" th:classappend="${active == 'reported'} ? ' active'"
-         data-section="reported" data-label="Reported" onclick="window.location.href='/admin/reported-listings'">
-      <svg class="nav-icon" viewBox="0 0 20 20"><path d="M10 3l7 14H3L10 3z"/><path d="M10 9v4M10 15h.01"/></svg>
-      <span class="nav-item-label">Reported</span>
-      <span class="nav-badge" th:text="${totalReported} ?: 0">0</span>
-    </div>
+        document.addEventListener('click', function (e) {
+            var overlay = document.getElementById('uleeLogoutOverlay');
+            if (overlay && overlay.classList.contains('active') && e.target === overlay) {
+                cancelAdminLogout();
+            }
+        });
 
-    <div class="nav-label">System</div>
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') cancelAdminLogout();
+        });
+    </script>
 
-    <div class="nav-item" th:classappend="${active == 'settings'} ? ' active'"
-         data-section="settings" data-label="Settings">
-      <svg class="nav-icon" viewBox="0 0 20 20"><circle cx="10" cy="10" r="2.5"/><path d="M10 3v2M10 15v2M3 10h2M15 10h2M5.1 5.1l1.4 1.4M13.5 13.5l1.4 1.4M5.1 14.9l1.4-1.4M13.5 6.5l1.4-1.4"/></svg>
-      <span class="nav-item-label">Settings</span>
-    </div>
-  </nav>
-
-  <div class="sidebar-footer">
-    <div class="admin-chip">
-      <div class="avatar">SA</div>
-      <div class="admin-info">
-        <div class="admin-name">Sarah Admin</div>
-        <div class="admin-role">Admin</div>
-      </div>
-    </div>
-  </div>
 </aside>
 
 </body>

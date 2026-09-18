@@ -14,8 +14,6 @@
 
 -- Clears out any earlier partial seed for this landlord's categorized
 -- properties, so re-running this script never creates duplicates.
-DELETE FROM property WHERE landlordID = 1
-  AND suburb IN ('On Campus','Summerstrand','Humewood','Town','North End','Central','Pier 14');
 
 -- ── On Campus (Single/Sharing only, capacity 20-30, walking distance) ──
 INSERT INTO property (landlordID, rent, capacity, status, isAvailable, title, description, deposit, address, city, suburb, type, bathrooms, commuteType) VALUES

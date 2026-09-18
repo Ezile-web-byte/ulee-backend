@@ -14,7 +14,18 @@
     <div th:replace="~{fragments/admin-sidebar :: sidebar('listings')}"></div>
 
     <div class="main">
-        <header class="topbar"><div class="topbar-title">All Listings</div></header>
+        <header class="topbar">
+            <div class="topbar-title">All Listings</div>
+            <div th:replace="~{fragments/notification-bell :: bell}"></div>
+            <button type="button" class="logout-btn" onclick="openLogoutModal()">
+                <svg viewBox="0 0 20 20">
+                    <path d="M7 4H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>
+                    <path d="M13 14l4-4-4-4"/>
+                    <path d="M17 10H7"/>
+                </svg>
+                Log out
+            </button>
+        </header>
         <div class="content">
             <div class="section active">
 
@@ -40,7 +51,7 @@
 
                     <select id="listingsStatusFilter"
                             onchange="applyListingFilters();"
-                            style="padding:9px 32px 9px 12px;border:1px solid #e5e7eb;border-radius:8px;font-family:inherit;font-size:14px;background:#fff;color:#1a1a1a;cursor:pointer">
+                            style="padding:9px 32px 9px 12px;border:1px solid var(--hero-yellow);border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;background:var(--hero-yellow);color:var(--on-yellow);cursor:pointer">
                         <option value="" th:selected="${status == null or status == ''}">All statuses</option>
                         <option value="Approved" th:selected="${status == 'Approved'}">Approved</option>
                         <option value="Pending" th:selected="${status == 'Pending'}">Pending</option>
@@ -115,6 +126,35 @@
     </div>
 </div>
 
+<!-- Logout confirmation modal — matches the confirm dialog used elsewhere
+     in the admin app ("Log out of ULEE?"). The visible "Log out" button in
+     the topbar just opens this; the real POST to /logout only happens when
+     the admin confirms inside the modal. -->
+<div id="logoutModalOverlay" style="display:none;position:fixed;inset:0;background:rgba(23,49,58,0.45);z-index:1000;align-items:center;justify-content:center">
+    <div style="background:var(--white);border-radius:16px;box-shadow:var(--shadow-md);padding:32px 28px 24px;width:340px;max-width:90vw;text-align:center">
+        <div style="width:52px;height:52px;border-radius:50%;background:var(--danger-bg);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+            <svg viewBox="0 0 20 20" style="width:22px;height:22px;stroke:var(--danger);fill:none;stroke-width:1.8">
+                <path d="M7 4H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>
+                <path d="M13 14l4-4-4-4"/>
+                <path d="M17 10H7"/>
+            </svg>
+        </div>
+        <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px">Log out of ULEE?</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:22px">You'll need to sign in again to access the admin dashboard.</div>
+        <div style="display:flex;gap:10px">
+            <button type="button" onclick="closeLogoutModal()"
+                    style="flex:1;padding:11px;border-radius:10px;border:none;background:var(--pp);color:var(--text);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">
+                Cancel
+            </button>
+            <button type="button" onclick="document.getElementById('logoutForm').submit()"
+                    style="flex:1;padding:11px;border-radius:10px;border:none;background:var(--danger);color:#fff;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">
+                Log out
+            </button>
+        </div>
+    </div>
+</div>
+<form id="logoutForm" th:action="@{/logout}" method="post" style="display:none"></form>
+
 <script th:inline="javascript">
     function applyListingFilters() {
         var search = document.getElementById('listingsSearchInput').value;
@@ -125,6 +165,19 @@
         var qs = params.toString();
         window.location.href = '/admin/listings' + (qs ? '?' + qs : '');
     }
+
+    function openLogoutModal() {
+        document.getElementById('logoutModalOverlay').style.display = 'flex';
+    }
+    function closeLogoutModal() {
+        document.getElementById('logoutModalOverlay').style.display = 'none';
+    }
+    document.addEventListener('DOMContentLoaded', function () {
+        var overlay = document.getElementById('logoutModalOverlay');
+        overlay.addEventListener('click', function (e) {
+            if (e.target === overlay) closeLogoutModal();
+        });
+    });
 </script>
 </body>
 </html>

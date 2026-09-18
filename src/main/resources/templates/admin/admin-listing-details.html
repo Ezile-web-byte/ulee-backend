@@ -10,8 +10,7 @@
 <body>
 <div class="shell">
 
-    <div th:replace="~{fragments/admin-sidebar :: sidebar('listings')}"></div>
-
+    <div th:replace="~{fragments/admin-sidebar :: sidebar(${activeSection})}"></div>
     <div class="main">
         <header class="topbar">
             <div class="topbar-title">Listing Detail <span th:text="'— ' + ${property.title}">— Property Name</span></div>

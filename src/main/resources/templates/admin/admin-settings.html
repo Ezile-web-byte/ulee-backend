@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ULEE — Settings</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/admin-style.css">
+    <script src="/admin-script.js" defer></script>
+
+    <!-- Settings-page-only styles. admin-style.css already defines .shell,
+         .main, .topbar, .content etc. for the rest of the admin panel — this
+         block only adds what's specific to Settings (tabs, panels, form
+         fields, session/activity rows) so nothing here fights those. -->
+    <style>
+        .stg-tabs{display:flex;gap:26px;padding:0 0 0;border-bottom:1px solid var(--border);margin:20px 0 0}
+        .stg-tab{
+            display:flex;align-items:center;gap:6px;padding-bottom:12px;font-size:13.5px;font-weight:600;
+            color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;background:none;border-top:none;border-left:none;border-right:none;
+            font-family:inherit;
+        }
+        .stg-tab svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.7}
+        .stg-tab.active{color:var(--text);border-bottom-color:var(--pdp)}
+        .stg-panel-group{display:none;padding-top:22px;max-width:760px}
+        .stg-panel-group.active{display:block}
+
+        .stg-panel{background:var(--white);border:1px solid var(--border);border-radius:12px;margin-bottom:18px;overflow:hidden}
+        .stg-panel-head{display:flex;gap:12px;align-items:flex-start;padding:18px 20px}
+        .stg-panel-head .ic{width:34px;height:34px;border-radius:9px;background:var(--pp);color:var(--pdp);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .stg-panel-head .ic svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8}
+        .stg-panel-head h3{margin:0 0 2px;font-size:14.5px}
+        .stg-panel-head p{margin:0;font-size:12.5px;color:var(--muted)}
+        .stg-panel-div{border-top:1px solid var(--border)}
+        .stg-panel-body{padding:18px 20px 20px}
+
+        .stg-field{display:flex;flex-direction:column;gap:6px}
+        .stg-field label{font-size:11px;font-weight:600;color:var(--pdp);text-transform:uppercase;letter-spacing:.03em}
+        .stg-field input{
+            border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13.5px;
+            font-family:inherit;color:var(--text);background:#fdfdfd;
+        }
+        .stg-field input:focus{outline:none;border-color:var(--pdp);background:#fff}
+        .stg-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+        .stg-hint{font-size:11.5px;color:var(--muted);margin-top:6px}
+        .stg-form-actions{display:flex;justify-content:flex-end;margin-top:16px;align-items:center;gap:12px}
+        .stg-btn-primary{
+            background:#f5c344;color:#0d2b3e;border:none;padding:10px 18px;border-radius:8px;
+            font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;
+        }
+        .stg-btn-primary:hover{filter:brightness(1.08)}
+        .stg-btn-primary:disabled{opacity:.6;cursor:default}
+        .stg-form-msg{font-size:12px;font-weight:600}
+        .stg-form-msg.ok{color:#1a9b5b}
+        .stg-form-msg.err{color:#d3453b}
+
+        .stg-row{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid #f2f3f4}
+        .stg-row:last-child{border-bottom:none}
+        .stg-row-ic{width:36px;height:36px;border-radius:9px;background:#f3f4f5;color:#666;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .stg-row-ic.ok{background:#e6f6ec;color:#1a9b5b}
+        .stg-row-ic.bad{background:#fdecea;color:#d3453b}
+        .stg-row-ic svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7}
+        .stg-row-main{flex:1;min-width:0}
+        .stg-row-title{font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:8px}
+        .stg-row-sub{font-size:12px;color:var(--muted);margin-top:2px}
+        .stg-row-side{text-align:right;flex-shrink:0}
+        .stg-row-time{font-size:12px;color:var(--muted)}
+        .stg-chip{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:999px;background:#e6f6ec;color:#1a9b5b}
+        .stg-link-danger{background:none;border:none;padding:0;font-family:inherit;font-size:12.5px;font-weight:600;color:#d3453b;cursor:pointer}
+        .stg-link-danger:hover{text-decoration:underline}
+        .stg-link-danger:disabled{opacity:.5;cursor:default;text-decoration:none}
+
+        .stg-panel-foot{padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end}
+        .stg-btn-outline-danger{
+            background:#fff;border:1px solid #f0b4b0;color:#d3453b;padding:9px 16px;border-radius:8px;
+            font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;
+        }
+        .stg-btn-outline-danger:hover{background:#fdecea}
+        .stg-btn-outline-danger:disabled{opacity:.5;cursor:default}
+
+        .stg-placeholder{background:var(--white);border:1px dashed var(--border);border-radius:12px;padding:32px;text-align:center;color:var(--muted);font-size:13px}
+    </style>
+</head>
+<body>
+<div class="shell">
+
+    <div th:replace="~{fragments/admin-sidebar :: sidebar('settings')}"></div>
+
+    <div class="main">
+        <header class="topbar">
+            <div class="topbar-title">Settings</div>
+            <div th:replace="~{fragments/notification-bell :: bell}"></div>
+            <button class="logout-btn" onclick="confirmAdminLogout()">
+                <svg viewBox="0 0 20 20"><path d="M13 3h4v14h-4M9 14l4-4-4-4M13 10H5"/></svg>
+                <span>Log out</span>
+            </button>
+        </header>
+
+        <div class="content">
+
+            <div th:if="${actionMessage}" style="background:#e8f5e9;border:1px solid #81c784;border-radius:8px;padding:12px 18px;margin-bottom:16px">
+                <strong style="color:#2e7d32" th:text="${actionMessage}">Success</strong>
+            </div>
+            <div th:if="${actionError}" style="background:#ffebee;border:1px solid #ef5350;border-radius:8px;padding:12px 18px;margin-bottom:16px">
+                <strong style="color:#c62828" th:text="${actionError}">Error</strong>
+            </div>
+
+            <p style="margin:0;color:var(--muted);font-size:13px">Manage your admin account and platform preferences</p>
+
+            <div class="stg-tabs">
+                <button type="button" class="stg-tab active" data-tab="account" onclick="stgShowTab('account')">
+                    <svg viewBox="0 0 20 20"><circle cx="10" cy="7" r="3"/><path d="M4 17c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>Account
+                </button>
+                <button type="button" class="stg-tab" data-tab="security" onclick="stgShowTab('security')">
+                    <svg viewBox="0 0 20 20"><rect x="4" y="9" width="12" height="8" rx="2"/><path d="M6.5 9V6a3.5 3.5 0 017 0v3"/></svg>Security
+                </button>
+            </div>
+
+            <!-- ============ ACCOUNT ============ -->
+            <div id="stg-panel-account" class="stg-panel-group active">
+                <div class="stg-panel">
+                    <div class="stg-panel-head">
+                        <div class="ic"><svg viewBox="0 0 20 20"><circle cx="10" cy="7" r="3"/><path d="M4 17c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg></div>
+                        <div><h3>Profile</h3><p>How you appear across the admin console</p></div>
+                    </div>
+                    <div class="stg-panel-div"></div>
+                    <div class="stg-panel-body">
+                        <form id="stg-profile-form" onsubmit="return stgSubmitProfile(event)">
+                            <div class="stg-grid2">
+                                <div class="stg-field">
+                                    <label>First name</label>
+                                    <input type="text" th:value="${currentUser != null ? currentUser.firstName : ''}" name="firstName" required />
+                                </div>
+                                <div class="stg-field">
+                                    <label>Last name</label>
+                                    <input type="text" th:value="${currentUser != null ? currentUser.lastName : ''}" name="lastName" required />
+                                </div>
+                                <div class="stg-field">
+                                    <label>Email</label>
+                                    <input type="email" th:value="${currentUser != null ? currentUser.email : ''}" name="email" required />
+                                </div>
+                                <div class="stg-field">
+                                    <label>Phone</label>
+                                    <input type="text" th:value="${currentUser != null ? currentUser.phone : ''}" name="phone" />
+                                </div>
+                            </div>
+                            <div class="stg-form-actions">
+                                <span class="stg-form-msg" id="stg-profile-msg"></span>
+                                <button type="submit" class="stg-btn-primary" id="stg-profile-btn">Save changes</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ SECURITY ============ -->
+            <div id="stg-panel-security" class="stg-panel-group">
+
+                <div class="stg-panel">
+                    <div class="stg-panel-head">
+                        <div class="ic"><svg viewBox="0 0 20 20"><rect x="4" y="9" width="12" height="8" rx="2"/><path d="M6.5 9V6a3.5 3.5 0 017 0v3"/></svg></div>
+                        <div><h3>Password</h3><p>Change the password you use to sign in</p></div>
+                    </div>
+                    <div class="stg-panel-div"></div>
+                    <div class="stg-panel-body">
+                        <form id="stg-password-form" onsubmit="return stgSubmitPassword(event)">
+                            <div class="stg-field" style="margin-bottom:14px">
+                                <label>Current password</label>
+                                <input type="password" placeholder="••••••••" name="currentPassword" required minlength="8" />
+                            </div>
+                            <div class="stg-grid2">
+                                <div class="stg-field">
+                                    <label>New password</label>
+                                    <input type="password" placeholder="••••••••" name="newPassword" id="stg-new-password" required minlength="8" />
+                                </div>
+                                <div class="stg-field">
+                                    <label>Confirm new password</label>
+                                    <input type="password" placeholder="••••••••" name="confirmPassword" id="stg-confirm-password" required minlength="8" />
+                                </div>
+                            </div>
+                            <p class="stg-hint">Use at least 8 characters. You'll stay signed in on this device.</p>
+                            <div class="stg-form-actions">
+                                <span class="stg-form-msg" id="stg-password-msg"></span>
+                                <button type="submit" class="stg-btn-primary" id="stg-password-btn">Update password</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="stg-panel">
+                    <div class="stg-panel-head">
+                        <div class="ic"><svg viewBox="0 0 20 20"><rect x="2" y="4" width="16" height="10" rx="1.5"/><path d="M7 17h6M10 14v3"/></svg></div>
+                        <div><h3>Active Sessions</h3><p>Devices currently signed in to your account</p></div>
+                    </div>
+                    <div class="stg-panel-div"></div>
+                    <div class="stg-panel-body" style="padding-top:6px" id="stg-sessions-body">
+                        <div class="stg-row" th:each="sess : ${activeSessions}" th:attr="data-session-id=${sess.id}">
+                            <div class="stg-row-ic"><svg viewBox="0 0 20 20"><rect x="2" y="4" width="16" height="10" rx="1.5"/><path d="M7 17h6M10 14v3"/></svg></div>
+                            <div class="stg-row-main">
+                                <div class="stg-row-title">
+                                    <span th:text="${sess.deviceLabel}">Device</span>
+                                    <span class="stg-chip" th:if="${sess.current}">This device</span>
+                                </div>
+                                <div class="stg-row-sub" th:text="${sess.location + ' · ' + sess.ipAddress}">Location · IP address</div>
+                            </div>
+                            <div class="stg-row-side">
+                                <div class="stg-row-time" th:if="${sess.current}" style="color:#1a9b5b;font-weight:600">Active now</div>
+                                <div class="stg-row-time" th:unless="${sess.current}" th:text="${sess.lastActive}">Last active</div>
+                            </div>
+                        </div>
+                        <div class="stg-row" th:if="${activeSessions == null or #lists.isEmpty(activeSessions)}">
+                            <div class="stg-row-main" style="color:var(--muted);font-size:12.5px">Session tracking isn't set up yet, so this can't show your devices.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stg-panel">
+                    <div class="stg-panel-head">
+                        <div class="ic"><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7.5"/><path d="M10 5.5v5l3.5 2"/></svg></div>
+                        <div><h3>Recent Login Activity</h3><p>The last logins made to your account</p></div>
+                    </div>
+                    <div class="stg-panel-div"></div>
+                    <div class="stg-panel-body" style="padding-top:6px">
+                        <div class="stg-row" th:each="login : ${loginActivity}">
+                            <div class="stg-row-ic" th:classappend="${login.success} ? 'ok' : 'bad'">
+                                <svg th:if="${login.success}" viewBox="0 0 20 20"><path d="M4 10l4 4 8-8"/></svg>
+                                <svg th:unless="${login.success}" viewBox="0 0 20 20"><path d="M6 6l8 8M14 6l-8 8"/></svg>
+                            </div>
+                            <div class="stg-row-main">
+                                <div class="stg-row-title" th:text="${login.success} ? 'Successful login' : 'Failed login attempt'">Successful login</div>
+                                <div class="stg-row-sub" th:text="${login.deviceLabel + ' · ' + login.location}">Device · Location</div>
+                            </div>
+                            <div class="stg-row-side"><div class="stg-row-time" th:text="${login.timeLabel}">Time</div></div>
+                        </div>
+                        <div class="stg-row" th:if="${loginActivity == null or #lists.isEmpty(loginActivity)}">
+                            <div class="stg-row-main" style="color:var(--muted);font-size:12.5px">Login history isn't tracked yet, so there's nothing to show here.</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    function stgShowTab(name) {
+        document.querySelectorAll('.stg-tab').forEach(function (btn) {
+            btn.classList.toggle('active', btn.getAttribute('data-tab') === name);
+        });
+        document.querySelectorAll('.stg-panel-group').forEach(function (panel) {
+            panel.classList.toggle('active', panel.id === 'stg-panel-' + name);
+        });
+    }
+
+    // ---- CSRF helper (Spring Security default meta tags, if present) ----
+    // No Content-Type header is set here on purpose: the body is a
+    // URLSearchParams object below, and letting fetch() set
+    // "application/x-www-form-urlencoded" itself is what makes Spring's
+    // @RequestParam-based controller methods able to read the fields.
+    function stgCsrfHeaders() {
+        var tokenEl = document.querySelector('meta[name="_csrf"]');
+        var headerEl = document.querySelector('meta[name="_csrf_header"]');
+        var headers = {};
+        if (tokenEl && headerEl) {
+            headers[headerEl.getAttribute('content')] = tokenEl.getAttribute('content');
+        }
+        return headers;
+    }
+
+    function stgSetMsg(el, text, ok) {
+        el.textContent = text || '';
+        el.classList.toggle('ok', !!ok);
+        el.classList.toggle('err', !ok);
+    }
+
+    // ---- Profile save ----
+    async function stgSubmitProfile(evt) {
+        evt.preventDefault();
+        var form = document.getElementById('stg-profile-form');
+        var btn = document.getElementById('stg-profile-btn');
+        var msg = document.getElementById('stg-profile-msg');
+        var params = new URLSearchParams(new FormData(form));
+
+        btn.disabled = true;
+        stgSetMsg(msg, 'Saving…', true);
+        try {
+            var res = await fetch('/admin/settings/profile', {
+                method: 'POST',
+                headers: stgCsrfHeaders(),
+                body: params
+            });
+            var payload = await res.json().catch(function () { return {}; });
+            if (!res.ok || payload.success === false) throw new Error(payload.message || 'Save failed');
+            stgSetMsg(msg, payload.message || 'Saved.', true);
+        } catch (err) {
+            stgSetMsg(msg, err.message || 'Could not save changes.', false);
+        } finally {
+            btn.disabled = false;
+        }
+        return false;
+    }
+
+    // ---- Password update ----
+    async function stgSubmitPassword(evt) {
+        evt.preventDefault();
+        var form = document.getElementById('stg-password-form');
+        var btn = document.getElementById('stg-password-btn');
+        var msg = document.getElementById('stg-password-msg');
+        var data = Object.fromEntries(new FormData(form).entries());
+
+        if (data.newPassword !== data.confirmPassword) {
+            stgSetMsg(msg, 'New passwords do not match.', false);
+            return false;
+        }
+        if (data.newPassword.length < 8) {
+            stgSetMsg(msg, 'New password must be at least 8 characters.', false);
+            return false;
+        }
+
+        btn.disabled = true;
+        stgSetMsg(msg, 'Updating…', true);
+        try {
+            var params = new URLSearchParams(new FormData(form));
+            var res = await fetch('/admin/settings/password', {
+                method: 'POST',
+                headers: stgCsrfHeaders(),
+                body: params
+            });
+            var payload = await res.json().catch(function () { return {}; });
+            if (!res.ok || payload.success === false) throw new Error(payload.message || 'Update failed');
+            stgSetMsg(msg, payload.message || 'Password updated.', true);
+            form.reset();
+        } catch (err) {
+            stgSetMsg(msg, err.message || 'Could not update password.', false);
+        } finally {
+            btn.disabled = false;
+        }
+        return false;
+    }
+
+    // NOTE: Active Sessions and Recent Login Activity are display-only —
+    // there's no session/login-history table in the schema yet, so there's
+    // nothing for a "log out this session" action to actually do. Once that
+    // table exists, add the fetch-based logout handlers back here the same
+    // way stgSubmitProfile/stgSubmitPassword work below.
+</script>
+
+</body>
+</html>
