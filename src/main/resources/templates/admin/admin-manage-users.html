@@ -2,79 +2,459 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ULEE — User Management</title>
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/admin-style.css">
-    <link rel="stylesheet" href="/speak-with-ai.css">
-    <script src="/speak-with-ai-logic.js" defer></script>
-    <script src="/speak-with-ai.js" defer></script>
+    <script src="/admin-script.js" defer></script>
+
+    <!-- Delete-confirmation modal styles. Scoped with a ulee-modal- prefix
+         so nothing collides with admin-style.css; reuses the app's existing
+         CSS variables (--white, --border, --muted, --text) with sane
+         fallbacks in case a var isn't defined on this page. -->
+    <style>
+        .ulee-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 32, 0.55);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity .18s ease, visibility .18s ease;
+        }
+        .ulee-modal-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+        .ulee-modal {
+            background: var(--white, #fff);
+            border-radius: 18px;
+            max-width: 380px;
+            width: 100%;
+            padding: 30px 26px 24px;
+            box-shadow: 0 24px 48px -12px rgba(15,23,32,.35), 0 0 0 1px rgba(15,23,32,.04);
+            text-align: center;
+            transform: translateY(10px) scale(.96);
+            transition: transform .2s cubic-bezier(.2,.9,.3,1.3);
+        }
+        .ulee-modal-overlay.open .ulee-modal {
+            transform: translateY(0) scale(1);
+        }
+        .ulee-modal-icon {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            background: #fdecea;
+            color: #d32f2f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+        }
+        .ulee-modal-icon svg { width: 24px; height: 24px; }
+        .ulee-modal-title {
+            margin: 0 0 8px;
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--text, #1a1a1a);
+        }
+        .ulee-modal-text {
+            margin: 0 0 24px;
+            font-size: 13.5px;
+            line-height: 1.55;
+            color: var(--muted, #6b7280);
+        }
+        .ulee-modal-text strong { color: var(--text, #1a1a1a); }
+        .ulee-modal-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .ulee-modal-btn {
+            flex: 1;
+            padding: 11px 14px;
+            border-radius: 10px;
+            font-size: 13.5px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: filter .15s ease, background .15s ease, transform .1s ease;
+        }
+        .ulee-modal-btn:active { transform: scale(.97); }
+        .ulee-modal-btn-cancel {
+            background: var(--white, #fff);
+            border-color: var(--border, #e5e7eb);
+            color: var(--text, #1a1a1a);
+        }
+        .ulee-modal-btn-cancel:hover { background: #f5f6f7; }
+        .ulee-modal-btn-danger {
+            background: #d32f2f;
+            color: #fff;
+        }
+        .ulee-modal-btn-danger:hover { filter: brightness(1.08); }
+    </style>
 </head>
 <body>
 <div class="shell">
+
+    <!-- FIX: sidebar was missing entirely on this page — added, same fragment
+         every other admin page uses, so navigation stays consistent. -->
+    <div th:replace="~{fragments/admin-sidebar :: sidebar('users')}"></div>
+
     <div class="main">
-        <header class="topbar"><div class="topbar-title">User Management</div></header>
+        <header class="topbar">
+            <div class="topbar-title">User Management</div>
+            <div th:replace="~{fragments/notification-bell :: bell}"></div>
+            <button class="logout-btn" onclick="ulee_triggerLogout()">
+                <svg viewBox="0 0 20 20"><path d="M13 3h4v14h-4M9 14l4-4-4-4M13 10H5"/></svg>
+                <span>Log out</span>
+            </button>
+        </header>
+
         <div class="content">
-            <div class="section active">
 
-                <div th:if="${actionMessage}" style="background:#e8f5e9;border:1px solid #81c784;border-radius:8px;padding:12px 18px;margin-bottom:16px">
-                    <strong style="color:#2e7d32" th:text="${actionMessage}">Success</strong>
-                </div>
-                <div th:if="${actionError}" style="background:#ffebee;border:1px solid #ef5350;border-radius:8px;padding:12px 18px;margin-bottom:16px">
-                    <strong style="color:#c62828" th:text="${actionError}">Error</strong>
-                </div>
+            <div th:if="${actionMessage}" style="background:#e8f5e9;border:1px solid #81c784;border-radius:8px;padding:12px 18px;margin-bottom:16px">
+                <strong style="color:#2e7d32" th:text="${actionMessage}">Success</strong>
+            </div>
+            <div th:if="${actionError}" style="background:#ffebee;border:1px solid #ef5350;border-radius:8px;padding:12px 18px;margin-bottom:16px">
+                <strong style="color:#c62828" th:text="${actionError}">Error</strong>
+            </div>
 
-                <div class="panel">
-                    <div class="panel-header">
-                        <span class="panel-title">All Users</span>
-                        <span class="panel-sub" th:text="${totalUsers} + ' total'">0 total</span>
-                    </div>
+            <!-- Header, same "small label + heading + subtitle" pattern used
+                 on Approved Properties / Review Properties, just with the
+                 app's teal palette instead of the mockup's purple. -->
+            <div style="margin-bottom:18px">
+                <span style="display:inline-flex;align-items:center;gap:6px;background:var(--pp);color:var(--pdp);font-size:11px;font-weight:700;letter-spacing:.06em;padding:5px 12px;border-radius:999px;text-transform:uppercase;margin-bottom:10px">
+                    <svg viewBox="0 0 20 20" style="width:12px;height:12px;stroke:var(--pdp);fill:none;stroke-width:1.8"><circle cx="8" cy="7" r="3"/><path d="M2 17c0-3.3 2.7-6 6-6"/><circle cx="15" cy="9" r="2.5"/><path d="M11 17c0-2.2 1.8-4 4-4s4 1.8 4 4"/></svg>
+                    Admin Console
+                </span>
+                <h2 style="margin:0 0 4px;font-size:22px">User Management</h2>
+                <p style="margin:0;color:var(--muted)">Every student, landlord, property and report — connected in one view.</p>
+            </div>
 
-                    <div style="padding:22px">
-                        <h3 style="margin-bottom:16px">Students</h3>
-                        <div class="user-row" th:each="user : ${studentUsers}"
-                             style="display:flex;justify-content:space-between;align-items:center;padding:16px;border:1px solid #eee;border-radius:10px;margin-bottom:10px">
-                            <div>
-                                <div style="font-weight:600" th:text="(${user.firstName} != null ? ${user.firstName} : 'User') + ' ' + (${user.lastName} != null ? ${user.lastName} : '#' + ${user.userID})">Name</div>
-                                <span class="badge badge-blue">Student</span>
-                                <span th:if="${user.isActive} == null or ${user.isActive}" class="badge badge-green">Active</span>
-                                <span th:if="${user.isActive} != null and !${user.isActive}" class="badge badge-amber">Inactive</span>
-                            </div>
+            <!-- Stat cards: Students / Landlords / Properties / Open reports -->
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <div class="stat-icon">
+                            <svg viewBox="0 0 20 20"><path d="M10 3L2 7l8 4 8-4-8-4z"/><path d="M4 9v5c0 1.5 2.7 3 6 3s6-1.5 6-3V9"/></svg>
                         </div>
-                        <p th:if="${#lists.isEmpty(studentUsers)}" style="color:var(--muted)">No students found.</p>
-
-                        <h3 style="margin:24px 0 16px">Landlords</h3>
-                        <div class="user-row" th:each="user : ${landlordUsers}"
-                             style="display:flex;justify-content:space-between;align-items:center;padding:16px;border:1px solid #eee;border-radius:10px;margin-bottom:10px">
-                            <div>
-                                <div style="font-weight:600" th:text="(${user.firstName} != null ? ${user.firstName} : 'User') + ' ' + (${user.lastName} != null ? ${user.lastName} : '#' + ${user.userID})">Name</div>
-                                <span class="badge badge-purple">Landlord</span>
-                                <span th:if="${user.isActive} == null or ${user.isActive}" class="badge badge-green">Active</span>
-                                <span th:if="${user.isActive} != null and !${user.isActive}" class="badge badge-amber">Inactive</span>
-                                <span th:if="${user.warningCount != null and user.warningCount > 0}" class="badge badge-red" th:text="${user.warningCount} + ' warning(s)'">0 warnings</span>
-                            </div>
-                            <div class="btn-group">
-                                <form th:action="@{/admin/warn-user/{id}(id=${user.userID})}" method="post" style="display:inline">
-                                    <button type="submit" class="btn btn-warn">Warn</button>
-                                </form>
-                                <a th:href="@{/admin/edit-user/{id}(id=${user.userID})}" class="btn btn-view">Edit</a>
-                                <form th:if="${user.isActive} == null or ${user.isActive}" th:action="@{/admin/deactivate-user/{id}(id=${user.userID})}" method="post" style="display:inline">
-                                    <button type="submit" class="btn btn-warn">Deactivate</button>
-                                </form>
-                                <form th:if="${user.isActive} != null and !${user.isActive}" th:action="@{/admin/reactivate-user/{id}(id=${user.userID})}" method="post" style="display:inline">
-                                    <button type="submit" class="btn btn-primary">Reactivate</button>
-                                </form>
-                                <form th:action="@{/admin/delete-user/{id}(id=${user.userID})}" method="post" style="display:inline"
-                                      onsubmit="return confirm('Permanently delete this account? This cannot be undone.');">
-                                    <button type="submit" class="btn btn-danger">Delete</button>
-                                </form>
-                            </div>
-                        </div>
-                        <p th:if="${#lists.isEmpty(landlordUsers)}" style="color:var(--muted)">No landlords found.</p>
                     </div>
+                    <div class="stat-num" th:text="${totalStudents}">0</div>
+                    <div class="stat-label">Students</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <div class="stat-icon">
+                            <svg viewBox="0 0 20 20"><circle cx="7" cy="13" r="4"/><path d="M10 10l7-7M14 6l2 2M16 4l2 2"/></svg>
+                        </div>
+                    </div>
+                    <div class="stat-num" th:text="${totalLandlords}">0</div>
+                    <div class="stat-label">Landlords</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <div class="stat-icon">
+                            <svg viewBox="0 0 20 20"><path d="M3 7l7-4 7 4v9H3V7z"/><path d="M8 11h4v5H8z"/></svg>
+                        </div>
+                    </div>
+                    <div class="stat-num" th:text="${totalProperties}">0</div>
+                    <div class="stat-label">Properties</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <div class="stat-icon red">
+                            <svg viewBox="0 0 20 20"><path d="M10 3l7 14H3L10 3z"/><path d="M10 9v4M10 15h.01"/></svg>
+                        </div>
+                    </div>
+                    <div class="stat-num" th:text="${totalReported}">0</div>
+                    <div class="stat-label">Open reports</div>
                 </div>
             </div>
+
+            <!-- Students / Landlords tabs — reuses the same .tabs/.tab classes
+                 the Dashboard already uses, so it looks native to the app. -->
+            <div class="tabs" style="margin-bottom:18px">
+                <button type="button" class="tab active" id="tabBtnStudents" onclick="showUserTab('students')">Students</button>
+                <button type="button" class="tab" id="tabBtnLandlords" onclick="showUserTab('landlords')">Landlords</button>
+            </div>
+
+            <!-- ============ STUDENTS ============ -->
+            <div id="tabStudents">
+                <div class="user-row" th:each="user : ${studentUsers}" style="border:1px solid var(--border);border-radius:12px;margin-bottom:10px;background:var(--white);overflow:hidden">
+
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;cursor:pointer"
+                         th:onclick="'toggleUserDetail(' + ${user.userID} + ')'">
+                        <div style="display:flex;align-items:center;gap:12px">
+                            <div style="width:36px;height:36px;border-radius:50%;background:var(--pl);color:var(--pdp);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0"
+                                 th:with="fi=${(user.firstName != null and #strings.length(user.firstName) > 0) ? #strings.substring(user.firstName,0,1) : 'U'}, li=${(user.lastName != null and #strings.length(user.lastName) > 0) ? #strings.substring(user.lastName,0,1) : '#'}"
+                                 th:text="${fi} + ${li}">UU</div>
+                            <div>
+                                <div style="font-weight:600" th:text="(${user.firstName} != null ? ${user.firstName} : 'User') + ' ' + (${user.lastName} != null ? ${user.lastName} : '#' + ${user.userID})">Name</div>
+                                <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">
+                                    <span class="badge badge-blue">Student</span>
+                                    <span th:if="${user.isActive} == null or ${user.isActive}" class="badge badge-green">Active</span>
+                                    <span th:if="${user.isActive} != null and !${user.isActive}" class="badge badge-amber">Inactive</span>
+                                    <span th:if="${user.warningCount != null and user.warningCount > 0}" class="badge badge-red" th:text="${user.warningCount} + ' warning(s)'">0 warnings</span>
+                                </div>
+                            </div>
+                        </div>
+                        <svg th:id="'chev-' + ${user.userID}" viewBox="0 0 20 20" style="width:16px;height:16px;stroke:var(--muted);fill:none;stroke-width:2;transition:transform 0.2s ease;flex-shrink:0"><path d="M5 8l5 5 5-5"/></svg>
+                    </div>
+
+                    <!-- Expanded panel: contact info (the data we actually have
+                         for a student) + the same action buttons landlords get,
+                         since /admin/warn-user, edit-user, deactivate-user and
+                         delete-user all operate on any User ID, not just
+                         landlords — students previously had no actions at all. -->
+                    <div th:id="'detail-' + ${user.userID}" style="display:none;border-top:1px solid var(--border);padding:16px;background:hsl(180,67%,98%)">
+                        <div style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--text);margin-bottom:14px">
+                            <div><strong>Email:</strong> <span th:text="${user.email} ?: 'Not on file'">email</span></div>
+                            <div><strong>Phone:</strong> <span th:text="${user.phone} ?: 'Not on file'">phone</span></div>
+                        </div>
+
+                        <!-- Accommodation: resolved through the student's Approved
+                             Application -> Property -> Property.landlordID -> User,
+                             so this is their real current residence, not a guess. -->
+                        <div style="margin-bottom:14px">
+                            <label class="field-label" style="display:block;margin-bottom:8px">Accommodation</label>
+                            <div th:each="app : ${approvedApplicationsByStudent.get(user.userID)}"
+                                 style="background:var(--white);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px">
+                                <div style="font-weight:600;font-size:13px"
+                                     th:text="${propertyLookup.get(app.propertyID) != null ? propertyLookup.get(app.propertyID).title : 'Property #' + app.propertyID}">Property title</div>
+                                <div style="font-size:12px;color:var(--muted)"
+                                     th:text="${propertyLookup.get(app.propertyID) != null ? propertyLookup.get(app.propertyID).city : ''}">City</div>
+                                <div style="font-size:12px;color:var(--muted);margin-top:4px"
+                                     th:if="${propertyLookup.get(app.propertyID) != null and landlordUserLookup.get(propertyLookup.get(app.propertyID).landlordID) != null}"
+                                     th:text="'Landlord: ' + ${landlordUserLookup.get(propertyLookup.get(app.propertyID).landlordID).firstName} + ' ' + ${landlordUserLookup.get(propertyLookup.get(app.propertyID).landlordID).lastName}">Landlord</div>
+                            </div>
+                            <p th:if="${approvedApplicationsByStudent.get(user.userID) == null or #lists.isEmpty(approvedApplicationsByStudent.get(user.userID))}"
+                               style="font-size:13px;color:var(--muted)">No confirmed accommodation on record.</p>
+                        </div>
+
+                        <div class="btn-group">
+                            <form th:action="@{/admin/warn-user/{id}(id=${user.userID})}" method="post" style="display:inline">
+                                <button type="submit" class="btn btn-warn">Warn</button>
+                            </form>
+                            <form th:if="${user.isActive} == null or ${user.isActive}" th:action="@{/admin/deactivate-user/{id}(id=${user.userID})}" method="post" style="display:inline">
+                                <button type="submit" class="btn btn-warn">Deactivate</button>
+                            </form>
+                            <form th:if="${user.isActive} != null and !${user.isActive}" th:action="@{/admin/reactivate-user/{id}(id=${user.userID})}" method="post" style="display:inline">
+                                <button type="submit" class="btn btn-primary">Reactivate</button>
+                            </form>
+                            <!-- Delete now opens the styled confirmation modal instead of
+                                 the native browser confirm(). The button carries the
+                                 user's display name so the modal can say who it's about. -->
+                            <form th:action="@{/admin/delete-user/{id}(id=${user.userID})}" method="post" style="display:inline">
+                                <button type="button" class="btn btn-danger"
+                                        th:attr="data-name=(${user.firstName} != null ? ${user.firstName} : 'User') + ' ' + (${user.lastName} != null ? ${user.lastName} : '#' + ${user.userID})"
+                                        onclick="openDeleteModal(this)">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <p th:if="${#lists.isEmpty(studentUsers)}" style="color:var(--muted);padding:22px 0">No students found.</p>
+            </div>
+
+            <!-- ============ LANDLORDS ============ -->
+            <div id="tabLandlords" style="display:none">
+                <div class="user-row" th:each="user : ${landlordUsers}" style="border:1px solid var(--border);border-radius:12px;margin-bottom:10px;background:var(--white);overflow:hidden">
+
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;cursor:pointer"
+                         th:onclick="'toggleUserDetail(' + ${user.userID} + ')'">
+                        <div style="display:flex;align-items:center;gap:12px">
+                            <div style="width:36px;height:36px;border-radius:50%;background:var(--pl);color:var(--pdp);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0"
+                                 th:with="fi=${(user.firstName != null and #strings.length(user.firstName) > 0) ? #strings.substring(user.firstName,0,1) : 'U'}, li=${(user.lastName != null and #strings.length(user.lastName) > 0) ? #strings.substring(user.lastName,0,1) : '#'}"
+                                 th:text="${fi} + ${li}">UU</div>
+                            <div>
+                                <div style="font-weight:600" th:text="(${user.firstName} != null ? ${user.firstName} : 'User') + ' ' + (${user.lastName} != null ? ${user.lastName} : '#' + ${user.userID})">Name</div>
+                                <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">
+                                    <span class="badge badge-purple">Landlord</span>
+                                    <span th:if="${user.isActive} == null or ${user.isActive}" class="badge badge-green">Active</span>
+                                    <span th:if="${user.isActive} != null and !${user.isActive}" class="badge badge-amber">Inactive</span>
+                                    <span th:if="${user.warningCount != null and user.warningCount > 0}" class="badge badge-red" th:text="${user.warningCount} + ' warning(s)'">0 warnings</span>
+                                    <span th:if="${reportsByLandlord.get(user.userID) != null and !#lists.isEmpty(reportsByLandlord.get(user.userID))}"
+                                          class="badge badge-amber"
+                                          th:text="${#lists.size(reportsByLandlord.get(user.userID))} + ' report(s)'">0 reports</span>
+                                    <span th:with="propCount=${propertiesByLandlord.get(user.userID) != null ? #lists.size(propertiesByLandlord.get(user.userID)) : 0}"
+                                          th:text="${propCount} + ' propert' + (${propCount} == 1 ? 'y' : 'ies')"
+                                          style="font-size:12px;color:var(--muted);align-self:center">0 properties</span>
+                                </div>
+                            </div>
+                        </div>
+                        <svg th:id="'chev-' + ${user.userID}" viewBox="0 0 20 20" style="width:16px;height:16px;stroke:var(--muted);fill:none;stroke-width:2;transition:transform 0.2s ease;flex-shrink:0"><path d="M5 8l5 5 5-5"/></svg>
+                    </div>
+
+                    <div th:id="'detail-' + ${user.userID}" style="display:none;border-top:1px solid var(--border);padding:16px;background:hsl(180,67%,98%)">
+
+                        <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:16px;margin-bottom:14px">
+                            <div>
+                                <label class="field-label" style="display:block;margin-bottom:8px">Properties owned</label>
+                                <div th:each="prop : ${propertiesByLandlord.get(user.userID)}"
+                                     style="background:var(--white);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px">
+                                    <div style="display:flex;justify-content:space-between;gap:8px">
+                                        <strong style="font-size:13px" th:text="${prop.title}">Property title</strong>
+                                        <span class="badge"
+                                              th:classappend="${prop.status == 'Approved' or prop.status == 'Active'} ? 'badge-green' : (${prop.status == 'Pending'} ? 'badge-amber' : 'badge-red')"
+                                              th:text="${prop.status}">Status</span>
+                                    </div>
+                                    <div style="font-size:12px;color:var(--muted);margin-top:2px" th:text="${prop.city}">City</div>
+                                </div>
+                                <p th:if="${propertiesByLandlord.get(user.userID) == null or #lists.isEmpty(propertiesByLandlord.get(user.userID))}"
+                                   style="font-size:13px;color:var(--muted)">No properties on record.</p>
+                            </div>
+
+                            <div>
+                                <label class="field-label" style="display:block;margin-bottom:8px">Reports on their properties</label>
+                                <div th:each="report : ${reportsByLandlord.get(user.userID)}"
+                                     style="background:var(--white);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px">
+                                    <div style="font-size:13px;font-weight:600" th:text="${report.reason} ?: 'Reported'">Reason</div>
+                                    <div style="font-size:12px;color:var(--muted);margin-top:2px" th:text="${report.description} ?: 'No details provided'">Description</div>
+                                    <div style="font-size:11px;color:var(--muted);margin-top:4px" th:text="${report.reportedAt} ?: 'Date not recorded'">Date</div>
+                                </div>
+                                <p th:if="${reportsByLandlord.get(user.userID) == null or #lists.isEmpty(reportsByLandlord.get(user.userID))}"
+                                   style="font-size:13px;color:var(--muted)">No reports on record.</p>
+                            </div>
+                        </div>
+
+                        <div class="btn-group">
+                            <form th:action="@{/admin/warn-user/{id}(id=${user.userID})}" method="post" style="display:inline">
+                                <button type="submit" class="btn btn-warn">Warn</button>
+                            </form>
+                            <form th:if="${user.isActive} == null or ${user.isActive}" th:action="@{/admin/deactivate-user/{id}(id=${user.userID})}" method="post" style="display:inline">
+                                <button type="submit" class="btn btn-warn">Deactivate</button>
+                            </form>
+                            <form th:if="${user.isActive} != null and !${user.isActive}" th:action="@{/admin/reactivate-user/{id}(id=${user.userID})}" method="post" style="display:inline">
+                                <button type="submit" class="btn btn-primary">Reactivate</button>
+                            </form>
+                            <form th:action="@{/admin/delete-user/{id}(id=${user.userID})}" method="post" style="display:inline">
+                                <button type="button" class="btn btn-danger"
+                                        th:attr="data-name=(${user.firstName} != null ? ${user.firstName} : 'User') + ' ' + (${user.lastName} != null ? ${user.lastName} : '#' + ${user.userID})"
+                                        onclick="openDeleteModal(this)">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <p th:if="${#lists.isEmpty(landlordUsers)}" style="color:var(--muted);padding:22px 0">No landlords found.</p>
+            </div>
+
         </div>
     </div>
 </div>
+
+<!-- Delete confirmation modal — single shared instance, reused for every
+     student/landlord row. openDeleteModal(button) reads the target form
+     via closest('form') and the display name from data-name. -->
+<div id="deleteModal" class="ulee-modal-overlay" aria-hidden="true" onclick="if (event.target === this) closeDeleteModal();">
+    <div class="ulee-modal" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+        <div class="ulee-modal-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 7h16M9 7V4.5A1.5 1.5 0 0110.5 3h3A1.5 1.5 0 0115 4.5V7m2 0v12a2 2 0 01-2 2H9a2 2 0 01-2-2V7h10z"/>
+                <path d="M10 11v6M14 11v6"/>
+            </svg>
+        </div>
+        <h3 id="deleteModalTitle" class="ulee-modal-title">Delete this account?</h3>
+        <p class="ulee-modal-text">This will permanently remove <strong id="deleteModalName">this account</strong> and everything tied to it. This action cannot be undone.</p>
+        <div class="ulee-modal-actions">
+            <button type="button" id="deleteModalCancel" class="ulee-modal-btn ulee-modal-btn-cancel" onclick="closeDeleteModal()">Cancel</button>
+            <button type="button" class="ulee-modal-btn ulee-modal-btn-danger" onclick="confirmDelete()">Delete account</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showUserTab(which) {
+        var students = document.getElementById('tabStudents');
+        var landlords = document.getElementById('tabLandlords');
+        var btnStudents = document.getElementById('tabBtnStudents');
+        var btnLandlords = document.getElementById('tabBtnLandlords');
+        if (which === 'students') {
+            students.style.display = 'block';
+            landlords.style.display = 'none';
+            btnStudents.classList.add('active');
+            btnLandlords.classList.remove('active');
+        } else {
+            students.style.display = 'none';
+            landlords.style.display = 'block';
+            btnStudents.classList.remove('active');
+            btnLandlords.classList.add('active');
+        }
+    }
+
+    function toggleUserDetail(userId) {
+        var detail = document.getElementById('detail-' + userId);
+        var chevron = document.getElementById('chev-' + userId);
+        if (!detail) return;
+        var isOpen = detail.style.display === 'block';
+        detail.style.display = isOpen ? 'none' : 'block';
+        if (chevron) chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+    }
+
+    function ulee_triggerLogout() {
+        if (typeof confirmAdminLogout === 'function') {
+            confirmAdminLogout();
+            return;
+        }
+        if (confirm('Log out of ULEE?')) {
+            var form = document.getElementById('uleeLogoutForm');
+            if (form) {
+                form.submit();
+            } else {
+                window.location.href = '/logout';
+            }
+        }
+    }
+
+    // --- Delete confirmation modal --------------------------------------
+    var ulee_pendingDeleteForm = null;
+
+    function openDeleteModal(btn) {
+        ulee_pendingDeleteForm = btn.closest('form');
+        var name = btn.getAttribute('data-name') || 'this account';
+        document.getElementById('deleteModalName').textContent = name;
+
+        var modal = document.getElementById('deleteModal');
+        modal.classList.add('open');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+
+        setTimeout(function () {
+            var cancelBtn = document.getElementById('deleteModalCancel');
+            if (cancelBtn) cancelBtn.focus();
+        }, 10);
+    }
+
+    function closeDeleteModal() {
+        var modal = document.getElementById('deleteModal');
+        modal.classList.remove('open');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+        ulee_pendingDeleteForm = null;
+    }
+
+    function confirmDelete() {
+        if (ulee_pendingDeleteForm) {
+            ulee_pendingDeleteForm.submit();
+        }
+        closeDeleteModal();
+    }
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            var modal = document.getElementById('deleteModal');
+            if (modal.classList.contains('open')) closeDeleteModal();
+        }
+    });
+</script>
+
 </body>
 </html>
