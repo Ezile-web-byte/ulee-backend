@@ -80,7 +80,44 @@ public class PropertyController {
     // this, the same way LIVE_STATUS marks what's visible to students.
     private static final String DEACTIVATED_STATUS = "Inactive";
 
+    // The lowest monthly rent a listing is allowed to go live with.
+    // Kept as a constant (not typed inline) so the create path, the update
+    // path, and any future admin tooling can never drift to different
+    // numbers. Mirrored client-side in listProperty.js and edit-property's
+    // validation script — but THIS is the check that actually binds, since
+    // client-side JS can always be bypassed with dev tools or a raw POST.
+    private static final java.math.BigDecimal MIN_RENT = new java.math.BigDecimal("1000");
+
     // ── Small reusable helpers, used by many endpoints below ──
+
+    // Server-side mirror of the wizard/edit-form's client-side validation.
+    // This is the enforcement that actually matters — client-side JS can
+    // always be bypassed (dev tools, a raw POST, Postman), so a listing
+    // can only ever go "live" (Pending/Active) through this backend check,
+    // never on the client's say-so alone. Called from BOTH /listProperty
+    // (create) and /update-property/{id} (edit), so the rule is identical
+    // and can't drift between the two.
+    //
+    // Rent must be >= MIN_RENT (R1 000), not merely > 0.
+    private boolean meetsPublishRequirements(String title, java.math.BigDecimal rent, String address, Integer capacity) {
+        boolean titleOk = title != null && !title.isBlank();
+        boolean rentOk = rent != null && rent.compareTo(MIN_RENT) >= 0;
+        boolean addressOk = address != null && !address.isBlank();
+        boolean capacityOk = capacity != null && capacity >= 1;
+        return titleOk && rentOk && addressOk && capacityOk;
+    }
+
+    // Names which requirement failed, so the edit page can send the landlord
+    // straight to the right step with the right message instead of a generic
+    // "something's missing". Returns null when everything passes.
+    private String firstUnmetRequirement(String title, java.math.BigDecimal rent, String address, Integer capacity) {
+        if (title == null || title.isBlank()) return "title";
+        if (capacity == null || capacity < 1) return "capacity";
+        if (rent == null) return "rent-missing";
+        if (rent.compareTo(MIN_RENT) < 0) return "rent-too-low";
+        if (address == null || address.isBlank()) return "address";
+        return null;
+    }
 
     // Resolves the logged-in user's account from their email (the Principal
     // Spring Security gives us). Every landlord-only endpoint calls this
@@ -354,6 +391,19 @@ public class PropertyController {
     // fields are skipped (the form uses formnovalidate) and whatever WAS
     // filled in is saved with status="Draft" so the landlord can finish
     // later without losing progress.
+    //
+    // A "Save Changes" (action=update) that would leave the listing below
+    // R1 000 rent, or with any starred field blank, is REJECTED outright
+    // and bounced back to the edit page with an error flag — it is never
+    // silently downgraded to Draft.
+    //
+    // CRITICAL ORDERING NOTE: all validation happens BEFORE the Property
+    // entity is mutated. With spring.jpa.open-in-view left at its default
+    // (true), the entity returned by getOwnedProperty stays managed for the
+    // whole request, so Hibernate's dirty checking can flush field changes
+    // at request end even on a path that never calls save(). Mutating first
+    // and returning early would therefore still persist the invalid rent.
+    // Do not reorder these blocks.
     @PostMapping("/update-property/{id}")
     public String updateProperty(
             @PathVariable Integer id,
@@ -377,14 +427,47 @@ public class PropertyController {
         Property property = getOwnedProperty(id, landlordID);
         boolean isDraft = "draft".equals(action);
 
-        // Only overwrite fields that were actually submitted (title/type/
-        // address use "if not null" guards); rent/deposit parse from
-        // Strings so a blank input doesn't crash BigDecimal parsing.
+        // ── STEP 1: work out what the values WOULD become, without
+        //    writing anything to the entity yet. Same fallback rules the
+        //    mutation block below uses, so the two can't disagree. ──
+        String effectiveTitle = (title != null) ? title : property.getTitle();
+        String effectiveAddress = (address != null) ? address : property.getAddress();
+        Integer effectiveCapacity = (capacity != null) ? capacity : property.getCapacity();
+
+        java.math.BigDecimal effectiveRent;
+        boolean rentUnparseable = false;
+        if (rent != null && !rent.isBlank()) {
+            try {
+                effectiveRent = new java.math.BigDecimal(rent);
+            } catch (NumberFormatException ex) {
+                effectiveRent = null;
+                rentUnparseable = true;
+            }
+        } else {
+            effectiveRent = property.getRent();
+        }
+
+        // ── STEP 2: gate the save. Only "Save Changes" is gated — "Save
+        //    Draft" still saves whatever's been filled in, exactly as
+        //    before, so a landlord is never trapped and never loses work. ──
+        if (!isDraft) {
+            if (rentUnparseable) {
+                return "redirect:/edit-property/" + id + "?error=rent-invalid";
+            }
+            String unmet = firstUnmetRequirement(effectiveTitle, effectiveRent, effectiveAddress, effectiveCapacity);
+            if (unmet != null) {
+                // Nothing has been mutated at this point, so returning here
+                // leaves the stored property completely untouched.
+                return "redirect:/edit-property/" + id + "?error=" + unmet;
+            }
+        }
+
+        // ── STEP 3: only now is it safe to mutate. ──
         if (title != null) property.setTitle(title);
         if (type != null) property.setType(type);
         if (address != null) property.setAddress(address);
         property.setCity(city);
-        property.setRent((rent != null && !rent.isBlank()) ? new java.math.BigDecimal(rent) : property.getRent());
+        property.setRent(effectiveRent != null ? effectiveRent : property.getRent());
         property.setDeposit((deposit != null && !deposit.isBlank()) ? new java.math.BigDecimal(deposit) : null);
         property.setDescription(description);
         property.setCommuteType(commuteType);
@@ -404,7 +487,9 @@ public class PropertyController {
             property.setStatus("Draft");
         } else if ("Draft".equals(property.getStatus())) {
             // Finishing a draft via "Save Changes" submits it for Admin
-            // approval — same as a brand-new listing going Pending.
+            // approval — same as a brand-new listing going Pending. By
+            // this point requirements are guaranteed met (STEP 2 returned
+            // early otherwise), so no re-check is needed here.
             property.setStatus("Pending");
         }
 
@@ -449,9 +534,24 @@ public class PropertyController {
 
             // Append any newly uploaded gallery photos after the ones
             // already on file, rather than replacing them.
+            //
+            // FIX: this used to hardcode isMain=false for every appended
+            // photo. Combined with the same bug in listProperty(), a
+            // property that ended up with zero main images could NEVER
+            // get one assigned through this endpoint either — permanently
+            // broken. Now it checks whether the property already has a
+            // main image (re-queried AFTER the coverImage block above, so
+            // it correctly sees a cover photo just uploaded in this same
+            // request) and, if not, promotes the first newly-appended
+            // photo to main instead.
             if (hasAdditionalImages) {
-                int existingCount = propertyImageRepository.findByPropertyID(id).size();
+                List<PropertyImage> currentImages = propertyImageRepository.findByPropertyID(id);
+                int existingCount = currentImages.size();
                 int order = existingCount + 1;
+
+                boolean propertyHasMainImage = currentImages.stream()
+                        .anyMatch(img -> Boolean.TRUE.equals(img.getIsMain()));
+                boolean firstNewImageHandled = false;
 
                 for (MultipartFile image : images) {
                     if (!image.isEmpty()) {
@@ -459,14 +559,20 @@ public class PropertyController {
                         Path filePath = uploadPath.resolve(uniqueFileName);
                         Files.copy(image.getInputStream(), filePath);
 
+                        boolean isMain = !propertyHasMainImage && !firstNewImageHandled;
+
                         PropertyImage propImage = new PropertyImage();
                         propImage.setPropertyID(id);
                         propImage.setUrl("/uploads/" + uniqueFileName);
                         propImage.setCategory("exterior");
-                        propImage.setIsMain(false);
+                        propImage.setIsMain(isMain);
                         propImage.setDisplayOrder(order);
                         propertyImageRepository.save(propImage);
                         order++;
+
+                        if (isMain) {
+                            firstNewImageHandled = true;
+                        }
                     }
                 }
             }
@@ -1548,6 +1654,21 @@ public class PropertyController {
         // this keeps old/partial submissions from crashing).
         property.setCapacity(capacity != null ? capacity : 1);
         property.setIsAvailable(false);
+
+        // ── Server-side enforcement (mirrors the wizard's client-side JS,
+        //    but this is the check that actually can't be bypassed) ──
+        // Even if the client claims action=submit, a listing missing a
+        // required field, with no address, or with rent below R1 000, can
+        // never go to "Pending" — it is silently saved as "Draft" instead.
+        // (Create keeps the silent-downgrade behaviour rather than
+        // rejecting outright, because the wizard's state lives entirely in
+        // client-side JS — bouncing the request back would lose everything
+        // the landlord typed across all seven steps. The update path below
+        // has no such constraint, since the edit form is fully
+        // server-rendered and every field persists in the DOM regardless.)
+        if (!isDraft && !meetsPublishRequirements(property.getTitle(), property.getRent(), property.getAddress(), property.getCapacity())) {
+            isDraft = true;
+        }
         property.setStatus(isDraft ? "Draft" : "Pending");
 
         if (availableFrom != null && !availableFrom.isBlank()) {
@@ -1580,8 +1701,18 @@ public class PropertyController {
         }
         int order = 1;
 
+        // FIX: previously, if coverImage was empty/not sent (e.g. the
+        // wizard only submits the "images" gallery field, no separate
+        // cover upload), EVERY gallery photo got hardcoded isMain=false —
+        // the property ended up with photos but no main image, permanently
+        // (updateProperty's append logic below can't fix this after the
+        // fact either, see the FIX note there). Track whether the cover
+        // slot was actually filled so the first gallery photo can take
+        // over as main when it wasn't.
+        boolean coverImageProvided = coverImage != null && !coverImage.isEmpty();
+
         // Cover image is always marked isMain=true and saved first.
-        if (coverImage != null && !coverImage.isEmpty()) {
+        if (coverImageProvided) {
             String uniqueFileName = savedProperty.getPropertyID() + "_" + System.currentTimeMillis() + "_" + coverImage.getOriginalFilename();
             Path filePath = uploadPath.resolve(uniqueFileName);
             Files.copy(coverImage.getInputStream(), filePath);
@@ -1596,7 +1727,10 @@ public class PropertyController {
             order++;
         }
 
-        // Remaining gallery photos, in upload order.
+        // Remaining gallery photos, in upload order. If there was no cover
+        // image, the FIRST non-empty gallery photo becomes the main image
+        // instead of every photo defaulting to isMain=false.
+        boolean firstGalleryImageHandled = false;
         if (images != null) {
             for (MultipartFile image : images) {
                 if (!image.isEmpty()) {
@@ -1604,14 +1738,20 @@ public class PropertyController {
                     Path filePath = uploadPath.resolve(uniqueFileName);
                     Files.copy(image.getInputStream(), filePath);
 
+                    boolean isMain = !coverImageProvided && !firstGalleryImageHandled;
+
                     PropertyImage propImage = new PropertyImage();
                     propImage.setPropertyID(savedProperty.getPropertyID());
                     propImage.setUrl("/uploads/" + uniqueFileName);
                     propImage.setCategory("exterior");
-                    propImage.setIsMain(false);
+                    propImage.setIsMain(isMain);
                     propImage.setDisplayOrder(order);
                     propertyImageRepository.save(propImage);
                     order++;
+
+                    if (isMain) {
+                        firstGalleryImageHandled = true;
+                    }
                 }
             }
         }

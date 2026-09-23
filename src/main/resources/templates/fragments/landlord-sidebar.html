@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--
+  Shared landlord sidebar. Every landlord page includes THIS fragment
+  instead of copy-pasting the <aside class="sidebar">...</aside> markup,
+  so the logo, the collapse toggle, and the nav items can never drift
+  between pages again (same pattern as fragments/admin-sidebar.html).
+
+  Usage from any landlord template:
+    <div th:replace="~{fragments/landlord-sidebar :: sidebar('properties')}"></div>
+
+  The `active` param is one of:
+    'properties' | 'applications' | 'reviews'
+
+  The collapse/expand behaviour (button click, localStorage,
+  the .collapsed / .sidebar-collapsed classes) lives in
+  landlord-sidebar-toggle.js — include that script on every page
+  that uses this fragment.
+-->
+<aside class="sidebar" id="sidebar" th:fragment="sidebar(active)">
+    <div class="logo">
+        <div class="logo-mark">
+            <div class="logo-icon">
+                <svg viewBox="0 0 20 20"><path d="M10 2L3 7v11h14V7L10 2zm0 2.6 5 3.5V16H5V8.1l5-3.5zM8 10h4v6H8z"/></svg>
+            </div>
+            <div class="logo-text">
+                <div class="logo-name">ULEE</div>
+                <div class="logo-tag">The future of Student Living</div>
+            </div>
+        </div>
+        <button class="sidebar-toggle" id="sidebar-toggle" type="button" title="Toggle sidebar" aria-label="Toggle sidebar" aria-expanded="true">
+            <svg viewBox="0 0 20 20" fill="none"><path d="M12 4l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+    </div>
+
+    <nav class="nav-list">
+        <a th:href="@{/landlord-index}" class="nav-item" th:classappend="${active == 'properties'} ? ' active'">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>
+            <span>My Properties</span>
+        </a>
+        <a th:href="@{/manage-applications}" class="nav-item" th:classappend="${active == 'applications'} ? ' active'">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M8 3h8a2 2 0 0 1 2 2v14l-6-3-6 3V5a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+            <span>Applications</span>
+        </a>
+        <a th:href="@{/my-property-reviews}" class="nav-item" th:classappend="${active == 'reviews'} ? ' active'">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M12 3.5 14.4 9l6 .6-4.5 4 1.4 5.9L12 16.6 6.7 19.5l1.4-5.9-4.5-4 6-.6L12 3.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+            <span>Reviews</span>
+        </a>
+    </nav>
+</aside>
+
+</body>
+</html>

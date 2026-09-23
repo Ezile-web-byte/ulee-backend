@@ -10,6 +10,7 @@ public class PropertyImage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer imageID;
 
+
     private Integer propertyID;
     private String url;
     private String category;

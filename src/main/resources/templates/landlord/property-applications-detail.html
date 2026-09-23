@@ -97,28 +97,8 @@
 
 <div class="app-shell">
 
-    <!-- ============ SIDEBAR (identical to My Properties / Reviews) ============ -->
-    <aside class="sidebar">
-        <div class="brand">
-            <span class="brand-name">ULEE</span>
-            <span class="brand-sub">THE FUTURE OF STUDENT LIVING</span>
-        </div>
-
-        <nav class="nav-list">
-            <a th:href="@{/landlord-index}" class="nav-item">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>
-                <span>My Properties</span>
-            </a>
-            <a th:href="@{/manage-applications}" class="nav-item active">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M8 3h8a2 2 0 0 1 2 2v14l-6-3-6 3V5a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-                <span>Applications</span>
-            </a>
-            <a th:href="@{/my-property-reviews}" class="nav-item">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M12 3.5 14.4 9l6 .6-4.5 4 1.4 5.9L12 16.6 6.7 19.5l1.4-5.9-4.5-4 6-.6L12 3.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-                <span>Reviews</span>
-            </a>
-        </nav>
-    </aside>
+    <!-- ============ SIDEBAR (shared fragment — see fragments/landlord-sidebar.html) ============ -->
+    <div th:replace="~{fragments/landlord-sidebar :: sidebar('applications')}"></div>
 
     <!-- ============ MAIN ============ -->
     <main class="main">
@@ -245,7 +225,7 @@
                         </div>
 
                         <div class="application-card-actions">
-                            <form th:if="${row.status != 'Rejected'}"
+                            <form th:if="${row.status != 'Rejected' and row.status != 'Accepted'}"
                                   th:action="@{/update-application-status/{id}(id=${row.applicationID})}" method="post" class="inline-form">
                                 <input type="hidden" name="status" value="Accepted" />
                                 <button class="btn-accept" type="submit"
@@ -294,6 +274,8 @@
 </div>
 
 <div id="appToast"></div>
+
+<script src="/landlord-sidebar-toggle.js" defer></script>
 
 <script>
     (function () {

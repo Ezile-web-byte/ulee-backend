@@ -1,4 +1,133 @@
 
+<!--<!DOCTYPE html>-->
+<!--<html lang="en" xmlns:th="http://www.thymeleaf.org">-->
+<!--<head>-->
+<!--  <meta charset="UTF-8" />-->
+<!--  <meta name="viewport" content="width=device-width, initial-scale=1.0" />-->
+<!--  <title>List a New Property – ULEE</title>-->
+<!--  <link rel="preconnect" href="https://fonts.googleapis.com">-->
+<!--  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>-->
+<!--  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />-->
+
+<!--  <link rel="stylesheet" th:href="@{/landlord-style.css}" href="/landlord-style.css" />-->
+<!--  <link rel="stylesheet" th:href="@{/listProperty.css}" href="/listProperty.css" />-->
+<!--</head>-->
+<!--<body>-->
+
+<!--<header class="topbar">-->
+<!--  <h1 class="topbar-title">List a New Property</h1>-->
+<!--  <div style="display: flex; align-items: center; gap: 16px;">-->
+<!--    <a th:href="@{/landlord-index}" href="/landlord-index" class="btn btn-secondary" style="display: inline-flex; align-items: center; text-decoration: none; font-size: 0.9rem; padding: 6px 14px;">-->
+<!--      ← Back-->
+<!--    </a>-->
+<!--    <div class="avatar-initials" th:text="${userInitials != null ? userInitials : 'EH'}">EH</div>-->
+<!--  </div>-->
+<!--</header>-->
+
+<!--<main class="container" style="padding-top: 2rem;">-->
+<!--  &lt;!&ndash; Clean Back Link &ndash;&gt;-->
+<!--  <div class="head-title">-->
+<!--    <h1>List a New Property</h1>-->
+<!--    <p>Follow the steps below to publish your student accommodation listing.</p>-->
+<!--  </div>-->
+
+<!--  &lt;!&ndash; Step Tracker &ndash;&gt;-->
+<!--  <div class="tracker-card">-->
+<!--    <div class="progress-bar-bg">-->
+<!--      <div class="progress-bar-fill" id="progressFill"></div>-->
+<!--    </div>-->
+<!--    <div class="steps-row" id="stepsTracker"></div>-->
+<!--  </div>-->
+
+<!--  &lt;!&ndash; Wizard Form &ndash;&gt;-->
+<!--  <form id="listPropertyForm" class="wizard-card" th:action="@{/listProperty}" method="post" enctype="multipart/form-data">-->
+
+<!--    <div class="panel-content" id="stepPanel">-->
+<!--      &lt;!&ndash; Rendered by JS &ndash;&gt;-->
+<!--    </div>-->
+
+<!--    <div class="actions-bar">-->
+<!--      <button type="button" class="btn btn-secondary" id="prevBtn" onclick="navigateStep(-1)">← Back</button>-->
+<!--      <div class="btn-group-right">-->
+<!--        <button type="submit" class="btn btn-outline" id="draftBtn" onclick="setSubmitAction('draft')">Save Draft</button>-->
+<!--        <button type="button" class="btn btn-primary" id="nextBtn" onclick="navigateStep(1)">Continue →</button>-->
+<!--      </div>-->
+<!--    </div>-->
+
+<!--    <input type="hidden" name="action" id="formAction" value="submit" />-->
+<!--  </form>-->
+
+<!--  &lt;!&ndash; Special-features prompt, shown after the Photos step. Kept outside-->
+<!--       the <form> and using plain type="button"s so it can never itself-->
+<!--       trigger a submit. &ndash;&gt;-->
+<!--  <div id="specialFeatureModal" class="modal-overlay">-->
+<!--    <div class="modal-box">-->
+<!--      <h3>Any special features?</h3>-->
+<!--      <p>Things like a Braai Area, Study Hub, or Game Room that make this place stand out.</p>-->
+<!--      <div class="modal-actions">-->
+<!--        <button type="button" class="btn btn-secondary" onclick="closeSpecialModal(false)">No, skip to Review</button>-->
+<!--        <button type="button" class="btn btn-primary" onclick="closeSpecialModal(true)">Yes, add features</button>-->
+<!--      </div>-->
+<!--    </div>-->
+<!--  </div>-->
+<!--</main>-->
+
+<!--<style>-->
+<!--  .modal-overlay {-->
+<!--    display: none;-->
+<!--    position: fixed;-->
+<!--    inset: 0;-->
+<!--    background: rgba(0, 0, 0, 0.45);-->
+<!--    align-items: center;-->
+<!--    justify-content: center;-->
+<!--    z-index: 2000;-->
+<!--  }-->
+
+
+<!--   .btn-primary, .btn-outline, .btn-delete {-->
+<!--     padding: 14px 28px;-->
+<!--     font-size: 15px;-->
+<!--     font-weight: 700;-->
+<!--     min-width: 160px;-->
+<!--   }-->
+
+
+<!--  .modal-overlay.active { display: flex; }-->
+<!--  .modal-box {-->
+<!--    background: #fff;-->
+<!--    border-radius: 12px;-->
+<!--    padding: 28px;-->
+<!--    max-width: 380px;-->
+<!--    width: 90%;-->
+<!--    box-shadow: 0 12px 40px rgba(0,0,0,0.25);-->
+<!--    font-family: 'Plus Jakarta Sans', sans-serif;-->
+<!--  }-->
+<!--  /*&lt;!&ndash;making the header stick at the top &ndash;&gt;*/-->
+<!--  .topbar {-->
+<!--    position: sticky;-->
+<!--    top: 0;-->
+<!--    z-index: 100;-->
+<!--  }-->
+<!--  .modal-box h3 { margin: 0 0 8px; font-size: 1.15rem; }-->
+<!--  .modal-box p { margin: 0 0 20px; color: #666; font-size: 0.9rem; }-->
+<!--  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }-->
+<!--</style>-->
+
+<!--&lt;!&ndash;-->
+<!--  Passes the real amenity list (grouped by category) from the controller's-->
+<!--  model straight into the wizard's JS as JSON. This is what lets the-->
+<!--  Amenities step render your actual database rows instead of a hardcoded-->
+<!--  placeholder list, and keeps the two permanently in sync.-->
+<!--&ndash;&gt;-->
+<!--<script th:inline="javascript">-->
+<!--  /*<![CDATA[*/-->
+<!--  window.AMENITY_CATEGORIES = /*[[${amenityCategories}]]*/ {};-->
+<!--  /*]]>*/-->
+<!--</script>-->
+<!--<script th:src="@{/listProperty.js}" src="/listProperty.js"></script>-->
+<!--</body>-->
+<!--</html>-->
+
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
@@ -14,111 +143,127 @@
 </head>
 <body>
 
+<!-- The page title lives HERE and nowhere else. The old <h1> inside
+     .head-title repeated it a second time directly below, which is what
+     made the top of the page feel like it was stalling. -->
 <header class="topbar">
+  <a th:href="@{/landlord-index}" href="/landlord-index" class="topbar-close" aria-label="Close and go back">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+      <line x1="6" y1="6" x2="18" y2="18"></line>
+      <line x1="18" y1="6" x2="6" y2="18"></line>
+    </svg>
+  </a>
+
   <h1 class="topbar-title">List a New Property</h1>
-  <div style="display: flex; align-items: center; gap: 16px;">
-    <a th:href="@{/landlord-index}" href="/landlord-index" class="btn btn-secondary" style="display: inline-flex; align-items: center; text-decoration: none; font-size: 0.9rem; padding: 6px 14px;">
-      ← Back
-    </a>
-    <div class="avatar-initials" th:text="${userInitials != null ? userInitials : 'EH'}">EH</div>
-  </div>
+
+  <div class="avatar-initials" th:text="${userInitials != null ? userInitials : 'EH'}">EH</div>
 </header>
 
-<main class="container" style="padding-top: 2rem;">
-  <!-- Clean Back Link -->
-  <div class="head-title">
-    <h1>List a New Property</h1>
-    <p>Follow the steps below to publish your student accommodation listing.</p>
+<main class="container-split">
+
+  <!-- ══════════ LEFT: the wizard ══════════ -->
+  <div class="wizard-column">
+
+    <!-- Tracker: numbered dots carry the sequence, and ONE caption names
+         the current step. The old version printed all seven labels in
+         uppercase under the dots, which competed with the panel heading
+         directly beneath it for the same job. -->
+    <div class="tracker-card">
+      <div class="tracker-head">
+        <p class="tracker-caption">
+          <span class="tracker-step-count" id="stepCount">Step 1 of 7</span>
+          <span class="tracker-step-name" id="stepName">Basic info</span>
+        </p>
+        <span class="tracker-saved" id="saveIndicator">Saved</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progressFill"></div>
+      </div>
+      <div class="steps-row" id="stepsTracker"></div>
+    </div>
+
+    <form id="listPropertyForm" class="wizard-card" th:action="@{/listProperty}" method="post" enctype="multipart/form-data">
+
+      <div class="panel-content" id="stepPanel">
+        <!-- Rendered by JS -->
+      </div>
+
+      <div class="actions-bar">
+        <button type="button" class="btn btn-secondary" id="prevBtn" onclick="navigateStep(-1)">Back</button>
+        <div class="btn-group-right">
+          <button type="submit" class="btn btn-outline" id="draftBtn" onclick="setSubmitAction('draft')">Save draft</button>
+          <button type="button" class="btn btn-primary" id="nextBtn" onclick="navigateStep(1)">Continue</button>
+        </div>
+      </div>
+
+      <input type="hidden" name="action" id="formAction" value="submit" />
+    </form>
+
   </div>
 
-  <!-- Step Tracker -->
-  <div class="tracker-card">
-    <div class="progress-bar-bg">
-      <div class="progress-bar-fill" id="progressFill"></div>
-    </div>
-    <div class="steps-row" id="stepsTracker"></div>
-  </div>
+  <!-- ══════════ RIGHT: what students will actually see ══════════
+       This is a real preview, not decoration: it's the same card shape
+       that appears on the browse grid, built from what's been typed so
+       far. The cover slot stays honestly empty until step 5 — that gap
+       is the reason to keep going, so it shouldn't be faked. -->
+  <aside class="preview-column">
 
-  <!-- Wizard Form -->
-  <form id="listPropertyForm" class="wizard-card" th:action="@{/listProperty}" method="post" enctype="multipart/form-data">
+    <div class="preview-card" id="previewCard">
+      <p class="preview-eyebrow">How students will see this</p>
 
-    <div class="panel-content" id="stepPanel">
-      <!-- Rendered by JS -->
-    </div>
+      <div class="listing-card">
+        <div class="listing-media" id="previewMedia">
+          <div class="listing-media-empty" id="previewMediaEmpty">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            </svg>
+            <span>Cover photo comes in at step 5</span>
+          </div>
+          <img id="previewImage" alt="" />
+          <span class="listing-status">Draft</span>
+        </div>
 
-    <div class="actions-bar">
-      <button type="button" class="btn btn-secondary" id="prevBtn" onclick="navigateStep(-1)">← Back</button>
-      <div class="btn-group-right">
-        <button type="submit" class="btn btn-outline" id="draftBtn" onclick="setSubmitAction('draft')">Save Draft</button>
-        <button type="button" class="btn btn-primary" id="nextBtn" onclick="navigateStep(1)">Continue →</button>
+        <div class="listing-body">
+          <h3 class="listing-title" id="previewTitle">Untitled listing</h3>
+          <p class="listing-location" id="previewLocation">Address not set</p>
+          <div class="listing-badges" id="previewBadges"></div>
+          <div class="listing-foot">
+            <span class="listing-rent" id="previewRent">R— / month</span>
+            <span class="listing-type" id="previewType">Room type</span>
+          </div>
+        </div>
       </div>
     </div>
 
-    <input type="hidden" name="action" id="formAction" value="submit" />
-  </form>
-
-  <!-- Special-features prompt, shown after the Photos step. Kept outside
-       the <form> and using plain type="button"s so it can never itself
-       trigger a submit. -->
-  <div id="specialFeatureModal" class="modal-overlay">
-    <div class="modal-box">
-      <h3>Any special features?</h3>
-      <p>Things like a Braai Area, Study Hub, or Game Room that make this place stand out.</p>
-      <div class="modal-actions">
-        <button type="button" class="btn btn-secondary" onclick="closeSpecialModal(false)">No, skip to Review</button>
-        <button type="button" class="btn btn-primary" onclick="closeSpecialModal(true)">Yes, add features</button>
-      </div>
+    <!-- Surfaces the silent draft-downgrade rule from listProperty.js
+         BEFORE the landlord hits Publish and gets an alert about it. -->
+    <div class="readiness" id="readiness">
+      <p class="readiness-head">
+        <span id="readinessTitle">Needed to publish</span>
+        <span class="readiness-count" id="readinessCount">0 of 4</span>
+      </p>
+      <ul class="readiness-list" id="readinessList"></ul>
+      <p class="readiness-note" id="readinessNote">
+        Anything still missing saves as a draft instead of going live.
+      </p>
     </div>
-  </div>
+
+  </aside>
+
 </main>
 
-<style>
-  .modal-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.45);
-    align-items: center;
-    justify-content: center;
-    z-index: 2000;
-  }
+<div id="specialFeatureModal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-icon">✨</div>
+    <h3>Any special features?</h3>
+    <p>Things like a braai area, study hub, or game room that make this place stand out.</p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-secondary" onclick="closeSpecialModal(false)">Skip to review</button>
+      <button type="button" class="btn btn-primary" onclick="closeSpecialModal(true)">Add features</button>
+    </div>
+  </div>
+</div>
 
-
-   .btn-primary, .btn-outline, .btn-delete {
-     padding: 14px 28px;
-     font-size: 15px;
-     font-weight: 700;
-     min-width: 160px;
-   }
-
-
-  .modal-overlay.active { display: flex; }
-  .modal-box {
-    background: #fff;
-    border-radius: 12px;
-    padding: 28px;
-    max-width: 380px;
-    width: 90%;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.25);
-    font-family: 'Plus Jakarta Sans', sans-serif;
-  }
-  /*<!--making the header stick at the top -->*/
-  .topbar {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-  .modal-box h3 { margin: 0 0 8px; font-size: 1.15rem; }
-  .modal-box p { margin: 0 0 20px; color: #666; font-size: 0.9rem; }
-  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
-</style>
-
-<!--
-  Passes the real amenity list (grouped by category) from the controller's
-  model straight into the wizard's JS as JSON. This is what lets the
-  Amenities step render your actual database rows instead of a hardcoded
-  placeholder list, and keeps the two permanently in sync.
--->
 <script th:inline="javascript">
   /*<![CDATA[*/
   window.AMENITY_CATEGORIES = /*[[${amenityCategories}]]*/ {};
