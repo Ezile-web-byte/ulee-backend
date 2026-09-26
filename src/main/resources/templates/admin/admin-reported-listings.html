@@ -16,7 +16,21 @@
     <div th:replace="~{fragments/admin-sidebar :: sidebar('reported')}"></div>
 
     <div class="main">
-        <header class="topbar"><div class="topbar-title">Reported Listings</div></header>
+        <header class="topbar">
+            <div class="topbar-title">Reported Listings</div>
+            <div th:replace="~{fragments/notification-bell :: bell}"></div>
+            <!--
+              FIX: this page had no Log out button at all. The admin-sidebar
+              fragment above already defines confirmAdminLogout() (opens the
+              same styled "Log out of ULEE?" confirmation used elsewhere and
+              submits the real /logout form on confirm), so this just wires
+              a button to it — same pattern as the other admin pages.
+            -->
+            <button class="logout-btn" onclick="confirmAdminLogout()">
+                <svg viewBox="0 0 20 20"><path d="M13 3h4v14h-4M9 14l4-4-4-4M13 10H5"/></svg>
+                <span>Log out</span>
+            </button>
+        </header>
         <div class="content">
             <div class="section active">
                 <div class="panel">
@@ -40,6 +54,5 @@
         </div>
     </div>
 </div>
-<div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null)}"></div>
 </body>
 </html>

@@ -53,3 +53,4 @@ public class PanoramaController {
         return "vr-tour";
     }
 }
+

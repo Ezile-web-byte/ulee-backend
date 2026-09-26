@@ -1,0 +1,12 @@
+src/main/java/com/ulee/ulee_backend/controller/PropertyController.java
+src/main/resources/application.properties
+src/main/resources/static/landlord-sidebar-toggle.js
+src/main/resources/static/landlord-style.css
+src/main/resources/static/listProperty.css
+src/main/resources/static/listProperty.js
+src/main/resources/templates/fragments/landlord-sidebar.html
+src/main/resources/templates/landlord/edit-property.html
+src/main/resources/templates/landlord/landlord-index.html
+src/main/resources/templates/landlord/listProperty.html
+src/main/resources/templates/landlord/property-applications-detail.html
+src/main/resources/templates/landlord/property-reviews-detail.html

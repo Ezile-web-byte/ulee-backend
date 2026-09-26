@@ -16,7 +16,10 @@
     <div th:replace="~{fragments/admin-sidebar :: sidebar('review-properties')}"></div>
 
     <div class="main">
-        <header class="topbar"><div class="topbar-title">Review Properties</div></header>
+        <header class="topbar">
+            <div class="topbar-title">Review Properties</div>
+            <div th:replace="~{fragments/notification-bell :: bell}"></div>
+        </header>
         <div class="content">
             <div class="section active">
 
@@ -30,14 +33,19 @@
                 <!-- Search + academic year filter. GET so the URL stays
                      bookmarkable/shareable and matches how @RequestParam
                      search/academicYear/page are read on the server.
-                     Changing the filter always starts back at page 1. -->
-                <form th:action="@{/admin/pending-listings}" method="get"
+                     Changing the filter always starts back at page 1.
+                     The academicYear <select> is intercepted by JS below so
+                     picking a year swaps just the results panel instead of
+                     doing a full page navigation; submitting the form itself
+                     (via the Filter button, or JS disabled) still works as a
+                     normal full-page GET fallback. -->
+                <form th:action="@{/admin/pending-listings}" method="get" id="pendingFilterForm"
                       style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
                     <input type="hidden" name="page" value="1" />
-                    <input type="text" name="search" th:value="${search}"
+                    <input type="text" name="search" id="pendingSearchInput" th:value="${search}"
                            placeholder="Search by title, city, or address"
                            style="flex:1;min-width:220px;padding:8px 12px;border:1px solid #ddd;border-radius:8px" />
-                    <select name="academicYear" onchange="this.form.submit()"
+                    <select name="academicYear" id="academicYearSelect"
                             style="padding:8px 12px;border:1px solid #ddd;border-radius:8px">
                         <option value="">All academic years</option>
                         <option th:each="year : ${academicYearOptions}"
@@ -47,10 +55,10 @@
                             2026
                         </option>
                     </select>
-                    <button type="submit" class="btn btn-view">Filter</button>
+                    <button type="submit" class="btn" style="background:var(--p);color:#fff;border:1px solid var(--p)">Filter</button>
                 </form>
 
-                <div class="panel">
+                <div class="panel" id="pendingPanel">
                     <div class="panel-header">
                         <span class="panel-title">Pending Listings</span>
                         <span class="panel-sub" th:text="${totalPending} + ' awaiting review'">0 pending</span>
@@ -82,11 +90,14 @@
                                 <div class="btn-group">
                                     <a th:href="@{/admin/listing/{id}(id=${row.property.propertyID},from='pending')}" class="btn btn-view">Review</a>
                                     <form th:action="@{/admin/approve-listing/{id}(id=${row.property.propertyID})}" method="post" style="display:inline">
-                                        <button type="submit" class="btn btn-primary" style="background-color:#2e7d32;border-color:#2e7d32;color:#fff">Approve</button>
+                                        <button type="submit" class="btn"
+                                                style="background:var(--success-bg);color:var(--success);border:1px solid var(--success-border)">
+                                            Approve
+                                        </button>
                                     </form>
                                     <form th:action="@{/admin/reject-listing/{id}(id=${row.property.propertyID})}" method="post" style="display:inline"
                                           onsubmit="return confirm('Reject this listing?');">
-                                        <button type="submit" class="btn btn-danger" style="background-color:#c62828;border-color:#c62828;color:#fff">Reject</button>
+                                        <button type="submit" class="btn btn-danger">Reject</button>
                                     </form>
                                 </div>
                             </td>
@@ -119,5 +130,81 @@
     </div>
 </div>
 <div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null)}"></div>
+
+<script>
+    // Picking an academic year re-fetches /admin/pending-listings with the
+    // new filter and swaps ONLY the #pendingPanel content in place, instead
+    // of doing a full page navigation. If the selected year has no matches,
+    // the server-rendered "No listings awaiting review." message (already
+    // in the panel markup above) comes through in the swap, so the empty
+    // state shows correctly without a full reload.
+    document.addEventListener('DOMContentLoaded', function () {
+        var yearSelect = document.getElementById('academicYearSelect');
+        var searchInput = document.getElementById('pendingSearchInput');
+        var panel = document.getElementById('pendingPanel');
+        if (!yearSelect || !panel) return;
+
+        function buildUrl() {
+            var params = new URLSearchParams();
+            params.set('page', '1');
+            if (searchInput && searchInput.value) params.set('search', searchInput.value);
+            if (yearSelect.value) params.set('academicYear', yearSelect.value);
+            return '/admin/pending-listings?' + params.toString();
+        }
+
+        function loadFiltered() {
+            var url = buildUrl();
+            panel.style.opacity = '0.5';
+            fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, cache: 'no-store' })
+                .then(function (r) { return r.text(); })
+                .then(function (html) {
+                    var doc = new DOMParser().parseFromString(html, 'text/html');
+                    var newPanel = doc.getElementById('pendingPanel');
+                    if (newPanel) {
+                        newPanel.id = 'pendingPanel';
+                        panel.replaceWith(newPanel);
+                        panel = newPanel;
+                        // Re-run this same listener wiring on the freshly
+                        // swapped-in pagination links/panel.
+                        attachPaginationInterception();
+                    }
+                    window.history.replaceState({}, '', url);
+                })
+                .catch(function () {
+                    // Fall back to a normal full navigation if the fetch fails.
+                    window.location.href = url;
+                })
+                .finally(function () {
+                    panel.style.opacity = '1';
+                });
+        }
+
+        function attachPaginationInterception() {
+            panel.querySelectorAll('a.btn-view').forEach(function (link) {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    panel.style.opacity = '0.5';
+                    fetch(link.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, cache: 'no-store' })
+                        .then(function (r) { return r.text(); })
+                        .then(function (html) {
+                            var doc = new DOMParser().parseFromString(html, 'text/html');
+                            var newPanel = doc.getElementById('pendingPanel');
+                            if (newPanel) {
+                                newPanel.id = 'pendingPanel';
+                                panel.replaceWith(newPanel);
+                                panel = newPanel;
+                                attachPaginationInterception();
+                            }
+                            window.history.replaceState({}, '', link.href);
+                        })
+                        .finally(function () { panel.style.opacity = '1'; });
+                });
+            });
+        }
+
+        yearSelect.addEventListener('change', loadFiltered);
+        attachPaginationInterception();
+    });
+</script>
 </body>
 </html>

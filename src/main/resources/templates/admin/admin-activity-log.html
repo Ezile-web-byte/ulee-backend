@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ULEE — Activity Log</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/admin-style.css">
+    <script src="/admin-script.js" defer></script>
+</head>
+<body>
+<div class="shell">
+
+    <!-- No dedicated sidebar item for this page (it's reached via Recent
+         Activity's "View all" on the Dashboard), so it highlights Dashboard
+         as the closest match rather than nothing at all. -->
+    <div th:replace="~{fragments/admin-sidebar :: sidebar('dashboard')}"></div>
+
+    <div class="main">
+        <header class="topbar">
+            <div class="topbar-title">Activity Log <span>— Everything admins have done</span></div>
+            <div th:replace="~{fragments/notification-bell :: bell}"></div>
+            <button class="logout-btn" onclick="confirmAdminLogout()">
+                <svg viewBox="0 0 20 20"><path d="M13 3h4v14h-4M9 14l4-4-4-4M13 10H5"/></svg>
+                <span>Log out</span>
+            </button>
+        </header>
+
+        <div class="content">
+
+            <a href="/admin-index" style="display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:13px;text-decoration:none;margin-bottom:14px">
+                <svg viewBox="0 0 20 20" style="width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2"><path d="M12 4l-6 6 6 6"/></svg>
+                Back to Dashboard
+            </a>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <div>
+                        <span class="panel-title">Activity Log</span>
+                        <span class="panel-sub" th:text="${totalActivity} + ' total'">0 total</span>
+                    </div>
+                </div>
+
+                <div style="padding:4px 0">
+                    <div th:each="activity : ${activityRows}"
+                         style="display:flex;align-items:center;gap:12px;padding:14px 22px;border-bottom:1px solid #f2f2f2">
+                        <div style="width:34px;height:34px;border-radius:50%;background:var(--pl);color:var(--pdp);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0"
+                             th:text="${activity.initials}">??</div>
+                        <div style="flex:1;min-width:0">
+                            <div th:text="${activity.message}" style="font-size:14px">Activity description</div>
+                            <div th:text="${activity.timestamp}" style="color:var(--muted);font-size:12px;margin-top:2px">Just now</div>
+                        </div>
+                        <span class="badge"
+                              th:classappend="${activity.tone == 'positive'} ? 'badge-green' : (${activity.tone == 'negative'} ? 'badge-red' : (${activity.tone == 'warning'} ? 'badge-amber' : 'badge-blue'))"
+                              th:text="${activity.action}">Action</span>
+                    </div>
+                    <p th:if="${activityRows == null or #lists.isEmpty(activityRows)}"
+                       style="color:var(--muted);text-align:center;padding:40px 18px">
+                        No activity logged yet.
+                    </p>
+                </div>
+
+                <!-- Pagination — same fromIndex/toIndex/currentPage/totalPages
+                     shape the controller already uses on Review Properties
+                     and Reviews, just rendered here. -->
+                <div th:if="${totalPages != null and totalPages > 1}"
+                     style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:16px 22px;border-top:1px solid #eee;flex-wrap:wrap">
+                    <span style="font-size:13px;color:var(--muted)"
+                          th:text="'Showing ' + ${fromIndex} + '–' + ${toIndex} + ' of ' + ${totalActivity}">Showing 1–20 of 0</span>
+                    <div style="display:flex;gap:6px;align-items:center">
+                        <a th:if="${currentPage > 1}" th:href="@{/admin/activity-log(page=${currentPage - 1})}"
+                           style="width:30px;height:30px;border:1px solid #e5e7eb;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#555;text-decoration:none">
+                            <svg viewBox="0 0 20 20" style="width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2"><path d="M12 4l-6 6 6 6"/></svg>
+                        </a>
+                        <span style="font-size:13px;color:var(--muted);padding:0 8px" th:text="'Page ' + ${currentPage} + ' of ' + ${totalPages}">Page 1 of 1</span>
+                        <a th:if="${currentPage < totalPages}" th:href="@{/admin/activity-log(page=${currentPage + 1})}"
+                           style="width:30px;height:30px;border:1px solid #e5e7eb;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#555;text-decoration:none">
+                            <svg viewBox="0 0 20 20" style="width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2"><path d="M8 4l6 6-6 6"/></svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+</body>
+</html>

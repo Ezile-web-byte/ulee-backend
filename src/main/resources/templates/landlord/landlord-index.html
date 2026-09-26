@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
@@ -13,31 +11,9 @@
   <script src="/speak-with-ai-logic.js" defer></script>
   <script src="/speak-with-ai.js" defer></script>
   <style>
-    .status-badge--pending {
-      background: hsl(38, 92%, 50%);
-      color: #fff;
-    }
-
-    /* Initials Avatar Styling */
-    .avatar-initials {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background-color: hsl(180, 67%, 36%);
-      color: #ffffff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      font-weight: 700;
-      font-size: 14px;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      user-select: none;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-      flex-shrink: 0;
-    }
-
+    /* Everything else (logo, sidebar collapse, avatar, status badges)
+       now lives in landlord-style.css. Only this page's toast is
+       specific enough to this template to stay inline. */
     #addedToast {
       position: fixed;
       top: 20px;
@@ -66,28 +42,8 @@
 
 <div class="app-shell">
 
-  <!-- ============ SIDEBAR ============ -->
-  <aside class="sidebar">
-    <div class="brand">
-      <span class="brand-name">ULEE</span>
-      <span class="brand-sub">The Future of Student Living</span>
-    </div>
-
-    <nav class="nav-list">
-      <a th:href="@{/landlord-index}" class="nav-item active">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>
-        <span>My Properties</span>
-      </a>
-      <a th:href="@{/manage-applications}" class="nav-item">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M8 3h8a2 2 0 0 1 2 2v14l-6-3-6 3V5a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-        <span>Applications</span>
-      </a>
-      <a th:href="@{/my-property-reviews}" class="nav-item">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M12 3.5 14.4 9l6 .6-4.5 4 1.4 5.9L12 16.6 6.7 19.5l1.4-5.9-4.5-4 6-.6L12 3.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-        <span>Reviews</span>
-      </a>
-    </nav>
-  </aside>
+  <!-- ============ SIDEBAR (shared fragment — see fragments/landlord-sidebar.html) ============ -->
+  <div th:replace="~{fragments/landlord-sidebar :: sidebar('properties')}"></div>
 
   <!-- ============ MAIN ============ -->
   <main class="main">
@@ -266,6 +222,8 @@
     }
   })();
 </script>
+
+<script src="/landlord-sidebar-toggle.js" defer></script>
 
 <div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null,null,null,null, null)}"></div>
 

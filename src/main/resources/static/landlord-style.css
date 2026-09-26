@@ -623,6 +623,15 @@ button, select { font-family: inherit; }
   display: grid;
   grid-template-columns: 250px 1fr;
   min-height: 100vh;
+  transition: grid-template-columns 0.25s ease;
+}
+
+/* Collapsed state: the sidebar column itself shrinks, so .main
+   reflows into the freed-up space instead of leaving a gap. */
+@media (min-width: 721px) {
+  .app-shell.sidebar-collapsed {
+    grid-template-columns: 76px 1fr;
+  }
 }
 
 /* ==================== SIDEBAR ==================== */
@@ -631,6 +640,11 @@ button, select { font-family: inherit; }
   background: var(--surface-container-lowest);
   border-right: 1px solid var(--outline-variant);
   padding: 32px 20px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  transition: padding 0.25s ease;
 }
 
 .brand {
@@ -655,6 +669,92 @@ button, select { font-family: inherit; }
   letter-spacing: 0.08em;
   color: var(--primary);
   text-transform: uppercase;
+}
+
+/* ---- Logo mark + collapse toggle ---- */
+
+.logo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 36px;
+  padding-left: 4px;
+}
+
+.logo-mark {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.logo-icon {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: var(--primary-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-icon svg {
+  width: 20px;
+  height: 20px;
+  fill: #ffffff;
+}
+
+.logo-text {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.logo-name {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: -0.01em;
+  color: var(--primary-dark);
+  line-height: 1.1;
+}
+
+.logo-tag {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--primary);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.sidebar-toggle {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.25s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-toggle:hover {
+  background: var(--surface-tint);
+  color: var(--primary-dark);
+}
+
+.sidebar-toggle svg {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.25s ease;
 }
 
 .nav-list {
@@ -688,11 +788,45 @@ button, select { font-family: inherit; }
   box-shadow: 0 4px 12px rgba(0, 106, 106, 0.25);
 }
 
+/* ---- Collapsed state: icon-only rail. The whole logo mark
+   (icon + text) disappears — only the toggle button remains,
+   so a closed sidebar shows nothing but the way to reopen it. ---- */
+
+.sidebar.collapsed {
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+.sidebar.collapsed .logo {
+  justify-content: center;
+}
+
+.sidebar.collapsed .logo-mark {
+  display: none;
+}
+
+.sidebar.collapsed .sidebar-toggle svg {
+  transform: rotate(180deg);
+}
+
+.sidebar.collapsed .nav-item {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.sidebar.collapsed .nav-item span {
+  display: none;
+}
+
 /* ==================== MAIN / TOPBAR ==================== */
 
 .main { min-width: 0; }
 
 .topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -703,9 +837,9 @@ button, select { font-family: inherit; }
 
 .topbar-title {
   font-family: var(--font-display);
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--primary-dark);
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--on-surface);
   margin: 0;
 }
 
@@ -744,11 +878,11 @@ button, select { font-family: inherit; }
 
 .page-title {
   font-family: var(--font-display);
-  font-size: 28px;
+  font-size: 20px;
   font-weight: 800;
   letter-spacing: -0.01em;
   margin: 0 0 6px;
-  color: var(--on-surface);
+  color: var(--primary-dark);
 }
 
 .page-subtitle {
@@ -1125,21 +1259,14 @@ button, select { font-family: inherit; }
 
 @media (max-width: 720px) {
   .app-shell { grid-template-columns: 1fr; }
-  .sidebar { padding: 16px 20px; }
+  .sidebar {
+    padding: 16px 20px;
+    position: static;
+    height: auto;
+    overflow: visible;
+  }
   .page-body { padding: 24px 16px 40px; }
   .property-grid { grid-template-columns: 1fr; }
-}
-
-.topbar {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 40px;
-  background: var(--surface-container-lowest);
-  border-bottom: 1px solid var(--outline-variant);
 }
 
 /* ==================== VALIDATION / CONFIRMATION MODAL ==================== */

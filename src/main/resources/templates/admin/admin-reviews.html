@@ -21,12 +21,16 @@
 
     <header class="topbar">
       <div class="topbar-title" id="topbar-title">Reviews <span>— Moderation</span></div>
-      <div class="notif-wrap">
-        <button class="icon-btn" title="Notifications">
-          <svg viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3l-1.5 2.5h15L16 11V8a6 6 0 00-6-6zM8 16a2 2 0 004 0"/></svg>
-        </button>
-      </div>
-      <button class="logout-btn" onclick="alert('Logging out…')">
+      <div th:replace="~{fragments/notification-bell :: bell}"></div>
+      <!--
+        FIX: was onclick="alert('Logging out…')" — a placeholder that never
+        actually logged anyone out. The admin-sidebar fragment above already
+        defines confirmAdminLogout() (it opens the same styled "Log out of
+        ULEE?" confirmation used by the sidebar's admin chip, and submits the
+        real /logout form on confirm), so this button now calls that instead
+        of showing a fake alert.
+      -->
+      <button class="logout-btn" onclick="confirmAdminLogout()">
         <svg viewBox="0 0 20 20"><path d="M13 3h4v14h-4M9 14l4-4-4-4M13 10H5"/></svg>
         <span>Log out</span>
       </button>
