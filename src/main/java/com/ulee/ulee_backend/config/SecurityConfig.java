@@ -31,7 +31,14 @@ public class SecurityConfig {
                                 "/*.png", "/*.jpg", "/*.jpeg", "/*.svg", "/*.gif", "/*.webp",
                                 "/login-style.css", "/login-script.js",
                                 "/student-style.css", "/student-script.js",
-                                "/static/**", "/uploads/**"
+                                "/static/**", "/uploads/**",
+                                // The SWAI widget's chat endpoint. The widget mounts on public
+                                // pages (student dashboard, login, property detail) that
+                                // anonymous visitors can already reach, so this must stay
+                                // reachable without authentication too — otherwise the catch-all
+                                // .anyRequest().authenticated() below would 401/403 every chat
+                                // message from a logged-out visitor.
+                                "/api/swai/chat"
                         ).permitAll()
 
                         // Landlord Protected Routes (ADD `/listProperty` HERE)
