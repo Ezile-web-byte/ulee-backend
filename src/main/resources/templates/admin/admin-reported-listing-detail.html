@@ -7,6 +7,50 @@
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/admin-style.css">
   <script src="/admin-script.js" defer></script>
+  <style>
+    /* ── Custom confirm dialog (replaces the browser's plain popup) ── */
+    .ulee-confirm-backdrop {
+      position: fixed; inset: 0; z-index: 1000;
+      display: none; align-items: center; justify-content: center;
+      background: rgba(10, 30, 38, 0.45);
+      backdrop-filter: blur(3px);
+      padding: 20px;
+    }
+    .ulee-confirm-backdrop.open { display: flex; animation: uleeFade .18s ease-out; }
+    .ulee-confirm-card {
+      width: 100%; max-width: 420px; background: #fff; border-radius: 18px;
+      padding: 28px 26px 22px; text-align: center; font-family: inherit;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+      animation: uleePop .22s cubic-bezier(.2, .9, .3, 1.2);
+    }
+    .ulee-confirm-icon {
+      width: 60px; height: 60px; border-radius: 50%; margin: 0 auto 16px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ulee-confirm-icon svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .ulee-confirm-card h3 { margin: 0 0 6px; font-size: 19px; font-weight: 700; color: #12262d; }
+    .ulee-confirm-prop {
+      display: inline-block; margin: 2px 0 10px; padding: 4px 12px; border-radius: 999px;
+      background: #f2f5f6; color: #006078; font-size: 12.5px; font-weight: 600;
+    }
+    .ulee-confirm-card p { margin: 0 0 22px; font-size: 13.5px; line-height: 1.6; color: #5b6b71; }
+    .ulee-confirm-actions { display: flex; gap: 10px; }
+    .ulee-confirm-actions button {
+      flex: 1; padding: 12px 0; border-radius: 10px; font-size: 14px; font-weight: 600;
+      font-family: inherit; cursor: pointer; transition: transform .1s ease, filter .15s ease;
+    }
+    .ulee-confirm-actions button:hover { filter: brightness(0.96); }
+    .ulee-confirm-actions button:active { transform: scale(0.97); }
+    #uleeConfirmCancel { background: #fff; border: 1px solid #d9dfe2; color: #444; }
+    .ulee-confirm-card.tone-warning .ulee-confirm-icon { background: #fff4d6; color: #b57a00; }
+    .ulee-confirm-card.tone-warning #uleeConfirmOk { background: #FFDC68; border: 1px solid #F8CF4F; color: #4a3500; }
+    .ulee-confirm-card.tone-danger .ulee-confirm-icon { background: #fdeceb; color: #c62828; }
+    .ulee-confirm-card.tone-danger #uleeConfirmOk { background: #c62828; border: 1px solid #c62828; color: #fff; }
+    .ulee-confirm-card.tone-info .ulee-confirm-icon { background: #e3eef1; color: #006078; }
+    .ulee-confirm-card.tone-info #uleeConfirmOk { background: #006078; border: 1px solid #006078; color: #fff; }
+    @keyframes uleeFade { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes uleePop { from { opacity: 0; transform: translateY(12px) scale(.94); } to { opacity: 1; transform: none; } }
+  </style>
 </head>
 <body>
 <div class="shell">
@@ -165,7 +209,11 @@
               </div>
 
               <div th:if="${isFlagged}">
-                <form th:action="@{/admin/warn-landlord-for-listing/{id}(id=${property.propertyID})}" method="post">
+                <form th:action="@{/admin/warn-landlord-for-listing/{id}(id=${property.propertyID})}" method="post"
+                      class="confirm-form" th:attr="data-property=${property.title}"
+                      data-tone="info" data-title="Send an official warning?"
+                      data-text="This sends a formal warning to the landlord's notification dashboard. The complainer's identity is never included."
+                      data-button="Yes, send warning">
                   <button type="submit" class="btn btn-primary"
                           style="background:#006078;border-color:#006078;color:#fff;padding:12px 22px;border-radius:8px;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:8px;cursor:pointer">
                     <svg viewBox="0 0 20 20" style="width:14px;height:14px;fill:#fff"><path d="M3 4l14 6-14 6V4z"/></svg>
@@ -212,7 +260,10 @@
                 Suspending hides this listing from students immediately but can be reversed. Removing deletes it permanently.
               </p>
               <form th:action="@{/admin/suspend-listing/{id}(id=${property.propertyID})}" method="post"
-                    onsubmit="return confirm('Suspend this listing? It will be hidden from students immediately.');"
+                    class="confirm-form" th:attr="data-property=${property.title}"
+                    data-tone="warning" data-title="Suspend this listing?"
+                    data-text="It will be hidden from students immediately. You can reverse this later."
+                    data-button="Yes, suspend"
                     style="margin-bottom:8px">
                 <button type="submit"
                         style="width:100%;background:#fff;border:1px solid #e5a300;color:#8a5a00;padding:10px 0;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">
@@ -220,7 +271,10 @@
                 </button>
               </form>
               <form th:action="@{/admin/remove-listing/{id}(id=${property.propertyID})}" method="post"
-                    onsubmit="return confirm('Permanently remove this listing? This cannot be undone.');">
+                    class="confirm-form" th:attr="data-property=${property.title}"
+                    data-tone="danger" data-title="Remove this listing permanently?"
+                    data-text="This deletes the listing for good and cannot be undone."
+                    data-button="Yes, remove it">
                 <button type="submit"
                         style="width:100%;background:#fff;border:1px solid #f0b4b0;color:#c62828;padding:10px 0;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">
                   Remove Listing Permanently
@@ -264,6 +318,75 @@
     </div>
   </div>
 </div>
+
+<!-- Custom confirm dialog (used by Suspend / Remove) -->
+<div id="ulee-confirm" class="ulee-confirm-backdrop" aria-hidden="true">
+  <div id="uleeConfirmCard" class="ulee-confirm-card tone-warning" role="dialog" aria-modal="true" aria-labelledby="uleeConfirmTitle">
+    <div id="uleeConfirmIcon" class="ulee-confirm-icon"></div>
+    <h3 id="uleeConfirmTitle">Are you sure?</h3>
+    <div id="uleeConfirmProperty" class="ulee-confirm-prop"></div>
+    <p id="uleeConfirmText"></p>
+    <div class="ulee-confirm-actions">
+      <button type="button" id="uleeConfirmCancel">Cancel</button>
+      <button type="button" id="uleeConfirmOk">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Nice-looking confirm dialog for forms marked class="confirm-form".
+  // Clicking the form's button opens the dialog; only "OK" actually submits.
+  (function () {
+    var backdrop = document.getElementById('ulee-confirm');
+    var card = document.getElementById('uleeConfirmCard');
+    var pendingForm = null;
+
+    var ICONS = {
+      warning: '<svg viewBox="0 0 24 24"><path d="M12 3l9.5 16.5h-19L12 3z"/><path d="M12 10v4.5M12 17.5v.01"/></svg>',
+      info: '<svg viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-3-7-7-1z"/></svg>',
+      danger: '<svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/></svg>'
+    };
+
+    function openConfirm(form) {
+      var tone = form.getAttribute('data-tone') || 'warning';
+      pendingForm = form;
+      card.className = 'ulee-confirm-card tone-' + tone;
+      document.getElementById('uleeConfirmIcon').innerHTML = ICONS[tone] || ICONS.warning;
+      document.getElementById('uleeConfirmTitle').textContent = form.getAttribute('data-title') || 'Are you sure?';
+      document.getElementById('uleeConfirmText').textContent = form.getAttribute('data-text') || '';
+      document.getElementById('uleeConfirmOk').textContent = form.getAttribute('data-button') || 'Confirm';
+      var prop = form.getAttribute('data-property');
+      var propEl = document.getElementById('uleeConfirmProperty');
+      propEl.textContent = prop || '';
+      propEl.style.display = prop ? 'inline-block' : 'none';
+      backdrop.classList.add('open');
+      backdrop.setAttribute('aria-hidden', 'false');
+      document.getElementById('uleeConfirmCancel').focus();
+    }
+
+    function closeConfirm() {
+      backdrop.classList.remove('open');
+      backdrop.setAttribute('aria-hidden', 'true');
+      pendingForm = null;
+    }
+
+    document.querySelectorAll('form.confirm-form').forEach(function (form) {
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        openConfirm(form);
+      });
+    });
+
+    document.getElementById('uleeConfirmCancel').addEventListener('click', closeConfirm);
+    document.getElementById('uleeConfirmOk').addEventListener('click', function () {
+      var form = pendingForm;
+      closeConfirm();
+      if (form) form.submit(); // form.submit() skips the submit event, so no loop
+    });
+    backdrop.addEventListener('click', function (e) { if (e.target === backdrop) closeConfirm(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeConfirm(); });
+  })();
+</script>
 
 <script>
   // Clicking a contact icon toggles a small popover (see .ulee-contact-tip

@@ -80,6 +80,16 @@ public class PropertyController {
     // this, the same way LIVE_STATUS marks what's visible to students.
     private static final String DEACTIVATED_STATUS = "Inactive";
 
+    // NEW — the single rule for "can a student see and apply to this
+    // property right now". status alone isn't enough: a deactivated
+    // landlord's properties stay status="Active" (deactivateUser() only
+    // flips isAvailable, never status), and a suspended property already
+    // fails the status check but this keeps both conditions in one place
+    // so student-dashboard, search, property detail, and apply all agree.
+    private boolean isVisibleToStudents(Property property) {
+        return LIVE_STATUS.equals(property.getStatus()) && Boolean.TRUE.equals(property.getIsAvailable());
+    }
+
     // ── Small reusable helpers, used by many endpoints below ──
 
     // Resolves the logged-in user's account from their email (the Principal
@@ -198,7 +208,17 @@ public class PropertyController {
     // disappears from the dashboard.
     @GetMapping("/student-dashboard")
     public String viewStudentDashboard(Model model, Principal principal) {
-        List<Property> allProperties = propertyRepository.findByStatus(LIVE_STATUS);
+        // FIX: was findByStatus(LIVE_STATUS) alone. A deactivated landlord's
+        // properties keep status="Active" (deactivation only flips
+        // isAvailable — see AdminController.deactivateUser()), so those
+        // listings kept showing up here and were still applyable even
+        // though the landlord's own dashboard already marked them
+        // "Inactive". isVisibleToStudents() below is now the single place
+        // that decides "can a student see/apply to this" — use it anywhere
+        // else that needs the same rule instead of re-typing the check.
+        List<Property> allProperties = propertyRepository.findByStatus(LIVE_STATUS).stream()
+                .filter(this::isVisibleToStudents)
+                .collect(Collectors.toList());
 
         List<String> categoryOrder = List.of(
                 "On Campus", "Summerstrand", "Humewood", "Town", "North End", "Central", "Pier 14");
@@ -597,6 +617,18 @@ public class PropertyController {
         Property property = propertyRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Property not found with id: " + id));
 
+        // NEW — this page never checked status/isAvailable at all, so a
+        // direct link to a suspended listing, or one belonging to a
+        // deactivated landlord, was still fully viewable (and applyable —
+        // see the matching check in applyToProperty below). The owning
+        // landlord can still open their own listing here (e.g. to preview
+        // it), everyone else gets bounced to the dashboard.
+        boolean viewerIsOwner = principal != null
+                && getCurrentUser(principal).getUserID().equals(property.getLandlordID());
+        if (!isVisibleToStudents(property) && !viewerIsOwner) {
+            return "redirect:/student-dashboard?propertyUnavailable=true";
+        }
+
         List<PropertyImage> propertyImages = propertyImageRepository.findByPropertyID(id).stream()
                 .sorted((a, b) -> {
                     Integer orderA = a.getDisplayOrder() != null ? a.getDisplayOrder() : 0;
@@ -661,21 +693,28 @@ public class PropertyController {
 
     // Public search — same LIVE_STATUS rule as the student dashboard, so
     // search never surfaces a Pending/Draft/Inactive property.
+    // FIX: same isAvailable gap as viewStudentDashboard — a deactivated
+    // landlord's properties still pass the repository's status-only
+    // queries, so every branch below now also filters through
+    // isVisibleToStudents() before handing results to the template.
     @GetMapping("/search")
     public String searchProperties(
             @RequestParam(required = false) String query,
             @RequestParam(required = false) java.math.BigDecimal maxRent,
             Model model) {
 
+        List<Property> results;
         if (maxRent != null) {
-            model.addAttribute("properties",
-                    propertyRepository.findByStatusAndRentLessThanEqual(LIVE_STATUS, maxRent));
+            results = propertyRepository.findByStatusAndRentLessThanEqual(LIVE_STATUS, maxRent);
         } else if (query != null && !query.isBlank()) {
-            model.addAttribute("properties",
-                    propertyRepository.searchActive(query));
+            results = propertyRepository.searchActive(query);
         } else {
-            model.addAttribute("properties", propertyRepository.findByStatus(LIVE_STATUS));
+            results = propertyRepository.findByStatus(LIVE_STATUS);
         }
+
+        model.addAttribute("properties", results.stream()
+                .filter(this::isVisibleToStudents)
+                .collect(Collectors.toList()));
         return "properties";
     }
 
@@ -1252,6 +1291,20 @@ public class PropertyController {
 
         Integer studentID = getCurrentUser(principal).getUserID();
 
+        // NEW — nothing here previously stopped a student applying to a
+        // suspended listing or one belonging to a deactivated landlord (the
+        // "Apply" button being hidden on a page they couldn't even load is
+        // one thing, but this endpoint itself had no server-side check —
+        // a direct POST would still go through). Checked before the
+        // duplicate-application check below since there's no point telling
+        // someone "you already applied" to a listing they shouldn't be able
+        // to apply to at all.
+        Property property = propertyRepository.findById(propertyId)
+                .orElseThrow(() -> new RuntimeException("Property not found with id: " + propertyId));
+        if (!isVisibleToStudents(property)) {
+            return "redirect:/student-dashboard?propertyUnavailable=true";
+        }
+
         // One application per student per property — enforced here regardless
         // of what the UI already hides, since a resubmitted/replayed form
         // should never be able to slip a second row in.
@@ -1465,8 +1518,19 @@ public class PropertyController {
 
     // Shows the blank wizard, passing amenities (grouped by category) and
     // the semester dropdown options for the JS to render.
+    // NEW — a deactivated landlord (User.isActive == false, see
+    // AdminController.deactivateUser()) can no longer open this wizard at
+    // all. Previously nothing stopped a deactivated account from still
+    // submitting new listings even though their existing properties were
+    // hidden. Redirects back to the dashboard with a flag the toast can key
+    // off, same pattern as the other ?toast=... redirects on that page.
     @GetMapping({"/listProperty", "/list-property"})
-    public String listPropertyForm(Model model) {
+    public String listPropertyForm(Model model, Principal principal) {
+        User currentUser = getCurrentUser(principal);
+        if (Boolean.FALSE.equals(currentUser.getIsActive())) {
+            return "redirect:/landlord-index?accountDeactivated=true";
+        }
+
         List<Amenity> allAmenities = amenityRepository.findAllByOrderByCategoryAscNameAsc();
         Map<String, List<Amenity>> amenityCategories = allAmenities.stream()
                 .collect(Collectors.groupingBy(Amenity::getCategory, LinkedHashMap::new, Collectors.toList()));
@@ -1511,6 +1575,11 @@ public class PropertyController {
     // always start with isAvailable=false — a property only becomes
     // available once an Admin approves it AND the landlord marks it
     // available (see togglePropertyStatus).
+    // NEW — same deactivated-account block as listPropertyForm() above,
+    // repeated here because a deactivated landlord could otherwise still
+    // POST directly to this endpoint (e.g. resubmitting a form they had
+    // open in another tab, or a raw request) even with the GET wizard
+    // blocked.
     @PostMapping("/listProperty")
     public String listProperty(
             @RequestParam String title,
@@ -1530,7 +1599,11 @@ public class PropertyController {
             @RequestParam(value = "action", defaultValue = "submit") String action,
             Principal principal) throws IOException {
 
-        Integer landlordID = getCurrentUser(principal).getUserID();
+        User currentUser = getCurrentUser(principal);
+        if (Boolean.FALSE.equals(currentUser.getIsActive())) {
+            return "redirect:/landlord-index?accountDeactivated=true";
+        }
+        Integer landlordID = currentUser.getUserID();
         boolean isDraft = "draft".equals(action);
 
         Property property = new Property();

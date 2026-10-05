@@ -33,6 +33,12 @@
         </header>
         <div class="content">
             <div class="section active">
+                <div th:if="${actionMessage}" style="background:#e3eef1;border:1px solid #a9c9d1;border-radius:8px;padding:12px 18px;margin-bottom:16px">
+                    <strong style="color:#006078" th:text="${actionMessage}">Success</strong>
+                </div>
+                <div th:if="${actionError}" style="background:#ffebee;border:1px solid #ef5350;border-radius:8px;padding:12px 18px;margin-bottom:16px">
+                    <strong style="color:#c62828" th:text="${actionError}">Error</strong>
+                </div>
                 <div class="panel">
                     <div class="panel-header">
                         <span class="panel-title">Reported Listings</span>
@@ -48,7 +54,7 @@
                         </tr>
                         </tbody>
                     </table>
-                    <p th:if="${#lists.isEmpty(reportedProperties)}" style="padding:22px;color:var(--muted)">No reported listings.</p>
+                    <p th:if="${#lists.isEmpty(reportedProperties)}" style="padding:22px;color:var(--muted)">All caught up. There are no reported listings waiting for action.</p>
                 </div>
             </div>
         </div>

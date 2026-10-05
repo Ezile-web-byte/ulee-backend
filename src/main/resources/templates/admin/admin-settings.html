@@ -165,16 +165,16 @@
                         <form id="stg-password-form" onsubmit="return stgSubmitPassword(event)">
                             <div class="stg-field" style="margin-bottom:14px">
                                 <label>Current password</label>
-                                <input type="password" placeholder="••••••••" name="currentPassword" required minlength="8" />
+                                <input type="password" name="currentPassword" required minlength="8" />
                             </div>
                             <div class="stg-grid2">
                                 <div class="stg-field">
                                     <label>New password</label>
-                                    <input type="password" placeholder="••••••••" name="newPassword" id="stg-new-password" required minlength="8" />
+                                    <input type="password" name="newPassword" id="stg-new-password" required minlength="8" />
                                 </div>
                                 <div class="stg-field">
                                     <label>Confirm new password</label>
-                                    <input type="password" placeholder="••••••••" name="confirmPassword" id="stg-confirm-password" required minlength="8" />
+                                    <input type="password" name="confirmPassword" id="stg-confirm-password" required minlength="8" />
                                 </div>
                             </div>
                             <p class="stg-hint">Use at least 8 characters. You'll stay signed in on this device.</p>
@@ -200,7 +200,7 @@
                                     <span th:text="${sess.deviceLabel}">Device</span>
                                     <span class="stg-chip" th:if="${sess.current}">This device</span>
                                 </div>
-                                <div class="stg-row-sub" th:text="${sess.location + ' · ' + sess.ipAddress}">Location · IP address</div>
+                                <div class="stg-row-sub" th:text="${sess.location}">Location</div>
                             </div>
                             <div class="stg-row-side">
                                 <div class="stg-row-time" th:if="${sess.current}" style="color:#1a9b5b;font-weight:600">Active now</div>

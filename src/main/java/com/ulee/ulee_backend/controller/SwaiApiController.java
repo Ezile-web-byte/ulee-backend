@@ -1,7 +1,9 @@
 package com.ulee.ulee_backend.controller;
 
 import com.ulee.ulee_backend.dto.ListingSummaryDTO;
+import com.ulee.ulee_backend.model.Amenity;
 import com.ulee.ulee_backend.model.Property;
+import com.ulee.ulee_backend.model.PropertyFeature;
 import com.ulee.ulee_backend.model.PropertyImage;
 import com.ulee.ulee_backend.repository.PropertyImageRepository;
 import com.ulee.ulee_backend.repository.PropertyRepository;
@@ -9,19 +11,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Backs the "Speak with AI" widget's category-guided listing matcher
- * (speak-with-ai.js fetches this once, client-side, and filters in-browser
- * using the question tree in speak-with-ai-logic.js). A separate controller
- * — rather than another method on PropertyController — so the widget's data
- * needs stay isolated from the landlord/student page-rendering flows.
+ * Backs the "Speak with AI" widget: the category-guided listing matcher
+ * (speak-with-ai.js fetches this once, client-side, and filters in-browser)
+ * AND the AI assistant, which reads the same listing details server-side so it
+ * can answer questions about any listing. A separate controller — rather than
+ * another method on PropertyController — so the widget's data needs stay
+ * isolated from the landlord/student page-rendering flows.
  */
 @RestController
 public class SwaiApiController {
+
+    private static final int MAX_DESCRIPTION_CHARS = 300;
 
     @Autowired
     private PropertyRepository propertyRepository;
@@ -46,15 +52,60 @@ public class SwaiApiController {
                         (existing, replacement) -> existing));
 
         return available.stream()
-                .map(p -> new ListingSummaryDTO(
-                        p.getPropertyID(),
-                        p.getTitle(),
-                        p.getAddress(),
-                        p.getCity(),
-                        p.getRent(),
-                        p.getType(),
-                        p.getCommuteType(),
-                        imageLookup.get(p.getPropertyID())))
+                .map(p -> toDto(p, imageLookup.get(p.getPropertyID())))
                 .collect(Collectors.toList());
+    }
+
+    private ListingSummaryDTO toDto(Property p, String imageUrl) {
+        ListingSummaryDTO dto = new ListingSummaryDTO(
+                p.getPropertyID(),
+                p.getTitle(),
+                p.getAddress(),
+                p.getCity(),
+                p.getRent(),
+                p.getType(),
+                p.getCommuteType(),
+                imageUrl);
+
+        dto.setSuburb(p.getSuburb());
+        dto.setDeposit(p.getDeposit());
+        dto.setBedrooms(p.getBedrooms());
+        dto.setBathrooms(p.getBathrooms());
+        dto.setCapacity(p.getCapacity());
+        dto.setFurnished(p.getFurnished());
+        dto.setStudyFriendly(p.getStudyFriendly());
+        dto.setDistanceFromUniversity(p.getDistanceFromUniversity());
+        dto.setRating(p.getRating());
+        dto.setReviewCount(p.getReviewCount());
+        dto.setAvailableFrom(p.getAvailableFrom() == null ? null : p.getAvailableFrom().toString());
+        dto.setFeatures(featureNames(p));
+        dto.setDescription(shorten(p.getDescription()));
+        return dto;
+    }
+
+    /** Amenities (fixed checklist) + landlord-authored special features, comma-separated. */
+    private static String featureNames(Property p) {
+        List<String> names = new ArrayList<>();
+        try {
+            if (p.getAmenities() != null) {
+                for (Amenity a : p.getAmenities()) {
+                    if (a != null && a.getName() != null && !a.getName().isBlank()) names.add(a.getName().trim());
+                }
+            }
+            if (p.getFeatures() != null) {
+                for (PropertyFeature f : p.getFeatures()) {
+                    if (f != null && f.getName() != null && !f.getName().isBlank()) names.add(f.getName().trim());
+                }
+            }
+        } catch (Exception e) {
+            // lazy-loading problem: just leave the features out rather than failing the whole list
+        }
+        return String.join(", ", names);
+    }
+
+    private static String shorten(String text) {
+        if (text == null) return null;
+        String t = text.replaceAll("\\s+", " ").trim();
+        return t.length() <= MAX_DESCRIPTION_CHARS ? t : t.substring(0, MAX_DESCRIPTION_CHARS).trim() + "...";
     }
 }

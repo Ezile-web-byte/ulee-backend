@@ -962,7 +962,27 @@
         <button type="button" class="validation-modal-ok" id="validationModalOkBtn">Got it</button>
     </div>
 </div>
+<!--
+  PASTE THIS into the property detail template, right after the
+  "validationModalBackdrop" </div> and BEFORE the first <script> near the bottom.
 
+  (The three <link>/<script> lines for speak-with-ai.css / -logic.js / .js are
+   already in your <head>, so nothing else is needed.)
+-->
+
+<!-- ULEE AI assistant (floating chat icon) -->
+<div th:with="propertyFeatures=${
+         (property.amenities != null and !property.amenities.isEmpty() ? #strings.listJoin(property.amenities.![name], ', ') : '')
+         + (features != null and !features.isEmpty()
+             ? ((property.amenities != null and !property.amenities.isEmpty()) ? ', ' : '') + #strings.listJoin(features.![name], ', ')
+             : '')
+     }">
+    <div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(
+             ${property.propertyID}, ${property.title},
+             ${property.address + ', ' + property.city}, ${property.commuteType},
+             ${propertyFeatures})}">
+    </div>
+</div>
 <script>
     (function () {
         const thumbImgs = Array.from(document.querySelectorAll('.detail-thumb img'));

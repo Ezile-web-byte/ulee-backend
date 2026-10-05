@@ -79,15 +79,16 @@ const SwaiLogic = {
       options: [
         { label: 'Under R2 000', test: (l) => Number(l.rent) < 2000 },
         { label: 'Under R2 500', test: (l) => Number(l.rent) < 2500 },
-        { label: 'Under R3 000', test: (l) => Number(l.rent) < 3000 }
+        { label: 'Under R3 000', test: (l) => Number(l.rent) < 3000 },
+        { label: 'R3 000 and up', test: (l) => Number(l.rent) >= 3000 }
       ]
     },
     roomType: {
       prompt: 'What kind of room are you after?',
       options: [
-        { label: 'Single room', test: (l) => /single/i.test(l.type || '') },
-        { label: 'Sharing (2)', test: (l) => /sharing.*2|2.*shar/i.test(l.type || '') },
-        { label: 'Sharing (3+)', test: (l) => /sharing.*[3-9]|[3-9].*shar/i.test(l.type || '') }
+        { label: 'Single', test: (l) => /single/i.test(l.type || '') },
+        { label: 'Sharing', test: (l) => /shar/i.test(l.type || '') },
+        { label: 'Commune', test: (l) => /commun/i.test(l.type || '') }
       ]
     },
     commute: {
@@ -108,10 +109,10 @@ const SwaiLogic = {
    */
   SAMPLE_LISTINGS: [
     { id: 1, title: 'The Dunes', address: '69 Zenios Place', city: 'Summerstrand', rent: 2800, type: 'Single Room', commuteType: 'Walking distance', imageUrl: null },
-    { id: 2, title: 'Harbour View', address: '12 Marine Drive', city: 'Summerstrand', rent: 2200, type: 'Sharing (2)', commuteType: 'Walking distance', imageUrl: null },
+    { id: 2, title: 'Harbour View', address: '12 Marine Drive', city: 'Summerstrand', rent: 2200, type: 'Sharing', commuteType: 'Walking distance', imageUrl: null },
     { id: 3, title: 'Campus Court', address: '4 University Way', city: 'Summerstrand', rent: 2450, type: 'Single Room', commuteType: 'Public transport', imageUrl: null },
     { id: 4, title: 'The Pines', address: '21 Beach Road', city: 'Humewood', rent: 3200, type: 'Single Room', commuteType: 'Own car', imageUrl: null },
-    { id: 5, title: 'Kingsley Digs', address: '8 College Road', city: 'Summerstrand', rent: 1950, type: 'Sharing (3)', commuteType: 'Walking distance', imageUrl: null }
+    { id: 5, title: 'Kingsley Digs', address: '8 College Road', city: 'Summerstrand', rent: 1950, type: 'Commune', commuteType: 'Walking distance', imageUrl: null }
   ],
 
   /** Looks up a category node by key, or null if it doesn't exist. */
@@ -123,6 +124,15 @@ const SwaiLogic = {
   matchListings(listings, option) {
     if (!Array.isArray(listings) || !option || typeof option.test !== 'function') return [];
     return listings.filter(option.test);
+  },
+
+  /** Returns the listings that pass ALL of the given terminal options (filters combine). */
+  matchAll(listings, options) {
+    if (!Array.isArray(listings)) return [];
+    const tests = (options || [])
+        .filter((o) => o && typeof o.test === 'function')
+        .map((o) => o.test);
+    return listings.filter((l) => tests.every((t) => t(l)));
   },
 
   /** Short human-readable tags summarizing why a listing matched. */

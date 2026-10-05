@@ -305,7 +305,7 @@
                                         <strong style="font-size:13px" th:text="${prop.title}">Property title</strong>
                                         <span class="badge"
                                               th:classappend="${prop.status == 'Approved' or prop.status == 'Active'} ? 'badge-green' : (${prop.status == 'Pending'} ? 'badge-amber' : 'badge-red')"
-                                              th:text="${prop.status}">Status</span>
+                                              th:text="${prop.status == 'Approved' ? 'Active' : prop.status}">Status</span>
                                     </div>
                                     <div style="font-size:12px;color:var(--muted);margin-top:2px" th:text="${prop.city}">City</div>
                                 </div>
@@ -319,7 +319,7 @@
                                      style="background:var(--white);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px">
                                     <div style="font-size:13px;font-weight:600" th:text="${report.reason} ?: 'Reported'">Reason</div>
                                     <div style="font-size:12px;color:var(--muted);margin-top:2px" th:text="${report.description} ?: 'No details provided'">Description</div>
-                                    <div style="font-size:11px;color:var(--muted);margin-top:4px" th:text="${report.reportedAt} ?: 'Date not recorded'">Date</div>
+                                    <div style="font-size:11px;color:var(--muted);margin-top:4px" th:text="${report.reportedAt != null ? #temporals.format(report.reportedAt, 'MMM d, h:mm a') : 'Date not recorded'}">Date</div>
                                 </div>
                                 <p th:if="${reportsByLandlord.get(user.userID) == null or #lists.isEmpty(reportsByLandlord.get(user.userID))}"
                                    style="font-size:13px;color:var(--muted)">No reports on record.</p>

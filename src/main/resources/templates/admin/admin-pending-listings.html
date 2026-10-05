@@ -5,10 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ULEE — Review Properties</title>
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/admin-style.css">
-    <link rel="stylesheet" href="/speak-with-ai.css">
-    <script src="/speak-with-ai-logic.js" defer></script>
-    <script src="/speak-with-ai.js" defer></script>
+
+    <style>
+        /* Custom confirm dialog (replaces the browser's plain popup) */
+        .ulee-confirm-backdrop {
+            position: fixed; inset: 0; z-index: 1000;
+            display: none; align-items: center; justify-content: center;
+            background: rgba(10, 30, 38, 0.45); backdrop-filter: blur(3px); padding: 20px;
+        }
+        .ulee-confirm-backdrop.open { display: flex; animation: uleeFade .18s ease-out; }
+        .ulee-confirm-card {
+            width: 100%; max-width: 420px; background: #fff; border-radius: 18px;
+            padding: 28px 26px 22px; text-align: center; font-family: inherit;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+            animation: uleePop .22s cubic-bezier(.2, .9, .3, 1.2);
+        }
+        .ulee-confirm-icon { width: 60px; height: 60px; border-radius: 50%; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; }
+        .ulee-confirm-icon svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+        .ulee-confirm-card h3 { margin: 0 0 6px; font-size: 19px; font-weight: 700; color: #12262d; }
+        .ulee-confirm-prop { display: inline-block; margin: 2px 0 10px; padding: 4px 12px; border-radius: 999px; background: #f2f5f6; color: #006078; font-size: 12.5px; font-weight: 600; }
+        .ulee-confirm-card p { margin: 0 0 22px; font-size: 13.5px; line-height: 1.6; color: #5b6b71; }
+        .ulee-confirm-actions { display: flex; gap: 10px; }
+        .ulee-confirm-actions button { flex: 1; padding: 12px 0; border-radius: 10px; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; transition: transform .1s ease, filter .15s ease; }
+        .ulee-confirm-actions button:hover { filter: brightness(0.96); }
+        .ulee-confirm-actions button:active { transform: scale(0.97); }
+        #uleeConfirmCancel { background: #fff; border: 1px solid #d9dfe2; color: #444; }
+        .ulee-confirm-card.tone-danger .ulee-confirm-icon { background: #fdeceb; color: #c62828; }
+        .ulee-confirm-card.tone-danger #uleeConfirmOk { background: #c62828; border: 1px solid #c62828; color: #fff; }
+        @keyframes uleeFade { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes uleePop { from { opacity: 0; transform: translateY(12px) scale(.94); } to { opacity: 1; transform: none; } }
+    </style>
 </head>
 <body>
 <div class="shell">
@@ -96,7 +122,10 @@
                                         </button>
                                     </form>
                                     <form th:action="@{/admin/reject-listing/{id}(id=${row.property.propertyID})}" method="post" style="display:inline"
-                                          onsubmit="return confirm('Reject this listing?');">
+                                          class="confirm-form" th:attr="data-property=${row.property.title}"
+                                          data-title="Reject this listing?"
+                                          data-text="It will be marked as Rejected and won't be visible to students."
+                                          data-button="Yes, reject">
                                         <button type="submit" class="btn btn-danger">Reject</button>
                                     </form>
                                 </div>
@@ -205,6 +234,70 @@
         yearSelect.addEventListener('change', loadFiltered);
         attachPaginationInterception();
     });
+</script>
+<!-- Custom confirm dialog (used by Reject) -->
+<div id="ulee-confirm" class="ulee-confirm-backdrop" aria-hidden="true">
+    <div id="uleeConfirmCard" class="ulee-confirm-card tone-danger" role="dialog" aria-modal="true" aria-labelledby="uleeConfirmTitle">
+        <div id="uleeConfirmIcon" class="ulee-confirm-icon"></div>
+        <h3 id="uleeConfirmTitle">Are you sure?</h3>
+        <div id="uleeConfirmProperty" class="ulee-confirm-prop"></div>
+        <p id="uleeConfirmText"></p>
+        <div class="ulee-confirm-actions">
+            <button type="button" id="uleeConfirmCancel">Cancel</button>
+            <button type="button" id="uleeConfirmOk">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Nice-looking confirm dialog for forms marked class="confirm-form".
+    // Uses one listener on the whole page, so it also works for rows that get
+    // swapped in later (e.g. after filtering). Only the confirm button submits.
+    (function () {
+        var backdrop = document.getElementById('ulee-confirm');
+        var card = document.getElementById('uleeConfirmCard');
+        var pendingForm = null;
+        var REJECT_ICON = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg>';
+
+        function openConfirm(form) {
+            pendingForm = form;
+            card.className = 'ulee-confirm-card tone-danger';
+            document.getElementById('uleeConfirmIcon').innerHTML = REJECT_ICON;
+            document.getElementById('uleeConfirmTitle').textContent = form.getAttribute('data-title') || 'Are you sure?';
+            document.getElementById('uleeConfirmText').textContent = form.getAttribute('data-text') || '';
+            document.getElementById('uleeConfirmOk').textContent = form.getAttribute('data-button') || 'Confirm';
+            var prop = form.getAttribute('data-property');
+            var propEl = document.getElementById('uleeConfirmProperty');
+            propEl.textContent = prop || '';
+            propEl.style.display = prop ? 'inline-block' : 'none';
+            backdrop.classList.add('open');
+            backdrop.setAttribute('aria-hidden', 'false');
+            document.getElementById('uleeConfirmCancel').focus();
+        }
+
+        function closeConfirm() {
+            backdrop.classList.remove('open');
+            backdrop.setAttribute('aria-hidden', 'true');
+            pendingForm = null;
+        }
+
+        document.addEventListener('submit', function (e) {
+            var form = e.target;
+            if (form && form.classList && form.classList.contains('confirm-form')) {
+                e.preventDefault();
+                openConfirm(form);
+            }
+        });
+
+        document.getElementById('uleeConfirmCancel').addEventListener('click', closeConfirm);
+        document.getElementById('uleeConfirmOk').addEventListener('click', function () {
+            var form = pendingForm;
+            closeConfirm();
+            if (form) form.submit(); // form.submit() skips the submit event, so no loop
+        });
+        backdrop.addEventListener('click', function (e) { if (e.target === backdrop) closeConfirm(); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeConfirm(); });
+    })();
 </script>
 </body>
 </html>

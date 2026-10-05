@@ -6,6 +6,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/admin-style.css">
     <script src="/admin-script.js" defer></script>
+    <style>
+        /* Status badges: Suspended = amber like the Suspend/Unsuspend buttons,
+           Rejected = red exactly like the Reject button */
+        .badge-suspended { background: #fff8e1; color: #8a5a00; border: 1px solid #e5a300; }
+        .badge-rejected  { background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border); }
+    </style>
 </head>
 <body>
 <div class="shell">
@@ -27,8 +33,8 @@
                         </div>
                         <span th:if="${property.status == 'Approved' or property.status == 'Active'}" class="badge badge-green"><span class="badge-dot"></span>Approved</span>
                         <span th:if="${property.status == 'Pending' or property.status == null}" class="badge badge-amber"><span class="badge-dot"></span>Pending</span>
-                        <span th:if="${property.status == 'Rejected'}" class="badge badge-red"><span class="badge-dot"></span>Rejected</span>
-                        <span th:if="${property.status == 'Suspended'}" class="badge badge-red"><span class="badge-dot"></span>Suspended</span>
+                        <span th:if="${property.status == 'Rejected'}" class="badge badge-rejected"><span class="badge-dot"></span>Rejected</span>
+                        <span th:if="${property.status == 'Suspended'}" class="badge badge-suspended"><span class="badge-dot"></span>Suspended</span>
                     </div>
 
                     <div style="padding:22px;display:flex;flex-direction:column;gap:18px">
@@ -159,9 +165,9 @@
                     <div class="review-grid">
                         <div class="review-card" th:each="review : ${reviews}">
                             <div class="review-top">
-                                <div class="r-avatar" th:text="'S' + ${review.studentID}">S#</div>
+                                <div class="r-avatar" th:text="${reviewerInitials.get(review.studentID)} ?: ('S' + ${review.studentID})">S#</div>
                                 <div>
-                                    <div class="review-name" th:text="'Student ID: ' + ${review.studentID}">Student</div>
+                                    <div class="review-name" th:text="${reviewerNames.get(review.studentID)} ?: ('Student ID: ' + ${review.studentID})">Student</div>
                                 </div>
                             </div>
                             <div class="review-text" th:text="${review.comment} ?: 'No comment provided'">Review text</div>

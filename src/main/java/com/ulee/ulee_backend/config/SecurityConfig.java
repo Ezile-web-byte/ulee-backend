@@ -49,6 +49,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/", "/student-dashboard", "/property/**", "/search",
                                 "/register", "/login",
+                                // "Speak with AI" widget endpoints (listings for the chips, chat for free text)
+                                "/api/listings", "/api/chat",
                                 "/images/**", "/*.css", "/*.js",
                                 "/*.png", "/*.jpg", "/*.jpeg", "/*.svg", "/*.gif", "/*.webp",
                                 "/login-style.css", "/login-script.js",

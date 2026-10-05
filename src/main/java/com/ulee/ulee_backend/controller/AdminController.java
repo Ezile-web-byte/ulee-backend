@@ -206,6 +206,34 @@ public class AdminController {
                     n.getPropertyID() != null ? "/admin/reported-listing/" + n.getPropertyID() : null));
         }
 
+        // NEW — Listings suspended and accounts deactivated. Neither Property
+        // nor User has its own "suspendedAt"/"deactivatedAt" timestamp column,
+        // but suspendListing() and deactivateUser() already call logActivity()
+        // with action "Suspended" / "Deactivated" for the Dashboard's Recent
+        // Activity feed — so this reuses that same AdminActivityLog table
+        // instead of adding new columns just for the bell.
+        for (com.ulee.ulee_backend.model.AdminActivityLog log : adminActivityLogRepository.findAllByOrderByTimestampDesc()) {
+            if (log.getTimestamp() == null || log.getAction() == null) continue;
+
+            if ("Suspended".equals(log.getAction())) {
+                items.add(new NotificationFeedItem(
+                        "suspended-" + log.getId(),
+                        "suspended",
+                        log.getMessage(),
+                        log.getTimestamp(),
+                        log.getTimestamp().format(timeFormat),
+                        "/admin/listings"));
+            } else if ("Deactivated".equals(log.getAction())) {
+                items.add(new NotificationFeedItem(
+                        "deactivated-" + log.getId(),
+                        "deactivated",
+                        log.getMessage(),
+                        log.getTimestamp(),
+                        log.getTimestamp().format(timeFormat),
+                        "/admin/manage-users"));
+            }
+        }
+
         items.sort(Comparator.comparing(NotificationFeedItem::getTimestamp, Comparator.reverseOrder()));
         List<NotificationFeedItem> trimmed = items.size() > 10 ? items.subList(0, 10) : items;
 
@@ -518,7 +546,35 @@ public class AdminController {
         // already maps "Approved" back to Active, so this is the only place
         // that needed to change.
         property.setStatus("Active");
+        // FIX: approving a listing only ever flipped status to "Active" and
+        // never touched isAvailable, so a property created with
+        // isAvailable=false stayed "Unavailable"/"Inactive" on the student
+        // site and the landlord dashboard even after admin approval — those
+        // pages key off isAvailable, not status. Approval is meant to make
+        // the listing live, so it now sets both together, same as
+        // unsuspendListing() already does for the same reason.
+        property.setIsAvailable(true);
         propertyRepository.save(property);
+
+        // NEW — landlords previously got zero notification when a listing
+        // was approved. The DB never stores "Approved" (see the comment
+        // above — internally this is just status="Active"), but the
+        // landlord-facing message uses "Approved" throughout since that's
+        // the concept the admin UI actually shows and acted on; nothing
+        // here changes the underlying status value itself.
+        Optional<User> approvedLandlordOpt = userRepository.findById(property.getLandlordID());
+        approvedLandlordOpt.ifPresent(landlordUser -> {
+            com.ulee.ulee_backend.model.Notification notification = new com.ulee.ulee_backend.model.Notification();
+            notification.setLandlordID(landlordUser.getUserID());
+            notification.setPropertyID(property.getPropertyID());
+            notification.setTitle("Listing Approved: " + property.getTitle());
+            notification.setMessage("Dear " + safeName(landlordUser) + ",\n\nGood news — \"" + property.getTitle()
+                    + "\" has been approved and is now live for students to view and apply to.");
+            notification.setCreatedAt(LocalDateTime.now());
+            notification.setIsRead(false);
+            notificationRepository.save(notification);
+        });
+
         logActivity("Approved", "Approved \"" + property.getTitle() + "\"");
         redirectAttributes.addFlashAttribute("actionMessage", "Approved \"" + property.getTitle() + "\"");
         return "redirect:/admin/pending-listings";
@@ -534,6 +590,23 @@ public class AdminController {
         Property property = propertyOpt.get();
         property.setStatus("Rejected");
         propertyRepository.save(property);
+
+        // NEW — same reasoning as approveListing() above: notify the
+        // landlord so a rejection isn't only visible by the listing
+        // silently disappearing from "Pending" on their own dashboard.
+        Optional<User> rejectedLandlordOpt = userRepository.findById(property.getLandlordID());
+        rejectedLandlordOpt.ifPresent(landlordUser -> {
+            com.ulee.ulee_backend.model.Notification notification = new com.ulee.ulee_backend.model.Notification();
+            notification.setLandlordID(landlordUser.getUserID());
+            notification.setPropertyID(property.getPropertyID());
+            notification.setTitle("Listing Rejected: " + property.getTitle());
+            notification.setMessage("Dear " + safeName(landlordUser) + ",\n\n\"" + property.getTitle()
+                    + "\" was not approved. Please review your listing details and resubmit, or contact support if you have questions.");
+            notification.setCreatedAt(LocalDateTime.now());
+            notification.setIsRead(false);
+            notificationRepository.save(notification);
+        });
+
         logActivity("Rejected", "Rejected \"" + property.getTitle() + "\"");
         redirectAttributes.addFlashAttribute("actionMessage", "Rejected \"" + property.getTitle() + "\"");
         return "redirect:/admin/pending-listings";
@@ -820,9 +893,16 @@ public class AdminController {
 
         redirectAttributes.addFlashAttribute("actionMessage",
                 "Official warning sent to " + safeName(landlordUser) + "'s notifications (warning #" + (current + 1) + ")");
-        return "redirect:/admin/reported-listings";
+        return "redirect:/admin/reported-listing/" + propertyId;
     }
 
+    // FIX: suspending a listing recorded the action in the Dashboard's
+    // Recent Activity log (via logActivity below) but never actually told
+    // the landlord — no Notification row was created, so the landlord's own
+    // bell (fragments/landlord-notifications.html) never showed anything
+    // and they'd only discover the suspension by noticing the listing was
+    // gone. Now mirrors the same in-app notification pattern already used
+    // by warnLandlordForListing()/warnUser()/deactivateUser().
     @PostMapping("/admin/suspend-listing/{id}")
     public String suspendListing(@PathVariable Integer id, RedirectAttributes redirectAttributes) {
         Optional<Property> propertyOpt = propertyRepository.findById(id);
@@ -836,6 +916,23 @@ public class AdminController {
         property.setIsReported(false);
         property.setReportReason(null);
         propertyRepository.save(property);
+
+        // NEW — notify the landlord
+        Optional<User> landlordUserOpt = userRepository.findById(property.getLandlordID());
+        if (landlordUserOpt.isPresent()) {
+            User landlordUser = landlordUserOpt.get();
+            com.ulee.ulee_backend.model.Notification notification = new com.ulee.ulee_backend.model.Notification();
+            notification.setLandlordID(landlordUser.getUserID());
+            notification.setPropertyID(id);
+            notification.setTitle("Listing Suspended: " + property.getTitle());
+            notification.setMessage("Dear " + safeName(landlordUser) + ",\n\n\"" + property.getTitle()
+                    + "\" has been suspended by an administrator due to unresolved reports. "
+                    + "It is no longer visible to students. Please contact support if you believe this was done in error.");
+            notification.setCreatedAt(LocalDateTime.now());
+            notification.setIsRead(false);
+            notificationRepository.save(notification);
+        }
+
         logActivity("Suspended", "Suspended \"" + property.getTitle() + "\"");
         redirectAttributes.addFlashAttribute("actionMessage", "Suspended \"" + property.getTitle() + "\"");
         return "redirect:/admin/reported-listings";
@@ -905,6 +1002,10 @@ public class AdminController {
         reportRepository.deleteAll(reportRepository.findByPropertyIDOrderByReportedAtAsc(propertyId));
         reviewRepository.deleteAll(reviewRepository.findByPropertyID(propertyId));
         propertyImageRepository.deleteAll(propertyImageRepository.findByPropertyID(propertyId));
+        // FIX: application_document has an FK to application.applicationID
+        // (application_document_ibfk_1), so its rows must go before the
+        // applications themselves or the delete fails.
+        jdbcTemplate.update("DELETE FROM application_document WHERE applicationID IN (SELECT applicationID FROM application WHERE propertyID = ?)", propertyId);
         applicationRepository.deleteAll(applicationRepository.findByPropertyIDIn(List.of(propertyId)));
         // Remaining tables with an FK to property.propertyID that don't have
         // a Spring Data repository wired into this controller. NOTE: "report"
@@ -1205,7 +1306,20 @@ public class AdminController {
         model.addAttribute("property", property);
         model.addAttribute("images", propertyImageRepository.findByPropertyID(id));
         model.addAttribute("landlord", landlordUserOpt.orElse(null));
-        model.addAttribute("reviews", reviewRepository.findByPropertyID(id));
+        var propertyReviews = reviewRepository.findByPropertyID(id);
+        Map<Integer, String> reviewerNames = new HashMap<>();
+        Map<Integer, String> reviewerInitials = new HashMap<>();
+        for (var r : propertyReviews) {
+            if (r.getStudentID() != null && !reviewerNames.containsKey(r.getStudentID())) {
+                userRepository.findById(r.getStudentID()).ifPresent(u -> {
+                    reviewerNames.put(r.getStudentID(), safeName(u));
+                    reviewerInitials.put(r.getStudentID(), initialsFor(u));
+                });
+            }
+        }
+        model.addAttribute("reviews", propertyReviews);
+        model.addAttribute("reviewerNames", reviewerNames);
+        model.addAttribute("reviewerInitials", reviewerInitials);
         model.addAttribute("validationIssues", validationIssues);
         model.addAttribute("isValid", validationIssues.isEmpty());
         model.addAttribute("totalListings", propertyRepository.findAll().size());
@@ -1308,8 +1422,11 @@ public class AdminController {
 
         // Properties owned per landlord — powers the "Properties owned" panel
         // when a landlord's row is expanded.
+        // Rejected listings are left out of this page entirely (the admin
+        // Users view only shows live/pending listings).
         Map<Integer, List<Property>> propertiesByLandlord = allProperties.stream()
                 .filter(p -> p.getLandlordID() != null)
+                .filter(p -> !"Rejected".equalsIgnoreCase(p.getStatus()))
                 .collect(Collectors.groupingBy(Property::getLandlordID));
 
         // Reports across every property a landlord owns — powers the
@@ -1461,6 +1578,9 @@ public class AdminController {
         // already blocks their next login via isActive, but nothing
         // previously told them why. This won't reach them before that
         // blocked attempt, but it's waiting for them once reactivated.
+        // NOTE: message now also mentions that new listings can't be added
+        // while deactivated (see PropertyController's listPropertyForm /
+        // listProperty, which now check isActive before allowing either).
         com.ulee.ulee_backend.model.Notification notification = new com.ulee.ulee_backend.model.Notification();
         if (landlordRepository.existsById(id)) {
             notification.setLandlordID(id);
@@ -1469,6 +1589,7 @@ public class AdminController {
         }
         notification.setTitle("Account Deactivated");
         notification.setMessage("Dear " + safeName(user) + ",\n\nYour ULEE account has been deactivated by an administrator. "
+                + "While deactivated, you will not be able to add new property listings. "
                 + "If you believe this was done in error, please contact support.");
         notification.setCreatedAt(LocalDateTime.now());
         notification.setIsRead(false);
@@ -1533,7 +1654,7 @@ public class AdminController {
                         .map(s -> new SessionView(
                                 s.getId(),
                                 s.getDeviceLabel() != null ? s.getDeviceLabel() : "Unknown device",
-                                (s.getLocation() != null && !s.getLocation().isBlank()) ? s.getLocation() : "Unknown location",
+                                resolveLocation(s.getIpAddress(), s.getLocation()),
                                 s.getIpAddress() != null ? s.getIpAddress() : "Unknown IP",
                                 currentSessionId.equals(s.getSessionId()),
                                 s.getLastActiveAt() != null ? s.getLastActiveAt().format(timeFormat) : ""))
@@ -1558,6 +1679,68 @@ public class AdminController {
         }
         addSidebarCounts(model);
         return "admin/admin-settings";
+    }
+
+    /** Pulls a simple "name":"value" text field out of a small JSON reply. */
+    private String jsonField(String json, String name) {
+        java.util.regex.Matcher m = java.util.regex.Pattern
+                .compile("\"" + name + "\"\\s*:\\s*\"([^\"]*)\"").matcher(json);
+        return m.find() ? m.group(1) : "";
+    }
+
+    // Remembers lookups so each IP is only looked up once while the app runs.
+    private final java.util.concurrent.ConcurrentHashMap<String, String> ipLocationCache =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
+    /**
+     * Turns a session's IP address into a readable place.
+     * - uses the stored location if one was already saved
+     * - your own computer / home network  -> "Local device"
+     * - a public IP -> looked up on ipwho.is (free, no key), e.g.
+     *   "Gqeberha, South Africa". If the lookup fails, "Unknown location".
+     */
+    private String resolveLocation(String ip, String storedLocation) {
+        if (storedLocation != null && !storedLocation.isBlank()) return storedLocation;
+        if (ip == null || ip.isBlank()) return "Unknown location";
+
+        String cached = ipLocationCache.get(ip);
+        if (cached != null) return cached;
+
+        String result = "Unknown location";
+        try {
+            java.net.InetAddress addr = java.net.InetAddress.getByName(ip);
+            // When the app runs on your own computer, the session IP is the
+            // computer itself (not a real internet address). In that case we
+            // look up this machine's public internet address instead, which
+            // gives the place your connection is in.
+            boolean isLocal = addr.isLoopbackAddress() || addr.isAnyLocalAddress()
+                    || addr.isSiteLocalAddress() || addr.isLinkLocalAddress();
+            if (isLocal) result = "Local device";
+
+            java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder()
+                    .connectTimeout(java.time.Duration.ofSeconds(2))
+                    .build();
+            java.net.http.HttpRequest req = java.net.http.HttpRequest.newBuilder()
+                    .uri(java.net.URI.create("https://ipwho.is/" + (isLocal ? "" : ip) + "?fields=success,city,country"))
+                    .timeout(java.time.Duration.ofSeconds(2))
+                    .GET()
+                    .build();
+            String body = client.send(req, java.net.http.HttpResponse.BodyHandlers.ofString()).body();
+            // Read the few fields we need straight from the text, so no extra
+            // JSON library is required.
+            if (java.util.regex.Pattern.compile("\"success\"\\s*:\\s*true").matcher(body).find()) {
+                String city = jsonField(body, "city");
+                String country = jsonField(body, "country");
+                String place = (city.isBlank() ? "" : city + ", ") + country;
+                if (!place.isBlank()) result = place;
+            }
+        } catch (Exception e) {
+            // lookup failed (no internet, timeout, bad IP) — fall through to
+            // "Unknown location" and do NOT cache it, so it can retry next time.
+            return result;
+        }
+        ipLocationCache.put(ip, result);
+        return result;
     }
 
     /** Read-only row for Settings > Security > Active Sessions. */
@@ -1740,6 +1923,9 @@ public class AdminController {
                 // only ever cleaned up by propertyID (in deletePropertyCascade),
                 // never here.
                 jdbcTemplate.update("DELETE FROM review WHERE studentID = ?", id);
+                // FIX: clear the documents attached to this student's
+                // applications first (application_document FK).
+                jdbcTemplate.update("DELETE FROM application_document WHERE applicationID IN (SELECT applicationID FROM application WHERE studentID = ?)", id);
                 jdbcTemplate.update("DELETE FROM application WHERE studentID = ?", id);
                 jdbcTemplate.update("DELETE FROM savedproperty WHERE studentID = ?", id);
                 studentRepository.deleteById(id);

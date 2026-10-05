@@ -91,6 +91,13 @@
             color: var(--on-surface);
             margin: 0;
         }
+
+        /* NEW — topbar layout so the bell + avatar sit side by side, right-aligned */
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
     </style>
 </head>
 <body>
@@ -125,7 +132,11 @@
 
         <header class="topbar">
             <h1 class="topbar-title">Applications Management</h1>
-            <div class="avatar-initials" th:text="${userInitials != null ? userInitials : 'EH'}">EH</div>
+            <!-- CHANGED — wrapped the bell + avatar in one flex row instead of just the bare avatar -->
+            <div class="topbar-actions">
+                <div th:replace="~{fragments/landlord-notifications :: bell}"></div>
+                <div class="avatar-initials" th:text="${userInitials != null ? userInitials : 'EH'}">EH</div>
+            </div>
         </header>
 
         <div class="page-body">
