@@ -476,6 +476,8 @@
    Everything below is live.
    ========================================================= */
 
+
+
  :root {
      --p:         hsl(180, 67%, 47%);
      --pd:        hsl(180, 67%, 36%);
@@ -512,8 +514,8 @@
      --r:    14px;
      --r-lg: 20px;
 
-     --font-body: 'Plus Jakarta Sans', sans-serif;
-     --font-display: 'Playfair Display', serif;
+     --font-body: 'Hanken Grotesk', sans-serif;
+     --font-display: 'Plus Jakarta Sans', sans-serif;
  }
 
  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1200,4 +1202,14 @@
 
  @media (prefers-reduced-motion: reduce) {
      *, *::before, *::after { transition: none !important; animation: none !important; }
+ }
+ /* Numeric fields: no up/down arrows */
+ input[type="number"]::-webkit-outer-spin-button,
+ input[type="number"]::-webkit-inner-spin-button {
+     -webkit-appearance: none;
+     margin: 0;
+ }
+ input[type="number"] {
+     -moz-appearance: textfield;
+     appearance: textfield;
  }

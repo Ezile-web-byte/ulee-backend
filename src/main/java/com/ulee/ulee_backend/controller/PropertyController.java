@@ -30,6 +30,7 @@ import java.security.Principal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Comparator;
 
 import com.ulee.ulee_backend.repository.PropertyImageRepository;
 
@@ -1057,11 +1058,12 @@ public class PropertyController {
         }
 
         // Most recent first
-        rows.sort((a, b) -> {
-            if (a.getApplicationDate() == null) return 1;
-            if (b.getApplicationDate() == null) return -1;
-            return b.getApplicationDate().compareTo(a.getApplicationDate());
-        });
+        // Pending applications first; anything already decided (Accepted or
+// Rejected) drops to the end of the list. Within each group, newest first.
+        rows.sort(Comparator
+                .comparing((ApplicationRowView r) -> "Pending".equalsIgnoreCase(r.getStatus()) ? 0 : 1)
+                .thenComparing(ApplicationRowView::getApplicationDate,
+                        Comparator.nullsLast(Comparator.reverseOrder())));
 
         long totalCount = rows.size();
         long pendingCount = rows.stream().filter(r -> "Pending".equalsIgnoreCase(r.getStatus())).count();
@@ -1147,21 +1149,40 @@ public class PropertyController {
             throw new RuntimeException("You do not have permission to manage this application");
         }
 
-        if ("Accepted".equalsIgnoreCase(status)) {
+        String redirectBase = "redirect:/property-applications/" + property.getPropertyID();
+
+        // Only the three statuses the UI can send are allowed. Anything else is
+        // ignored, so a hand-crafted POST can't write arbitrary text into the column.
+        boolean validStatus = "Accepted".equalsIgnoreCase(status)
+                || "Rejected".equalsIgnoreCase(status)
+                || "Pending".equalsIgnoreCase(status);
+        if (!validStatus) {
+            return redirectBase;
+        }
+
+        // An accepted student can't be rejected. The Reject button is hidden for
+        // accepted cards in the template, and this stops a replayed or
+        // hand-crafted POST from doing it anyway.
+        if ("Rejected".equalsIgnoreCase(status) && "Accepted".equalsIgnoreCase(application.getStatus())) {
+            return redirectBase;
+        }
+
+        // Accepting is capped by the property's capacity. Skipped when the
+        // application is already Accepted, so re-submitting can't trip the cap.
+        if ("Accepted".equalsIgnoreCase(status) && !"Accepted".equalsIgnoreCase(application.getStatus())) {
             long acceptedCount = applicationRepository.findByPropertyIDIn(List.of(property.getPropertyID())).stream()
                     .filter(a -> "Accepted".equalsIgnoreCase(a.getStatus()))
                     .count();
             int capacity = property.getCapacity() != null ? property.getCapacity() : 0;
             if (acceptedCount >= capacity) {
-                // Refuse the accept; the applications page shows a toast
-                // for this exact query flag.
-                return "redirect:/property-applications/" + property.getPropertyID() + "?capacityFull=true";
+                // The applications page shows a toast for this exact query flag.
+                return redirectBase + "?capacityFull=true";
             }
         }
 
         application.setStatus(status);
         applicationRepository.save(application);
-        return "redirect:/property-applications/" + property.getPropertyID();
+        return redirectBase;
     }
 
     // Marks that the landlord has emailed the student directly about their

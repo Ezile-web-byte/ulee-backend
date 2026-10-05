@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title th:text="${property.title} + ' | Reviews | ULEE'">Reviews | ULEE</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Hanken+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=Fredoka:wght@500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/landlord-style.css">
   <link rel="stylesheet" href="/landlord-reviews.css">
   <style>
@@ -26,8 +26,8 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      color: var(--on-surface-variant);
-      font-size: 13px;
+      color: var(--primary-dark);
+      font-size: 14px;
       background: var(--surface-container-lowest);
       padding: 8px 14px;
       border-radius: var(--radius-sm);
@@ -38,7 +38,7 @@
       background: transparent;
       color: var(--on-surface);
       font-weight: 600;
-      font-size: 13px;
+      font-size: 14px;
       cursor: pointer;
       outline: none;
     }
@@ -63,63 +63,213 @@
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 18px;
-      margin-bottom: 24px;
+      margin-bottom: 26px;
     }
+
+    /* Navy gradient + teal border — same look as the Edit Property banner */
     .rating-metric-card {
-      background: var(--surface-container-lowest);
-      border: 1px solid var(--outline-variant);
-      border-radius: var(--radius-md);
-      padding: 18px 20px;
-      box-shadow: var(--shadow-sm);
+      position: relative;
+      overflow: hidden;
+      min-height: 138px;
+      padding: 22px 26px 38px;
+      border: 1.5px solid rgba(20, 200, 190, 0.45);
+      border-radius: var(--radius-lg);
+      background: linear-gradient(115deg, #071C2D 0%, #0A3A48 55%, #0F6C70 100%);
+      box-shadow: 0 6px 18px rgba(7, 28, 45, 0.18);
+      color: #fff;
       cursor: pointer;
-      transition: all 0.15s ease;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      animation: rm-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
     }
+    .rating-metric-card:nth-child(2) { animation-delay: 0.12s; }
+    .rating-metric-card:nth-child(3) { animation-delay: 0.24s; }
+
     .rating-metric-card:hover {
-      box-shadow: var(--shadow-surface);
-      border-color: var(--accent-border);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 28px rgba(7, 28, 45, 0.28);
     }
+
+    /* The filter that's currently applied glows brighter teal */
     .rating-metric-card--active {
-      border-color: var(--primary-dark);
-      box-shadow: 0 0 0 2px var(--primary-tint);
+      border-color: #14C8BE;
+      box-shadow: 0 0 0 3px rgba(20, 200, 190, 0.35), 0 12px 28px rgba(7, 28, 45, 0.28);
     }
+
+    /* Poor ratings: same navy, with a warm wine tint */
+    .rating-metric-card--poor {
+      border-color: rgba(255, 130, 130, 0.45);
+      background: linear-gradient(115deg, #071C2D 0%, #2A2340 60%, #4A2A40 100%);
+    }
+    .rating-metric-card--poor.rating-metric-card--active {
+      border-color: #FF8A8A;
+      box-shadow: 0 0 0 3px rgba(255, 138, 138, 0.35), 0 12px 28px rgba(7, 28, 45, 0.28);
+    }
+
+    /* Light sweep across the card */
+    .rating-metric-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -60%;
+      width: 40%;
+      height: 100%;
+      background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+      transform: skewX(-20deg);
+      animation: rm-shine 7s ease-in-out infinite;
+      pointer-events: none;
+    }
+    /* Breathing glow in the corner */
+    .rating-metric-card::after {
+      content: '';
+      position: absolute;
+      top: -60px;
+      right: -40px;
+      width: 190px;
+      height: 190px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(20, 200, 190, 0.28) 0%, transparent 70%);
+      animation: rm-pulse 4.5s ease-in-out infinite;
+      pointer-events: none;
+    }
+    .rating-metric-card--poor::after {
+      background: radial-gradient(circle, rgba(255, 130, 130, 0.25) 0%, transparent 70%);
+    }
+
+    .rating-metric-copy { position: relative; z-index: 2; }
+
     .rating-metric-label {
-      font-size: 11.5px;
+      font-size: 13px;
       font-weight: 700;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.07em;
       text-transform: uppercase;
-      color: var(--outline);
+      color: rgba(255, 255, 255, 0.78);
       margin: 0 0 8px;
     }
     .rating-metric-value {
       font-family: var(--font-display);
-      font-size: 26px;
+      font-size: 42px;
       font-weight: 800;
-      color: var(--on-surface);
+      line-height: 1;
+      color: #fff;
       display: flex;
       align-items: baseline;
-      gap: 4px;
+      gap: 6px;
     }
     .rating-metric-value .unit {
-      font-size: 13px;
+      font-size: 15px;
       font-weight: 600;
-      color: var(--on-surface-variant);
+      color: rgba(255, 255, 255, 0.7);
     }
     .rating-metric-stars {
       display: block;
       color: var(--accent-yellow);
-      font-size: 13px;
-      letter-spacing: 1px;
-      margin-top: 4px;
+      font-size: 17px;
+      letter-spacing: 2px;
+      margin-top: 8px;
     }
-    .rating-metric-card--good .rating-metric-value { color: var(--primary-dark); }
-    .rating-metric-card--poor .rating-metric-value { color: var(--alert); }
+    .rating-metric-card--good .rating-metric-value { color: #7DF0E6; }
+    .rating-metric-card--poor .rating-metric-value { color: #FF9E9E; }
+
+    .rm-stars {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 52%;
+      height: 80%;
+      z-index: 1;
+    }
+    .rm-stars .star { animation: rm-twinkle 4s ease-in-out infinite; animation-delay: var(--d, 0s); }
+
+    .rm-wave {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 200%;
+      height: 26px;
+      z-index: 1;
+      animation: rm-wave 16s linear infinite;
+    }
+    .rm-wave .w-back  { fill: rgba(14, 116, 128, 0.55); }
+    .rm-wave .w-front { fill: #071C2D; stroke: #14C8BE; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+    .rating-metric-card--poor .rm-wave .w-back  { fill: rgba(150, 70, 90, 0.5); }
+    .rating-metric-card--poor .rm-wave .w-front { stroke: #FF8A8A; }
+
+    @keyframes rm-in {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: none; }
+    }
+    @keyframes rm-shine {
+      0%, 55% { left: -60%; }
+      100%    { left: 130%; }
+    }
+    @keyframes rm-pulse {
+      0%, 100% { opacity: 0.6; transform: scale(1); }
+      50%      { opacity: 1;   transform: scale(1.12); }
+    }
+    @keyframes rm-twinkle { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+    @keyframes rm-wave    { to { transform: translateX(-50%); } }
 
     .property-name-heading {
       font-family: var(--font-display);
       font-weight: 800;
-      font-size: 22px;
-      color: var(--on-surface);
+      font-size: 24px;
+      color: var(--primary-dark);
       margin: 0;
+    }
+
+    /* ── Cute empty states ── */
+    .empty-reviews {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 40px 20px 44px;
+      background: linear-gradient(180deg, #ffffff 0%, var(--primary-tint) 100%);
+      border: 2px dashed var(--accent-border);
+      border-radius: var(--radius-lg);
+    }
+    .empty-reviews-art { width: 220px; max-width: 70%; height: auto; overflow: visible; }
+    .empty-reviews-title,
+    .empty-reviews-sub,
+    .filter-empty-state { font-family: 'Fredoka', var(--font-display), sans-serif; }
+    .empty-reviews-title {
+      font-size: 27px;
+      font-weight: 600;
+      color: var(--primary-dark);
+      margin: 14px 0 4px;
+    }
+    .empty-reviews-sub { font-size: 17px; font-weight: 500; color: var(--outline); margin: 0; }
+    .filter-empty-state { font-size: 19px; font-weight: 500; color: var(--primary-dark); }
+
+    .er-bubble {
+      transform-box: fill-box;
+      transform-origin: 50% 100%;
+      transform: rotate(var(--r, 0deg));
+      animation: er-float 3.6s ease-in-out infinite;
+      animation-delay: var(--d, 0s);
+    }
+    .er-shadow { animation: er-shadow 3.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+    .er-spark  { transform-box: fill-box; transform-origin: center; animation: er-spark 2.6s ease-in-out infinite; animation-delay: var(--d, 0s); }
+    @keyframes er-float {
+      0%, 100% { transform: translateY(0) rotate(var(--r, 0deg)); }
+      50%      { transform: translateY(-7px) rotate(var(--r, 0deg)); }
+    }
+    @keyframes er-shadow {
+      0%, 100% { transform: scaleX(1);   opacity: 0.12; }
+      50%      { transform: scaleX(0.9); opacity: 0.08; }
+    }
+    @keyframes er-spark {
+      0%, 100% { opacity: 0.2; transform: scale(0.6) rotate(0deg); }
+      50%      { opacity: 1;   transform: scale(1)   rotate(20deg); }
+    }
+
+    @media (max-width: 900px) {
+      .rating-metrics-bar { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .rating-metric-card, .rating-metric-card::before, .rating-metric-card::after,
+      .rm-wave, .rm-stars .star,
+      .er-bubble, .er-shadow, .er-spark { animation: none !important; }
     }
 
     /* ── Reported review styling ── */
@@ -202,27 +352,9 @@
 
 <div class="app-shell">
 
-  <aside class="sidebar">
-    <div class="brand">
-      <span class="brand-name">ULEE</span>
-      <span class="brand-sub">The Future of Student Living</span>
-    </div>
-
-    <nav class="nav-list">
-      <a th:href="@{/landlord-index}" class="nav-item">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>
-        <span>My Properties</span>
-      </a>
-      <a th:href="@{/manage-applications}" class="nav-item">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M8 3h8a2 2 0 0 1 2 2v14l-6-3-6 3V5a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-        <span>Applications</span>
-      </a>
-      <a th:href="@{/my-property-reviews}" class="nav-item active">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M12 3.5 14.4 9l6 .6-4.5 4 1.4 5.9L12 16.6 6.7 19.5l1.4-5.9-4.5-4 6-.6L12 3.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-        <span>Reviews</span>
-      </a>
-    </nav>
-  </aside>
+  <!-- Shared sidebar (same fragment as My Properties / Applications).
+       'reviews' highlights the Reviews item. -->
+  <div th:replace="~{fragments/landlord-sidebar :: sidebar('reviews')}"></div>
 
   <main class="main">
 
@@ -257,28 +389,49 @@
 
       <section class="rating-metrics-bar" aria-label="Rating summary">
         <div class="rating-metric-card" data-rating-filter="all">
-          <p class="rating-metric-label" th:text="${property.title} + ' Average'">Property Average</p>
-          <div class="rating-metric-value">
-            <span th:text="${#numbers.formatDecimal(averageRating,1,1)}">4.2</span>
-            <span class="unit">/ 5.0</span>
+          <svg class="rm-stars" viewBox="0 0 200 90" aria-hidden="true"><g fill="#9FF0E8"><circle class="star" cx="150" cy="20" r="1.6" style="--d:0.0s"/><circle class="star" cx="180" cy="44" r="1.3" style="--d:0.6s"/><circle class="star" cx="120" cy="52" r="1.2" style="--d:1.2s"/><circle class="star" cx="190" cy="12" r="1.4" style="--d:1.8s"/><circle class="star" cx="95" cy="18" r="1.1" style="--d:2.4s"/></g></svg>
+          <div class="rating-metric-copy">
+            <p class="rating-metric-label" th:text="${property.title} + ' Average'">Property Average</p>
+            <div class="rating-metric-value">
+              <span class="count-up" th:text="${#numbers.formatDecimal(averageRating,1,1)}">4.2</span>
+              <span class="unit">/ 5.0</span>
+            </div>
+            <span class="rating-metric-stars"
+                  th:with="fullStars=${T(java.lang.Math).round(averageRating)}"
+                  th:text="${'★'.repeat(fullStars)} + ${'☆'.repeat(5 - fullStars)}">★★★★☆</span>
           </div>
-          <span class="rating-metric-stars"
-                th:with="fullStars=${T(java.lang.Math).round(averageRating)}"
-                th:text="${'★'.repeat(fullStars)} + ${'☆'.repeat(5 - fullStars)}">★★★★☆</span>
+          <svg class="rm-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true">
+            <path class="w-back"  d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+            <path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+          </svg>
         </div>
 
         <div class="rating-metric-card rating-metric-card--good" data-rating-filter="high">
-          <p class="rating-metric-label">High Ratings</p>
-          <div class="rating-metric-value">
-            <span th:text="${highRatingsCount}">25</span>
+          <svg class="rm-stars" viewBox="0 0 200 90" aria-hidden="true"><g fill="#9FF0E8"><circle class="star" cx="150" cy="20" r="1.6" style="--d:0.9s"/><circle class="star" cx="180" cy="44" r="1.3" style="--d:1.5s"/><circle class="star" cx="120" cy="52" r="1.2" style="--d:2.1s"/><circle class="star" cx="190" cy="12" r="1.4" style="--d:0.1s"/><circle class="star" cx="95" cy="18" r="1.1" style="--d:0.7s"/></g></svg>
+          <div class="rating-metric-copy">
+            <p class="rating-metric-label">High Ratings</p>
+            <div class="rating-metric-value">
+              <span class="count-up" th:text="${highRatingsCount}">25</span>
+            </div>
           </div>
+          <svg class="rm-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true">
+            <path class="w-back"  d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+            <path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+          </svg>
         </div>
 
         <div class="rating-metric-card rating-metric-card--poor" data-rating-filter="poor">
-          <p class="rating-metric-label">Poor Ratings</p>
-          <div class="rating-metric-value">
-            <span th:text="${poorRatingsCount}">2</span>
+          <svg class="rm-stars" viewBox="0 0 200 90" aria-hidden="true"><g fill="#9FF0E8"><circle class="star" cx="150" cy="20" r="1.6" style="--d:1.7s"/><circle class="star" cx="180" cy="44" r="1.3" style="--d:2.3s"/><circle class="star" cx="120" cy="52" r="1.2" style="--d:0.3s"/><circle class="star" cx="190" cy="12" r="1.4" style="--d:0.9s"/><circle class="star" cx="95" cy="18" r="1.1" style="--d:1.5s"/></g></svg>
+          <div class="rating-metric-copy">
+            <p class="rating-metric-label">Poor Ratings</p>
+            <div class="rating-metric-value">
+              <span class="count-up" th:text="${poorRatingsCount}">2</span>
+            </div>
           </div>
+          <svg class="rm-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true">
+            <path class="w-back"  d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+            <path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+          </svg>
         </div>
       </section>
 
@@ -305,9 +458,31 @@
         </div>
       </div>
 
-      <p class="review-empty" th:unless="${reviewCount > 0}">
-        No reviews yet for this property.
-      </p>
+      <div class="empty-reviews" th:unless="${reviewCount > 0}">
+        <svg class="empty-reviews-art" viewBox="0 0 240 170" fill="none" aria-hidden="true">
+          <ellipse class="er-shadow" cx="120" cy="156" rx="64" ry="7" fill="#0b3b4a" opacity=".12"/>
+
+          <g class="er-bubble" style="--r:-5deg; --d:0s">
+            <path d="M50 36h84a12 12 0 0 1 12 12v46a12 12 0 0 1-12 12H92l-22 18v-18H50a12 12 0 0 1-12-12V48a12 12 0 0 1 12-12Z"
+                  fill="#dcf1ef" stroke="#93C0C5" stroke-width="2"/>
+          </g>
+
+          <g class="er-bubble" style="--r:3deg; --d:.6s">
+            <path d="M108 60h88a12 12 0 0 1 12 12v46a12 12 0 0 1-12 12h-22l-6 18-20-18h-40a12 12 0 0 1-12-12V72a12 12 0 0 1 12-12Z"
+                  fill="#ffffff" stroke="#0f8a8a" stroke-width="2.5"/>
+            <text x="152" y="98" text-anchor="middle" font-size="21" fill="#F5D450" letter-spacing="2">☆☆☆☆☆</text>
+            <circle cx="141" cy="112" r="2.4" fill="#0f8a8a"/>
+            <circle cx="163" cy="112" r="2.4" fill="#0f8a8a"/>
+            <path d="M144 118q8 7 16 0" stroke="#0f8a8a" stroke-width="2.4" stroke-linecap="round"/>
+          </g>
+
+          <path class="er-spark" style="--d:0s"   d="M206 30l3 8 8 3-8 3-3 8-3-8-8-3 8-3z" fill="#14C8BE"/>
+          <path class="er-spark" style="--d:1s"   d="M32 82l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"  fill="#F5D450"/>
+          <path class="er-spark" style="--d:1.8s" d="M214 104l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#9FF0E8"/>
+        </svg>
+        <p class="empty-reviews-title">No reviews yet for this property</p>
+        <p class="empty-reviews-sub">When students share their thoughts, they'll show up here.</p>
+      </div>
 
       <div id="reviewSortEmptyState" class="filter-empty-state" style="display:none;">
         No reviews match this filter.
@@ -317,7 +492,30 @@
   </main>
 </div>
 
+<!-- Sidebar collapse/expand — adjust the path if your file lives elsewhere -->
+<script src="/js/landlord-sidebar-toggle.js"></script>
 <script src="/landlord-script.js"></script>
 <script src="/js/landlord-review-detail.js"></script>
+<script>
+  // Numbers on the rating cards count up from 0 on load.
+  (function () {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    document.querySelectorAll('.count-up').forEach(function (el) {
+      var text = el.textContent.trim();
+      var target = parseFloat(text);
+      if (isNaN(target) || target <= 0) return;
+      var decimals = (text.split('.')[1] || '').length;
+      var start = null, dur = 900;
+      el.textContent = (0).toFixed(decimals);
+      function tick(now) {
+        if (start === null) start = now;
+        var t = Math.min((now - start) / dur, 1);
+        el.textContent = (target * (1 - Math.pow(1 - t, 3))).toFixed(decimals);
+        if (t < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    });
+  })();
+</script>
 </body>
 </html>

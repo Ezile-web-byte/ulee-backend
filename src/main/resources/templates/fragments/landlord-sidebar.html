@@ -3,21 +3,22 @@
 <body>
 
 <!--
-  Shared landlord sidebar. Every landlord page includes THIS fragment
-  instead of copy-pasting the <aside class="sidebar">...</aside> markup,
-  so the logo, the collapse toggle, and the nav items can never drift
-  between pages again (same pattern as fragments/admin-sidebar.html).
+  Shared landlord sidebar.  Save as: templates/fragments/landlord-sidebar.html
 
-  Usage from any landlord template:
+  Usage from any landlord template (inside <div class="app-shell">):
     <div th:replace="~{fragments/landlord-sidebar :: sidebar('properties')}"></div>
 
-  The `active` param is one of:
-    'properties' | 'applications' | 'reviews'
+  `active` is one of:  'properties' | 'applications' | 'reviews'
 
-  The collapse/expand behaviour (button click, localStorage,
-  the .collapsed / .sidebar-collapsed classes) lives in
-  landlord-sidebar-toggle.js — include that script on every page
-  that uses this fragment.
+  FIX: "My Properties" used to point at /manage-properties, which has no
+  controller mapping (the real route is /landlord-index). That is what
+  broke the trip Applications -> My Properties.
+
+  Applications shows a count badge when the model has a
+  `pendingApplicationsCount` attribute > 0 (pages that don't set it show
+  no badge).
+
+  Collapse/expand behaviour lives in landlord-sidebar-toggle.js.
 -->
 <aside class="sidebar" id="sidebar" th:fragment="sidebar(active)">
     <div class="logo">
@@ -27,7 +28,7 @@
             </div>
             <div class="logo-text">
                 <div class="logo-name">ULEE</div>
-                <div class="logo-tag">The future of Student Living</div>
+                <div class="logo-tag">Student Living. Simplified.</div>
             </div>
         </div>
         <button class="sidebar-toggle" id="sidebar-toggle" type="button" title="Toggle sidebar" aria-label="Toggle sidebar" aria-expanded="true">
@@ -37,18 +38,42 @@
 
     <nav class="nav-list">
         <a th:href="@{/landlord-index}" class="nav-item" th:classappend="${active == 'properties'} ? ' active'">
-            <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M4 21V9l8-6 8 6v12h-5v-7h-6v7H4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
             <span>My Properties</span>
         </a>
         <a th:href="@{/manage-applications}" class="nav-item" th:classappend="${active == 'applications'} ? ' active'">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M8 3h8a2 2 0 0 1 2 2v14l-6-3-6 3V5a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
             <span>Applications</span>
+            <span class="nav-badge" th:if="${pendingApplicationsCount != null and pendingApplicationsCount > 0}" th:text="${pendingApplicationsCount}">3</span>
         </a>
         <a th:href="@{/my-property-reviews}" class="nav-item" th:classappend="${active == 'reviews'} ? ' active'">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M12 3.5 14.4 9l6 .6-4.5 4 1.4 5.9L12 16.6 6.7 19.5l1.4-5.9-4.5-4 6-.6L12 3.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
             <span>Reviews</span>
         </a>
     </nav>
+
+    <!-- Spring Security expects logout as a POST -->
+    <form th:action="@{/logout}" method="post" class="nav-logout-form">
+        <button type="submit" class="nav-item nav-item--logout">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 17l5-5-5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Log out</span>
+        </button>
+    </form>
+
+    <!-- Drawing: pinned to the bottom of the rail, hidden when collapsed -->
+    <div class="sidebar-footer">
+        <svg class="sidebar-illustration" viewBox="0 0 220 90" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M0 70c18-6 36-6 54 0s36 6 54 0 36-6 54 0 36 6 58 0" stroke-width="1.5" fill="none"/>
+            <path d="M0 80c18-5 36-5 54 0s36 5 54 0 36-5 54 0 36 5 58 0" stroke-width="1.5" fill="none"/>
+            <g stroke-width="1.6" stroke-linejoin="round" fill="none">
+                <path d="M32 58h14l-3-32h-8l-3 32Z"/>
+                <path d="M29 58h20"/>
+                <path d="M35 26h8v-6h-8v6Z"/>
+                <path d="M33 32h12M32 40h14M31 48h16"/>
+                <path d="M39 20l-4-6h10l-4 6"/>
+            </g>
+        </svg>
+    </div>
 </aside>
 
 </body>

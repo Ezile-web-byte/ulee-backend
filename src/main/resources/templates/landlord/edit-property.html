@@ -1,490 +1,3 @@
-<!--<!DOCTYPE html>-->
-<!--<html lang="en" xmlns:th="http://www.thymeleaf.org">-->
-<!--<head>-->
-<!--    <meta charset="UTF-8" />-->
-<!--    <meta name="viewport" content="width=device-width, initial-scale=1.0" />-->
-<!--    <title th:text="'Edit ' + ${property.title} + ' – ULEE'">Edit Property</title>-->
-<!--    <link rel="preconnect" href="https://fonts.googleapis.com">-->
-<!--    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>-->
-<!--    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />-->
-
-<!--    <link rel="stylesheet" th:href="@{/landlord-style.css}" href="/landlord-style.css" />-->
-
-<!--    &lt;!&ndash; Reuses the exact same stylesheet as the creation wizard, so both-->
-<!--         forms share one visual language. &ndash;&gt;-->
-<!--    <link rel="stylesheet" th:href="@{/listProperty.css}" href="/listProperty.css" />-->
-
-<!--    <style>-->
-<!--        /* ── Pieces specific to Manage Property that listProperty.css doesn't-->
-<!--             define: the existing-photo gallery (with Main badge + delete-->
-<!--             button), the Special Features cards, the status note, and the-->
-<!--             danger-styled Deactivate button. Everything else below (tracker,-->
-<!--             wizard-card, panel-content, f-grid, field, tile-selector,-->
-<!--             amenity-cat, review-table, actions-bar, btn) comes straight from-->
-<!--             listProperty.css's shared design tokens. ── */-->
-
-<!--        .status-note {-->
-<!--            font-size: 13px; color: var(&#45;&#45;pdd); background: var(&#45;&#45;pl2);-->
-<!--            border: 1px solid var(&#45;&#45;border); border-radius: var(&#45;&#45;r-sm);-->
-<!--            padding: 12px 16px; margin-bottom: 20px;-->
-<!--        }-->
-
-<!--        /* Required-field note + red-border validation, matching the-->
-<!--           creation wizard (listProperty.js). */-->
-<!--        .required-fields-note {-->
-<!--            font-size: 13.5px; line-height: 1.5; color: #9a3412;-->
-<!--            background: #fff7ed; border: 1px solid #fdba74;-->
-<!--            border-radius: 10px; padding: 12px 16px; margin-bottom: 20px;-->
-<!--        }-->
-<!--        .required-asterisk { color: #dc2626; font-weight: 700; margin-left: 3px; }-->
-<!--        .field-invalid { border: 2px solid #dc2626 !important; background: #fef2f2 !important; }-->
-
-<!--        .side-card {-->
-<!--            background: var(&#45;&#45;white); border: 1px solid var(&#45;&#45;border);-->
-<!--            border-radius: var(&#45;&#45;r-lg); box-shadow: var(&#45;&#45;shadow-sm);-->
-<!--            padding: 28px; margin-top: 24px;-->
-<!--        }-->
-<!--        .side-card h2 {-->
-<!--            font-family: var(&#45;&#45;font-display); font-size: 18px; color: var(&#45;&#45;pdd);-->
-<!--            margin-bottom: 4px;-->
-<!--        }-->
-<!--        .side-card .hint-text { margin-bottom: 14px; }-->
-
-<!--        .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }-->
-<!--        .gallery-item { position: relative; border-radius: var(&#45;&#45;r-sm); overflow: hidden; border: 1.5px solid var(&#45;&#45;border); aspect-ratio: 1/1; }-->
-<!--        .gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; }-->
-<!--        .gallery-item .main-badge {-->
-<!--            position: absolute; top: 6px; left: 6px; background: var(&#45;&#45;p);-->
-<!--            color: #fff; font-size: 10px; font-weight: 700; text-transform: uppercase;-->
-<!--            letter-spacing: 0.03em; padding: 3px 7px; border-radius: 5px;-->
-<!--        }-->
-<!--        .gallery-item .delete-btn {-->
-<!--            position: absolute; top: 6px; right: 6px;-->
-<!--            width: 24px; height: 24px; border-radius: 50%; border: none;-->
-<!--            background: rgba(0,0,0,0.55); color: #fff; font-size: 14px; line-height: 1;-->
-<!--            cursor: pointer; display: flex; align-items: center; justify-content: center;-->
-<!--        }-->
-<!--        .gallery-item .delete-btn:hover { background: hsl(0, 65%, 52%); }-->
-<!--        .gallery-empty { font-size: 13px; color: var(&#45;&#45;muted); margin-bottom: 10px; }-->
-
-<!--        .feature-card {-->
-<!--            border: 1.5px solid var(&#45;&#45;border); border-radius: var(&#45;&#45;r-sm); padding: 16px;-->
-<!--            display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;-->
-<!--        }-->
-<!--        .feature-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }-->
-<!--        .feature-name { font-weight: 700; font-size: 14.5px; color: var(&#45;&#45;txt); }-->
-<!--        .feature-desc { font-size: 13px; color: var(&#45;&#45;muted); }-->
-<!--        .feature-photos { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }-->
-<!--        .feature-photos img { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 6px; border: 1px solid var(&#45;&#45;border); }-->
-<!--        .feature-delete-btn {-->
-<!--            background: none; border: 1.5px solid var(&#45;&#45;border); border-radius: 7px;-->
-<!--            padding: 5px 10px; font-size: 12px; font-weight: 600; color: hsl(0, 65%, 52%);-->
-<!--            cursor: pointer; white-space: nowrap;-->
-<!--        }-->
-<!--        .feature-delete-btn:hover { background: hsl(0, 65%, 96%); border-color: hsl(0, 65%, 52%); }-->
-<!--        .no-features { font-size: 13px; color: var(&#45;&#45;muted); }-->
-<!--        .add-feature-form { border-top: 1px dashed var(&#45;&#45;border); padding-top: 16px; display: flex; flex-direction: column; gap: 14px; margin-top: 6px; }-->
-
-<!--        .btn-delete {-->
-<!--            width: 100%; background: var(&#45;&#45;white); color: hsl(0, 65%, 52%);-->
-<!--            border: 1.5px solid hsl(0, 65%, 52%);-->
-<!--        }-->
-<!--        .btn-delete:hover { background: hsl(0, 65%, 96%); }-->
-
-<!--        /* Review rows in Manage Property are clickable — creation wizard's-->
-<!--           review-table is read-only, so we only add the interaction affordance-->
-<!--           here without touching the shared class. */-->
-<!--        #reviewSummaryBody .review-row { cursor: pointer; transition: background 0.15s ease; }-->
-<!--        #reviewSummaryBody .review-row:hover { background: var(&#45;&#45;pl2); }-->
-
-
-<!--        .btn-primary, .btn-outline, .btn-delete {-->
-<!--            padding: 14px 28px;-->
-<!--            font-size: 15px;-->
-<!--            font-weight: 700;-->
-<!--            min-width: 160px;-->
-<!--        }-->
-
-<!--    </style>-->
-<!--</head>-->
-<!--<body>-->
-
-<!--<header class="topbar">-->
-<!--    <h1 class="topbar-title" th:text="'Edit ' + ${property.title}">Edit Property</h1>-->
-<!--    <div style="display: flex; align-items: center; gap: 16px;">-->
-<!--        <a th:href="@{/landlord-index}" href="/landlord-index" class="btn btn-secondary" style="display: inline-flex; align-items: center; text-decoration: none; font-size: 0.9rem; padding: 6px 14px;">-->
-<!--            ← Back-->
-<!--        </a>-->
-<!--        <div class="avatar-initials" th:text="${userInitials != null ? userInitials : 'EH'}">EH</div>-->
-<!--    </div>-->
-<!--</header>-->
-
-<!--<main class="container" style="padding-top: 2rem;">-->
-<!--    <div class="head-title">-->
-<!--        <h1 th:text="'Edit ' + ${property.title}">Edit Property</h1>-->
-<!--        <p>Jump to any section below and make your changes — one Save applies everything.</p>-->
-<!--    </div>-->
-
-<!--    <p class="status-note" th:if="${property.status == 'Draft'}">-->
-<!--        This listing is still a <strong>Draft</strong>. It won't be visible to students until you fill in the required fields and hit "Save Changes" to submit it for approval.-->
-<!--    </p>-->
-
-<!--    &lt;!&ndash; Required-fields note — mirrors the creation wizard's banner. &ndash;&gt;-->
-<!--    <p class="required-fields-note">-->
-<!--        ⚠️ Fields marked with <strong>*</strong> are required. Do not skip or leave them blank or invalid — if any are missing when you hit <strong>Save Changes</strong>, this listing will be saved as a <strong>Draft</strong> instead of going live.-->
-<!--    </p>-->
-
-<!--    &lt;!&ndash; Step Tracker — jumps to any step from anywhere &ndash;&gt;-->
-<!--    <div class="tracker-card">-->
-<!--        <div class="progress-bar-bg">-->
-<!--            <div class="progress-bar-fill" id="editProgressFill"></div>-->
-<!--        </div>-->
-<!--        <div class="steps-row" id="editStepsTracker"></div>-->
-<!--    </div>-->
-
-<!--    <form id="editPropertyForm" class="wizard-card" th:action="@{/update-property/{id}(id=${property.propertyID})}" method="post" enctype="multipart/form-data">-->
-
-<!--        <div class="panel-content">-->
-
-<!--            &lt;!&ndash; Step 0 — Review (default landing). Built live by edit-property.js-->
-<!--                 from whatever's currently in the real fields below, so it always-->
-<!--                 reflects the latest edits even when you jump around out of order. &ndash;&gt;-->
-<!--            <div class="edit-step" data-step="0">-->
-<!--                <div class="panel-header">-->
-<!--                    <h2>Review</h2>-->
-<!--                    <p>Click any row to jump straight to that section and edit it.</p>-->
-<!--                </div>-->
-<!--                <div class="review-table" id="reviewSummaryBody"></div>-->
-<!--            </div>-->
-
-<!--            &lt;!&ndash; Step 1 — Basic Info &ndash;&gt;-->
-<!--            <div class="edit-step" data-step="1">-->
-<!--                <div class="panel-header">-->
-<!--                    <h2>Basic Info & Accommodation Type</h2>-->
-<!--                    <p>The title students see first, and the room setup.</p>-->
-<!--                </div>-->
-<!--                <div class="f-grid">-->
-<!--                    <div class="field f-col-2">-->
-<!--                        <label>Property Title<span class="required-asterisk">*</span></label>-->
-<!--                        <input type="text" name="title" th:value="${property.title}" required />-->
-<!--                    </div>-->
-<!--                    <div class="field f-col-2">-->
-<!--                        <label>Room Type</label>-->
-<!--                        <div class="tile-selector">-->
-<!--                            <label class="tile-option" th:classappend="${property.type == 'Single Room'} ? 'selected'" onclick="selectEditTile(this, 'type')">-->
-<!--                                <input type="radio" name="type" value="Single Room" th:checked="${property.type == 'Single Room'}" />-->
-<!--                                <span class="tile-icon">🛏️</span>-->
-<!--                                <span class="tile-text">-->
-<!--                  <span class="tile-title">Single Room</span>-->
-<!--                  <span class="hint-text">Private bedroom for one student</span>-->
-<!--                </span>-->
-<!--                            </label>-->
-<!--                            <label class="tile-option" th:classappend="${property.type == 'Sharing'} ? 'selected'" onclick="selectEditTile(this, 'type')">-->
-<!--                                <input type="radio" name="type" value="Sharing" th:checked="${property.type == 'Sharing'}" />-->
-<!--                                <span class="tile-icon">👥</span>-->
-<!--                                <span class="tile-text">-->
-<!--                  <span class="tile-title">Sharing Room</span>-->
-<!--                  <span class="hint-text">Shared bedroom arrangement</span>-->
-<!--                </span>-->
-<!--                            </label>-->
-<!--                            <label class="tile-option" th:classappend="${property.type == 'Commune'} ? 'selected'" onclick="selectEditTile(this, 'type')">-->
-<!--                                <input type="radio" name="type" value="Commune" th:checked="${property.type == 'Commune'}" />-->
-<!--                                <span class="tile-icon">🏠</span>-->
-<!--                                <span class="tile-text">-->
-<!--                  <span class="tile-title">Commune</span>-->
-<!--                  <span class="hint-text">Shared house, typically 4-5 students</span>-->
-<!--                </span>-->
-<!--                            </label>-->
-<!--                        </div>-->
-<!--                    </div>-->
-<!--                    <div class="field f-col-2">-->
-<!--                        <label>Capacity (number of students this listing can hold)<span class="required-asterisk">*</span></label>-->
-<!--                        <input type="number" name="capacity" min="1" step="1"-->
-<!--                               th:value="${property.capacity != null ? property.capacity : 1}" required />-->
-<!--                        <p class="hint-text">This is what caps how many applications you can accept for this property.</p>-->
-<!--                    </div>-->
-<!--                </div>-->
-<!--            </div>-->
-
-<!--            &lt;!&ndash; Step 2 — Pricing & Location &ndash;&gt;-->
-<!--            <div class="edit-step" data-step="2">-->
-<!--                <div class="panel-header">-->
-<!--                    <h2>Pricing & Location Details</h2>-->
-<!--                    <p>Rent, deposit, and where students will find you.</p>-->
-<!--                </div>-->
-<!--                <div class="f-grid f-grid-2">-->
-<!--                    <div class="field">-->
-<!--                        <label>Monthly Rent (R)<span class="required-asterisk">*</span></label>-->
-<!--                        <input type="number" step="0.01" name="rent" th:value="${property.rent}" required />-->
-<!--                    </div>-->
-<!--                    <div class="field">-->
-<!--                        <label>Deposit (R)</label>-->
-<!--                        <input type="number" step="0.01" name="deposit" th:value="${property.deposit}" />-->
-<!--                    </div>-->
-<!--                    <div class="field">-->
-<!--                        <label>Suburb</label>-->
-<!--                        <input type="text" name="city" th:value="${property.city}" placeholder="e.g. Summerstrand" />-->
-<!--                    </div>-->
-<!--                    <div class="field">-->
-<!--                        <label>Full Address<span class="required-asterisk">*</span></label>-->
-<!--                        <input type="text" name="address" th:value="${property.address}" required />-->
-<!--                    </div>-->
-<!--                    <div class="field f-col-2">-->
-<!--                        <label>Getting to Campus</label>-->
-<!--                        <div class="tile-selector">-->
-<!--                            <label class="tile-option" th:classappend="${property.commuteType == 'Walking distance'} ? 'selected'" onclick="selectEditTile(this, 'commuteType')">-->
-<!--                                <input type="radio" name="commuteType" value="Walking distance" th:checked="${property.commuteType == 'Walking distance'}" />-->
-<!--                                <span class="tile-icon">🚶</span>-->
-<!--                                <span class="tile-text">-->
-<!--                  <span class="tile-title">Walking Distance</span>-->
-<!--                  <span class="hint-text">Close enough to walk to campus</span>-->
-<!--                </span>-->
-<!--                            </label>-->
-<!--                            <label class="tile-option" th:classappend="${property.commuteType == 'Shuttle required'} ? 'selected'" onclick="selectEditTile(this, 'commuteType')">-->
-<!--                                <input type="radio" name="commuteType" value="Shuttle required" th:checked="${property.commuteType == 'Shuttle required'}" />-->
-<!--                                <span class="tile-icon">🚌</span>-->
-<!--                                <span class="tile-text">-->
-<!--                  <span class="tile-title">Shuttle Required</span>-->
-<!--                  <span class="hint-text">Transport required to reach campus</span>-->
-<!--                </span>-->
-<!--                            </label>-->
-<!--                        </div>-->
-<!--                    </div>-->
-<!--                </div>-->
-
-<!--                <div class="f-grid" style="margin-top: 20px;">-->
-<!--                    <div class="field f-col-2">-->
-<!--                        <label>Available From</label>-->
-<!--                        <select name="availableFrom">-->
-<!--                            <option value="">Select a semester</option>-->
-<!--                            <option th:each="option : ${availableFromOptions}"-->
-<!--                                    th:value="${#temporals.format(option, 'yyyy-MM-dd')}"-->
-<!--                                    th:text="${#temporals.format(option, 'MMMM yyyy')}"-->
-<!--                                    th:selected="${option == property.availableFrom}">-->
-<!--                            </option>-->
-<!--                        </select>-->
-<!--                    </div>-->
-<!--                </div>-->
-<!--            </div>-->
-
-<!--            &lt;!&ndash; Step 3 — Description &ndash;&gt;-->
-<!--            <div class="edit-step" data-step="3">-->
-<!--                <div class="panel-header">-->
-<!--                    <h2>Property Description</h2>-->
-<!--                    <p>Highlight key selling points, house rules, and nearby universities.</p>-->
-<!--                </div>-->
-<!--                <div class="f-grid">-->
-<!--                    <div class="field f-col-2">-->
-<!--                        <label>Description</label>-->
-<!--                        <textarea name="description" th:text="${property.description}"></textarea>-->
-<!--                    </div>-->
-<!--                </div>-->
-<!--            </div>-->
-
-<!--            &lt;!&ndash; Step 4 — Amenities, grouped by category &ndash;&gt;-->
-<!--            <div class="edit-step" data-step="4">-->
-<!--                <div class="panel-header">-->
-<!--                    <h2>Property Amenities</h2>-->
-<!--                    <p>Tick everything included with this room.</p>-->
-<!--                </div>-->
-<!--                <div th:each="entry : ${amenityCategories}" class="amenity-cat">-->
-<!--                    <div class="amenity-cat-title" th:text="${entry.key}">Category</div>-->
-<!--                    <div class="amenity-grid-list">-->
-<!--                        <label class="amenity-card-item" th:each="amenity : ${entry.value}">-->
-<!--                            <input type="checkbox" name="amenityIds" th:value="${amenity.amenityID}"-->
-<!--                                   th:checked="${selectedAmenityIds.contains(amenity.amenityID)}" />-->
-<!--                            <label th:text="${amenity.name}" style="pointer-events:none;">Amenity</label>-->
-<!--                        </label>-->
-<!--                    </div>-->
-<!--                </div>-->
-<!--            </div>-->
-
-<!--            &lt;!&ndash;-->
-<!--                Step 5 — Photos.-->
-<!--                IMPORTANT: each delete button is bound to THIS form via form="editPropertyForm"-->
-<!--                plus formaction/formmethod — it is NOT its own nested <form>. Nested <form>-->
-<!--                elements are invalid HTML; the browser silently closes the outer form at the-->
-<!--                first nested </form> it hits, which would orphan the Save buttons below.-->
-<!--                This pattern avoids that.-->
-<!--            &ndash;&gt;-->
-<!--            <div class="edit-step" data-step="5">-->
-<!--                <div class="panel-header">-->
-<!--                    <h2>Property Photos</h2>-->
-<!--                    <p>Manage existing photos and upload new ones.</p>-->
-<!--                </div>-->
-
-<!--                <div class="gallery-grid" th:if="${!images.isEmpty()}" style="margin-bottom: 20px;">-->
-<!--                    <div class="gallery-item" th:each="img : ${images}">-->
-<!--                        <img th:src="${img.url}" alt="Property photo" />-->
-<!--                        <span class="main-badge" th:if="${img.isMain}">Main</span>-->
-<!--                        <button type="submit"-->
-<!--                                class="delete-btn"-->
-<!--                                title="Delete photo"-->
-<!--                                form="editPropertyForm"-->
-<!--                                th:formaction="@{/delete-property-image/{imageId}(imageId=${img.imageID})}"-->
-<!--                                formmethod="post"-->
-<!--                                formnovalidate-->
-<!--                                onclick="return confirm('Remove this photo?');">&times;</button>-->
-<!--                    </div>-->
-<!--                </div>-->
-<!--                <p class="gallery-empty" th:if="${images.isEmpty()}">No photos uploaded yet.</p>-->
-
-<!--                <div class="f-grid">-->
-<!--                    <div class="field f-col-2">-->
-<!--                        <label>Replace Cover Photo (Main Display Image)</label>-->
-<!--                        <input type="file" id="coverImageInput" name="coverImage" accept="image/*" onchange="previewCoverImage(this)" />-->
-<!--                        <div id="coverImagePreview" style="margin-top:10px;"></div>-->
-<!--                        <p class="hint-text">Only upload here if you want to change the main photo. Leave empty to keep your current one.</p>-->
-<!--                    </div>-->
-<!--                    <div class="field f-col-2" style="margin-top:16px;">-->
-<!--                        <label>Add More Photos</label>-->
-<!--                        <input type="file" id="additionalImagesInput" name="images" multiple accept="image/*" onchange="previewAdditionalImages(this)" />-->
-<!--                        <div id="additionalImagesPreview" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;"></div>-->
-<!--                    </div>-->
-<!--                </div>-->
-<!--            </div>-->
-
-<!--        </div>-->
-
-<!--        <input type="hidden" name="action" id="formAction" value="update" />-->
-
-<!--        &lt;!&ndash; Save actions — always visible regardless of which step is showing,-->
-<!--             so changes made across any steps you visited save together, from-->
-<!--             wherever you currently are. &ndash;&gt;-->
-<!--        <div class="actions-bar" style="display:flex; align-items:center; justify-content:space-between; gap:12px;">-->
-<!--            <button type="submit" formnovalidate class="btn btn-outline"-->
-<!--                    style="flex:1;"-->
-<!--                    onclick="document.getElementById('formAction').value='draft';">Save Draft</button>-->
-<!--            <button type="submit"-->
-<!--                    class="btn btn-outline"-->
-<!--                    style="flex:1; color:#b91c1c; border-color:#b91c1c;"-->
-<!--                    th:formaction="@{/toggle-property-status/{id}(id=${property.propertyID}, isAvailable=false)}"-->
-<!--                    formmethod="post"-->
-<!--                    formnovalidate-->
-<!--                    th:attr="onclick=|return confirm('Deactivate &quot;${#strings.escapeJavaScript(property.title)}&quot;? It will stop showing to students until you reactivate it.');|">Delete</button>-->
-<!--        </div>-->
-
-<!--    </form>-->
-
-<!--    &lt;!&ndash; Standalone Save Changes button. Color is set with inline styles-->
-<!--         (not a shared class) so nothing else on the page — like .side-card's-->
-<!--         white background — can ever override it, on hover or otherwise.-->
-<!--         formnovalidate is set so the browser's native required-field popups-->
-<!--         never fire here — required-field enforcement is handled entirely by-->
-<!--         the validation script below, which decides between "update" and a-->
-<!--         entirely blocked from saving until every required field is valid —-->
-<!--         see the validation script below, which intercepts the click. &ndash;&gt;-->
-<!--    <button type="submit" form="editPropertyForm" formnovalidate id="saveChangesBtn"-->
-<!--            style="width:100%; text-align:center; padding:18px 0; font-size:16px; font-weight:700; cursor:pointer; background:#0f8a8a; color:#fff; border:none; border-radius:12px; margin-top:24px;">-->
-<!--        Save Changes</button>-->
-
-<!--</main>-->
-
-<!--<script>-->
-<!--    // ── Required-field validation for Save Changes ──-->
-<!--    // "Save Changes" is BLOCKED entirely if any required field is missing-->
-<!--    // or invalid — the click is cancelled, the landlord is jumped to the-->
-<!--    // step containing the first unanswered required field, that field is-->
-<!--    // highlighted red and scrolled into view. "Save Draft" (elsewhere on-->
-<!--    // this page) is completely untouched by this script — it always saves-->
-<!--    // whatever's filled in, no validation, exactly as before.-->
-<!--    (function () {-->
-<!--        const REQUIRED_FIELDS_EDIT = [-->
-<!--            { name: 'title', label: 'Property Title', step: 1, validate: v => !!(v && v.trim().length > 0) },-->
-<!--            { name: 'capacity', label: 'Capacity', step: 1, validate: v => !!(v && Number(v) >= 1) },-->
-<!--            { name: 'rent', label: 'Monthly Rent', step: 2, validate: v => !!(v && Number(v) > 0) },-->
-<!--            { name: 'address', label: 'Full Address', step: 2, validate: v => !!(v && v.trim().length > 0) }-->
-<!--        ];-->
-
-<!--        function fieldEl(name) {-->
-<!--            return document.querySelector(`#editPropertyForm [name="${name}"]`);-->
-<!--        }-->
-
-<!--        function getInvalidFields() {-->
-<!--            return REQUIRED_FIELDS_EDIT.filter(f => {-->
-<!--                const el = fieldEl(f.name);-->
-<!--                const val = el ? el.value : '';-->
-<!--                return !f.validate(val);-->
-<!--            });-->
-<!--        }-->
-
-<!--        function highlightInvalid(fields) {-->
-<!--            document.querySelectorAll('#editPropertyForm .field-invalid').forEach(el => el.classList.remove('field-invalid'));-->
-<!--            fields.forEach(f => {-->
-<!--                const el = fieldEl(f.name);-->
-<!--                if (el) el.classList.add('field-invalid');-->
-<!--            });-->
-<!--        }-->
-
-<!--        // Reveals the given step. Tries the REAL step-tracker's own click-->
-<!--        // handler first (whatever edit-property.js wired it to), so the-->
-<!--        // page's internal "current step" state stays in sync instead of-->
-<!--        // this script fighting it. Falls back to toggling the .active-->
-<!--        // class directly (same pattern the creation wizard uses) if no-->
-<!--        // tracker nodes are found.-->
-<!--        function revealStep(stepIndex) {-->
-<!--            const trackerNodes = document.querySelectorAll('#editStepsTracker .step-node');-->
-<!--            if (trackerNodes && trackerNodes.length > stepIndex) {-->
-<!--                trackerNodes[stepIndex].click();-->
-<!--                return;-->
-<!--            }-->
-<!--            document.querySelectorAll('.edit-step').forEach(el => {-->
-<!--                el.classList.toggle('active', Number(el.dataset.step) === stepIndex);-->
-<!--            });-->
-<!--        }-->
-
-<!--        document.addEventListener('DOMContentLoaded', function () {-->
-<!--            const saveChangesBtn = document.getElementById('saveChangesBtn');-->
-<!--            if (!saveChangesBtn) return;-->
-
-<!--            saveChangesBtn.addEventListener('click', function (e) {-->
-<!--                const invalid = getInvalidFields();-->
-<!--                if (invalid.length > 0) {-->
-<!--                    e.preventDefault(); // block the save — do not submit-->
-<!--                    e.stopImmediatePropagation();-->
-<!--                    highlightInvalid(invalid);-->
-
-<!--                    const firstInvalid = invalid[0];-->
-<!--                    revealStep(firstInvalid.step);-->
-
-<!--                    // Give the step a moment to actually become visible-->
-<!--                    // before scrolling/focusing the field inside it.-->
-<!--                    setTimeout(() => {-->
-<!--                        const el = fieldEl(firstInvalid.name);-->
-<!--                        if (el) {-->
-<!--                            el.scrollIntoView({ behavior: 'smooth', block: 'center' });-->
-<!--                            el.focus();-->
-<!--                        }-->
-<!--                    }, 60);-->
-
-<!--                    alert('These required fields (marked *) still need valid values:\n\n' +-->
-<!--                        invalid.map(f => '• ' + f.label).join('\n') +-->
-<!--                        '\n\nFill them in to save changes, or use "Save Draft" to keep your progress without publishing yet.');-->
-<!--                } else {-->
-<!--                    highlightInvalid([]);-->
-<!--                    // Not forced invalid — let the click proceed normally.-->
-<!--                    // formAction stays whatever it already is ("update"),-->
-<!--                    // since nothing here ever sets it to "draft" anymore.-->
-<!--                }-->
-<!--            });-->
-
-<!--            // Live-clear the red border the moment a field becomes valid again.-->
-<!--            REQUIRED_FIELDS_EDIT.forEach(f => {-->
-<!--                const el = fieldEl(f.name);-->
-<!--                if (el) {-->
-<!--                    el.addEventListener('input', () => {-->
-<!--                        if (f.validate(el.value)) el.classList.remove('field-invalid');-->
-<!--                    });-->
-<!--                }-->
-<!--            });-->
-<!--        });-->
-<!--    })();-->
-<!--</script>-->
-
-<!--<script th:src="@{/edit-property.js}" src="/edit-property.js"></script>-->
-<!--</body>-->
-<!--</html>-->
-
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
@@ -493,188 +6,138 @@
     <title th:text="'Edit ' + ${property.title} + ' – ULEE'">Edit Property</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
     <link rel="stylesheet" th:href="@{/landlord-style.css}" href="/landlord-style.css" />
     <link rel="stylesheet" th:href="@{/listProperty.css}" href="/listProperty.css" />
 
     <!--
-        Everything below is a SELF-CONTAINED light-teal design system for this
-        page. It intentionally re-declares every class this template uses
-        (tracker, wizard-card, panel-content, f-grid, tile-selector,
-        amenity-cat, review-table, actions-bar, btn, gallery, feature cards)
-        instead of relying on tokens from listProperty.css — so the page
-        looks correct and consistent even if that stylesheet defines
-        something different. Loaded after the two <link> tags above, so on
-        equal selector specificity these rules win by source order.
+        All styles for THIS page live here (not in edit-property-page.css), so the page
+        looks right even if that file is missing or not being served.
+        Placed after the two <link> tags so these rules win on equal specificity.
     -->
     <style>
         :root {
-            --teal-900: #063c3c;
             --teal-800: #0b5656;
             --teal-700: #0f8a8a;
             --teal-600: #14a3a3;
             --teal-100: #dcf1ef;
             --teal-50:  #f2fbfa;
-
-            --ink:       #16232a;
-            --ink-soft:  #5b6b70;
-            --border:    #e1e6e6;
-            --surface:   #ffffff;
-            --bg:        #f6f9f9;
-
-            --danger:     #dc2626;
-            --danger-bg:  #fef2f2;
-
+            --ink:      #16232a;
+            --ink-soft: #5b6b70;
+            --border:   #e1e6e6;
+            --danger:   #dc2626;
+            --danger-bg:#fef2f2;
             --r-sm: 8px;
             --r-md: 14px;
             --r-lg: 20px;
-
             --shadow-sm: 0 1px 2px rgba(15, 45, 45, 0.06);
             --shadow-md: 0 10px 28px rgba(15, 45, 45, 0.08);
-
-            --font-display: 'Playfair Display', serif;
-            --font-body: 'Plus Jakarta Sans', sans-serif;
         }
 
-        * { box-sizing: border-box; }
-
-        body {
-            background: var(--bg);
-            font-family: var(--font-body);
-            color: var(--ink);
-            margin: 0;
-        }
-
-        /* ── Topbar ── */
-        .topbar {
-            position: sticky; top: 0; z-index: 50;
-            display: flex; align-items: center; justify-content: space-between;
+        /* ── Topbar: initials pinned to the right ── */
+        .main > .topbar {
+            justify-content: flex-end;
             padding: 16px 32px;
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-            box-shadow: var(--shadow-sm);
         }
-        .topbar-title {
-            font-family: var(--font-display); font-size: 19px; font-weight: 600;
-            color: var(--ink); margin: 0;
-        }
-        .avatar-initials {
-            width: 36px; height: 36px; border-radius: 50%;
-            background: linear-gradient(135deg, var(--teal-600), var(--teal-800));
-            color: #fff; font-weight: 600; font-size: 13px;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .btn-secondary {
-            border: 1.5px solid var(--border); border-radius: var(--r-sm);
-            color: var(--ink-soft); font-weight: 600; background: var(--surface);
-            transition: border-color .15s, color .15s, background .15s;
-        }
-        .btn-secondary:hover { border-color: var(--teal-600); color: var(--teal-700); background: var(--teal-50); }
 
         /* ── Page shell ── */
-        .container { max-width: 900px; margin: 0 auto; padding: 0 24px 64px; }
-        .head-title { margin-bottom: 24px; }
-        .head-title h1 {
-            font-family: var(--font-display); font-size: 30px; font-weight: 700;
-            color: var(--ink); margin: 0 0 6px;
-        }
-        .head-title p { font-size: 14px; color: var(--ink-soft); margin: 0; }
+        .main { font-size: 16px; }
+        .field input[type="file"] { font-size: 15px; }
+        .container { max-width: 1160px; margin: 0 auto; padding: 0 32px 64px; }
 
-        /* ── Notices ── */
+        /* ── Compact banner: bordered, gradient, drawing behind the text ── */
+        .head-banner {
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 6px;
+            min-height: 160px;
+            padding: 24px 32px 34px;
+            margin-bottom: 22px;
+            border: 1.5px solid rgba(20, 200, 190, .45);
+            border-radius: var(--r-lg);
+            color: #fff;
+            background: linear-gradient(115deg, #071C2D 0%, #0A3A48 55%, #0F6C70 100%);
+            box-shadow: 0 6px 18px rgba(7, 28, 45, .18);
+        }
+        .head-banner-back, .head-banner h1, .head-banner p { position: relative; z-index: 2; }
+        .head-banner-back {
+            align-self: flex-start;
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: 14px; font-weight: 600;
+            color: rgba(255,255,255,.9); text-decoration: none;
+        }
+        .head-banner-back:hover { color: #fff; text-decoration: underline; }
+        .head-banner h1 { font-size: 30px; font-weight: 800; color: #fff; margin: 0; }
+        .head-banner p {
+            font-size: 15.5px; line-height: 1.55; margin: 0; max-width: 54ch;
+            color: rgba(255,255,255,.88);
+        }
+
+        /* Drawing (background artwork) */
+        .banner-skyline {
+            position: absolute; right: 0; bottom: 0;
+            height: 100%; width: auto; max-width: 58%; z-index: 1;
+            opacity: .95;
+        }
+        .banner-waves {
+            position: absolute; left: 0; bottom: 0;
+            width: 200%; height: 26px; z-index: 1;
+            animation: wave-drift 16s linear infinite;
+        }
+        .wave-back  { fill: rgba(14, 116, 128, .55); }
+        .wave-front { fill: #071C2D; stroke: #14C8BE; stroke-width: 1.5; }
+
+        .bld {
+            transform-box: fill-box; transform-origin: 50% 100%;
+            animation: rise .9s cubic-bezier(.2,.8,.2,1) both;
+            animation-delay: var(--d, 0s);
+        }
+        .glow-a { animation: twinkle 5s ease-in-out infinite; }
+        .glow-b { animation: twinkle 5s ease-in-out infinite -2.5s; }
+        .beacon { animation: blink 1.8s ease-in-out infinite; }
+        .star   { animation: twinkle 4s ease-in-out infinite; animation-delay: var(--d, 0s); }
+
+        @keyframes rise { from { opacity: 0; transform: translateY(40px) scaleY(.9); } to { opacity: 1; transform: none; } }
+        @keyframes twinkle { 0%,100% { opacity: .25; } 50% { opacity: 1; } }
+        @keyframes blink   { 0%,100% { opacity: .2; }  50% { opacity: 1; } }
+        @keyframes wave-drift { to { transform: translateX(-50%); } }
+
+        /* ── Notices / validation ── */
         .status-note {
-            font-size: 13.5px; color: var(--teal-800); background: var(--teal-50);
+            font-size: 15px; color: var(--teal-800); background: var(--teal-50);
             border: 1px solid var(--teal-100); border-radius: var(--r-md);
             padding: 14px 18px; margin-bottom: 20px;
-        }
-        .required-fields-note {
-            font-size: 13.5px; line-height: 1.5; color: #9a3412;
-            background: #fff7ed; border: 1px solid #fdba74;
-            border-radius: var(--r-md); padding: 14px 18px; margin-bottom: 24px;
         }
         .required-asterisk { color: var(--danger); font-weight: 700; margin-left: 3px; }
         .field-invalid { border: 2px solid var(--danger) !important; background: var(--danger-bg) !important; }
 
-        /* ── Step tracker ── */
-        .tracker-card {
-            background: var(--surface); border: 1px solid var(--border);
-            border-radius: var(--r-lg); box-shadow: var(--shadow-sm);
-            padding: 22px 24px; margin-bottom: 28px;
-        }
-        .progress-bar-bg {
-            height: 6px; background: var(--teal-100); border-radius: 999px;
-            overflow: hidden; margin-bottom: 20px;
-        }
-        .progress-bar-fill {
-            height: 100%; background: var(--teal-700); border-radius: 999px;
-            transition: width .3s ease;
-        }
-        .steps-row { display: flex; justify-content: space-between; gap: 6px; }
-        .step-node {
-            flex: 1; display: flex; flex-direction: column; align-items: center;
-            gap: 6px; cursor: pointer; text-align: center;
-        }
-        .node-circle {
-            width: 30px; height: 30px; border-radius: 50%;
-            background: var(--teal-50); color: var(--teal-700);
-            border: 1.5px solid var(--teal-100);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 13px; font-weight: 700;
-            transition: background .15s, color .15s, border-color .15s, box-shadow .15s;
-        }
-        .node-label {
-            font-size: 10.5px; font-weight: 500; color: var(--ink-soft);
-            transition: color .15s;
-        }
-        .step-node.active .node-circle {
-            background: var(--teal-700); color: #fff; border-color: var(--teal-700);
-            box-shadow: 0 0 0 4px var(--teal-100);
-        }
-        .step-node.active .node-label { color: var(--teal-800); font-weight: 700; }
-        .step-node:hover .node-circle { border-color: var(--teal-600); }
-
-        /* ── Wizard card + panels ── */
+        /* ── Form card: every section visible, stacked ── */
         .wizard-card {
-            background: var(--surface); border: 1px solid var(--border);
-            border-radius: var(--r-lg); box-shadow: var(--shadow-sm);
-            overflow: hidden;
+            background: #fff; border: 1px solid var(--border);
+            border-radius: var(--r-lg); box-shadow: var(--shadow-sm); overflow: hidden;
         }
-        .panel-content { padding: 36px; }
-        .panel-header { margin-bottom: 26px; }
-        .panel-header h2 {
-            font-family: var(--font-display); font-size: 21px; font-weight: 600;
-            color: var(--ink); margin: 0 0 4px;
+        .panel-content { padding: 38px 44px; }
+        .edit-step { display: block; }
+        .edit-step + .edit-step {
+            margin-top: 34px; padding-top: 30px;
+            border-top: 1px solid var(--border);
         }
-        .panel-header p { font-size: 13.5px; color: var(--ink-soft); margin: 0; }
+        .panel-header { margin-bottom: 22px; }
+        .panel-header h2 { font-size: 23px; font-weight: 700; color: var(--ink); margin: 0 0 4px; }
+        .panel-header p  { font-size: 15px; color: var(--ink-soft); margin: 0; }
 
-        /* ── Review table (step 0) ── */
-        .review-table {
-            border: 1px solid var(--border); border-radius: var(--r-md);
-            overflow: hidden;
-        }
-        .review-row {
-            display: flex; align-items: center; justify-content: space-between;
-            gap: 16px; padding: 14px 18px;
-            border-bottom: 1px solid var(--border);
-            cursor: pointer; transition: background .15s ease;
-        }
-        .review-row:last-child { border-bottom: none; }
-        .review-row:hover { background: var(--teal-50); }
-        .review-key { font-size: 13px; font-weight: 600; color: var(--ink-soft); white-space: nowrap; }
-        .review-val {
-            font-size: 13.5px; color: var(--ink); text-align: right;
-            max-width: 62%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-        }
-
-        /* ── Field grid ── */
-        .f-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .f-grid-2 { grid-template-columns: 1fr 1fr; }
+        /* ── Fields ── */
+        .f-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
         .f-col-2 { grid-column: span 2; }
         .field { display: flex; flex-direction: column; }
-        .field label { font-size: 12.5px; font-weight: 600; color: var(--ink); margin-bottom: 7px; }
+        .field label { font-size: 14.5px; font-weight: 600; color: var(--ink); margin-bottom: 7px; }
         .field input[type="text"], .field input[type="number"], .field select, .field textarea {
-            width: 100%; padding: 11px 14px; font-family: inherit; font-size: 14px;
-            color: var(--ink); background: var(--surface);
+            width: 100%; padding: 13px 16px; font-family: inherit; font-size: 16px;
+            color: var(--ink); background: #fff;
             border: 1.5px solid var(--border); border-radius: var(--r-sm);
             outline: none; transition: border-color .15s, box-shadow .15s;
         }
@@ -682,49 +145,47 @@
             border-color: var(--teal-700); box-shadow: 0 0 0 3px var(--teal-100);
         }
         .field textarea { min-height: 150px; resize: vertical; }
-        .hint-text { font-size: 12px; color: var(--ink-soft); margin-top: 7px; line-height: 1.45; }
+        .hint-text { font-size: 13.5px; color: var(--ink-soft); margin-top: 7px; line-height: 1.45; }
 
-        /* ── Tile selector (room type / commute) ── */
+        /* No up/down arrows on number inputs */
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+
+        /* ── Tiles ── */
         .tile-selector { display: flex; gap: 12px; flex-wrap: wrap; }
         .tile-option {
             flex: 1; min-width: 170px; display: flex; align-items: center; gap: 12px;
-            padding: 14px 16px; border: 1.5px solid var(--border); border-radius: var(--r-sm);
-            background: var(--surface); cursor: pointer;
+            padding: 16px 18px; border: 1.5px solid var(--border); border-radius: var(--r-sm);
+            background: #fff; cursor: pointer;
             transition: border-color .15s, background .15s, box-shadow .15s;
         }
         .tile-option:hover { border-color: var(--teal-600); }
-        .tile-option.selected {
-            border-color: var(--teal-700); background: var(--teal-50);
-            box-shadow: 0 0 0 3px var(--teal-100);
-        }
-        .tile-icon { font-size: 22px; flex-shrink: 0; }
+        .tile-option.selected { border-color: var(--teal-700); background: var(--teal-50); box-shadow: 0 0 0 3px var(--teal-100); }
+        .tile-option input[type="radio"] { position: absolute; opacity: 0; pointer-events: none; }
+        .tile-icon { font-size: 28px; flex-shrink: 0; }
         .tile-text { display: flex; flex-direction: column; gap: 2px; }
-        .tile-title { font-size: 14px; font-weight: 600; color: var(--ink); }
+        .tile-title { font-size: 16px; font-weight: 600; color: var(--ink); }
         .tile-text .hint-text { margin: 0; }
 
         /* ── Amenities ── */
-        .amenity-cat { margin-bottom: 26px; }
+        .amenity-cat { margin-bottom: 24px; }
         .amenity-cat-title {
-            font-size: 12.5px; font-weight: 700; color: var(--teal-700);
+            font-size: 14px; font-weight: 700; color: var(--teal-700);
             text-transform: uppercase; letter-spacing: .05em;
-            padding-bottom: 8px; margin-bottom: 12px;
-            border-bottom: 1px solid var(--teal-100);
+            padding-bottom: 8px; margin-bottom: 12px; border-bottom: 1px solid var(--teal-100);
         }
-        .amenity-grid-list {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-            gap: 10px;
-        }
+        .amenity-grid-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
         .amenity-card-item {
             display: flex; align-items: center; gap: 9px;
-            padding: 11px 13px; border: 1.5px solid var(--border); border-radius: var(--r-sm);
-            background: var(--surface); cursor: pointer;
-            transition: border-color .15s, background .15s;
+            padding: 13px 15px; border: 1.5px solid var(--border); border-radius: var(--r-sm);
+            background: #fff; cursor: pointer; transition: border-color .15s, background .15s;
         }
         .amenity-card-item:has(input:checked) { border-color: var(--teal-700); background: var(--teal-50); }
-        .amenity-card-item label { font-size: 13px; color: var(--ink); cursor: pointer; }
-        .amenity-card-item input { accent-color: var(--teal-700); width: 16px; height: 16px; flex-shrink: 0; }
+        .amenity-card-item label { font-size: 15px; color: var(--ink); cursor: pointer; margin: 0; }
+        .amenity-card-item input { accent-color: var(--teal-700); width: 18px; height: 18px; flex-shrink: 0; }
 
-        /* ── Photo gallery ── */
+        /* ── Photos ── */
         .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
         .gallery-item {
             position: relative; border-radius: var(--r-sm); overflow: hidden;
@@ -732,461 +193,398 @@
         }
         .gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .gallery-item .main-badge {
-            position: absolute; top: 6px; left: 6px; background: var(--teal-700);
-            color: #fff; font-size: 10px; font-weight: 700; text-transform: uppercase;
-            letter-spacing: .03em; padding: 3px 7px; border-radius: 5px;
+            position: absolute; top: 6px; left: 6px; background: var(--teal-700); color: #fff;
+            font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em;
+            padding: 4px 9px; border-radius: 5px;
         }
         .gallery-item .delete-btn {
-            position: absolute; top: 6px; right: 6px;
-            width: 24px; height: 24px; border-radius: 50%; border: none;
-            background: rgba(0,0,0,.55); color: #fff; font-size: 14px; line-height: 1;
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
-            transition: background .15s;
+            position: absolute; top: 6px; right: 6px; width: 24px; height: 24px;
+            border-radius: 50%; border: none; background: rgba(0,0,0,.55); color: #fff;
+            font-size: 14px; line-height: 1; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; transition: background .15s;
         }
         .gallery-item .delete-btn:hover { background: var(--danger); }
-        .gallery-empty { font-size: 13px; color: var(--ink-soft); margin-bottom: 12px; }
+        .gallery-empty { font-size: 15px; color: var(--ink-soft); margin-bottom: 12px; }
 
-        /* ── Special-feature cards (kept for parity even if unused on this
-             template today, so nothing looks broken if a features step is
-             added later) ── */
-        .feature-card {
-            border: 1.5px solid var(--border); border-radius: var(--r-sm); padding: 16px;
-            display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;
-        }
-        .feature-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
-        .feature-name { font-weight: 700; font-size: 14.5px; color: var(--ink); }
-        .feature-desc { font-size: 13px; color: var(--ink-soft); }
-        .feature-photos { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-        .feature-photos img { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); }
-        .feature-delete-btn {
-            background: none; border: 1.5px solid var(--border); border-radius: 7px;
-            padding: 5px 10px; font-size: 12px; font-weight: 600; color: var(--danger);
-            cursor: pointer; white-space: nowrap; transition: background .15s, border-color .15s;
-        }
-        .feature-delete-btn:hover { background: var(--danger-bg); border-color: var(--danger); }
-        .no-features { font-size: 13px; color: var(--ink-soft); }
-        .add-feature-form { border-top: 1px dashed var(--border); padding-top: 16px; display: flex; flex-direction: column; gap: 14px; margin-top: 6px; }
-
-        /* ── Buttons ── */
-        .btn {
-            font-family: inherit; border-radius: var(--r-sm); font-weight: 700;
-            font-size: 14.5px; cursor: pointer; transition: background .15s, border-color .15s, color .15s, transform .1s;
-        }
-        .btn-primary, .btn-outline, .btn-delete { padding: 14px 28px; min-width: 160px; }
-        .btn-outline {
-            background: var(--surface); border: 1.5px solid var(--border); color: var(--ink);
-        }
-        .btn-outline:hover { background: var(--teal-50); border-color: var(--teal-600); }
-        .btn:active { transform: scale(.98); }
-
-        /* ── Review row + actions bar ── */
-        #reviewSummaryBody .review-row { cursor: pointer; }
-
+        /* ── Save Draft / Delete ── */
         .actions-bar {
-            display: flex; align-items: center; justify-content: space-between;
-            gap: 12px; padding: 24px 36px; border-top: 1px solid var(--border);
-            background: var(--teal-50);
+            display: flex; align-items: center; gap: 14px;
+            padding: 24px 44px; border-top: 1px solid var(--border); background: var(--teal-50);
         }
+        .actions-bar .btn {
+            flex: 1; padding: 16px 20px; font-family: inherit; font-size: 16.5px; font-weight: 700;
+            background: #fff; border: 1.5px solid var(--border); border-radius: var(--r-sm);
+            color: var(--ink); cursor: pointer;
+            transition: background .15s, border-color .15s, transform .1s;
+        }
+        .actions-bar .btn:hover { background: var(--teal-50); border-color: var(--teal-600); }
+        .actions-bar .btn-danger { color: var(--danger); border-color: var(--danger); }
+        .actions-bar .btn-danger:hover { background: var(--danger-bg); border-color: var(--danger); }
+        .actions-bar .btn:active { transform: scale(.98); }
 
-        /* ── Save Changes CTA ── */
+        /* ── Save Changes: standalone teal button below the two ── */
         #saveChangesBtn {
-            width: 100%; text-align: center; padding: 18px 0;
-            font-family: inherit; font-size: 16px; font-weight: 700; cursor: pointer;
+            display: block; width: 100%; margin-top: 18px; padding: 19px 0;
+            font-family: inherit; font-size: 18px; font-weight: 700; text-align: center;
             background: var(--teal-700); color: #fff; border: none;
-            border-radius: var(--r-md); margin-top: 24px;
-            box-shadow: var(--shadow-sm);
+            border-radius: var(--r-md); cursor: pointer; box-shadow: var(--shadow-sm);
             transition: background .15s, box-shadow .15s, transform .1s;
         }
-        #saveChangesBtn:hover { background: var(--teal-800); box-shadow: var(--shadow-md); }
+        #saveChangesBtn:hover  { background: var(--teal-800); box-shadow: var(--shadow-md); }
         #saveChangesBtn:active { transform: scale(.99); }
 
         /* ── Responsive ── */
         @media (max-width: 720px) {
-            .topbar { padding: 14px 18px; }
+            .main > .topbar { padding: 14px 18px; }
             .container { padding: 0 16px 48px; }
-            .panel-content { padding: 24px; }
-            .actions-bar { padding: 20px 24px; flex-direction: column; }
-            .f-grid, .f-grid-2 { grid-template-columns: 1fr; }
+            .head-banner { padding: 18px 20px 30px; }
+            .banner-skyline { opacity: .3; max-width: 100%; }
+            .panel-content { padding: 22px; }
+            .actions-bar { padding: 18px 22px; flex-direction: column; }
+            .actions-bar .btn { width: 100%; }
+            .f-grid { grid-template-columns: 1fr; }
             .f-col-2 { grid-column: span 1; }
             .gallery-grid { grid-template-columns: repeat(2, 1fr); }
-            .node-label { display: none; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .bld, .glow-a, .glow-b, .beacon, .star, .banner-waves { animation: none; }
         }
     </style>
 </head>
 <body>
 
-<header class="topbar">
-    <h1 class="topbar-title" th:text="'Edit ' + ${property.title}">Edit Property</h1>
-    <div style="display: flex; align-items: center; gap: 16px;">
-        <a th:href="@{/landlord-index}" href="/landlord-index" class="btn btn-secondary" style="display: inline-flex; align-items: center; text-decoration: none; font-size: 0.9rem; padding: 8px 16px;">
-            ← Back
-        </a>
-        <div class="avatar-initials" th:text="${userInitials != null ? userInitials : 'EH'}">EH</div>
-    </div>
-</header>
+<div class="app-shell">
+    <!-- ============ SIDEBAR (shared fragment) ============ -->
+    <div th:replace="~{fragments/landlord-sidebar :: sidebar('properties')}"></div>
 
-<main class="container" style="padding-top: 2rem;">
-    <div class="head-title">
-        <h1 th:text="'Edit ' + ${property.title}">Edit Property</h1>
-        <p>Jump to any section below and make your changes — one Save applies everything.</p>
-    </div>
+    <!-- ============ MAIN ============ -->
+    <main class="main">
 
-    <p class="status-note" th:if="${property.status == 'Draft'}">
-        This listing is still a <strong>Draft</strong>. It won't be visible to students until you fill in the required fields and hit "Save Changes" to submit it for approval.
-    </p>
+        <header class="topbar">
+            <div class="avatar-initials" th:text="${userInitials != null ? userInitials : 'EH'}">EH</div>
+        </header>
 
-    <!-- Required-fields note — mirrors the creation wizard's banner. -->
-    <p class="required-fields-note">
-        ⚠️ Fields marked with <strong>*</strong> are required. Do not skip or leave them blank or invalid — if any are missing when you hit <strong>Save Changes</strong>, this listing will be saved as a <strong>Draft</strong> instead of going live.
-    </p>
+        <div class="container" style="padding-top: 1.75rem;">
 
-    <!-- Step Tracker — jumps to any step from anywhere -->
-    <div class="tracker-card">
-        <div class="progress-bar-bg">
-            <div class="progress-bar-fill" id="editProgressFill"></div>
-        </div>
-        <div class="steps-row" id="editStepsTracker"></div>
-    </div>
+            <!-- Compact banner: gradient + drawing behind the text -->
+            <div class="head-banner">
+                <svg class="banner-skyline" viewBox="0 0 560 200" preserveAspectRatio="xMaxYMax meet" aria-hidden="true">
+                    <defs>
+                        <pattern id="winA" width="12" height="28" patternUnits="userSpaceOnUse">
+                            <rect x="3" y="4" width="5" height="6" rx="1" fill="#9FF0E8"/>
+                        </pattern>
+                        <pattern id="winB" width="12" height="28" patternUnits="userSpaceOnUse">
+                            <rect x="3" y="18" width="5" height="6" rx="1" fill="#F5D450"/>
+                        </pattern>
+                    </defs>
+                    <g fill="#9FF0E8">
+                        <circle class="star" cx="300" cy="24" r="1.4" style="--d:0s"/>
+                        <circle class="star" cx="360" cy="40" r="1.2" style="--d:1.2s"/>
+                        <circle class="star" cx="520" cy="30" r="1.5" style="--d:.6s"/>
+                        <circle class="star" cx="240" cy="60" r="1.1" style="--d:2s"/>
+                    </g>
+                    <g class="bld" style="--d:.1s">
+                        <path d="M200 200V160L223 140L246 160V200Z" fill="#14C8BE"/>
+                        <rect x="217" y="172" width="12" height="28" fill="#071C2D"/>
+                    </g>
+                    <g class="bld" style="--d:.25s">
+                        <rect x="250" y="120" width="50" height="80" fill="#0D3947"/>
+                        <rect class="glow-a" x="264" y="140" width="24" height="56" fill="url(#winA)"/>
+                        <rect class="glow-b" x="264" y="140" width="24" height="56" fill="url(#winB)"/>
+                    </g>
+                    <g class="bld" style="--d:.4s">
+                        <rect x="308" y="80" width="42" height="120" fill="#0F4654"/>
+                        <rect class="glow-a" x="312" y="84" width="36" height="112" fill="url(#winA)"/>
+                        <rect class="glow-b" x="312" y="84" width="36" height="112" fill="url(#winB)"/>
+                    </g>
+                    <g class="bld" style="--d:.55s">
+                        <rect x="358" y="105" width="60" height="95" fill="#0D3947"/>
+                        <rect class="glow-a" x="360" y="112" width="48" height="84" fill="url(#winA)"/>
+                        <rect class="glow-b" x="360" y="112" width="48" height="84" fill="url(#winB)"/>
+                    </g>
+                    <g class="bld" style="--d:.7s">
+                        <rect x="426" y="40" width="46" height="160" fill="#124F5D"/>
+                        <rect class="glow-a" x="432" y="56" width="36" height="140" fill="url(#winA)"/>
+                        <rect class="glow-b" x="432" y="56" width="36" height="140" fill="url(#winB)"/>
+                        <line x1="449" y1="40" x2="449" y2="18" stroke="#14C8BE" stroke-width="1.5"/>
+                        <circle class="beacon" cx="449" cy="16" r="3" fill="#F5D450"/>
+                    </g>
+                    <g class="bld" style="--d:.85s">
+                        <rect x="480" y="95" width="52" height="105" fill="#0F4654"/>
+                        <rect class="glow-a" x="480" y="112" width="48" height="84" fill="url(#winA)"/>
+                        <rect class="glow-b" x="480" y="112" width="48" height="84" fill="url(#winB)"/>
+                    </g>
+                </svg>
 
-    <form id="editPropertyForm" class="wizard-card" th:action="@{/update-property/{id}(id=${property.propertyID})}" method="post" enctype="multipart/form-data">
+                <svg class="banner-waves" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true">
+                    <path class="wave wave-back"  d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+                    <path class="wave wave-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+                </svg>
 
-        <div class="panel-content">
-
-            <!-- Step 0 — Review (default landing). Built live by edit-property.js
-                 from whatever's currently in the real fields below, so it always
-                 reflects the latest edits even when you jump around out of order. -->
-            <div class="edit-step" data-step="0">
-                <div class="panel-header">
-                    <h2>Review</h2>
-                    <p>Click any row to jump straight to that section and edit it.</p>
-                </div>
-                <div class="review-table" id="reviewSummaryBody"></div>
+                <a th:href="@{/landlord-index}" href="/landlord-index" class="head-banner-back">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Back to My Properties
+                </a>
+                <h1>Edit Property</h1>
+                <p>Update your property details, photos, and amenities. Draft listings are reviewed by our admin team before going live for students.</p>
             </div>
 
-            <!-- Step 1 — Basic Info -->
-            <div class="edit-step" data-step="1">
-                <div class="panel-header">
-                    <h2>Basic Info & Accommodation Type</h2>
-                    <p>The title students see first, and the room setup.</p>
-                </div>
-                <div class="f-grid">
-                    <div class="field f-col-2">
-                        <label>Property Title<span class="required-asterisk">*</span></label>
-                        <input type="text" name="title" th:value="${property.title}" required />
-                    </div>
-                    <div class="field f-col-2">
-                        <label>Room Type</label>
-                        <div class="tile-selector">
-                            <label class="tile-option" th:classappend="${property.type == 'Single Room'} ? 'selected'" onclick="selectEditTile(this, 'type')">
-                                <input type="radio" name="type" value="Single Room" th:checked="${property.type == 'Single Room'}" />
-                                <span class="tile-icon">🛏️</span>
-                                <span class="tile-text">
-                  <span class="tile-title">Single Room</span>
-                  <span class="hint-text">Private bedroom for one student</span>
-                </span>
-                            </label>
-                            <label class="tile-option" th:classappend="${property.type == 'Sharing'} ? 'selected'" onclick="selectEditTile(this, 'type')">
-                                <input type="radio" name="type" value="Sharing" th:checked="${property.type == 'Sharing'}" />
-                                <span class="tile-icon">👥</span>
-                                <span class="tile-text">
-                  <span class="tile-title">Sharing Room</span>
-                  <span class="hint-text">Shared bedroom arrangement</span>
-                </span>
-                            </label>
-                            <label class="tile-option" th:classappend="${property.type == 'Commune'} ? 'selected'" onclick="selectEditTile(this, 'type')">
-                                <input type="radio" name="type" value="Commune" th:checked="${property.type == 'Commune'}" />
-                                <span class="tile-icon">🏠</span>
-                                <span class="tile-text">
-                  <span class="tile-title">Commune</span>
-                  <span class="hint-text">Shared house, typically 4-5 students</span>
-                </span>
-                            </label>
+            <p class="status-note" th:if="${property.status == 'Draft'}">
+                This listing is still a <strong>Draft</strong>. It won't be visible to students until you fill in the required fields and hit "Save Changes" to submit it for approval.
+            </p>
+
+            <form id="editPropertyForm" class="wizard-card" th:action="@{/update-property/{id}(id=${property.propertyID})}" method="post" enctype="multipart/form-data">
+
+                <div class="panel-content">
+
+                    <!-- Basic Info -->
+                    <div class="edit-step" data-step="1">
+                        <div class="panel-header">
+                            <h2>Basic Info &amp; Accommodation Type</h2>
+                            <p>The title students see first, and the room setup.</p>
+                        </div>
+                        <div class="f-grid">
+                            <div class="field f-col-2">
+                                <label>Property Title<span class="required-asterisk">*</span></label>
+                                <input type="text" name="title" th:value="${property.title}" required />
+                            </div>
+                            <div class="field f-col-2">
+                                <label>Room Type</label>
+                                <div class="tile-selector">
+                                    <label class="tile-option" th:classappend="${property.type == 'Single Room'} ? 'selected'" onclick="selectEditTile(this, 'type')">
+                                        <input type="radio" name="type" value="Single Room" th:checked="${property.type == 'Single Room'}" />
+                                        <span class="tile-icon">🛏️</span>
+                                        <span class="tile-text">
+                                            <span class="tile-title">Single Room</span>
+                                            <span class="hint-text">Private bedroom for one student</span>
+                                        </span>
+                                    </label>
+                                    <label class="tile-option" th:classappend="${property.type == 'Sharing'} ? 'selected'" onclick="selectEditTile(this, 'type')">
+                                        <input type="radio" name="type" value="Sharing" th:checked="${property.type == 'Sharing'}" />
+                                        <span class="tile-icon">👥</span>
+                                        <span class="tile-text">
+                                            <span class="tile-title">Sharing Room</span>
+                                            <span class="hint-text">Shared bedroom arrangement</span>
+                                        </span>
+                                    </label>
+                                    <label class="tile-option" th:classappend="${property.type == 'Commune'} ? 'selected'" onclick="selectEditTile(this, 'type')">
+                                        <input type="radio" name="type" value="Commune" th:checked="${property.type == 'Commune'}" />
+                                        <span class="tile-icon">🏠</span>
+                                        <span class="tile-text">
+                                            <span class="tile-title">Commune</span>
+                                            <span class="hint-text">Shared house, typically 4-5 students</span>
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="field f-col-2">
+                                <label>Capacity (number of students this listing can hold)<span class="required-asterisk">*</span></label>
+                                <input type="number" name="capacity" min="1" step="1"
+                                       th:value="${property.capacity}" placeholder="e.g. 30" required />
+                                <p class="hint-text">This is what caps how many applications you can accept for this property.</p>
+                            </div>
                         </div>
                     </div>
-                    <div class="field f-col-2">
-                        <label>Capacity (number of students this listing can hold)<span class="required-asterisk">*</span></label>
-                        <input type="number" name="capacity" min="1" step="1"
-                               th:value="${property.capacity != null ? property.capacity : 1}" required />
-                        <p class="hint-text">This is what caps how many applications you can accept for this property.</p>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Step 2 — Pricing & Location -->
-            <div class="edit-step" data-step="2">
-                <div class="panel-header">
-                    <h2>Pricing & Location Details</h2>
-                    <p>Rent, deposit, and where students will find you.</p>
-                </div>
-                <div class="f-grid f-grid-2">
-                    <div class="field">
-                        <label>Monthly Rent (R)<span class="required-asterisk">*</span></label>
-                        <input type="number" step="0.01" name="rent" th:value="${property.rent}" required />
-                    </div>
-                    <div class="field">
-                        <label>Deposit (R)</label>
-                        <input type="number" step="0.01" name="deposit" th:value="${property.deposit}" />
-                    </div>
-                    <div class="field">
-                        <label>Suburb</label>
-                        <input type="text" name="city" th:value="${property.city}" placeholder="e.g. Summerstrand" />
-                    </div>
-                    <div class="field">
-                        <label>Full Address<span class="required-asterisk">*</span></label>
-                        <input type="text" name="address" th:value="${property.address}" required />
-                    </div>
-                    <div class="field f-col-2">
-                        <label>Getting to Campus</label>
-                        <div class="tile-selector">
-                            <label class="tile-option" th:classappend="${property.commuteType == 'Walking distance'} ? 'selected'" onclick="selectEditTile(this, 'commuteType')">
-                                <input type="radio" name="commuteType" value="Walking distance" th:checked="${property.commuteType == 'Walking distance'}" />
-                                <span class="tile-icon">🚶</span>
-                                <span class="tile-text">
-                  <span class="tile-title">Walking Distance</span>
-                  <span class="hint-text">Close enough to walk to campus</span>
-                </span>
-                            </label>
-                            <label class="tile-option" th:classappend="${property.commuteType == 'Shuttle required'} ? 'selected'" onclick="selectEditTile(this, 'commuteType')">
-                                <input type="radio" name="commuteType" value="Shuttle required" th:checked="${property.commuteType == 'Shuttle required'}" />
-                                <span class="tile-icon">🚌</span>
-                                <span class="tile-text">
-                  <span class="tile-title">Shuttle Required</span>
-                  <span class="hint-text">Transport required to reach campus</span>
-                </span>
-                            </label>
+                    <!-- Pricing & Location -->
+                    <div class="edit-step" data-step="2">
+                        <div class="panel-header">
+                            <h2>Pricing &amp; Location Details</h2>
+                            <p>Rent, deposit, and where students will find you.</p>
+                        </div>
+                        <div class="f-grid">
+                            <div class="field">
+                                <label>Monthly Rent (R)<span class="required-asterisk">*</span></label>
+                                <input type="number" step="0.01" name="rent" th:value="${property.rent}" required />
+                            </div>
+                            <div class="field">
+                                <label>Deposit (R)</label>
+                                <input type="number" step="0.01" name="deposit" th:value="${property.deposit}" />
+                            </div>
+                            <div class="field">
+                                <label>Suburb</label>
+                                <input type="text" name="city" th:value="${property.city}" placeholder="e.g. Summerstrand" />
+                            </div>
+                            <div class="field">
+                                <label>Full Address<span class="required-asterisk">*</span></label>
+                                <input type="text" name="address" th:value="${property.address}" required />
+                            </div>
+                            <div class="field f-col-2">
+                                <label>Getting to Campus</label>
+                                <div class="tile-selector">
+                                    <label class="tile-option" th:classappend="${property.commuteType == 'Walking distance'} ? 'selected'" onclick="selectEditTile(this, 'commuteType')">
+                                        <input type="radio" name="commuteType" value="Walking distance" th:checked="${property.commuteType == 'Walking distance'}" />
+                                        <span class="tile-icon">🚶</span>
+                                        <span class="tile-text">
+                                            <span class="tile-title">Walking Distance</span>
+                                            <span class="hint-text">Close enough to walk to campus</span>
+                                        </span>
+                                    </label>
+                                    <label class="tile-option" th:classappend="${property.commuteType == 'Shuttle required'} ? 'selected'" onclick="selectEditTile(this, 'commuteType')">
+                                        <input type="radio" name="commuteType" value="Shuttle required" th:checked="${property.commuteType == 'Shuttle required'}" />
+                                        <span class="tile-icon">🚌</span>
+                                        <span class="tile-text">
+                                            <span class="tile-title">Shuttle Required</span>
+                                            <span class="hint-text">Transport required to reach campus</span>
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="field f-col-2">
+                                <label>Available From</label>
+                                <select name="availableFrom">
+                                    <option value="">Select a semester</option>
+                                    <option th:each="option : ${availableFromOptions}"
+                                            th:value="${#temporals.format(option, 'yyyy-MM-dd')}"
+                                            th:text="${#temporals.format(option, 'MMMM yyyy')}"
+                                            th:selected="${option == property.availableFrom}">
+                                    </option>
+                                </select>
+                            </div>
                         </div>
                     </div>
+
+                    <!-- Description -->
+                    <div class="edit-step" data-step="3">
+                        <div class="panel-header">
+                            <h2>Property Description</h2>
+                            <p>Highlight key selling points, house rules, and nearby universities.</p>
+                        </div>
+                        <div class="f-grid">
+                            <div class="field f-col-2">
+                                <label>Description</label>
+                                <textarea name="description" th:text="${property.description}"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Amenities -->
+                    <div class="edit-step" data-step="4">
+                        <div class="panel-header">
+                            <h2>Property Amenities</h2>
+                            <p>Tick everything included with this room.</p>
+                        </div>
+                        <div th:each="entry : ${amenityCategories}" class="amenity-cat">
+                            <div class="amenity-cat-title" th:text="${entry.key}">Category</div>
+                            <div class="amenity-grid-list">
+                                <label class="amenity-card-item" th:each="amenity : ${entry.value}">
+                                    <input type="checkbox" name="amenityIds" th:value="${amenity.amenityID}"
+                                           th:checked="${selectedAmenityIds.contains(amenity.amenityID)}" />
+                                    <label th:text="${amenity.name}" style="pointer-events:none;">Amenity</label>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!--
+                        Photos.
+                        Each delete button is bound to THIS form via form="editPropertyForm"
+                        plus formaction/formmethod — it is NOT a nested <form>
+                        (nested forms are invalid HTML and would orphan the Save buttons).
+                    -->
+                    <div class="edit-step" data-step="5">
+                        <div class="panel-header">
+                            <h2>Property Photos</h2>
+                            <p>Manage existing photos and upload new ones.</p>
+                        </div>
+
+                        <div class="gallery-grid" th:if="${!images.isEmpty()}" style="margin-bottom: 20px;">
+                            <div class="gallery-item" th:each="img : ${images}">
+                                <img th:src="${img.url}" alt="Property photo" />
+                                <span class="main-badge" th:if="${img.isMain}">Main</span>
+                                <button type="submit"
+                                        class="delete-btn"
+                                        title="Delete photo"
+                                        form="editPropertyForm"
+                                        th:formaction="@{/delete-property-image/{imageId}(imageId=${img.imageID})}"
+                                        formmethod="post"
+                                        formnovalidate
+                                        onclick="return confirm('Remove this photo?');">&times;</button>
+                            </div>
+                        </div>
+                        <p class="gallery-empty" th:if="${images.isEmpty()}">No photos uploaded yet.</p>
+
+                        <div class="f-grid">
+                            <div class="field f-col-2">
+                                <label>Replace Cover Photo (Main Display Image)</label>
+                                <input type="file" id="coverImageInput" name="coverImage" accept="image/*" onchange="previewCoverImage(this)" />
+                                <div id="coverImagePreview" style="margin-top:10px;"></div>
+                                <p class="hint-text">Only upload here if you want to change the main photo. Leave empty to keep your current one.</p>
+                            </div>
+                            <div class="field f-col-2">
+                                <label>Add More Photos</label>
+                                <input type="file" id="additionalImagesInput" name="images" multiple accept="image/*" onchange="previewAdditionalImages(this)" />
+                                <div id="additionalImagesPreview" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;"></div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
-                <div class="f-grid" style="margin-top: 20px;">
-                    <div class="field f-col-2">
-                        <label>Available From</label>
-                        <select name="availableFrom">
-                            <option value="">Select a semester</option>
-                            <option th:each="option : ${availableFromOptions}"
-                                    th:value="${#temporals.format(option, 'yyyy-MM-dd')}"
-                                    th:text="${#temporals.format(option, 'MMMM yyyy')}"
-                                    th:selected="${option == property.availableFrom}">
-                            </option>
-                        </select>
-                    </div>
-                </div>
-            </div>
+                <input type="hidden" name="action" id="formAction" value="update" />
 
-            <!-- Step 3 — Description -->
-            <div class="edit-step" data-step="3">
-                <div class="panel-header">
-                    <h2>Property Description</h2>
-                    <p>Highlight key selling points, house rules, and nearby universities.</p>
-                </div>
-                <div class="f-grid">
-                    <div class="field f-col-2">
-                        <label>Description</label>
-                        <textarea name="description" th:text="${property.description}"></textarea>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Step 4 — Amenities, grouped by category -->
-            <div class="edit-step" data-step="4">
-                <div class="panel-header">
-                    <h2>Property Amenities</h2>
-                    <p>Tick everything included with this room.</p>
-                </div>
-                <div th:each="entry : ${amenityCategories}" class="amenity-cat">
-                    <div class="amenity-cat-title" th:text="${entry.key}">Category</div>
-                    <div class="amenity-grid-list">
-                        <label class="amenity-card-item" th:each="amenity : ${entry.value}">
-                            <input type="checkbox" name="amenityIds" th:value="${amenity.amenityID}"
-                                   th:checked="${selectedAmenityIds.contains(amenity.amenityID)}" />
-                            <label th:text="${amenity.name}" style="pointer-events:none;">Amenity</label>
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            <!--
-                Step 5 — Photos.
-                IMPORTANT: each delete button is bound to THIS form via form="editPropertyForm"
-                plus formaction/formmethod — it is NOT its own nested <form>. Nested <form>
-                elements are invalid HTML; the browser silently closes the outer form at the
-                first nested </form> it hits, which would orphan the Save buttons below.
-                This pattern avoids that.
-            -->
-            <div class="edit-step" data-step="5">
-                <div class="panel-header">
-                    <h2>Property Photos</h2>
-                    <p>Manage existing photos and upload new ones.</p>
+                <div class="actions-bar">
+                    <button type="submit" formnovalidate class="btn"
+                            onclick="document.getElementById('formAction').value='draft';">Save Draft</button>
+                    <button type="submit"
+                            class="btn btn-danger"
+                            th:formaction="@{/toggle-property-status/{id}(id=${property.propertyID}, isAvailable=false)}"
+                            formmethod="post"
+                            formnovalidate
+                            th:attr="onclick=|return confirm('Deactivate &quot;${#strings.escapeJavaScript(property.title)}&quot;? It will stop showing to students until you reactivate it.');|">Delete</button>
                 </div>
 
-                <div class="gallery-grid" th:if="${!images.isEmpty()}" style="margin-bottom: 20px;">
-                    <div class="gallery-item" th:each="img : ${images}">
-                        <img th:src="${img.url}" alt="Property photo" />
-                        <span class="main-badge" th:if="${img.isMain}">Main</span>
-                        <button type="submit"
-                                class="delete-btn"
-                                title="Delete photo"
-                                form="editPropertyForm"
-                                th:formaction="@{/delete-property-image/{imageId}(imageId=${img.imageID})}"
-                                formmethod="post"
-                                formnovalidate
-                                onclick="return confirm('Remove this photo?');">&times;</button>
-                    </div>
-                </div>
-                <p class="gallery-empty" th:if="${images.isEmpty()}">No photos uploaded yet.</p>
+            </form>
 
-                <div class="f-grid">
-                    <div class="field f-col-2">
-                        <label>Replace Cover Photo (Main Display Image)</label>
-                        <input type="file" id="coverImageInput" name="coverImage" accept="image/*" onchange="previewCoverImage(this)" />
-                        <div id="coverImagePreview" style="margin-top:10px;"></div>
-                        <p class="hint-text">Only upload here if you want to change the main photo. Leave empty to keep your current one.</p>
-                    </div>
-                    <div class="field f-col-2" style="margin-top:16px;">
-                        <label>Add More Photos</label>
-                        <input type="file" id="additionalImagesInput" name="images" multiple accept="image/*" onchange="previewAdditionalImages(this)" />
-                        <div id="additionalImagesPreview" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;"></div>
-                    </div>
-                </div>
-            </div>
+            <!-- Standalone Save Changes — teal, below the two buttons.
+                 formnovalidate: required-field checks are done by edit-property-validation.js,
+                 which blocks the save until every required field is valid. -->
+            <button type="submit" form="editPropertyForm" formnovalidate id="saveChangesBtn">Save Changes</button>
 
         </div>
+    </main>
+</div>
 
-        <input type="hidden" name="action" id="formAction" value="update" />
-
-        <!-- Save actions — always visible regardless of which step is showing,
-             so changes made across any steps you visited save together, from
-             wherever you currently are. -->
-        <div class="actions-bar">
-            <button type="submit" formnovalidate class="btn btn-outline"
-                    style="flex:1;"
-                    onclick="document.getElementById('formAction').value='draft';">Save Draft</button>
-            <button type="submit"
-                    class="btn btn-outline"
-                    style="flex:1; color:var(--danger); border-color:var(--danger);"
-                    th:formaction="@{/toggle-property-status/{id}(id=${property.propertyID}, isAvailable=false)}"
-                    formmethod="post"
-                    formnovalidate
-                    th:attr="onclick=|return confirm('Deactivate &quot;${#strings.escapeJavaScript(property.title)}&quot;? It will stop showing to students until you reactivate it.');|">Delete</button>
-        </div>
-
-    </form>
-
-    <!-- Standalone Save Changes button. Styled via the #saveChangesBtn rule
-         above rather than an inline style attribute, so nothing else on the
-         page can accidentally override it, but it still can't be beaten by
-         anything with lower specificity elsewhere.
-         formnovalidate is set so the browser's native required-field popups
-         never fire here — required-field enforcement is handled entirely by
-         the validation script below, which decides between "update" and a
-         entirely blocked from saving until every required field is valid —
-         see the validation script below, which intercepts the click. -->
-    <button type="submit" form="editPropertyForm" formnovalidate id="saveChangesBtn">
-        Save Changes</button>
-
-</main>
-
+<script src="/landlord-sidebar-toggle.js" defer></script>
 <script>
-    // ── Required-field validation for Save Changes ──
-    // "Save Changes" is BLOCKED entirely if any required field is missing
-    // or invalid — the click is cancelled, the landlord is jumped to the
-    // step containing the first unanswered required field, that field is
-    // highlighted red and scrolled into view. "Save Draft" (elsewhere on
-    // this page) is completely untouched by this script — it always saves
-    // whatever's filled in, no validation, exactly as before.
-    (function () {
-        const REQUIRED_FIELDS_EDIT = [
-            { name: 'title', label: 'Property Title', step: 1, validate: v => !!(v && v.trim().length > 0) },
-            { name: 'capacity', label: 'Capacity', step: 1, validate: v => !!(v && Number(v) >= 1) },
-            { name: 'rent', label: 'Monthly Rent', step: 2, validate: v => !!(v && Number(v) > 0) },
-            { name: 'address', label: 'Full Address', step: 2, validate: v => !!(v && v.trim().length > 0) }
-        ];
-
-        function fieldEl(name) {
-            return document.querySelector(`#editPropertyForm [name="${name}"]`);
-        }
-
-        function getInvalidFields() {
-            return REQUIRED_FIELDS_EDIT.filter(f => {
-                const el = fieldEl(f.name);
-                const val = el ? el.value : '';
-                return !f.validate(val);
-            });
-        }
-
-        function highlightInvalid(fields) {
-            document.querySelectorAll('#editPropertyForm .field-invalid').forEach(el => el.classList.remove('field-invalid'));
-            fields.forEach(f => {
-                const el = fieldEl(f.name);
-                if (el) el.classList.add('field-invalid');
-            });
-        }
-
-        // Reveals the given step. Tries the REAL step-tracker's own click
-        // handler first (whatever edit-property.js wired it to), so the
-        // page's internal "current step" state stays in sync instead of
-        // this script fighting it. Falls back to toggling the .active
-        // class directly (same pattern the creation wizard uses) if no
-        // tracker nodes are found.
-        function revealStep(stepIndex) {
-            const trackerNodes = document.querySelectorAll('#editStepsTracker .step-node');
-            if (trackerNodes && trackerNodes.length > stepIndex) {
-                trackerNodes[stepIndex].click();
-                return;
-            }
-            document.querySelectorAll('.edit-step').forEach(el => {
-                el.classList.toggle('active', Number(el.dataset.step) === stepIndex);
-            });
-        }
-
-        document.addEventListener('DOMContentLoaded', function () {
-            const saveChangesBtn = document.getElementById('saveChangesBtn');
-            if (!saveChangesBtn) return;
-
-            saveChangesBtn.addEventListener('click', function (e) {
-                const invalid = getInvalidFields();
-                if (invalid.length > 0) {
-                    e.preventDefault(); // block the save — do not submit
-                    e.stopImmediatePropagation();
-                    highlightInvalid(invalid);
-
-                    const firstInvalid = invalid[0];
-                    revealStep(firstInvalid.step);
-
-                    // Give the step a moment to actually become visible
-                    // before scrolling/focusing the field inside it.
-                    setTimeout(() => {
-                        const el = fieldEl(firstInvalid.name);
-                        if (el) {
-                            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            el.focus();
-                        }
-                    }, 60);
-
-                    alert('These required fields (marked *) still need valid values:\n\n' +
-                        invalid.map(f => '• ' + f.label).join('\n') +
-                        '\n\nFill them in to save changes, or use "Save Draft" to keep your progress without publishing yet.');
-                } else {
-                    highlightInvalid([]);
-                    // Not forced invalid — let the click proceed normally.
-                    // formAction stays whatever it already is ("update"),
-                    // since nothing here ever sets it to "draft" anymore.
-                }
-            });
-
-            // Live-clear the red border the moment a field becomes valid again.
-            REQUIRED_FIELDS_EDIT.forEach(f => {
-                const el = fieldEl(f.name);
-                if (el) {
-                    el.addEventListener('input', () => {
-                        if (f.validate(el.value)) el.classList.remove('field-invalid');
-                    });
-                }
-            });
+    /* Page helpers (inline so nothing else has to load): tile selection + photo previews */
+    function selectEditTile(label, name) {
+        var input = label.querySelector('input[type="radio"]');
+        if (!input) return;
+        input.checked = true;
+        document.querySelectorAll('#editPropertyForm input[name="' + name + '"]').forEach(function (r) {
+            var tile = r.closest('.tile-option');
+            if (tile) tile.classList.toggle('selected', r.checked);
         });
-    })();
-</script>
+    }
 
-<script th:src="@{/edit-property.js}" src="/edit-property.js"></script>
+    function makeThumb(src, size) {
+        var img = document.createElement('img');
+        img.src = src;
+        img.alt = 'Preview';
+        img.style.cssText = 'width:' + size + 'px;height:' + size + 'px;object-fit:cover;' +
+            'border-radius:8px;border:1.5px solid #e1e6e6;';
+        return img;
+    }
+
+    function previewCoverImage(input) {
+        var box = document.getElementById('coverImagePreview');
+        if (!box) return;
+        box.innerHTML = '';
+        if (input.files && input.files[0]) {
+            box.appendChild(makeThumb(URL.createObjectURL(input.files[0]), 120));
+        }
+    }
+
+    function previewAdditionalImages(input) {
+        var box = document.getElementById('additionalImagesPreview');
+        if (!box) return;
+        box.innerHTML = '';
+        Array.prototype.forEach.call(input.files || [], function (file) {
+            box.appendChild(makeThumb(URL.createObjectURL(file), 88));
+        });
+    }
+</script>
+<script th:src="@{/edit-property-validation.js}" src="/edit-property-validation.js"></script>
 </body>
 </html>
