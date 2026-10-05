@@ -1,3 +1,237 @@
+
+<!--<!DOCTYPE html>-->
+<!--<html lang="en" xmlns:th="http://www.thymeleaf.org">-->
+<!--<head>-->
+<!--  <meta charset="UTF-8">-->
+<!--  <meta name="viewport" content="width=device-width, initial-scale=1.0">-->
+<!--  <title>ULEE | My Properties</title>-->
+<!--  <link rel="preconnect" href="https://fonts.googleapis.com">-->
+<!--  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Playfair+Display:wght@400;500;700&display=swap" rel="stylesheet">-->
+<!--  <link rel="stylesheet" href="/landlord-style.css">-->
+<!--  <link rel="stylesheet" href="/speak-with-ai.css">-->
+<!--  <script src="/speak-with-ai-logic.js" defer></script>-->
+<!--  <script src="/speak-with-ai.js" defer></script>-->
+<!--  <style>-->
+<!--    /* Everything else (logo, sidebar collapse, avatar, status badges)-->
+<!--       now lives in landlord-style.css. Only this page's toast is-->
+<!--       specific enough to this template to stay inline. */-->
+<!--    #addedToast {-->
+<!--      position: fixed;-->
+<!--      top: 20px;-->
+<!--      left: 50%;-->
+<!--      transform: translateX(-50%) translateY(-20px);-->
+<!--      background: hsl(180, 67%, 36%);-->
+<!--      color: #fff;-->
+<!--      padding: 14px 22px;-->
+<!--      border-radius: 10px;-->
+<!--      font-family: 'Hanken Grotesk', sans-serif;-->
+<!--      font-weight: 600;-->
+<!--      font-size: 14px;-->
+<!--      box-shadow: 0 8px 24px rgba(0,0,0,0.18);-->
+<!--      opacity: 0;-->
+<!--      pointer-events: none;-->
+<!--      transition: opacity 0.25s ease, transform 0.25s ease;-->
+<!--      z-index: 1000;-->
+<!--    }-->
+<!--    #addedToast.show {-->
+<!--      opacity: 1;-->
+<!--      transform: translateX(-50%) translateY(0);-->
+<!--    }-->
+<!--  </style>-->
+<!--</head>-->
+<!--<body>-->
+
+<!--<div class="app-shell">-->
+
+<!--  &lt;!&ndash; ============ SIDEBAR (shared fragment — see fragments/landlord-sidebar.html) ============ &ndash;&gt;-->
+<!--  <div th:replace="~{fragments/landlord-sidebar :: sidebar('properties')}"></div>-->
+
+<!--  &lt;!&ndash; ============ MAIN ============ &ndash;&gt;-->
+<!--  <main class="main">-->
+
+<!--    <header class="topbar">-->
+<!--      <h1 class="topbar-title">My Properties</h1>-->
+<!--      <div class="avatar-initials" th:text="${userInitials != null ? userInitials : 'EH'}">EH</div>-->
+<!--    </header>-->
+
+<!--    <div class="page-body">-->
+
+<!--      &lt;!&ndash; Page intro + primary action &ndash;&gt;-->
+<!--      <div class="page-head">-->
+<!--        <div>-->
+<!--          <h2 class="page-title">Property Inventory</h2>-->
+<!--          <p class="page-subtitle">Manage and track your Gqeberha student housing portfolio.</p>-->
+<!--        </div>-->
+<!--        <a class="btn btn-primary" th:href="@{/list-property}">-->
+<!--          <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>-->
+<!--          Add New Property-->
+<!--        </a>-->
+<!--      </div>-->
+
+<!--      &lt;!&ndash; Metrics bar &ndash;&gt;-->
+<!--      <section class="metrics-bar" aria-label="Portfolio summary">-->
+<!--        <div class="stat-card">-->
+<!--          <div class="stat-icon stat-icon&#45;&#45;teal">-->
+<!--            <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="13" y="3" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="13" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="13" y="13" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>-->
+<!--          </div>-->
+<!--          <div class="stat-copy">-->
+<!--            <span class="stat-value" id="statTotalProperties" th:text="${totalProperties}">12</span>-->
+<!--            <span class="stat-label">Total Properties</span>-->
+<!--          </div>-->
+<!--        </div>-->
+
+<!--        <div class="stat-card">-->
+<!--          <div class="stat-icon stat-icon&#45;&#45;purple">-->
+<!--            <svg viewBox="0 0 24 24" fill="none"><path d="M8 3h8a2 2 0 0 1 2 2v14l-6-3-6 3V5a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>-->
+<!--          </div>-->
+<!--          <div class="stat-copy">-->
+<!--            <span class="stat-value" id="statPendingApplications" th:text="${awaitingApprovalCount}">24</span>-->
+<!--            <span class="stat-label">Awaiting Review</span>-->
+<!--          </div>-->
+<!--          <span class="stat-alert-dot" id="statAlertDot" th:hidden="${awaitingApprovalCount == 0}" aria-hidden="true"></span>-->
+<!--        </div>-->
+
+<!--        <div class="stat-card">-->
+<!--          <div class="stat-icon stat-icon&#45;&#45;tealdark">-->
+<!--            <svg viewBox="0 0 24 24" fill="none"><path d="M4 21V9l8-6 8 6v12h-5v-7h-6v7H4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>-->
+<!--          </div>-->
+<!--          <div class="stat-copy">-->
+<!--            <span class="stat-value" id="statVacantRooms" th:text="${vacantRooms}">15</span>-->
+<!--            <span class="stat-label">Vacant Rooms</span>-->
+<!--          </div>-->
+<!--        </div>-->
+
+<!--        <div class="stat-card">-->
+<!--          <div class="stat-icon stat-icon&#45;&#45;purple">-->
+<!--            <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 3a9 9 0 0 1 0 18" stroke="currentColor" stroke-width="1.8"/></svg>-->
+<!--          </div>-->
+<!--          <div class="stat-copy">-->
+<!--            <span class="stat-value" id="statOccupancy" th:text="${occupancyRate} + '%'">92%</span>-->
+<!--            <span class="stat-label">Avg. Occupancy</span>-->
+<!--          </div>-->
+<!--        </div>-->
+<!--      </section>-->
+
+<!--      &lt;!&ndash; Filter / sort row &ndash;&gt;-->
+<!--      <section class="toolbar" aria-label="Filter and sort properties">-->
+<!--        <div class="filter-group" id="filterGroup" role="tablist" aria-label="Filter by status">-->
+<!--          <button class="chip chip&#45;&#45;active" data-filter="all" role="tab" aria-selected="true">All</button>-->
+<!--          <button class="chip" data-filter="available" role="tab" aria-selected="false">Available</button>-->
+<!--          <button class="chip" data-filter="pending" role="tab" aria-selected="false">Pending Approval</button>-->
+<!--          <button class="chip" data-filter="draft" role="tab" aria-selected="false">Drafts</button>-->
+<!--        </div>-->
+
+<!--        <label class="sort-select">-->
+<!--          <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M6 8h12M8 12h8M10 16h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>-->
+<!--          <select id="sortSelect" aria-label="Sort properties">-->
+<!--            <option value="date-added">Sort by: Date Added</option>-->
+<!--            <option value="name-asc">Sort by: Name (A–Z)</option>-->
+<!--            <option value="rent-desc">Sort by: Rent (High–Low)</option>-->
+<!--          </select>-->
+<!--        </label>-->
+<!--      </section>-->
+
+<!--      &lt;!&ndash; Property grid &ndash;&gt;-->
+<!--      <section class="property-grid" id="propertyGrid" aria-label="Property listings">-->
+
+<!--        <article th:each="property : ${properties}"-->
+<!--                 class="property-card"-->
+<!--                 th:attr="data-status=${property.status == 'Draft'} ? 'draft' : (${property.status == 'Pending'} ? 'pending' : (${property.isAvailable} ? 'available' : 'inactive')),-->
+<!--                          data-property-id=${property.propertyID},-->
+<!--                          data-name=${property.title},-->
+<!--                          data-rent=${property.rent}">-->
+<!--          <div class="property-media">-->
+<!--            <img th:if="${imageLookup.get(property.propertyID)} != null"-->
+<!--                 th:src="${imageLookup.get(property.propertyID)}"-->
+<!--                 th:alt="${property.title} + ' exterior'">-->
+<!--            <div th:unless="${imageLookup.get(property.propertyID)} != null" class="property-media-placeholder">-->
+<!--              <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="currentColor" stroke-width="1.5"/></svg>-->
+<!--            </div>-->
+<!--            <span th:if="${property.status == 'Draft'}" class="status-badge status-badge&#45;&#45;draft">Draft</span>-->
+<!--            <span th:if="${property.status == 'Pending'}" class="status-badge status-badge&#45;&#45;pending">Pending Approval</span>-->
+<!--            <span th:if="${property.status != 'Draft' and property.status != 'Pending'}"-->
+<!--                  class="status-badge"-->
+<!--                  th:classappend="${property.isAvailable} ? 'status-badge&#45;&#45;available' : 'status-badge&#45;&#45;inactive'"-->
+<!--                  th:text="${property.isAvailable} ? 'Available' : 'Inactive'">Available</span>-->
+<!--          </div>-->
+<!--          <div class="property-body">-->
+<!--            <h3 class="property-name" th:text="${property.title}">Property Title</h3>-->
+<!--            <p class="property-address">-->
+<!--              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="1.8"/></svg>-->
+<!--              <span th:text="(${property.suburb} != null ? ${property.suburb} + ', ' : '') + ${property.city}">Suburb, City</span>-->
+<!--            </p>-->
+<!--            <p class="property-commute" th:if="${property.commuteType != null}" th:text="${property.commuteType}">Walking distance</p>-->
+<!--            <p class="property-commute" th:if="${property.distanceFromUniversity != null}" th:text="${property.distanceFromUniversity} + ' min from campus'">5 min from campus</p>-->
+
+<!--            <div class="amenity-badges" th:if="${property.amenities != null and !property.amenities.isEmpty()}">-->
+<!--              <span class="amenity-badge" th:each="amenity, iterStat : ${property.amenities}"-->
+<!--                    th:if="${iterStat.index < 3}" th:text="${amenity.name}">Amenity</span>-->
+<!--            </div>-->
+
+<!--            <div class="property-footer">-->
+<!--              <div class="rooms-info">-->
+<!--                <span class="rent-value" th:text="'R' + ${property.rent} + ' / month'">R0 / month</span>-->
+<!--                <span class="rooms-updated" th:text="${property.type}">Room type</span>-->
+<!--              </div>-->
+<!--              <a class="btn-manage" th:href="@{/edit-property/{id}(id=${property.propertyID})}">Manage</a>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </article>-->
+
+<!--        <div th:if="${#lists.isEmpty(properties)}" class="empty-state">-->
+<!--          <h3>No properties yet</h3>-->
+<!--          <p>Add your first property to start renting to students.</p>-->
+<!--          <a class="btn btn-primary" th:href="@{/list-property}">+ Add New Property</a>-->
+<!--        </div>-->
+
+<!--      </section>-->
+
+<!--      <div id="filterEmptyState" class="filter-empty-state" style="display:none;">-->
+<!--        No properties match this filter.-->
+<!--      </div>-->
+
+<!--    </div>-->
+<!--  </main>-->
+<!--</div>-->
+
+<!--<div id="addedToast"></div>-->
+
+
+<!--</div>-->
+
+<!--<script src="/landlord-script.js"></script>-->
+<!--<script>-->
+<!--  (function () {-->
+<!--    const params = new URLSearchParams(window.location.search);-->
+<!--    const toast = document.getElementById('addedToast');-->
+
+<!--    let message = null;-->
+<!--    if (params.get('added') === 'true') {-->
+<!--      message = 'New property submitted — pending admin approval.';-->
+<!--    } else if (params.get('updated') === 'true') {-->
+<!--      message = 'Changes saved.';-->
+<!--    } else if (params.get('draftSaved') === 'true') {-->
+<!--      message = 'Draft saved.';-->
+<!--    }-->
+
+<!--    if (message) {-->
+<!--      toast.textContent = message;-->
+<!--      toast.classList.add('show');-->
+<!--      setTimeout(() => toast.classList.remove('show'), 4000);-->
+<!--      const cleanUrl = window.location.pathname;-->
+<!--      window.history.replaceState({}, document.title, cleanUrl);-->
+<!--    }-->
+<!--  })();-->
+<!--</script>-->
+
+<!--<script src="/landlord-sidebar-toggle.js" defer></script>-->
+
+<!--<div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null,null,null,null, null)}"></div>-->
+
+<!--</body>-->
+<!--</html>-->
+
+
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
@@ -5,35 +239,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ULEE | My Properties</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Playfair+Display:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- FIX: this page used to load Sora + Playfair Display, but the whole site's styles
+       are written for Plus Jakarta Sans + Hanken Grotesk. Those two were never loaded here,
+       so every heading and paragraph fell back to the browser's Arial. Fredoka is only
+       for the friendly empty-state text. -->
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=Fredoka:wght@500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/landlord-style.css">
 
   <style>
-    .status-badge--pending {
-      background: hsl(38, 92%, 50%);
-      color: #fff;
-    }
-
-    /* Initials Avatar Styling */
-    .avatar-initials {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background-color: hsl(180, 67%, 36%);
-      color: #ffffff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      font-weight: 700;
-      font-size: 14px;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      user-select: none;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-      flex-shrink: 0;
-    }
-
+    /* ── Toast ── */
     #addedToast {
       position: fixed;
       top: 20px;
@@ -43,7 +258,7 @@
       color: #fff;
       padding: 14px 22px;
       border-radius: 10px;
-      font-family: 'Hanken Grotesk', sans-serif;
+      font-family: var(--font-body);
       font-weight: 600;
       font-size: 14px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.18);
@@ -52,9 +267,177 @@
       transition: opacity 0.25s ease, transform 0.25s ease;
       z-index: 1000;
     }
-    #addedToast.show {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
+    #addedToast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── Page intro: larger, teal ── */
+    .page-title { font-size: 28px; color: var(--primary-dark); }
+    .page-subtitle { font-size: 16.5px; }
+    .page-head .btn { font-size: 15px; padding: 13px 22px; }
+
+    /* ── Stat cards: navy gradient + teal border, same look as the Edit Property banner ── */
+    .metrics-bar { gap: 18px; margin-bottom: 28px; }
+
+    .stat-card {
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      gap: 0;
+      min-height: 122px;
+      padding: 20px 24px 36px;
+      border: 1.5px solid rgba(20, 200, 190, 0.45);
+      border-radius: var(--radius-lg);
+      background: linear-gradient(115deg, #071C2D 0%, #0A3A48 55%, #0F6C70 100%);
+      box-shadow: 0 6px 18px rgba(7, 28, 45, 0.18);
+      color: #fff;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      animation: sc-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+    }
+    .stat-card:nth-child(2) { animation-delay: 0.08s; }
+    .stat-card:nth-child(3) { animation-delay: 0.16s; }
+    .stat-card:nth-child(4) { animation-delay: 0.24s; }
+
+    .stat-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(20, 200, 190, 0.85);
+      box-shadow: 0 12px 28px rgba(7, 28, 45, 0.28);
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -60%;
+      width: 40%;
+      height: 100%;
+      background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+      transform: skewX(-20deg);
+      animation: sc-shine 7s ease-in-out infinite;
+      pointer-events: none;
+    }
+    .stat-card::after {
+      content: '';
+      position: absolute;
+      top: -60px;
+      right: -40px;
+      width: 170px;
+      height: 170px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(20, 200, 190, 0.28) 0%, transparent 70%);
+      animation: sc-pulse 4.5s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    .stat-copy { position: relative; z-index: 2; gap: 6px; }
+
+    .stat-label {
+      font-size: 12.5px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.78);
+      white-space: nowrap;
+    }
+    .stat-value {
+      font-family: var(--font-display);
+      font-size: 38px;
+      font-weight: 800;
+      line-height: 1;
+      color: #fff;
+    }
+
+    .stat-card .stat-alert-dot {
+      z-index: 3;
+      width: 11px;
+      height: 11px;
+      background: #F5D450;
+      box-shadow: 0 0 0 3px rgba(245, 212, 80, 0.3);
+      animation: sc-blink 1.8s ease-in-out infinite;
+    }
+
+    .sc-stars { position: absolute; top: 0; right: 0; width: 55%; height: 80%; z-index: 1; }
+    .sc-stars .star { animation: sc-twinkle 4s ease-in-out infinite; animation-delay: var(--d, 0s); }
+
+    .sc-wave {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 200%;
+      height: 24px;
+      z-index: 1;
+      animation: sc-wave 16s linear infinite;
+    }
+    .sc-wave .w-back  { fill: rgba(14, 116, 128, 0.55); }
+    .sc-wave .w-front { fill: #071C2D; stroke: #14C8BE; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+
+    @keyframes sc-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+    @keyframes sc-shine { 0%, 55% { left: -60%; } 100% { left: 130%; } }
+    @keyframes sc-pulse { 0%, 100% { opacity: 0.6; transform: scale(1); } 50% { opacity: 1; transform: scale(1.12); } }
+    @keyframes sc-twinkle { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+    @keyframes sc-blink { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
+    @keyframes sc-wave { to { transform: translateX(-50%); } }
+
+    /* ── Toolbar: a little larger ── */
+    .chip { font-size: 14.5px; padding: 9px 18px; }
+    .sort-select, .sort-select select { font-size: 14px; }
+
+    /* ── Property cards ── */
+    .property-card { animation: pc-in 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
+    .property-card:nth-child(3n+2) { animation-delay: 0.07s; }
+    .property-card:nth-child(3n+3) { animation-delay: 0.14s; }
+    @keyframes pc-in { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+
+    .property-name { font-size: 19px; }
+    .property-address { font-size: 14.5px; }
+    .property-commute { font-size: 13.5px; }
+    .amenity-badge { font-size: 12px; padding: 5px 11px; }
+    .rent-value { font-size: 18px; }
+    .rooms-updated { font-size: 13.5px; }
+    .btn-manage { font-size: 14.5px; padding: 9px 18px; }
+    .status-badge { font-size: 12px; }
+
+    /* Photo missing / not loading: friendly tile instead of broken-image text */
+    .property-media-placeholder {
+      flex-direction: column;
+      gap: 8px;
+      background: linear-gradient(135deg, var(--primary-tint), var(--surface-tint));
+      color: var(--primary);
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .property-media-placeholder svg { width: 38px; height: 38px; }
+
+    /* ── Cute empty states ── */
+    .empty-properties {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 38px 20px 44px;
+      background: linear-gradient(180deg, #ffffff 0%, var(--primary-tint) 100%);
+      border: 2px dashed var(--accent-border);
+    }
+    .empty-properties-art { width: 220px; max-width: 70%; height: auto; overflow: visible; }
+    .empty-properties h3,
+    .empty-properties p,
+    .filter-empty-state { font-family: 'Fredoka', var(--font-display), sans-serif; }
+    .empty-properties h3 { font-size: 27px; font-weight: 600; color: var(--primary-dark); margin: 14px 0 4px; }
+    .empty-properties p { font-size: 17px; font-weight: 500; color: var(--outline); margin: 0 0 18px; }
+    .filter-empty-state { font-size: 19px; font-weight: 500; color: var(--primary-dark); }
+
+    .ep-shadow { animation: ep-shadow 3.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+    .ep-smoke  { transform-box: fill-box; transform-origin: center; animation: ep-smoke 3.2s ease-in infinite; animation-delay: var(--d, 0s); }
+    .ep-window { animation: ep-window 3.6s ease-in-out infinite; animation-delay: var(--d, 0s); }
+    .ep-spark  { transform-box: fill-box; transform-origin: center; animation: ep-spark 2.6s ease-in-out infinite; animation-delay: var(--d, 0s); }
+    @keyframes ep-shadow { 0%, 100% { transform: scaleX(1); opacity: 0.12; } 50% { transform: scaleX(0.92); opacity: 0.08; } }
+    @keyframes ep-smoke  { 0% { opacity: 0; transform: translateY(6px) scale(0.6); } 30% { opacity: 0.9; } 100% { opacity: 0; transform: translateY(-22px) scale(1.3); } }
+    @keyframes ep-window { 0%, 100% { fill: #f2fbfa; } 50% { fill: #F5D450; } }
+    @keyframes ep-spark  { 0%, 100% { opacity: 0.2; transform: scale(0.6) rotate(0deg); } 50% { opacity: 1; transform: scale(1) rotate(20deg); } }
+
+    @media (prefers-reduced-motion: reduce) {
+      .stat-card, .stat-card::before, .stat-card::after, .sc-wave, .sc-stars .star,
+      .stat-card .stat-alert-dot, .property-card,
+      .ep-shadow, .ep-smoke, .ep-window, .ep-spark { animation: none !important; }
     }
 
     /* NEW — topbar layout so the bell + avatar sit side by side, right-aligned */
@@ -69,28 +452,8 @@
 
 <div class="app-shell">
 
-  <!-- ============ SIDEBAR ============ -->
-  <aside class="sidebar">
-    <div class="brand">
-      <span class="brand-name">ULEE</span>
-      <span class="brand-sub">The Future of Student Living</span>
-    </div>
-
-    <nav class="nav-list">
-      <a th:href="@{/landlord-index}" class="nav-item active">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>
-        <span>My Properties</span>
-      </a>
-      <a th:href="@{/manage-applications}" class="nav-item">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M8 3h8a2 2 0 0 1 2 2v14l-6-3-6 3V5a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-        <span>Applications</span>
-      </a>
-      <a th:href="@{/my-property-reviews}" class="nav-item">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M12 3.5 14.4 9l6 .6-4.5 4 1.4 5.9L12 16.6 6.7 19.5l1.4-5.9-4.5-4 6-.6L12 3.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-        <span>Reviews</span>
-      </a>
-    </nav>
-  </aside>
+  <!-- ============ SIDEBAR (shared fragment — see fragments/landlord-sidebar.html) ============ -->
+  <div th:replace="~{fragments/landlord-sidebar :: sidebar('properties')}"></div>
 
   <!-- ============ MAIN ============ -->
   <main class="main">
@@ -121,44 +484,52 @@
       <!-- Metrics bar -->
       <section class="metrics-bar" aria-label="Portfolio summary">
         <div class="stat-card">
-          <div class="stat-icon stat-icon--teal">
-            <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="13" y="3" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="13" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="13" y="13" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>
-          </div>
+          <svg class="sc-stars" viewBox="0 0 200 90" aria-hidden="true"><g fill="#9FF0E8"><circle class="star" cx="150" cy="20" r="1.6" style="--d:0.0s"/><circle class="star" cx="180" cy="44" r="1.3" style="--d:0.6s"/><circle class="star" cx="120" cy="52" r="1.2" style="--d:1.2s"/><circle class="star" cx="190" cy="12" r="1.4" style="--d:1.8s"/><circle class="star" cx="95" cy="18" r="1.1" style="--d:2.4s"/></g></svg>
           <div class="stat-copy">
-            <span class="stat-value" id="statTotalProperties" th:text="${totalProperties}">12</span>
             <span class="stat-label">Total Properties</span>
+            <span class="stat-value" id="statTotalProperties" th:text="${totalProperties}">12</span>
           </div>
+          <svg class="sc-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true">
+            <path class="w-back"  d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+            <path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+          </svg>
         </div>
 
         <div class="stat-card">
-          <div class="stat-icon stat-icon--purple">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M8 3h8a2 2 0 0 1 2 2v14l-6-3-6 3V5a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-          </div>
+          <svg class="sc-stars" viewBox="0 0 200 90" aria-hidden="true"><g fill="#9FF0E8"><circle class="star" cx="150" cy="20" r="1.6" style="--d:0.9s"/><circle class="star" cx="180" cy="44" r="1.3" style="--d:1.5s"/><circle class="star" cx="120" cy="52" r="1.2" style="--d:2.1s"/><circle class="star" cx="190" cy="12" r="1.4" style="--d:0.1s"/><circle class="star" cx="95" cy="18" r="1.1" style="--d:0.7s"/></g></svg>
           <div class="stat-copy">
-            <span class="stat-value" id="statPendingApplications" th:text="${awaitingApprovalCount}">24</span>
             <span class="stat-label">Awaiting Review</span>
+            <span class="stat-value" id="statPendingApplications" th:text="${awaitingApprovalCount}">24</span>
           </div>
           <span class="stat-alert-dot" id="statAlertDot" th:hidden="${awaitingApprovalCount == 0}" aria-hidden="true"></span>
+          <svg class="sc-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true">
+            <path class="w-back"  d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+            <path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+          </svg>
         </div>
 
         <div class="stat-card">
-          <div class="stat-icon stat-icon--tealdark">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M4 21V9l8-6 8 6v12h-5v-7h-6v7H4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-          </div>
+          <svg class="sc-stars" viewBox="0 0 200 90" aria-hidden="true"><g fill="#9FF0E8"><circle class="star" cx="150" cy="20" r="1.6" style="--d:1.7s"/><circle class="star" cx="180" cy="44" r="1.3" style="--d:2.3s"/><circle class="star" cx="120" cy="52" r="1.2" style="--d:0.3s"/><circle class="star" cx="190" cy="12" r="1.4" style="--d:0.9s"/><circle class="star" cx="95" cy="18" r="1.1" style="--d:1.5s"/></g></svg>
           <div class="stat-copy">
-            <span class="stat-value" id="statVacantRooms" th:text="${vacantRooms}">15</span>
             <span class="stat-label">Vacant Rooms</span>
+            <span class="stat-value" id="statVacantRooms" th:text="${vacantRooms}">15</span>
           </div>
+          <svg class="sc-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true">
+            <path class="w-back"  d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+            <path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+          </svg>
         </div>
 
         <div class="stat-card">
-          <div class="stat-icon stat-icon--purple">
-            <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 3a9 9 0 0 1 0 18" stroke="currentColor" stroke-width="1.8"/></svg>
-          </div>
+          <svg class="sc-stars" viewBox="0 0 200 90" aria-hidden="true"><g fill="#9FF0E8"><circle class="star" cx="150" cy="20" r="1.6" style="--d:2.3s"/><circle class="star" cx="180" cy="44" r="1.3" style="--d:0.3s"/><circle class="star" cx="120" cy="52" r="1.2" style="--d:0.9s"/><circle class="star" cx="190" cy="12" r="1.4" style="--d:1.5s"/><circle class="star" cx="95" cy="18" r="1.1" style="--d:2.1s"/></g></svg>
           <div class="stat-copy">
-            <span class="stat-value" id="statOccupancy" th:text="${occupancyRate} + '%'">92%</span>
             <span class="stat-label">Avg. Occupancy</span>
+            <span class="stat-value" id="statOccupancy" th:text="${occupancyRate} + '%'">92%</span>
           </div>
+          <svg class="sc-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true">
+            <path class="w-back"  d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+            <path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+          </svg>
         </div>
       </section>
 
@@ -193,9 +564,11 @@
           <div class="property-media">
             <img th:if="${imageLookup.get(property.propertyID)} != null"
                  th:src="${imageLookup.get(property.propertyID)}"
-                 th:alt="${property.title} + ' exterior'">
+                 th:alt="${property.title} + ' exterior'"
+                 loading="lazy">
             <div th:unless="${imageLookup.get(property.propertyID)} != null" class="property-media-placeholder">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="currentColor" stroke-width="1.5"/></svg>
+              <svg viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="currentColor" stroke-width="1.5"/></svg>
+              <span>No photo yet</span>
             </div>
             <span th:if="${property.status == 'Draft'}" class="status-badge status-badge--draft">Draft</span>
             <span th:if="${property.status == 'Pending'}" class="status-badge status-badge--pending">Pending Approval</span>
@@ -228,7 +601,35 @@
           </div>
         </article>
 
-        <div th:if="${#lists.isEmpty(properties)}" class="empty-state">
+        <!-- Cute empty state: a little house with smoke rising from the chimney -->
+        <div th:if="${#lists.isEmpty(properties)}" class="empty-state empty-properties">
+          <svg class="empty-properties-art" viewBox="0 0 240 170" fill="none" aria-hidden="true">
+            <ellipse class="ep-shadow" cx="120" cy="156" rx="78" ry="7" fill="#0b3b4a" opacity=".12"/>
+
+            <!-- tree -->
+            <rect x="31" y="118" width="6" height="30" rx="2" fill="#93C0C5"/>
+            <circle cx="34" cy="110" r="19" fill="#dcf1ef" stroke="#93C0C5" stroke-width="2"/>
+
+            <!-- chimney + smoke -->
+            <rect x="146" y="38" width="14" height="26" rx="2" fill="#93C0C5"/>
+            <circle class="ep-smoke" style="--d:0s"   cx="153" cy="30" r="5" fill="#cfe7e4"/>
+            <circle class="ep-smoke" style="--d:1.1s" cx="157" cy="30" r="4" fill="#cfe7e4"/>
+            <circle class="ep-smoke" style="--d:2.1s" cx="151" cy="30" r="4.5" fill="#cfe7e4"/>
+
+            <!-- house -->
+            <rect x="68" y="72" width="104" height="76" rx="6" fill="#ffffff" stroke="#0f8a8a" stroke-width="2.5"/>
+            <path d="M56 78L120 26l64 52Z" fill="#dcf1ef" stroke="#0f8a8a" stroke-width="2.5" stroke-linejoin="round"/>
+            <rect x="108" y="102" width="24" height="46" rx="4" fill="#0f8a8a"/>
+            <circle cx="127" cy="126" r="1.8" fill="#F5D450"/>
+            <rect class="ep-window" style="--d:0s"   x="79"  y="90" width="20" height="20" rx="3" fill="#f2fbfa" stroke="#0f8a8a" stroke-width="2"/>
+            <rect class="ep-window" style="--d:1.8s" x="141" y="90" width="20" height="20" rx="3" fill="#f2fbfa" stroke="#0f8a8a" stroke-width="2"/>
+            <path d="M89 90v20M79 100h20M151 90v20M141 100h20" stroke="#0f8a8a" stroke-width="1.5"/>
+
+            <!-- sparkles -->
+            <path class="ep-spark" style="--d:0s"   d="M206 44l3 8 8 3-8 3-3 8-3-8-8-3 8-3z" fill="#14C8BE"/>
+            <path class="ep-spark" style="--d:1s"   d="M20 60l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#F5D450"/>
+            <path class="ep-spark" style="--d:1.8s" d="M210 110l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#9FF0E8"/>
+          </svg>
           <h3>No properties yet</h3>
           <p>Add your first property to start renting to students.</p>
           <a class="btn btn-primary" th:href="@{/list-property}">+ Add New Property</a>
@@ -245,9 +646,6 @@
 </div>
 
 <div id="addedToast"></div>
-
-
-</div>
 
 <script src="/landlord-script.js"></script>
 <script>
@@ -273,6 +671,54 @@
     }
   })();
 </script>
+
+<<<<<<< HEAD
+=======
+<script>
+  // A photo that can't be loaded gets a friendly tile instead of broken-image text.
+  (function () {
+    var houseIcon = '<svg viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="currentColor" stroke-width="1.5"/></svg>';
+    function showFallback(img) {
+      if (img.dataset.fallback) return;
+      img.dataset.fallback = '1';
+      img.style.display = 'none';
+      var box = document.createElement('div');
+      box.className = 'property-media-placeholder';
+      box.innerHTML = houseIcon + '<span>Photo unavailable</span>';
+      img.parentNode.insertBefore(box, img);
+    }
+    document.querySelectorAll('.property-media img').forEach(function (img) {
+      img.addEventListener('error', function () { showFallback(img); });
+      if (img.complete && img.naturalWidth === 0) showFallback(img);
+    });
+  })();
+</script>
+
+<script>
+  // Numbers on the stat cards count up from 0 (runs after landlord-script.js has set its values).
+  window.addEventListener('load', function () {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    document.querySelectorAll('.stat-value').forEach(function (el) {
+      var m = el.textContent.trim().match(/^(\d+(?:\.\d+)?)(.*)$/);
+      if (!m) return;
+      var target = parseFloat(m[1]);
+      if (!(target > 0)) return;
+      var suffix = m[2] || '';
+      var decimals = (m[1].split('.')[1] || '').length;
+      var start = null, dur = 900;
+      el.textContent = (0).toFixed(decimals) + suffix;
+      function tick(now) {
+        if (start === null) start = now;
+        var t = Math.min((now - start) / dur, 1);
+        el.textContent = (target * (1 - Math.pow(1 - t, 3))).toFixed(decimals) + suffix;
+        if (t < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    });
+  });
+</script>
+
+<script src="/landlord-sidebar-toggle.js" defer></script>
 
 
 </body>

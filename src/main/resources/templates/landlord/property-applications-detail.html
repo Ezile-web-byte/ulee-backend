@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${property.title} + ' | Applications | ULEE'">Applications | ULEE</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Hanken+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=Fredoka:wght@500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/landlord-style.css">
     <link rel="stylesheet" href="/applications-style.css">
     <style>
@@ -18,7 +19,7 @@
             color: #fff;
             padding: 16px 28px;
             border-radius: 12px;
-            font-family: 'Hanken Grotesk', sans-serif;
+            font-family: var(--font-body);
             font-weight: 700;
             font-size: 15px;
             box-shadow: 0 12px 32px rgba(0,0,0,0.22);
@@ -38,7 +39,7 @@
             justify-content: space-between;
             align-items: center;
             gap: 16px;
-            margin-bottom: 16px;
+            margin-bottom: 18px;
             flex-wrap: wrap;
         }
         .app-switcher-controls {
@@ -50,8 +51,8 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            color: var(--on-surface-variant);
-            font-size: 13px;
+            color: var(--primary-dark);
+            font-size: 14px;
             background: var(--surface-container-lowest);
             padding: 8px 14px;
             border-radius: var(--radius-sm);
@@ -62,7 +63,7 @@
             background: transparent;
             color: var(--on-surface);
             font-weight: 600;
-            font-size: 13px;
+            font-size: 14px;
             cursor: pointer;
             outline: none;
         }
@@ -70,8 +71,8 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 36px;
-            height: 36px;
+            width: 38px;
+            height: 38px;
             border-radius: var(--radius-sm);
             border: 1px solid var(--outline-variant);
             background: var(--surface-container-lowest);
@@ -87,8 +88,8 @@
         .property-name-heading {
             font-family: var(--font-display);
             font-weight: 800;
-            font-size: 22px;
-            color: var(--on-surface);
+            font-size: 24px;
+            color: var(--primary-dark);
             margin: 0;
         }
 
@@ -104,28 +105,8 @@
 
 <div class="app-shell">
 
-    <!-- ============ SIDEBAR (identical to My Properties / Reviews) ============ -->
-    <aside class="sidebar">
-        <div class="brand">
-            <span class="brand-name">ULEE</span>
-            <span class="brand-sub">THE FUTURE OF STUDENT LIVING</span>
-        </div>
-
-        <nav class="nav-list">
-            <a th:href="@{/landlord-index}" class="nav-item">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>
-                <span>My Properties</span>
-            </a>
-            <a th:href="@{/manage-applications}" class="nav-item active">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M8 3h8a2 2 0 0 1 2 2v14l-6-3-6 3V5a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-                <span>Applications</span>
-            </a>
-            <a th:href="@{/my-property-reviews}" class="nav-item">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M12 3.5 14.4 9l6 .6-4.5 4 1.4 5.9L12 16.6 6.7 19.5l1.4-5.9-4.5-4 6-.6L12 3.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-                <span>Reviews</span>
-            </a>
-        </nav>
-    </aside>
+    <!-- ============ SIDEBAR (shared fragment — see fragments/landlord-sidebar.html) ============ -->
+    <div th:replace="~{fragments/landlord-sidebar :: sidebar('applications')}"></div>
 
     <!-- ============ MAIN ============ -->
     <main class="main">
@@ -147,8 +128,7 @@
                 </h2>
                 <div class="app-switcher-controls">
                     <!-- Back arrow — walks eligibleProperties backward (wraps to
-                         the last property), mirroring the forward "next" arrow
-                         on the right of the switcher. -->
+                         the last property), mirroring the forward "next" arrow. -->
                     <a class="app-next-btn" th:href="@{/property-applications/{id}(id=${previousPropertyId})}" aria-label="Previous property">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </a>
@@ -167,27 +147,46 @@
                 </div>
             </section>
 
-            <!-- Summary stats — Pending % and Accepted %, both scoped to
-                 THIS property's applications only. -->
+            <!-- Summary stats — scoped to THIS property's applications only. -->
             <section class="summary-row" aria-label="Application summary">
                 <div class="summary-card">
-                    <div>
+                    <svg class="summary-stars" viewBox="0 0 200 90" aria-hidden="true">
+                        <g fill="#9FF0E8">
+                            <circle class="star" cx="150" cy="20" r="1.6" style="--d:0s"/>
+                            <circle class="star" cx="180" cy="44" r="1.3" style="--d:1.1s"/>
+                            <circle class="star" cx="120" cy="52" r="1.2" style="--d:.5s"/>
+                            <circle class="star" cx="190" cy="12" r="1.4" style="--d:1.8s"/>
+                            <circle class="star" cx="95"  cy="18" r="1.1" style="--d:2.4s"/>
+                        </g>
+                    </svg>
+                    <div class="summary-copy">
                         <p class="summary-label">Capacity</p>
                         <span class="summary-value" th:text="${capacity}">53</span>
                     </div>
-                    <div class="summary-icon summary-icon--purple">
-                        <svg viewBox="0 0 24 24" fill="none"><path d="M4 21V9l8-6 8 6v12h-5v-7h-6v7H4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-                    </div>
+                    <svg class="summary-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true">
+                        <path class="w-back"  d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+                        <path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+                    </svg>
                 </div>
 
                 <div class="summary-card">
-                    <div>
+                    <svg class="summary-stars" viewBox="0 0 200 90" aria-hidden="true">
+                        <g fill="#9FF0E8">
+                            <circle class="star" cx="160" cy="24" r="1.6" style="--d:.7s"/>
+                            <circle class="star" cx="185" cy="50" r="1.3" style="--d:1.5s"/>
+                            <circle class="star" cx="130" cy="16" r="1.2" style="--d:0s"/>
+                            <circle class="star" cx="105" cy="46" r="1.4" style="--d:2.1s"/>
+                            <circle class="star" cx="192" cy="10" r="1.1" style="--d:1.2s"/>
+                        </g>
+                    </svg>
+                    <div class="summary-copy">
                         <p class="summary-label">Accepted</p>
                         <span class="summary-value" th:text="${acceptedCount}">2</span>
                     </div>
-                    <div class="summary-icon summary-icon--teal">
-                        <svg viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2"/></svg>
-                    </div>
+                    <svg class="summary-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true">
+                        <path class="w-back"  d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+                        <path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+                    </svg>
                 </div>
             </section>
 
@@ -205,10 +204,11 @@
                     </div>
                 </div>
 
-                <!-- Card-per-application layout: full-width, stacked, with
-                     Accept / Reject / Respond built into each card. -->
+                <!-- One full-width card per application. The controller sorts Pending
+                     first, so once a decision is made the card drops to the end. -->
                 <div class="applications-card-list">
-                    <div class="application-card" th:each="row : ${applications}">
+                    <div class="application-card" th:each="row : ${applications}"
+                         th:classappend="${row.status == 'Accepted'} ? 'application-card--accepted' : (${row.status == 'Rejected'} ? 'application-card--rejected' : '')">
                         <div class="application-card-header">
                             <div class="student-cell">
                                 <div class="student-avatar" th:text="${row.studentInitials}">SM</div>
@@ -256,12 +256,13 @@
                         </div>
 
                         <div class="application-card-actions">
-                            <form th:if="${row.status != 'Rejected'}"
+                            <!-- Accept: only while the application is still undecided -->
+                            <form th:if="${row.status != 'Rejected' and row.status != 'Accepted'}"
                                   th:action="@{/update-application-status/{id}(id=${row.applicationID})}" method="post" class="inline-form">
                                 <input type="hidden" name="status" value="Accepted" />
                                 <button class="btn-accept" type="submit"
-                                        th:disabled="${row.status != 'Accepted' and acceptedCount >= capacity}"
-                                        th:title="${row.status != 'Accepted' and acceptedCount >= capacity} ? 'This property is at full capacity' : ''">
+                                        th:disabled="${acceptedCount >= capacity}"
+                                        th:title="${acceptedCount >= capacity} ? 'This property is at full capacity' : ''">
                                     <svg viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2"/></svg>
                                     Accept
                                 </button>
@@ -273,7 +274,8 @@
                             </form>
 
                             <div class="action-right-group">
-                                <form th:if="${row.status != 'Rejected'}"
+                                <!-- Reject: removed once a student is accepted (or already rejected) -->
+                                <form th:if="${row.status != 'Rejected' and row.status != 'Accepted'}"
                                       th:action="@{/update-application-status/{id}(id=${row.applicationID})}" method="post" class="inline-form">
                                     <input type="hidden" name="status" value="Rejected" />
                                     <button class="btn-reject" type="submit">
@@ -283,8 +285,7 @@
                                 </form>
 
                                 <!-- Opens the student's email client client-side (JS below),
-                                     then marks landlordResponded=true server-side. Nothing is
-                                     sent or stored by the app itself. -->
+                                     then marks landlordResponded=true server-side. -->
                                 <form th:action="@{/mark-application-responded/{id}(id=${row.applicationID})}" method="post"
                                       class="inline-form respond-form"
                                       th:attr="data-email=${row.studentEmail}, data-subject='Regarding your application for ' + ${row.propertyName}">
@@ -296,8 +297,30 @@
                 </div>
             </section>
 
-            <div class="filter-empty-state" th:if="${applicationCount == 0}">
-                No applications yet for this property.
+            <div class="empty-applications" th:if="${applicationCount == 0}">
+                <svg class="empty-papers" viewBox="0 0 240 170" fill="none" aria-hidden="true">
+                    <ellipse class="ep-shadow" cx="120" cy="153" rx="64" ry="7" fill="#0b3b4a" opacity=".12"/>
+
+                    <g class="ep-sheet" style="--r:-9deg; --d:0s">
+                        <rect x="58" y="34" width="100" height="116" rx="9" fill="#dcf1ef" stroke="#93C0C5" stroke-width="2"/>
+                    </g>
+                    <g class="ep-sheet" style="--r:7deg; --d:.4s">
+                        <rect x="84" y="28" width="100" height="116" rx="9" fill="#f2fbfa" stroke="#14a3a3" stroke-width="2"/>
+                    </g>
+                    <g class="ep-sheet" style="--r:0deg; --d:.8s">
+                        <rect x="70" y="20" width="100" height="122" rx="9" fill="#ffffff" stroke="#0f8a8a" stroke-width="2.5"/>
+                        <path d="M88 46h42M88 62h64M88 78h64" stroke="#93C0C5" stroke-width="3.5" stroke-linecap="round"/>
+                        <circle cx="111" cy="108" r="2.6" fill="#0f8a8a"/>
+                        <circle cx="129" cy="108" r="2.6" fill="#0f8a8a"/>
+                        <path d="M112 117q8 7 16 0" stroke="#0f8a8a" stroke-width="2.5" stroke-linecap="round"/>
+                    </g>
+
+                    <path class="ep-spark" style="--d:0s"   d="M196 34l3 8 8 3-8 3-3 8-3-8-8-3 8-3z" fill="#14C8BE"/>
+                    <path class="ep-spark" style="--d:1s"   d="M42 60l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"  fill="#F5D450"/>
+                    <path class="ep-spark" style="--d:1.8s" d="M204 96l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#9FF0E8"/>
+                </svg>
+                <p class="empty-title">No applications yet for this property</p>
+                <p class="empty-sub">When students apply, they'll show up here.</p>
             </div>
 
         </div>
@@ -305,6 +328,8 @@
 </div>
 
 <div id="appToast"></div>
+
+<script src="/landlord-sidebar-toggle.js" defer></script>
 
 <script>
     (function () {
@@ -340,6 +365,26 @@
             }
         });
     });
+</script>
+
+<script>
+    // Numbers on the Capacity / Accepted cards count up from 0 on load.
+    (function () {
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        document.querySelectorAll('.summary-value').forEach(function (el) {
+            var target = parseInt(el.textContent, 10);
+            if (isNaN(target) || target <= 0) return;
+            var start = null, dur = 900;
+            el.textContent = '0';
+            function tick(now) {
+                if (start === null) start = now;
+                var t = Math.min((now - start) / dur, 1);
+                el.textContent = Math.round(target * (1 - Math.pow(1 - t, 3)));
+                if (t < 1) requestAnimationFrame(tick);
+            }
+            requestAnimationFrame(tick);
+        });
+    })();
 </script>
 
 </body>
