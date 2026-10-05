@@ -344,12 +344,29 @@
       input.value = '';
       input.focus();
 
-      // Requirements 4.1, 4.2: reply locally, well under 1 second, with no
-      // network call of any kind.
-      setTimeout(function () {
-        var reply = window.SwaiLogic.buildPlaceholderResponse(value, context);
-        addMessage('assistant', reply);
-      }, 700);
+      // Calls the real SWAI backend endpoint for a grounded reply, instead
+      // of the old local placeholder response.
+      fetch('/api/swai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: value,
+          propertyId: context.mode === 'property' ? Number(context.propertyId) : null
+        })
+      })
+          .then(function (res) {
+            if (!res.ok) throw new Error('bad status ' + res.status);
+            return res.json();
+          })
+          .then(function (data) {
+            if (!data || !data.reply || window.SwaiLogic.isBlank(data.reply)) {
+              throw new Error('missing reply');
+            }
+            addMessage('assistant', data.reply);
+          })
+          .catch(function () {
+            addMessage('assistant', "I'm having trouble answering right now. Please try again in a moment.");
+          });
     });
   }
 })();

@@ -40,7 +40,7 @@ public class GroqAiService implements AiService {
     // A small, fast Groq-hosted model — good enough for grounded,
     // conversational answers about a single property/neighbourhood
     // without the latency/cost of a larger model.
-    private static final String MODEL = "llama-3.1-8b-instant";
+    private static final String MODEL = "openai/gpt-oss-20b";
 
     private final RestClient groqRestClient;
     private final GroqProperties groqProperties;
