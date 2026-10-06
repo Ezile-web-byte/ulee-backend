@@ -149,16 +149,28 @@ public class SecurityConfig {
                         default -> "/student-dashboard";
                     })
                     .orElse("/student-dashboard");
-            response.sendRedirect(redirectUrl);
+
+            // The login modal submits via fetch (no page reload) and sends
+            // X-Requested-With: XMLHttpRequest. For those requests reply with
+            // JSON and let the page do the navigation; normal form posts keep
+            // the plain redirect.
+            if (isAjax(request)) {
+                writeJson(response, 200, "{\"redirect\":\"" + redirectUrl + "\"}");
+            } else {
+                response.sendRedirect(redirectUrl);
+            }
         };
     }
 
     /**
      * Records a failed login attempt (Settings > Recent Login Activity),
-     * then falls back to the same failureUrl behaviour the app had before
-     * ("/?loginError=true"). The attempted email is logged even if it
-     * doesn't match any account, so failed attempts are still visible —
-     * userID is just left null in that case.
+     * then sends the visitor back to the student dashboard with
+     * ?loginError=credentials, which re-opens the login modal showing
+     * "Incorrect username or password." The same message is used whether
+     * the email doesn't exist or the password is wrong, so the response
+     * never reveals which accounts are registered. The attempted email is
+     * logged even if it doesn't match any account — userID is just left
+     * null in that case.
      */
     private AuthenticationFailureHandler loginFailureHandler() {
         return (request, response, exception) -> {
@@ -175,8 +187,27 @@ public class SecurityConfig {
             activity.setTimestamp(LocalDateTime.now());
             adminLoginActivityRepository.save(activity);
 
-            response.sendRedirect("/?loginError=true");
+            // AJAX login (the modal): answer 401 + JSON so the page can show the
+            // error instantly without reloading. Non-AJAX posts still redirect.
+            if (isAjax(request)) {
+                writeJson(response, 401, "{\"error\":\"Incorrect username or password.\"}");
+            } else {
+                response.sendRedirect("/student-dashboard?loginError=credentials");
+            }
         };
+    }
+
+    /** True when the request came from fetch/XHR with X-Requested-With set. */
+    private boolean isAjax(jakarta.servlet.http.HttpServletRequest request) {
+        return "XMLHttpRequest".equals(request.getHeader("X-Requested-With"));
+    }
+
+    private void writeJson(jakarta.servlet.http.HttpServletResponse response, int status, String json)
+            throws java.io.IOException {
+        response.setStatus(status);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        response.getWriter().write(json);
     }
 
     /** Marks this HttpSession's AdminSession row inactive on explicit logout. */

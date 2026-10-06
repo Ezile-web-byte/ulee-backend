@@ -247,13 +247,6 @@
                         </select>
                     </div>
                 </div>
-                <div class="flex-1 px-md py-sm flex items-center gap-sm">
-                    <span class="material-symbols-outlined text-tertiary-fixed">search</span>
-                    <div class="flex flex-col w-full">
-                        <span class="text-[10px] uppercase font-bold text-white/60 tracking-wider">Or ask</span>
-                        <input id="aiSearchInput" type="text" placeholder="Ask AI to find a room..." class="bg-transparent text-white font-label-bold border-none p-0 focus:ring-0 w-full placeholder:text-white/50" />
-                    </div>
-                </div>
                 <button type="submit" class="bg-tertiary-fixed text-on-tertiary-fixed px-xl py-md rounded-xl font-label-bold flex items-center justify-center gap-sm hover:bg-tertiary-container transition-colors">
                     <span class="material-symbols-outlined">search</span>
                     Search
@@ -510,7 +503,16 @@
             <span class="material-symbols-outlined">close</span>
         </button>
         <h2 class="font-headline-sm text-headline-sm text-on-surface mb-md">Log in to ULEE</h2>
-        <form th:action="@{/login}" method="post" class="space-y-md">
+
+        <!-- Hidden until a login attempt fails; shown by JS with no page reload -->
+        <div id="loginErrorBox"
+             class="hidden mb-md items-center gap-sm bg-error-container text-on-error-container text-sm font-label-bold px-md py-sm rounded-lg"
+             role="alert">
+            <span class="material-symbols-outlined text-[18px]">error</span>
+            <span id="loginErrorText">Incorrect username or password.</span>
+        </div>
+
+        <form id="loginForm" th:action="@{/login}" method="post" class="space-y-md">
             <div>
                 <label class="text-[11px] uppercase font-bold text-on-surface-variant tracking-wider">Username</label>
                 <input type="text" name="username" class="w-full mt-xs border border-outline-variant rounded-lg px-md py-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="e.g. s227676637" required/>
@@ -522,7 +524,7 @@
             <p class="text-right -mt-sm">
                 <button type="button" id="openForgotPasswordBtn" class="text-xs text-primary font-bold hover:underline">Forgot password?</button>
             </p>
-            <button type="submit" class="w-full bg-primary text-white py-sm rounded-full font-label-bold hover:bg-primary-container transition-colors">Log in</button>
+            <button type="submit" id="loginSubmitBtn" class="w-full bg-primary text-white py-sm rounded-full font-label-bold hover:bg-primary-container transition-colors disabled:opacity-60">Log in</button>
         </form>
         <p class="text-center text-sm text-on-surface-variant mt-md">
             No account? <a href="/register" class="text-primary font-bold hover:underline">Register</a>
@@ -566,6 +568,10 @@
     </div>
 </div>
 
+<!-- Wrapper lets the script hide the AI widget while a modal (login / forgot / logout) is open -->
+<div id="aiWidgetWrap">
+    <div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null, null, null, null)}"></div>
+</div>
 <script>
     // ── Login modal ──
     const loginOverlay = document.getElementById('loginModalOverlay');
@@ -619,6 +625,62 @@
     // ── Open login modal when redirected here from the register page ──
     if (new URLSearchParams(window.location.search).get('openLogin') === 'true') {
         loginOverlay.classList.add('open');
+    }
+
+    // ── Login: submit via fetch so a wrong password shows the error instantly, no reload ──
+    const loginForm = document.getElementById('loginForm');
+    const loginErrorBox = document.getElementById('loginErrorBox');
+    const loginErrorText = document.getElementById('loginErrorText');
+    const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+
+    function showLoginError(msg) {
+        loginErrorText.textContent = msg || 'Incorrect username or password.';
+        loginErrorBox.classList.remove('hidden');
+        loginErrorBox.classList.add('flex');
+    }
+    function hideLoginError() {
+        loginErrorBox.classList.add('hidden');
+        loginErrorBox.classList.remove('flex');
+    }
+    // Clear the error as soon as the student starts typing again
+    loginForm.querySelectorAll('input').forEach(i => i.addEventListener('input', hideLoginError));
+
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        hideLoginError();
+        loginSubmitBtn.disabled = true;
+        loginSubmitBtn.textContent = 'Logging in...';
+        try {
+            const res = await fetch(loginForm.action, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Accept': 'application/json'
+                },
+                body: new URLSearchParams(new FormData(loginForm)).toString()
+            });
+            if (res.ok) {
+                const data = await res.json();
+                window.location.href = data.redirect || '/student-dashboard';
+                return; // leave the button in "Logging in..." while navigating
+            }
+            let msg = 'Incorrect username or password.';
+            try { msg = (await res.json()).error || msg; } catch (_) {}
+            showLoginError(msg);
+        } catch (err) {
+            showLoginError('Could not reach the server. Please try again.');
+        }
+        loginSubmitBtn.disabled = false;
+        loginSubmitBtn.textContent = 'Log in';
+        loginForm.querySelector('input[name="password"]').select();
+    });
+
+    // Fallback: if a non-AJAX login ever redirects here with ?loginError, still show it
+    if (new URLSearchParams(window.location.search).has('loginError')) {
+        loginOverlay.classList.add('open');
+        showLoginError();
+        history.replaceState(null, '', window.location.pathname);
     }
 
     // ── User menu dropdown (only present when logged in) ──
@@ -729,15 +791,6 @@
         document.getElementById('properties')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
-    // ── AI search shortcut in hero ──
-    document.getElementById('aiSearchInput')?.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            const q = e.target.value.trim();
-            alert('🤖 AI Assistant: Searching for "' + (q || 'accommodation') + '"...');
-        }
-    });
-
     // ── Save toggle (visual only; the form submit still hits /favorite/{id}) ──
     document.querySelectorAll('.save-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -746,7 +799,35 @@
             btn.closest('form').submit();
         });
     });
+
+    // ── Hide the AI chat widget while any modal is open ──
+    // The widget's script may inject its icon straight into <body>, outside our wrapper,
+    // so besides the wrapper we also hide any extra top-level element on the page that
+    // isn't part of this template (nav, hero, sections, footer, modals, banner).
+    const aiWidgetWrap = document.getElementById('aiWidgetWrap');
+    const modalOverlays = [loginOverlay, forgotOverlay, logoutConfirmOverlay];
+    const KNOWN_TAGS = ['NAV', 'HEADER', 'SECTION', 'FOOTER', 'SCRIPT', 'STYLE', 'LINK', 'NOSCRIPT'];
+
+    function widgetElements() {
+        const found = aiWidgetWrap ? [aiWidgetWrap] : [];
+        Array.from(document.body.children).forEach(el => {
+            if (KNOWN_TAGS.includes(el.tagName)) return;
+            if (modalOverlays.includes(el) || el === aiWidgetWrap) return;
+            if (el.querySelector('#dismissLoginBanner')) return; // "please log in" banner
+            found.push(el);
+        });
+        return found;
+    }
+
+    function syncAiWidget() {
+        const anyOpen = modalOverlays.some(o => o.classList.contains('open'));
+        widgetElements().forEach(el => {
+            if (anyOpen) el.style.setProperty('display', 'none', 'important');
+            else el.style.removeProperty('display');
+        });
+    }
+    modalOverlays.forEach(o => new MutationObserver(syncAiWidget).observe(o, { attributes: true, attributeFilter: ['class'] }));
+    syncAiWidget();
 </script>
-<div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null, null, null, null)}"></div>
 </body>
 </html>

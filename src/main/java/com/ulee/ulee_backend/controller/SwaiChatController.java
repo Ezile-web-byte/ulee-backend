@@ -454,9 +454,37 @@ public class SwaiChatController {
                 - If you are not sure about opening hours, events or prices, say so instead of guessing.
                 - You cannot make bookings or take payments. Tell the student to open the listing and use \
                   "View & Apply", or contact the ULEE team.
+                - When a student asks about shops, malls, restaurants, beaches or other places, always NAME \
+                  specific places (for example Boardwalk Mall, Greenacres, Walmer Park, Baywest Mall) and say \
+                  which area each one is in. Never say only that shops or amenities are "nearby", "close" or \
+                  "on your doorstep" without naming them.
+                - Only say a property is close to, or closer to, a place when the local guide or the \
+                  property's address clearly supports it. If you do not know how far the property is from a \
+                  place, say so plainly, name the suburb that place is in, and suggest checking walking or \
+                  driving directions on Google Maps. Never answer "yes" to "is it closer to X?" unless you are sure.
+                - When asked about shops, food or social life, be specific and friendly: name the \
+                  supermarket, restaurants and fast-food places, and mention running groups, societies and \
+                  weekend ideas from the guide.
+                - If you do not know exactly what is around a property's address (for example Pier 14), do \
+                  not invent specifics, but still help: name the nearest well-known shops, malls and places \
+                  from the guide, say which suburb each is in, and suggest Google Maps for exact distances. \
+                  Never tell the student that a guide does not cover something, and never mention the guide.
                 - Keep answers short (2-5 sentences), friendly, plain text, no markdown formatting.
                 - Amounts are in South African rand (R).
                 """);
+
+        // Without Google Search grounding the model must not pretend it can look things up live.
+        if (!searchEnabled) {
+            sb.append("""
+
+                    You cannot browse the internet or search live. Never offer to "search" or "look up" places.
+                    Answer from the local guide and your general knowledge of Gqeberha, and say when something
+                    should be checked on Google Maps (opening hours, prices, events).
+                    For shops, malls, beaches, restaurants or things to do "near me" or "near campus", answer
+                    straight away with the best-known options. Do not ask which area first. If the student is
+                    viewing a property, treat its address as "near me". Ask at most one short follow-up at the end.
+                    """);
+        }
 
         String guide = loadGuide();
         if (!guide.isBlank()) {
@@ -476,6 +504,10 @@ public class SwaiChatController {
                 sb.append("Features: ").append(req.propertyFeatures()).append("\n");
             }
             sb.append("Prefer answering about this property and the area around its address.\n");
+            sb.append("The student is ALREADY on this property's page, so never recommend it, never offer to show it, "
+                    + "and never ask whether they want to view or apply for it (the page has its own Apply Now button). "
+                    + "Just answer their question about it. Do not write this property's link path. Only mention OTHER "
+                    + "listings if the student asks for alternatives or a comparison.\n");
         }
 
         sb.append("\nCurrent available ULEE listings (the only ones you may mention). "
@@ -547,14 +579,16 @@ public class SwaiChatController {
             boolean named = !title.isEmpty() && recent.contains(title);
 
             Level level = (viewing || named) ? Level.FULL : detailQuestion ? Level.DETAILED : Level.COMPACT;
-            sb.append("- ").append(describeListing(l, level)).append("\n");
+            sb.append("- ").append(describeListing(l, level, !viewing)).append("\n");
         }
         return sb.toString();
     }
 
-    private static String describeListing(ListingSummaryDTO l, Level level) {
+    private static String describeListing(ListingSummaryDTO l, Level level, boolean showLink) {
         List<String> parts = new ArrayList<>();
-        parts.add(l.getTitle() + " (/property/" + l.getId() + ")");
+        parts.add(showLink
+                ? l.getTitle() + " (/property/" + l.getId() + ")"
+                : l.getTitle() + " [the property the student is viewing right now]");
 
         if (level == Level.COMPACT) {
             String where = notBlank(l.getSuburb())

@@ -183,8 +183,13 @@
         if (message.sender === 'user') {
             el.textContent = message.text;
         } else {
-            ids = listingIdsIn(message.text);
-            el.textContent = ids.length ? stripListingPaths(message.text) : message.text;
+            var allIds = listingIdsIn(message.text);
+            // On a property page the student is already looking at that listing,
+            // so never show a card (or "View & Apply") for it, only for OTHER listings.
+            ids = allIds.filter(function (id) {
+                return !(context.mode === 'property' && String(id) === String(context.propertyId));
+            });
+            el.textContent = allIds.length ? stripListingPaths(message.text) : message.text;
         }
 
         historyEl.appendChild(el);
