@@ -4,11 +4,76 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ULEE — Admin Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/admin-style.css">
     <script src="/admin-script.js" defer></script>
+    <script src="/landlord-sidebar-toggle.js" defer></script>
     <style>
-        /* Custom confirm dialog (replaces the browser's plain popup) */
+        /* ── Hero carousel (self-contained: no other CSS file needed) ── */
+        .hero-carousel {
+            position: relative; border-radius: 16px; overflow: hidden;
+            min-height: 360px; margin-bottom: 20px; background: #0A3A48;
+        }
+        .hero-slide {
+            --hero-img: none;                       /* overridden per slide by the inline style */
+            display: none; position: relative; padding: 28px; min-height: 360px;
+            flex-direction: column; justify-content: center; color: #fff;
+            background-color: #0A3A48;
+            background-image:
+                    linear-gradient(90deg, rgba(7,28,45,.88) 0%, rgba(7,28,45,.5) 45%, rgba(7,28,45,.1) 100%),
+                    var(--hero-img);
+            background-size: cover;
+            background-position: center 40%;
+        }
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 6px; width: fit-content;
+            background: rgba(255,255,255,.14); font-size: 11px; font-weight: 700;
+            letter-spacing: .06em; text-transform: uppercase;
+            padding: 5px 12px; border-radius: 999px; margin-bottom: 14px;
+        }
+        .hero-title { margin: 0 0 8px; font-size: 30px; font-weight: 700; max-width: 520px; }
+        .hero-text  { margin: 0 0 18px; max-width: 460px; color: rgba(255,255,255,.8); font-size: 14px; }
+        .hero-row   { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+        .hero-chip  { background: rgba(0,0,0,.4); border-radius: 10px; padding: 9px 16px; }
+        .hero-chip-label { font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: rgba(255,255,255,.6); }
+        .hero-chip-value { font-size: 17px; font-weight: 700; }
+        .hero-cta {
+            background: #ffe170; color: #221b00; font-weight: 700; padding: 11px 22px;
+            border-radius: 10px; text-decoration: none;
+            display: inline-flex; align-items: center; gap: 6px;
+        }
+        .hero-cta.push { margin-left: auto; }
+        .hero-cta svg { width: 14px; height: 14px; stroke: #221b00; fill: none; stroke-width: 2; }
+        .hero-arrow {
+            position: absolute; bottom: 14px; width: 32px; height: 32px; border-radius: 50%;
+            background: rgba(255,255,255,.2); border: none; cursor: pointer; z-index: 5;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .hero-arrow svg { width: 14px; height: 14px; stroke: #fff; fill: none; stroke-width: 2; }
+
+        /* ── Review Properties page ── */
+        .rv-photo { width: 48px; height: 48px; border-radius: 10px; object-fit: cover; display: block; }
+        .rv-photo.empty { background: var(--surface-tint); border: 1px solid var(--border); }
+        .rv-name { font-family: var(--font-display); font-weight: 700; color: var(--text); text-decoration: none; }
+        .rv-name:hover { color: var(--p); text-decoration: underline; }
+        .rv-actions { display: flex; gap: 8px; }
+        .rv-actions form { margin: 0; }
+        .rv-filter {
+            display: none; position: absolute; top: calc(100% + 8px); right: 0; z-index: 20; width: 280px;
+            background: #fff; border: 1px solid var(--border); border-radius: var(--radius-md);
+            box-shadow: var(--shadow-md); padding: 16px;
+        }
+        .rv-filter > label {
+            display: block; margin-bottom: 4px; font-size: 12px; font-weight: 700;
+            color: var(--text-2); text-transform: uppercase; letter-spacing: .07em;
+        }
+        .rv-filter .lk-select, .rv-filter input[type=number] { width: 100%; margin-bottom: 12px; }
+        .rv-filter input[type=number] {
+            padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+            background: var(--bg); font-family: inherit; font-size: 14px;
+        }
+
+        /* ── Confirm dialog ── */
         .ulee-confirm-backdrop {
             position: fixed; inset: 0; z-index: 1000;
             display: none; align-items: center; justify-content: center;
@@ -36,60 +101,33 @@
         @keyframes uleeFade { from { opacity: 0; } to { opacity: 1; } }
         @keyframes uleePop { from { opacity: 0; transform: translateY(12px) scale(.94); } to { opacity: 1; transform: none; } }
     </style>
+    <link rel="stylesheet" href="/admin-theme.css">
 </head>
 <body>
 
 <div class="shell">
 
-    <!-- FIX: was hardcoded sidebar('dashboard'), which meant the sidebar
-         highlight always showed Dashboard no matter which tab was actually
-         active. Now it uses the same ${activeSection} the controller already
-         computes (dashboard | review-properties), so the sidebar highlight
-         matches whichever tab is really showing. -->
     <div th:replace="~{fragments/admin-sidebar :: sidebar(${activeSection})}"></div>
 
     <div class="main">
 
         <header class="topbar">
-            <!-- FIX: was hardcoded "Dashboard — Overview" text, so the heading
-                 never changed even when Review Properties was the active tab.
-                 Now it switches based on ${activeSection}, same source of
-                 truth as the sidebar highlight and the section toggle below. -->
             <div class="topbar-title" id="topbar-title">
-                <th:block th:if="${activeSection == 'review-properties'}">Review Properties <span>— Pending Listings</span></th:block>
-                <th:block th:unless="${activeSection == 'review-properties'}">Dashboard <span>— Overview</span></th:block>
+                <th:block th:if="${activeSection == 'review-properties'}">Review Properties</th:block>
+                <th:block th:unless="${activeSection == 'review-properties'}">Dashboard</th:block>
             </div>
             <div th:replace="~{fragments/notification-bell :: bell}"></div>
-            <!--
-              FIX: was onclick="alert('Logging out…')" — a fake placeholder
-              that never actually logged anyone out (same issue Reviews and
-              Reported Listings had). The admin-sidebar fragment above
-              already defines confirmAdminLogout() — it opens the same
-              styled "Log out of ULEE?" confirmation used by the sidebar's
-              admin chip and submits the real /logout form on confirm — so
-              this now calls that instead of the fake alert.
-            -->
-            <button class="logout-btn" onclick="confirmAdminLogout()">
-                <svg viewBox="0 0 20 20"><path d="M13 3h4v14h-4M9 14l4-4-4-4M13 10H5"/></svg>
-                <span>Log out</span>
-            </button>
+            <div class="avatar" th:text="${adminInitials} ?: 'AD'">SA</div>
         </header>
 
         <div class="content">
 
-            <!-- Flash messages from redirect actions (approve/reject/etc.) -->
             <div th:if="${actionMessage}" style="margin:16px 0;padding:12px 16px;border-radius:8px;background:#e6f6ec;color:#1a7a3c;" th:text="${actionMessage}"></div>
             <div th:if="${actionError}" style="margin:16px 0;padding:12px 16px;border-radius:8px;background:#fdecec;color:#b3261e;" th:text="${actionError}"></div>
 
-            <!-- ============ DASHBOARD (overview only — no per-listing review table here) ============ -->
-            <!-- FIX: which tab shows is now decided server-side via ${activeSection}
-                 instead of hardcoding "active" here and patching it with JS after
-                 load — that JS/#hash approach was unreliable after a form submit. -->
+            <!-- ============ DASHBOARD ============ -->
             <div class="section" th:classappend="${activeSection == 'dashboard'} ? ' active'" id="sec-dashboard">
 
-                <!-- Greeting header — name hardcoded to match the sidebar
-                     footer's existing hardcoded "Sarah Admin"; greeting and
-                     date are both real, computed server-side. -->
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;flex-wrap:wrap;gap:12px">
                     <div>
                         <h2 th:text="${greeting} + ', ' + (${adminName} ?: 'Admin')">Good morning, Sarah</h2>
@@ -97,139 +135,126 @@
                     </div>
                 </div>
 
-                <!-- Hero carousel: 4 slides — the 2 most recent pending listings
-                     (real photos/data), a landlord-verification notice (real
-                     count), and a static branding slide. Slides are toggled by
-                     JS at the bottom of this section; only one has class
-                     "hero-slide-active" at a time. -->
-                <div class="hero-carousel" style="position:relative;border-radius:16px;overflow:hidden;min-height:360px;margin-bottom:20px">
+                <!-- Hero carousel -->
+                <div class="hero-carousel">
 
-                    <!-- Slides 1 & 2: latest pending listings, real photo as background -->
+                    <!-- One slide per pending listing, read straight from the database -->
                     <div th:each="prop, iter : ${latestPendingForHero}"
                          th:id="'hero-slide-' + ${iter.index}"
-                         class="hero-slide" th:classappend="${iter.index == 0} ? ' hero-slide-active'"
-                         th:style="'display:none;position:relative;padding:28px;min-height:360px;flex-direction:column;justify-content:center;color:#fff;background-size:cover;background-position:center;background-image:linear-gradient(90deg, rgba(10,10,10,0.75), rgba(10,10,10,0.25)), url(' + (${prop.mainImageUrl} != null ? prop.mainImageUrl : '/uploads/dashboardpicture/hero1.png') + ')'">
-
-                        <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.12);font-size:11px;font-weight:700;letter-spacing:.06em;padding:5px 12px;border-radius:999px;text-transform:uppercase;width:fit-content;margin-bottom:14px">
-                            <svg viewBox="0 0 20 20" style="width:10px;height:10px;fill:#ffe170"><path d="M10 2l2.3 4.7 5.2.8-3.8 3.7.9 5.2L10 14l-4.6 2.4.9-5.2L2.5 7.5l5.2-.8z"/></svg>
-                            Featured Listing
-                        </span>
-
-                        <h1 style="margin:0 0 8px;font-size:30px;font-weight:700;max-width:520px" th:text="${prop.title}">Property Title</h1>
-                        <p style="margin:0 0 18px;max-width:440px;color:rgba(255,255,255,0.8);font-size:14px">
-                            Recently submitted — awaiting your review.
-                        </p>
-
-                        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-                            <div style="background:rgba(0,0,0,0.4);border-radius:10px;padding:9px 16px">
-                                <div style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,0.6)">Rent</div>
-                                <div style="font-size:17px;font-weight:700" th:text="'R' + (${prop.rent} ?: 'N/A') + ' / mo'">R0 / mo</div>
+                         class="hero-slide"
+                         th:style="${prop.mainImageUrl != null} ? ('--hero-img:url(\'' + ${prop.mainImageUrl} + '\')')">
+                        <span class="hero-badge" th:text="'★ Pending Review · ' + ${iter.count} + ' of ' + ${totalPending}">★ Pending Review</span>
+                        <h1 class="hero-title" th:text="${prop.title}">Property Title</h1>
+                        <p class="hero-text" th:text="${prop.city} ?: 'Recently submitted — awaiting your review.'">Recently submitted — awaiting your review.</p>
+                        <div class="hero-row">
+                            <div class="hero-chip">
+                                <div class="hero-chip-label">Rent</div>
+                                <div class="hero-chip-value" th:text="'R' + (${prop.rent} ?: 'N/A') + ' / mo'">R0 / mo</div>
                             </div>
-                            <div style="background:rgba(0,0,0,0.4);border-radius:10px;padding:9px 16px">
-                                <div style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,0.6)">Applicants</div>
-                                <div style="font-size:17px;font-weight:700" th:text="${heroApplicantCounts.get(prop.propertyID) != null ? heroApplicantCounts.get(prop.propertyID) : 0}">0</div>
+                            <div class="hero-chip">
+                                <div class="hero-chip-label">Applicants</div>
+                                <div class="hero-chip-value" th:text="${heroApplicantCounts.get(prop.propertyID) != null ? heroApplicantCounts.get(prop.propertyID) : 0}">0</div>
                             </div>
-                            <div style="background:rgba(0,0,0,0.4);border-radius:10px;padding:9px 16px">
-                                <div style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,0.6)">Rating</div>
-                                <div style="font-size:17px;font-weight:700" th:text="${prop.rating} ?: 'N/A'">N/A</div>
+                            <div class="hero-chip">
+                                <div class="hero-chip-label">Rating</div>
+                                <div class="hero-chip-value" th:text="${prop.rating} ?: 'N/A'">N/A</div>
                             </div>
-                            <a th:href="@{/admin/listing/{id}(id=${prop.propertyID},from='pending')}"
-                               style="background:#ffe170;color:#221b00;font-weight:700;padding:11px 22px;border-radius:10px;text-decoration:none;display:inline-flex;align-items:center;gap:6px;margin-left:auto">
+                            <a class="hero-cta push" th:href="@{/admin/listing/{id}(id=${prop.propertyID},from='pending')}">
                                 Review listing
-                                <svg viewBox="0 0 20 20" style="width:14px;height:14px;stroke:#221b00;fill:none;stroke-width:2"><path d="M7 4l6 6-6 6"/></svg>
+                                <svg viewBox="0 0 20 20"><path d="M7 4l6 6-6 6"/></svg>
                             </a>
                         </div>
                     </div>
 
-                    <!-- Slide 3: reported listings notice — real count, links to
-                         a page with actual working actions (Warn Landlord,
-                         Suspend, Remove), unlike the landlord-verification
-                         idea this replaced (no verify action exists anywhere
-                         in this app). -->
-                    <div id="hero-slide-2" class="hero-slide"
-                         th:classappend="${#lists.isEmpty(latestPendingForHero)} ? ' hero-slide-active'"
-                         style="display:none;position:relative;padding:28px;min-height:360px;flex-direction:column;justify-content:center;color:#fff;background:linear-gradient(90deg, rgba(10,10,10,0.75), rgba(10,10,10,0.25)), url('/uploads/dashboardpicture/hero2.png');background-size:cover;background-position:center">
+                    <!-- Overflow slide: shown only when more are pending than the few featured above -->
+                    <div id="hero-slide-more" class="hero-slide"
+                         th:if="${totalPending > #lists.size(latestPendingForHero)}">
+                        <span class="hero-badge">★ Review Queue</span>
+                        <h1 class="hero-title"
+                            th:text="'+ ' + (${totalPending} - ${#lists.size(latestPendingForHero)}) + ' more awaiting review'">+ 0 more awaiting review</h1>
+                        <p class="hero-text">The dashboard only features the newest submissions. The full list is in Review Properties.</p>
+                        <div class="hero-row">
+                            <div class="hero-chip">
+                                <div class="hero-chip-label">Total pending</div>
+                                <div class="hero-chip-value" th:text="${totalPending}">0</div>
+                            </div>
+                            <a class="hero-cta" href="/admin-index?section=review-properties">
+                                Open Review Properties
+                                <svg viewBox="0 0 20 20"><path d="M7 4l6 6-6 6"/></svg>
+                            </a>
+                        </div>
+                    </div>
 
-                        <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.12);font-size:11px;font-weight:700;letter-spacing:.06em;padding:5px 12px;border-radius:999px;text-transform:uppercase;width:fit-content;margin-bottom:14px">
-                            <svg viewBox="0 0 20 20" style="width:10px;height:10px;fill:#ffe170"><path d="M10 3l7 14H3L10 3z"/><path d="M10 9v4M10 15h.01"/></svg>
-                            Admin Notice
-                        </span>
-
-                        <h1 style="margin:0 0 8px;font-size:28px;font-weight:700;max-width:520px"
+                    <!-- Reported listings: uses the first reported property's photo -->
+                    <div id="hero-slide-reported" class="hero-slide"
+                         th:if="${totalReported > 0}"
+                         th:with="rp=${reportedProperties[0]}"
+                         th:style="${rp.mainImageUrl != null} ? ('--hero-img:url(\'' + ${rp.mainImageUrl} + '\')')">
+                        <span class="hero-badge">⚠ Admin Notice</span>
+                        <h1 class="hero-title"
                             th:text="${totalReported} + ' reported listing' + (${totalReported} == 1 ? '' : 's') + ' need' + (${totalReported} == 1 ? 's' : '') + ' action'">0 reported listings need action</h1>
-                        <p style="margin:0 0 18px;max-width:460px;color:rgba(255,255,255,0.8);font-size:14px">
-                            These listings have been flagged by students. Review each one to warn the landlord, suspend, or remove it.
-                        </p>
-
-                        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-                            <div style="background:rgba(0,0,0,0.4);border-radius:10px;padding:9px 16px">
-                                <div style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,0.6)">Reported</div>
-                                <div style="font-size:20px;font-weight:700" th:text="${totalReported}">0</div>
+                        <p class="hero-text">Flagged by students. Review each one to warn the landlord, suspend, or remove it.</p>
+                        <div class="hero-row">
+                            <div class="hero-chip">
+                                <div class="hero-chip-label">Reported</div>
+                                <div class="hero-chip-value" th:text="${totalReported}">0</div>
                             </div>
-                            <a href="/admin/reported-listings" style="background:#ffe170;color:#221b00;font-weight:700;padding:11px 22px;border-radius:10px;text-decoration:none;display:inline-flex;align-items:center;gap:6px">
+                            <a class="hero-cta" href="/admin/reported-listings">
                                 Open Reported Listings
-                                <svg viewBox="0 0 20 20" style="width:14px;height:14px;stroke:#221b00;fill:none;stroke-width:2"><path d="M7 4l6 6-6 6"/></svg>
+                                <svg viewBox="0 0 20 20"><path d="M7 4l6 6-6 6"/></svg>
                             </a>
                         </div>
                     </div>
 
-                    <!-- Slide 4: static branding slide -->
-                    <div id="hero-slide-3" class="hero-slide"
-                         style="display:none;position:relative;padding:28px;min-height:360px;flex-direction:column;justify-content:center;color:#fff;background:linear-gradient(90deg, rgba(10,10,10,0.75), rgba(10,10,10,0.25)), url('/uploads/dashboardpicture/hero3.png');background-size:cover;background-position:center">
-
-                        <!-- Urgent alert bar — only shows when there's actually something urgent -->
-                        <div th:if="${totalPending > 0 or totalReported > 0}"
-                             style="position:absolute;top:0;left:0;right:0;background:rgba(0,0,0,0.35);padding:8px 20px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px">
-                            <span>⚠</span>
-                            <span th:if="${totalPending > 0}" th:text="${totalPending} + ' propert' + (${totalPending} == 1 ? 'y' : 'ies') + ' awaiting review'">0 awaiting review</span>
-                            <span th:if="${totalPending > 0 and totalReported > 0}">&amp;</span>
-                            <span th:if="${totalReported > 0}" th:text="${totalReported} + ' reported listing' + (${totalReported} == 1 ? '' : 's')">0 reported</span>
-                            <a href="/admin-index?section=review-properties" style="margin-left:auto;color:#ffe170;text-decoration:none;font-weight:700">Review Queue →</a>
-                        </div>
-
-                        <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.12);font-size:11px;font-weight:700;letter-spacing:.06em;padding:5px 12px;border-radius:999px;text-transform:uppercase;width:fit-content;margin-bottom:14px">
-                            <span style="width:6px;height:6px;border-radius:50%;background:#1a9b5b"></span>
-                            Student Community Hub
-                        </span>
-
-                        <h1 style="margin:0 0 8px;font-size:32px;font-weight:700;max-width:520px">Central Living &amp; Academic Quarters</h1>
-                        <p style="margin:0 0 18px;max-width:480px;color:rgba(255,255,255,0.75);font-size:14px">
-                            Modern co-working spaces, study lounges and sustainable resident buildings designed for academic excellence and collaborative living.
-                        </p>
-
-                        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-                            <div style="background:rgba(255,255,255,0.1);border-radius:10px;padding:10px 18px">
-                                <div style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,0.6)">Campus Network</div>
-                                <div style="font-size:20px;font-weight:700" th:text="${totalListings} + ' Residences'">0 Residences</div>
+                    <!-- Lowest-rated live listing (only when one exists) -->
+                    <div id="hero-slide-lowrated" class="hero-slide"
+                         th:if="${lowRatedProperty != null}"
+                         th:style="${lowRatedProperty.mainImageUrl != null} ? ('--hero-img:url(\'' + ${lowRatedProperty.mainImageUrl} + '\')')">
+                        <span class="hero-badge">⚠ Needs Attention — Low Rating</span>
+                        <h1 class="hero-title" th:text="${lowRatedProperty.title}">Property Title</h1>
+                        <p class="hero-text">This live listing has the lowest average rating on the platform — worth a closer look.</p>
+                        <div class="hero-row">
+                            <div class="hero-chip">
+                                <div class="hero-chip-label">Avg Rating</div>
+                                <div class="hero-chip-value" th:text="${#numbers.formatDecimal(lowRatedAverage,1,1)} + ' / 5.0'">0 / 5.0</div>
                             </div>
-                            <a href="/admin/listings" style="background:#ffe170;color:#221b00;font-weight:700;padding:11px 22px;border-radius:10px;text-decoration:none;display:inline-flex;align-items:center;gap:6px">
-                                View Network
-                                <svg viewBox="0 0 20 20" style="width:14px;height:14px;stroke:#221b00;fill:none;stroke-width:2"><path d="M7 4l6 6-6 6"/></svg>
+                            <div class="hero-chip">
+                                <div class="hero-chip-label">Reviews</div>
+                                <div class="hero-chip-value" th:text="${lowRatedReviewCount}">0</div>
+                            </div>
+                            <a class="hero-cta push" th:href="@{/admin/listing/{id}(id=${lowRatedProperty.propertyID},from='approved')}">
+                                Review listing
+                                <svg viewBox="0 0 20 20"><path d="M7 4l6 6-6 6"/></svg>
                             </a>
                         </div>
                     </div>
 
-                    <!-- Prev/next arrows -->
-                    <button type="button" onclick="heroSlidePrev()"
-                            style="position:absolute;left:14px;bottom:14px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.2);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:5">
-                        <svg viewBox="0 0 20 20" style="width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2"><path d="M12 4l-6 6 6 6"/></svg>
-                    </button>
-                    <button type="button" onclick="heroSlideNext()"
-                            style="position:absolute;left:54px;bottom:14px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.2);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:5">
-                        <svg viewBox="0 0 20 20" style="width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2"><path d="M8 4l6 6-6 6"/></svg>
-                    </button>
+                    <!-- Nothing to show: all caught up -->
+                    <div id="hero-slide-empty" class="hero-slide"
+                         th:if="${#lists.isEmpty(latestPendingForHero) and totalReported == 0 and lowRatedProperty == null}">
+                        <span class="hero-badge">✓ All caught up</span>
+                        <h1 class="hero-title">No listings need your attention</h1>
+                        <p class="hero-text">New submissions and reports will show up here as they come in.</p>
+                        <div class="hero-row">
+                            <a class="hero-cta" href="/admin/listings">
+                                View all listings
+                                <svg viewBox="0 0 20 20"><path d="M7 4l6 6-6 6"/></svg>
+                            </a>
+                        </div>
+                    </div>
 
-                    <!-- Dot indicators -->
+
+                    <button type="button" class="hero-arrow" style="left:14px" onclick="heroSlidePrev()">
+                        <svg viewBox="0 0 20 20"><path d="M12 4l-6 6 6 6"/></svg>
+                    </button>
+                    <button type="button" class="hero-arrow" style="left:54px" onclick="heroSlideNext()">
+                        <svg viewBox="0 0 20 20"><path d="M8 4l6 6-6 6"/></svg>
+                    </button>
                     <div id="heroDots" style="position:absolute;left:96px;bottom:22px;display:flex;gap:6px;z-index:5"></div>
                 </div>
 
                 <script>
-                    // Simple 4-slide carousel: exactly one .hero-slide has
-                    // display:block at a time, tracked by heroSlideIndex.
                     var heroSlideIndex = 0;
-                    function heroSlideCount() {
-                        return document.querySelectorAll('.hero-slide').length;
-                    }
                     function heroShowSlide(index) {
                         var slides = document.querySelectorAll('.hero-slide');
                         if (!slides.length) return;
@@ -251,54 +276,47 @@
                     document.addEventListener('DOMContentLoaded', function () { heroShowSlide(0); });
                 </script>
 
-                <div class="stats">
-                    <div class="stat-card">
-                        <div class="stat-top">
-                            <div class="stat-icon warn">
-                                <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"/><path d="M10 7v4M10 14h.01"/></svg>
-                            </div>
-                        </div>
-                        <div class="stat-num" th:text="${totalPending}">0</div>
-                        <div class="stat-label">Pending Review</div>
+                <!-- Metric cards -->
+                <div class="stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:18px">
+                    <div class="ulee-metric-card">
+                        <div class="ulee-metric-label">Pending Review</div>
+                        <div class="ulee-metric-value" th:text="${totalPending}">0</div>
+                        <svg class="ulee-metric-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true">
+                            <path class="w-back" d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+                            <path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+                        </svg>
                     </div>
-
-                    <div class="stat-card">
-                        <div class="stat-top">
-                            <div class="stat-icon red">
-                                <svg viewBox="0 0 20 20"><path d="M10 3l7 14H3L10 3z"/><path d="M10 9v4M10 15h.01"/></svg>
-                            </div>
-                        </div>
-                        <div class="stat-num" th:text="${totalReported}">0</div>
-                        <div class="stat-label">Flagged</div>
+                    <div class="ulee-metric-card">
+                        <div class="ulee-metric-label">Flagged</div>
+                        <div class="ulee-metric-value" th:text="${totalReported}">0</div>
+                        <svg class="ulee-metric-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true">
+                            <path class="w-back" d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+                            <path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+                        </svg>
                     </div>
-
-                    <div class="stat-card">
-                        <div class="stat-top">
-                            <div class="stat-icon">
-                                <svg viewBox="0 0 20 20"><path d="M3 7l7-4 7 4v9H3V7z"/><path d="M8 11h4v5H8z"/></svg>
-                            </div>
-                        </div>
-                        <div class="stat-num" th:text="${totalListings}">0</div>
-                        <div class="stat-label">Total Listings</div>
-                        <div style="font-size:12px;color:var(--ulee-teal, #0f9e94);margin-top:2px" th:text="'+' + ${listingsThisMonth} + ' this month'">+0 this month</div>
+                    <div class="ulee-metric-card">
+                        <div class="ulee-metric-label">Total Listings</div>
+                        <div class="ulee-metric-value" th:text="${totalListings}">0</div>
+                        <div class="ulee-metric-sub" th:text="'+' + ${listingsThisMonth} + ' this month'">+0 this month</div>
+                        <svg class="ulee-metric-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true">
+                            <path class="w-back" d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+                            <path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+                        </svg>
                     </div>
-
-                    <div class="stat-card">
-                        <div class="stat-top">
-                            <div class="stat-icon" style="background:#e6f7f5">
-                                <svg viewBox="0 0 20 20" style="stroke:#0f9e94"><path d="M4 10l4 4 8-8"/></svg>
-                            </div>
-                        </div>
-                        <div class="stat-num" th:text="${totalApproved}">0</div>
-                        <div class="stat-label">Approved</div>
-                        <div style="font-size:12px;color:var(--ulee-teal, #0f9e94);margin-top:2px" th:text="'+' + ${approvedThisMonth} + ' this month'">+0 this month</div>
+                    <div class="ulee-metric-card">
+                        <div class="ulee-metric-label">Active</div>
+                        <div class="ulee-metric-value" th:text="${totalApproved}">0</div>
+                        <div class="ulee-metric-sub" th:text="'+' + ${approvedThisMonth} + ' this month'">+0 this month</div>
+                        <svg class="ulee-metric-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true">
+                            <path class="w-back" d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+                            <path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+                        </svg>
                     </div>
                 </div>
 
                 <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:20px;align-items:start;margin-top:20px">
 
-                    <!-- Listings trend chart. Backend supplies two parallel lists:
-                         monthlyLabels: List<String>, monthlyCounts: List<Long>  (last 6 months, oldest first) -->
+                    <!-- Listings trend -->
                     <div class="panel">
                         <div class="panel-header">
                             <div><span class="panel-title">Listings Trend</span><span class="panel-sub">Last 6 months</span></div>
@@ -312,7 +330,6 @@
                         </div>
                     </div>
 
-                    <!-- Values Thymeleaf inlines into the chart script below -->
                     <script th:inline="javascript">
                         /*<![CDATA[*/
                         var ULEE_monthlyLabels = /*[[${monthlyLabels}]]*/ [];
@@ -320,14 +337,7 @@
                         /*]]>*/
                     </script>
 
-                    <!-- Listing Status donut — real counts, built with a plain
-                         SVG conic-style ring (stacked stroke-dasharray arcs)
-                         so no chart library is needed.
-                         FIX: was green/amber/red (#1a9b5b / #f5b83d / #e85555),
-                         which didn't match anything else on the dashboard's
-                         chart palette. All three segments — plus the legend
-                         dots and the bar chart below — now use one teal-based
-                         palette (#0f9e94 / #4fc3c0 / #a7e0dd) instead. -->
+                    <!-- Listing status donut -->
                     <div class="panel" th:with="donutTotal=${totalApproved + totalPending + totalReported}">
                         <div class="panel-header">
                             <div><span class="panel-title">Listing Status</span></div>
@@ -351,7 +361,7 @@
                                 </div>
                             </div>
                             <div style="display:flex;flex-direction:column;gap:10px;font-size:13px">
-                                <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:#0f9e94"></span>Approved <strong style="margin-left:auto" th:text="${totalApproved}">0</strong></div>
+                                <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:#0f9e94"></span>Active <strong style="margin-left:auto" th:text="${totalApproved}">0</strong></div>
                                 <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:#4fc3c0"></span>Pending <strong style="margin-left:auto" th:text="${totalPending}">0</strong></div>
                                 <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:#a7e0dd"></span>Flagged <strong style="margin-left:auto" th:text="${totalReported}">0</strong></div>
                             </div>
@@ -360,7 +370,7 @@
 
                 </div>
 
-                <!-- Quick actions — jump straight into the section that needs attention -->
+                <!-- Quick actions -->
                 <div class="panel" style="margin-top:20px">
                     <div class="panel-header">
                         <div><span class="panel-title">Quick Actions</span></div>
@@ -389,14 +399,7 @@
                     </div>
                 </div>
 
-                <!-- Recent activity feed. Backend now supplies REAL logged admin
-                     actions (see AdminController.logActivity / buildRecentActivity),
-                     not a guess based on which property was touched most recently:
-                     recentActivity: List<{ message, timestamp, action, tone, initials }>
-                     - message:   e.g. 'Approved "Hlomane Riverside House"', 'Warned John Smith (warning #2)'
-                     - action:    the raw action key, e.g. "Approved", "Warned landlord", "Deleted"
-                     - tone:      "positive" | "negative" | "warning" | "neutral" — pick the badge color
-                     - initials:  the admin who performed the action, not the property -->
+                <!-- Recent activity -->
                 <div class="panel" style="margin-top:20px">
                     <div class="panel-header">
                         <div><span class="panel-title">Recent Activity</span></div>
@@ -411,15 +414,6 @@
                                 <div th:text="${activity.message}" style="font-size:14px">Activity description</div>
                                 <div th:text="${activity.timestamp}" style="color:var(--muted);font-size:12px;margin-top:2px">Just now</div>
                             </div>
-                            <!--
-                              FIX: badge color used to be matched against
-                              property STATUS strings (Approved/Pending/
-                              Rejected). This feed now shows admin ACTIONS
-                              instead, so the badge keys off activity.tone
-                              (positive/negative/warning/neutral) that the
-                              controller already computed, and the label
-                              shown is the action itself.
-                            -->
                             <span class="badge"
                                   th:classappend="${activity.tone == 'positive'} ? 'badge-green' : (${activity.tone == 'negative'} ? 'badge-red' : (${activity.tone == 'warning'} ? 'badge-amber' : 'badge-blue'))"
                                   th:text="${activity.action}">Action</span>
@@ -433,187 +427,165 @@
 
             </div>
 
-            <!-- ============ REVIEW PROPERTIES (the pending-listings queue lives here now) ============ -->
+            <!-- ============ REVIEW PROPERTIES ============ -->
             <div class="section" th:classappend="${activeSection == 'review-properties'} ? ' active'" id="sec-review-properties">
 
-                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px;flex-wrap:wrap">
-                    <div>
-                        <h2 style="margin:0 0 4px;font-size:22px;font-weight:700;color:#1a1a1a">Review Properties</h2>
-                        <p style="margin:0;color:var(--muted);font-size:14px">Manage and verify new property submissions for the academic year.</p>
-                    </div>
-                    <!-- FIX: action is now plain /admin-index (no #hash — that was the
-                         unreliable part). A hidden "section" field tells the server
-                         which tab to render active on the response, so filtering no
-                         longer bounces back to the Dashboard tab. -->
-                    <form id="reviewYearFilterForm" action="/admin-index" method="get" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;position:relative">
-                        <input type="hidden" name="section" value="review-properties" />
-                        <div style="position:relative">
-                            <svg viewBox="0 0 20 20" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:14px;height:14px;stroke:#9aa1a9;fill:none;stroke-width:1.6">
-                                <circle cx="9" cy="9" r="6"/><path d="M14 14l4 4"/>
-                            </svg>
-                            <input type="text" name="search" th:value="${reviewSearch}"
-                                   placeholder="Search by name, area, or address…"
-                                   style="padding:9px 12px 9px 32px;border:1px solid #e5e7eb;border-radius:8px;font-family:inherit;font-size:14px;width:220px" />
-                        </div>
-                        <select name="academicYear" onchange="document.getElementById('reviewYearFilterForm').submit()"
-                                style="padding:9px 14px;border:1px solid #e5e7eb;border-radius:8px;font-family:inherit;font-size:14px;background:#fff;cursor:pointer">
-                            <option value="" th:selected="${selectedAcademicYear == null}">All Academic Years</option>
-                            <option th:each="year : ${academicYearOptions}"
-                                    th:value="${year}"
-                                    th:text="${year} + ' Academic Year'"
-                                    th:selected="${selectedAcademicYear != null and selectedAcademicYear == year}">2026 Academic Year</option>
+                <p class="lk-sub" style="margin:0 0 20px">Check each new submission, then approve or reject it.</p>
+
+                <!-- One row: search (takes all the free space) · year · Filter button at the far right -->
+                <form id="reviewYearFilterForm" class="lk-toolbar" action="/admin-index" method="get" style="position:relative">
+                    <input type="hidden" name="section" value="review-properties" />
+
+                    <label class="lk-search">
+                        <svg viewBox="0 0 20 20"><circle cx="9" cy="9" r="6"/><path d="M14 14l4 4"/></svg>
+                        <input type="text" name="search" th:value="${reviewSearch}" placeholder="Search by name, suburb or address" />
+                    </label>
+
+                    <select name="academicYear" class="lk-select" onchange="this.form.submit()">
+                        <option value="" th:selected="${selectedAcademicYear == null}">All Academic Years</option>
+                        <option th:each="year : ${academicYearOptions}"
+                                th:value="${year}"
+                                th:text="${year} + ' Academic Year'"
+                                th:selected="${selectedAcademicYear != null and selectedAcademicYear == year}">2026 Academic Year</option>
+                    </select>
+
+                    <button id="reviewFilterToggleBtn" type="button" class="btn btn-primary" onclick="toggleReviewFilterPanel()">
+                        <svg viewBox="0 0 20 20" style="width:14px;height:14px;stroke:#fff;fill:none;stroke-width:1.8"><path d="M3 5h14M6 10h8M9 15h2"/></svg>
+                        Filter
+                    </button>
+
+                    <div id="reviewFilterPanel" class="rv-filter">
+                        <label for="rvCity">City</label>
+                        <select id="rvCity" name="city" class="lk-select">
+                            <option value="">All cities</option>
+                            <option th:each="c : ${cityOptions}" th:value="${c}" th:text="${c}"
+                                    th:selected="${selectedCity != null and selectedCity.equalsIgnoreCase(c)}">City</option>
                         </select>
 
-                        <!-- "Filter" now opens a dropdown panel (City / Price range / Type),
-                             matching the same panel pattern used on Approved Properties.
-                             Search + Academic Year stay as always-visible fields above;
-                             this panel adds the extra criteria. All fields submit together
-                             as one form since they share the form's action/section. -->
-                        <button id="reviewFilterToggleBtn" type="button" onclick="toggleReviewFilterPanel()"
-                                style="background:#ffe170;border:1px solid #ffe170;color:#221b00;border-radius:8px;padding:9px 16px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px">
-                            <svg viewBox="0 0 20 20" style="width:14px;height:14px;stroke:#221b00;fill:none;stroke-width:1.6"><path d="M3 5h14M6 10h8M9 15h2"/></svg>
-                            Filter
-                        </button>
-
-                        <div id="reviewFilterPanel" style="display:none;position:absolute;top:44px;right:0;z-index:20;background:#fff;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.08);padding:16px;width:260px">
-                            <label style="display:block;font-size:12px;font-weight:600;color:#555;margin-bottom:4px">City</label>
-                            <select name="city" style="width:100%;padding:7px 8px;border:1px solid #e5e7eb;border-radius:6px;margin-bottom:12px;font-family:inherit;font-size:13px">
-                                <option value="">All cities</option>
-                                <option th:each="c : ${cityOptions}" th:value="${c}" th:text="${c}"
-                                        th:selected="${selectedCity != null and selectedCity.equalsIgnoreCase(c)}">City</option>
-                            </select>
-
-                            <label style="display:block;font-size:12px;font-weight:600;color:#555;margin-bottom:4px">Price range (R)</label>
-                            <div style="display:flex;gap:8px;margin-bottom:12px">
-                                <input type="number" name="minPrice" th:value="${minPrice}" placeholder="Min"
-                                       style="width:50%;padding:7px 8px;border:1px solid #e5e7eb;border-radius:6px;font-family:inherit;font-size:13px" />
-                                <input type="number" name="maxPrice" th:value="${maxPrice}" placeholder="Max"
-                                       style="width:50%;padding:7px 8px;border:1px solid #e5e7eb;border-radius:6px;font-family:inherit;font-size:13px" />
-                            </div>
-
-                            <label style="display:block;font-size:12px;font-weight:600;color:#555;margin-bottom:4px">Type</label>
-                            <select name="type" style="width:100%;padding:7px 8px;border:1px solid #e5e7eb;border-radius:6px;margin-bottom:14px;font-family:inherit;font-size:13px">
-                                <option value="" th:selected="${selectedType == null or selectedType.isEmpty()}">Any</option>
-                                <option value="Single" th:selected="${selectedType == 'Single'}">Single</option>
-                                <option value="Sharing" th:selected="${selectedType == 'Sharing'}">Sharing</option>
-                            </select>
-
-                            <div style="display:flex;gap:8px">
-                                <button type="submit" style="flex:1;background:#006078;border:1px solid #006078;color:#fff;border-radius:6px;padding:8px 0;font-size:13px;font-weight:600;cursor:pointer">Apply</button>
-                                <a href="/admin-index?section=review-properties"
-                                   style="flex:1;text-align:center;border:1px solid #e5e7eb;color:#555;border-radius:6px;padding:8px 0;font-size:13px;text-decoration:none">Clear</a>
-                            </div>
+                        <label for="rvMin">Price range (R)</label>
+                        <div style="display:flex;gap:8px">
+                            <input type="number" id="rvMin" name="minPrice" th:value="${minPrice}" placeholder="Min" />
+                            <input type="number" name="maxPrice" aria-label="Maximum price" th:value="${maxPrice}" placeholder="Max" />
                         </div>
-                    </form>
-                </div>
 
+                        <label for="rvType">Type</label>
+                        <select id="rvType" name="type" class="lk-select">
+                            <option value="" th:selected="${selectedType == null or selectedType.isEmpty()}">Any</option>
+                            <option value="Single" th:selected="${selectedType == 'Single'}">Single</option>
+                            <option value="Sharing" th:selected="${selectedType == 'Sharing'}">Sharing</option>
+                        </select>
+
+                        <div style="display:flex;gap:8px">
+                            <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center">Apply</button>
+                            <a href="/admin-index?section=review-properties" class="btn btn-view" style="flex:1;justify-content:center">Clear</a>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Stat cards: same markup as the landlord / Users pages (stars, wave, shine, count-up) -->
                 <div class="stats">
                     <div class="stat-card">
-                        <div class="stat-top">
-                            <div class="stat-icon warn">
-                                <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"/><path d="M10 7v4M10 14h.01"/></svg>
-                            </div>
+                        <svg class="sc-stars" viewBox="0 0 200 90" aria-hidden="true"><g fill="#9FF0E8"><circle class="star" cx="150" cy="20" r="1.6" style="--d:0s"/><circle class="star" cx="180" cy="44" r="1.3" style="--d:0.6s"/><circle class="star" cx="120" cy="52" r="1.2" style="--d:1.2s"/><circle class="star" cx="190" cy="12" r="1.4" style="--d:1.8s"/><circle class="star" cx="95" cy="18" r="1.1" style="--d:2.4s"/></g></svg>
+                        <div class="stat-copy">
+                            <span class="stat-label">Pending Review</span>
+                            <span class="stat-num" th:text="${totalPending}">0</span>
                         </div>
-                        <div class="stat-num" th:text="${totalPending}">0</div>
-                        <div class="stat-label">Pending Review</div>
+                        <span class="stat-alert-dot" th:hidden="${totalPending == 0}" aria-hidden="true"></span>
+                        <svg class="sc-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true">
+                            <path class="w-back"  d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+                            <path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+                        </svg>
                     </div>
 
                     <div class="stat-card">
-                        <div class="stat-top">
-                            <div class="stat-icon">
-                                <svg viewBox="0 0 20 20"><path d="M4 10l4 4 8-8"/><circle cx="10" cy="10" r="8"/></svg>
-                            </div>
+                        <svg class="sc-stars" viewBox="0 0 200 90" aria-hidden="true"><g fill="#9FF0E8"><circle class="star" cx="150" cy="20" r="1.6" style="--d:0.9s"/><circle class="star" cx="180" cy="44" r="1.3" style="--d:1.5s"/><circle class="star" cx="120" cy="52" r="1.2" style="--d:2.1s"/><circle class="star" cx="190" cy="12" r="1.4" style="--d:0.1s"/><circle class="star" cx="95" cy="18" r="1.1" style="--d:0.7s"/></g></svg>
+                        <div class="stat-copy">
+                            <span class="stat-label">Verified Landlords</span>
+                            <span class="stat-num" th:text="${totalVerifiedLandlords}">0</span>
                         </div>
-                        <div class="stat-num" th:text="${totalVerifiedLandlords}">0</div>
-                        <div class="stat-label">Accredited</div>
+                        <svg class="sc-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true">
+                            <path class="w-back"  d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+                            <path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+                        </svg>
                     </div>
 
-                    <div class="stat-card">
-                        <div class="stat-top">
-                            <div class="stat-icon red">
-                                <svg viewBox="0 0 20 20"><path d="M10 3l7 14H3L10 3z"/><path d="M10 9v4M10 15h.01"/></svg>
-                            </div>
+                    <a class="stat-card" href="/admin/reported-listings">
+                        <svg class="sc-stars" viewBox="0 0 200 90" aria-hidden="true"><g fill="#9FF0E8"><circle class="star" cx="150" cy="20" r="1.6" style="--d:1.7s"/><circle class="star" cx="180" cy="44" r="1.3" style="--d:2.3s"/><circle class="star" cx="120" cy="52" r="1.2" style="--d:0.3s"/><circle class="star" cx="190" cy="12" r="1.4" style="--d:0.9s"/><circle class="star" cx="95" cy="18" r="1.1" style="--d:1.5s"/></g></svg>
+                        <div class="stat-copy">
+                            <span class="stat-label">Flagged</span>
+                            <span class="stat-num" th:text="${totalReported}">0</span>
                         </div>
-                        <div class="stat-num" th:text="${totalReported}">0</div>
-                        <div class="stat-label">Flagged</div>
-                    </div>
+                        <span class="stat-alert-dot" th:hidden="${totalReported == 0}" aria-hidden="true"></span>
+                        <svg class="sc-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true">
+                            <path class="w-back"  d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+                            <path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+                        </svg>
+                    </a>
                 </div>
 
+                <!-- Simple table: Photo · Property · Landlord · Suburb · Date · Actions. Anything missing shows N/A. -->
                 <div class="panel">
-                    <div class="panel-header">
-                        <div>
-                            <span class="panel-title">Review Properties</span>
-                            <span class="panel-sub" th:text="${totalPending} + ' pending listings'">0 pending listings</span>
-                        </div>
+                    <div class="lk-table-wrap" th:if="${not #lists.isEmpty(pendingProperties)}">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th style="width:72px">Photo</th>
+                                <th>Property</th>
+                                <th>Landlord</th>
+                                <th>Suburb</th>
+                                <th>Submitted</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="prop : ${pendingProperties}" th:with="ll=${landlordLookup.get(prop.landlordID)}">
+                                <td>
+                                    <img th:if="${prop.mainImageUrl} != null" th:src="${prop.mainImageUrl}" class="rv-photo" alt="" />
+                                    <span th:if="${prop.mainImageUrl} == null" class="rv-photo empty"></span>
+                                </td>
+                                <td>
+                                    <a class="rv-name" th:href="@{/admin/listing/{id}(id=${prop.propertyID}, from='pending')}"
+                                       th:text="${#strings.isEmpty(#strings.trim(prop.title)) ? 'N/A' : prop.title}">Property Name</a>
+                                </td>
+                                <td th:text="${ll == null or #strings.isEmpty(#strings.trim((ll.firstName ?: '') + ' ' + (ll.lastName ?: ''))) ? 'N/A' : #strings.trim((ll.firstName ?: '') + ' ' + (ll.lastName ?: ''))}">Landlord</td>
+                                <td th:text="${#strings.isEmpty(#strings.trim(prop.suburb)) ? 'N/A' : prop.suburb}">Suburb</td>
+                                <td th:text="${prop.createdAt != null ? #temporals.format(prop.createdAt, 'd MMM yyyy') : 'N/A'}">1 Sep 2026</td>
+                                <td>
+                                    <div class="rv-actions">
+                                        <form th:action="@{/admin/approve-listing/{id}(id=${prop.propertyID})}" method="post">
+                                            <button type="submit" class="btn btn-approve" style="border-radius:9999px;padding:7px 16px">Approve</button>
+                                        </form>
+                                        <form th:action="@{/admin/reject-listing/{id}(id=${prop.propertyID})}" method="post"
+                                              class="confirm-form" th:attr="data-property=${prop.title}"
+                                              data-title="Reject this listing?"
+                                              data-text="It will be marked as Rejected and won't be visible to students."
+                                              data-button="Yes, reject">
+                                            <button type="submit" class="btn btn-danger" style="border-radius:9999px;padding:7px 16px">Reject</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
                     </div>
-                    <table>
-                        <thead>
-                        <tr>
-                            <th style="width:56px">PHOTO</th>
-                            <th>PROPERTY NAME</th>
-                            <th>LANDLORD</th>
-                            <th>LOCATION</th>
-                            <th>DATE SUBMITTED</th>
-                            <th>STATUS</th>
-                            <th>ACTIONS</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr th:each="prop : ${pendingProperties}">
-                            <td>
-                                <img th:if="${prop.mainImageUrl} != null"
-                                     th:src="${prop.mainImageUrl}"
-                                     style="width:40px;height:40px;object-fit:cover;border-radius:8px" />
-                                <span th:if="${prop.mainImageUrl} == null"
-                                      style="display:inline-block;width:40px;height:40px;background:#eee;border-radius:8px"></span>
-                            </td>
-                            <td>
-                                <!-- FIX: without from='pending' here, resolveBackUrl(from)
-                                     falls through to its default (/admin/listings) since
-                                     from arrives as null — Back wouldn't return here. -->
-                                <a th:href="@{/admin/listing/{id}(id=${prop.propertyID}, from='pending')}" th:text="${prop.title}">Property Name</a>
-                            </td>
-                            <td th:text="${landlordLookup.get(prop.landlordID) != null
-                                            ? (landlordLookup.get(prop.landlordID).firstName + ' ' + landlordLookup.get(prop.landlordID).lastName)
-                                            : ('Landlord #' + prop.landlordID)}">Landlord</td>
-                            <td th:text="${prop.city}">City</td>
-                            <td th:text="${prop.createdAt}">Date</td>
-                            <td th:text="${prop.status}">Status</td>
-                            <td>
-                                <form th:action="@{/admin/approve-listing/{id}(id=${prop.propertyID})}" method="post" style="display:inline">
-                                    <button type="submit" style="background-color:#edfaf4;border:1px solid #b8e6cd;color:#1a9b5b;border-radius:999px;padding:6px 14px;font-weight:600;cursor:pointer">Approve</button>
-                                </form>
-                                <form th:action="@{/admin/reject-listing/{id}(id=${prop.propertyID})}" method="post" style="display:inline"
-                                      class="confirm-form" th:attr="data-property=${prop.title}"
-                                      data-title="Reject this listing?"
-                                      data-text="It will be marked as Rejected and won't be visible to students."
-                                      data-button="Yes, reject">
-                                    <button type="submit" style="background-color:#fdecec;border:1px solid #f3c9c9;color:#ba1a1a;border-radius:999px;padding:6px 14px;font-weight:600;cursor:pointer;margin-left:6px">Reject</button>
-                                </form>
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
-                    <p th:if="${#lists.isEmpty(pendingProperties)}" style="padding:22px;color:var(--muted)">
-                        No listings are currently awaiting review.
-                    </p>
+
+                    <div class="lk-empty" th:if="${#lists.isEmpty(pendingProperties)}">
+                        <h3>All caught up</h3>
+                        <p>No listings are waiting for review.</p>
+                    </div>
                 </div>
 
             </div>
-
         </div>
     </div>
 </div>
 
 <script>
-    // Toggle the Review Properties filter panel (City / Price range / Type),
-    // same open/close pattern as the Approved Properties filter panel.
     function toggleReviewFilterPanel() {
         var panel = document.getElementById('reviewFilterPanel');
         if (!panel) return;
         panel.style.display = (panel.style.display === 'none' || !panel.style.display) ? 'block' : 'none';
     }
-
     document.addEventListener('click', function (e) {
         var panel = document.getElementById('reviewFilterPanel');
         var btn = document.getElementById('reviewFilterToggleBtn');
@@ -624,36 +596,24 @@
 </script>
 
 <script>
-    // Renders the Listings Trend as simple CSS bars from ULEE_monthlyLabels /
-    // ULEE_monthlyCounts (inlined by Thymeleaf further up the page). No
-    // external library or network access required, so it always renders.
-    // FIX: bar color changed from green (#1a9b5b) to the same teal
-    // (#0f9e94) used everywhere else on this dashboard's charts.
+    // Listings Trend bars, built from ULEE_monthlyLabels / ULEE_monthlyCounts
     document.addEventListener('DOMContentLoaded', function () {
         var container = document.getElementById('listingsTrendChart');
         if (!container) return;
         if (typeof ULEE_monthlyCounts === 'undefined' || !ULEE_monthlyCounts.length) return;
-
-        var maxCount = Math.max.apply(null, ULEE_monthlyCounts.concat([1])); // avoid divide-by-zero
-
+        var maxCount = Math.max.apply(null, ULEE_monthlyCounts.concat([1]));
         ULEE_monthlyCounts.forEach(function (count, i) {
-            var label = ULEE_monthlyLabels[i] || '';
             var barHeightPct = Math.round((count / maxCount) * 100);
-
             var col = document.createElement('div');
             col.style.cssText = 'flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:6px';
-
             var countLabel = document.createElement('div');
             countLabel.textContent = count;
             countLabel.style.cssText = 'font-size:12px;font-weight:600;color:#333';
-
             var bar = document.createElement('div');
             bar.style.cssText = 'width:100%;max-width:36px;background:#0f9e94;border-radius:6px 6px 0 0;height:' + Math.max(barHeightPct, 3) + '%;transition:height 0.3s ease';
-
             var monthLabel = document.createElement('div');
-            monthLabel.textContent = label;
+            monthLabel.textContent = ULEE_monthlyLabels[i] || '';
             monthLabel.style.cssText = 'font-size:12px;color:var(--muted);margin-top:4px';
-
             col.appendChild(countLabel);
             col.appendChild(bar);
             col.appendChild(monthLabel);
@@ -662,7 +622,29 @@
     });
 </script>
 
-<!-- Custom confirm dialog (used by Reject) -->
+<script>
+    // Stat numbers count up from 0 (same effect as the landlord and Users pages)
+    window.addEventListener('load', function () {
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        document.querySelectorAll('.stat-num').forEach(function (el) {
+            var m = el.textContent.trim().match(/^(\d+)(.*)$/);
+            if (!m) return;
+            var target = parseInt(m[1], 10);
+            if (!(target > 0)) return;
+            var suffix = m[2] || '', start = null, dur = 900;
+            el.textContent = '0' + suffix;
+            function tick(now) {
+                if (start === null) start = now;
+                var t = Math.min((now - start) / dur, 1);
+                el.textContent = Math.round(target * (1 - Math.pow(1 - t, 3))) + suffix;
+                if (t < 1) requestAnimationFrame(tick);
+            }
+            requestAnimationFrame(tick);
+        });
+    });
+</script>
+
+<!-- Confirm dialog (used by Reject) -->
 <div id="ulee-confirm" class="ulee-confirm-backdrop" aria-hidden="true">
     <div id="uleeConfirmCard" class="ulee-confirm-card tone-danger" role="dialog" aria-modal="true" aria-labelledby="uleeConfirmTitle">
         <div id="uleeConfirmIcon" class="ulee-confirm-icon"></div>
@@ -677,9 +659,6 @@
 </div>
 
 <script>
-    // Nice-looking confirm dialog for forms marked class="confirm-form".
-    // Uses one listener on the whole page, so it also works for rows that get
-    // swapped in later (e.g. after filtering). Only the confirm button submits.
     (function () {
         var backdrop = document.getElementById('ulee-confirm');
         var card = document.getElementById('uleeConfirmCard');
@@ -720,7 +699,7 @@
         document.getElementById('uleeConfirmOk').addEventListener('click', function () {
             var form = pendingForm;
             closeConfirm();
-            if (form) form.submit(); // form.submit() skips the submit event, so no loop
+            if (form) form.submit();
         });
         backdrop.addEventListener('click', function (e) { if (e.target === backdrop) closeConfirm(); });
         document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeConfirm(); });

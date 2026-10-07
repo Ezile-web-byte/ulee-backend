@@ -4,37 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ULEE — Review Properties</title>
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
-
-    <style>
-        /* Custom confirm dialog (replaces the browser's plain popup) */
-        .ulee-confirm-backdrop {
-            position: fixed; inset: 0; z-index: 1000;
-            display: none; align-items: center; justify-content: center;
-            background: rgba(10, 30, 38, 0.45); backdrop-filter: blur(3px); padding: 20px;
-        }
-        .ulee-confirm-backdrop.open { display: flex; animation: uleeFade .18s ease-out; }
-        .ulee-confirm-card {
-            width: 100%; max-width: 420px; background: #fff; border-radius: 18px;
-            padding: 28px 26px 22px; text-align: center; font-family: inherit;
-            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
-            animation: uleePop .22s cubic-bezier(.2, .9, .3, 1.2);
-        }
-        .ulee-confirm-icon { width: 60px; height: 60px; border-radius: 50%; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; }
-        .ulee-confirm-icon svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-        .ulee-confirm-card h3 { margin: 0 0 6px; font-size: 19px; font-weight: 700; color: #12262d; }
-        .ulee-confirm-prop { display: inline-block; margin: 2px 0 10px; padding: 4px 12px; border-radius: 999px; background: #f2f5f6; color: #006078; font-size: 12.5px; font-weight: 600; }
-        .ulee-confirm-card p { margin: 0 0 22px; font-size: 13.5px; line-height: 1.6; color: #5b6b71; }
-        .ulee-confirm-actions { display: flex; gap: 10px; }
-        .ulee-confirm-actions button { flex: 1; padding: 12px 0; border-radius: 10px; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; transition: transform .1s ease, filter .15s ease; }
-        .ulee-confirm-actions button:hover { filter: brightness(0.96); }
-        .ulee-confirm-actions button:active { transform: scale(0.97); }
-        #uleeConfirmCancel { background: #fff; border: 1px solid #d9dfe2; color: #444; }
-        .ulee-confirm-card.tone-danger .ulee-confirm-icon { background: #fdeceb; color: #c62828; }
-        .ulee-confirm-card.tone-danger #uleeConfirmOk { background: #c62828; border: 1px solid #c62828; color: #fff; }
-        @keyframes uleeFade { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes uleePop { from { opacity: 0; transform: translateY(12px) scale(.94); } to { opacity: 1; transform: none; } }
-    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=Fredoka:wght@500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/admin-style.css">
+    <!-- Landlord look, loaded after admin-style.css so it wins -->
+    <link rel="stylesheet" href="/admin-landlord-style.css">
+    <script src="/admin-script.js" defer></script>
+    <link rel="stylesheet" href="/speak-with-ai.css">
+    <script src="/speak-with-ai-logic.js" defer></script>
+    <script src="/speak-with-ai.js" defer></script>
 </head>
 <body>
 <div class="shell">
@@ -46,15 +25,49 @@
             <div class="topbar-title">Review Properties</div>
             <div th:replace="~{fragments/notification-bell :: bell}"></div>
         </header>
+
         <div class="content">
             <div class="section active">
 
-                <div th:if="${actionMessage}" style="background:#e8f5e9;border:1px solid #81c784;border-radius:8px;padding:12px 18px;margin-bottom:16px">
-                    <strong style="color:#2e7d32" th:text="${actionMessage}">Success</strong>
+                <div th:if="${actionMessage}" class="lk-flash lk-flash--success" th:text="${actionMessage}">Success</div>
+                <div th:if="${actionError}" class="lk-flash lk-flash--error" th:text="${actionError}">Error</div>
+
+                <div class="lk-head">
+                    <div>
+                        <h2 class="lk-title">Property Submissions</h2>
+                        <p class="lk-sub">Manage and verify new property submissions for the academic year.</p>
+                    </div>
                 </div>
-                <div th:if="${actionError}" style="background:#ffebee;border:1px solid #ef5350;border-radius:8px;padding:12px 18px;margin-bottom:16px">
-                    <strong style="color:#c62828" th:text="${actionError}">Error</strong>
-                </div>
+
+                <!-- Stat cards: both counts ignore the filters, so they stay correct
+                     when the results panel below is swapped by the filter script. -->
+                <section class="stats" aria-label="Review summary">
+                    <div class="stat-card">
+                        <svg class="sc-stars" viewBox="0 0 200 90" aria-hidden="true"><g fill="#9FF0E8"><circle class="star" cx="150" cy="20" r="1.6" style="--d:0s"/><circle class="star" cx="180" cy="44" r="1.3" style="--d:0.6s"/><circle class="star" cx="120" cy="52" r="1.2" style="--d:1.2s"/><circle class="star" cx="190" cy="12" r="1.4" style="--d:1.8s"/><circle class="star" cx="95" cy="18" r="1.1" style="--d:2.4s"/></g></svg>
+                        <div class="stat-copy">
+                            <span class="stat-label">Awaiting Review</span>
+                            <span class="stat-num" th:text="${totalPendingAll}">0</span>
+                        </div>
+                        <span class="stat-alert-dot" th:hidden="${totalPendingAll == 0}" aria-hidden="true"></span>
+                        <svg class="sc-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true">
+                            <path class="w-back"  d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+                            <path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+                        </svg>
+                    </div>
+
+                    <a class="stat-card" th:href="@{/admin/reported-listings}">
+                        <svg class="sc-stars" viewBox="0 0 200 90" aria-hidden="true"><g fill="#9FF0E8"><circle class="star" cx="150" cy="20" r="1.6" style="--d:0.9s"/><circle class="star" cx="180" cy="44" r="1.3" style="--d:1.5s"/><circle class="star" cx="120" cy="52" r="1.2" style="--d:2.1s"/><circle class="star" cx="190" cy="12" r="1.4" style="--d:0.1s"/><circle class="star" cx="95" cy="18" r="1.1" style="--d:0.7s"/></g></svg>
+                        <div class="stat-copy">
+                            <span class="stat-label">Flagged Listings</span>
+                            <span class="stat-num" th:text="${flaggedCount}">0</span>
+                        </div>
+                        <span class="stat-alert-dot" th:hidden="${flaggedCount == 0}" aria-hidden="true"></span>
+                        <svg class="sc-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true">
+                            <path class="w-back"  d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+                            <path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+                        </svg>
+                    </a>
+                </section>
 
                 <!-- Search + academic year filter. GET so the URL stays
                      bookmarkable/shareable and matches how @RequestParam
@@ -65,92 +78,101 @@
                      doing a full page navigation; submitting the form itself
                      (via the Filter button, or JS disabled) still works as a
                      normal full-page GET fallback. -->
-                <form th:action="@{/admin/pending-listings}" method="get" id="pendingFilterForm"
-                      style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+                <form th:action="@{/admin/pending-listings}" method="get" id="pendingFilterForm" class="lk-toolbar">
                     <input type="hidden" name="page" value="1" />
-                    <input type="text" name="search" id="pendingSearchInput" th:value="${search}"
-                           placeholder="Search by title, city, or address"
-                           style="flex:1;min-width:220px;padding:8px 12px;border:1px solid #ddd;border-radius:8px" />
-                    <select name="academicYear" id="academicYearSelect"
-                            style="padding:8px 12px;border:1px solid #ddd;border-radius:8px">
+                    <label class="lk-search">
+                        <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="9" cy="9" r="6"/><path d="M14 14l4 4"/></svg>
+                        <input type="text" name="search" id="pendingSearchInput" th:value="${search}"
+                               placeholder="Search by title, city, or address" />
+                    </label>
+                    <select name="academicYear" id="academicYearSelect" class="lk-select">
                         <option value="">All academic years</option>
                         <option th:each="year : ${academicYearOptions}"
                                 th:value="${year}"
-                                th:text="${year}"
+                                th:text="${year} + ' Academic Year'"
                                 th:selected="${selectedAcademicYear != null and selectedAcademicYear == year}">
-                            2026
+                            2026 Academic Year
                         </option>
                     </select>
-                    <button type="submit" class="btn" style="background:var(--p);color:#fff;border:1px solid var(--p)">Filter</button>
+                    <button type="submit" class="btn btn-primary">Filter</button>
                 </form>
 
                 <div class="panel" id="pendingPanel">
                     <div class="panel-header">
-                        <span class="panel-title">Pending Listings</span>
-                        <span class="panel-sub" th:text="${totalPending} + ' awaiting review'">0 pending</span>
+                        <div>
+                            <span class="panel-title">Pending Listings</span>
+                            <span class="panel-sub" th:text="${totalPending} + ' awaiting review'">0 pending</span>
+                        </div>
                     </div>
-                    <table>
-                        <thead>
-                        <tr>
-                            <th>Property Name</th>
-                            <th>Location</th>
-                            <th>Landlord</th>
-                            <th>Reference</th>
-                            <th>Date Submitted</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr th:each="row : ${rows}">
-                            <td><strong th:text="${row.property.title}">Name</strong></td>
-                            <td th:text="${row.property.city}">Location</td>
-                            <td>
-                                <span th:text="${row.landlordName}">Landlord</span>
-                                <span class="badge" th:text="${row.trustLabel}" style="margin-left:6px;font-size:11px">Verified</span>
-                            </td>
-                            <td th:text="${row.ref}">Ref: NMU 2026-001</td>
-                            <td th:text="${row.property.createdAt} ?: 'Date not recorded'">Date</td>
-                            <td><span class="badge badge-amber"><span class="badge-dot"></span>Pending</span></td>
-                            <td>
-                                <div class="btn-group">
-                                    <a th:href="@{/admin/listing/{id}(id=${row.property.propertyID},from='pending')}" class="btn btn-view">Review</a>
-                                    <form th:action="@{/admin/approve-listing/{id}(id=${row.property.propertyID})}" method="post" style="display:inline">
-                                        <button type="submit" class="btn"
-                                                style="background:var(--success-bg);color:var(--success);border:1px solid var(--success-border)">
-                                            Approve
-                                        </button>
-                                    </form>
-                                    <form th:action="@{/admin/reject-listing/{id}(id=${row.property.propertyID})}" method="post" style="display:inline"
-                                          class="confirm-form" th:attr="data-property=${row.property.title}"
-                                          data-title="Reject this listing?"
-                                          data-text="It will be marked as Rejected and won't be visible to students."
-                                          data-button="Yes, reject">
-                                        <button type="submit" class="btn btn-danger">Reject</button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
-                    <p th:if="${#lists.isEmpty(rows)}" style="padding:22px;color:var(--muted)">No listings awaiting review.</p>
+
+                    <div class="lk-table-wrap">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>Property Name</th>
+                                <th>Location</th>
+                                <th>Landlord</th>
+                                <th>Reference</th>
+                                <th>Date Submitted</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="row : ${rows}">
+                                <td><strong class="lk-cell-title" th:text="${row.property.title}">Name</strong></td>
+                                <td th:text="${row.property.city}">Location</td>
+                                <td>
+                                    <div class="lk-stack">
+                                        <span th:text="${row.landlordName}">Landlord</span>
+                                        <span class="badge"
+                                              th:classappend="${row.trustLabel == 'Verified Partner'} ? 'badge-green' : 'badge-blue'"
+                                              th:text="${row.trustLabel}">Verified</span>
+                                    </div>
+                                </td>
+                                <td><span class="lk-ref" th:text="${row.ref}">Ref: NMU 2026-001</span></td>
+                                <td th:text="${row.property.createdAt != null ? #temporals.format(row.property.createdAt, 'd MMM yyyy') : 'Date not recorded'}">Date</td>
+                                <td><span class="badge badge-amber"><span class="badge-dot"></span>Pending</span></td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a th:href="@{/admin/listing/{id}(id=${row.property.propertyID},from='pending')}" class="btn btn-view">Review</a>
+                                        <form th:action="@{/admin/approve-listing/{id}(id=${row.property.propertyID})}" method="post" style="display:inline">
+                                            <button type="submit" class="btn btn-approve">Approve</button>
+                                        </form>
+                                        <form th:action="@{/admin/reject-listing/{id}(id=${row.property.propertyID})}" method="post" style="display:inline"
+                                              class="confirm-form" th:attr="data-property=${row.property.title}"
+                                              data-title="Reject this listing?"
+                                              data-text="It will be marked as Rejected and won't be visible to students."
+                                              data-button="Yes, reject">
+                                            <button type="submit" class="btn btn-danger">Reject</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div th:if="${#lists.isEmpty(rows)}" class="lk-empty">
+                        <h3>All caught up</h3>
+                        <p>No listings awaiting review.</p>
+                    </div>
 
                     <!-- Pagination — mirrors currentPage/totalPages/fromIndex/toIndex
                          already computed server-side in viewPendingListings(). -->
-                    <div th:if="${totalPages > 1}"
-                         style="display:flex;justify-content:space-between;align-items:center;padding:16px;border-top:1px solid #eee">
-                        <span style="color:var(--muted);font-size:13px"
+                    <div th:if="${totalPages > 1}" class="lk-pager">
+                        <span class="lk-pager-info"
                               th:text="'Showing ' + ${fromIndex} + '–' + ${toIndex} + ' of ' + ${totalPending}">
                             Showing 1–10 of 30
                         </span>
-                        <div style="display:flex;gap:6px">
+                        <div class="lk-pager-nav">
                             <a th:if="${currentPage > 1}"
                                th:href="@{/admin/pending-listings(page=${currentPage - 1}, search=${search}, academicYear=${selectedAcademicYear})}"
-                               class="btn btn-view">Prev</a>
-                            <span style="padding:8px 12px" th:text="'Page ' + ${currentPage} + ' of ' + ${totalPages}">Page 1 of 3</span>
+                               class="btn btn-view lk-pager-link">Prev</a>
+                            <span class="lk-pager-page" th:text="'Page ' + ${currentPage} + ' of ' + ${totalPages}">Page 1 of 3</span>
                             <a th:if="${currentPage < totalPages}"
                                th:href="@{/admin/pending-listings(page=${currentPage + 1}, search=${search}, academicYear=${selectedAcademicYear})}"
-                               class="btn btn-view">Next</a>
+                               class="btn btn-view lk-pager-link">Next</a>
                         </div>
                     </div>
                 </div>
@@ -208,8 +230,12 @@
                 });
         }
 
+        // FIX: this used to grab every a.btn-view in the panel, which also
+        // included each row's "Review" button — so clicking Review fetched the
+        // listing page in the background instead of opening it. Only the
+        // Prev/Next links carry .lk-pager-link now.
         function attachPaginationInterception() {
-            panel.querySelectorAll('a.btn-view').forEach(function (link) {
+            panel.querySelectorAll('a.lk-pager-link').forEach(function (link) {
                 link.addEventListener('click', function (e) {
                     e.preventDefault();
                     panel.style.opacity = '0.5';
@@ -235,7 +261,31 @@
         attachPaginationInterception();
     });
 </script>
-<!-- Custom confirm dialog (used by Reject) -->
+
+<script>
+    // Numbers on the stat cards count up from 0, same as the landlord My Properties page.
+    window.addEventListener('load', function () {
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        document.querySelectorAll('.stat-num').forEach(function (el) {
+            var m = el.textContent.trim().match(/^(\d+)(.*)$/);
+            if (!m) return;
+            var target = parseInt(m[1], 10);
+            if (!(target > 0)) return;
+            var suffix = m[2] || '';
+            var start = null, dur = 900;
+            el.textContent = '0' + suffix;
+            function tick(now) {
+                if (start === null) start = now;
+                var t = Math.min((now - start) / dur, 1);
+                el.textContent = Math.round(target * (1 - Math.pow(1 - t, 3))) + suffix;
+                if (t < 1) requestAnimationFrame(tick);
+            }
+            requestAnimationFrame(tick);
+        });
+    });
+</script>
+
+<!-- Custom confirm dialog (used by Reject). Its styles now live in admin-landlord-style.css -->
 <div id="ulee-confirm" class="ulee-confirm-backdrop" aria-hidden="true">
     <div id="uleeConfirmCard" class="ulee-confirm-card tone-danger" role="dialog" aria-modal="true" aria-labelledby="uleeConfirmTitle">
         <div id="uleeConfirmIcon" class="ulee-confirm-icon"></div>

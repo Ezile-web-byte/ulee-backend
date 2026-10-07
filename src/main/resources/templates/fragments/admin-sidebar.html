@@ -116,18 +116,12 @@
     </nav>
 
     <div class="sidebar-footer">
-        <!--
-          Clicking the admin chip now opens the same "are you sure you want to
-          log out" confirmation used by the topbar Log out button (see
-          confirmAdminLogout() below), instead of doing nothing.
-        -->
         <div class="admin-chip" role="button" tabindex="0" title="Log out"
              onclick="confirmAdminLogout()"
              onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();confirmAdminLogout();}">
-            <div class="avatar" th:text="${adminInitials} ?: 'AD'">SA</div>
+            <svg class="logout-icon" viewBox="0 0 20 20"><path d="M13 3h4v14h-4M9 14l4-4-4-4M13 10H5"/></svg>
             <div class="admin-info">
-                <div class="admin-name" th:text="${adminName} ?: 'Admin'">Sarah Admin</div>
-                <div class="admin-role">Admin</div>
+                <div class="admin-name">Log out</div>
             </div>
         </div>
     </div>
@@ -173,6 +167,9 @@
     </div>
 
     <style>
+        #sidebar { z-index: 1500; }   /* lifts the sidebar (and the logout popup inside it) above the page content */
+
+
         .admin-chip { cursor: pointer; }
 
         .ulee-logout-overlay {
