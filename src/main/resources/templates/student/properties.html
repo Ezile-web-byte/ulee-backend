@@ -139,7 +139,7 @@
     <h1>Available Properties</h1>
 
     <form class="filter-bar" action="/search" method="get">
-        <input class="filter-input" type="number" name="minBedrooms" placeholder="Min bedrooms" />
+
         <input class="filter-input" type="number" name="maxRent" placeholder="Max rent" step="0.01" />
         <button class="filter-btn" type="submit">Filter</button>
     </form>
@@ -148,7 +148,6 @@
         <a class="property-card" th:each="property : ${properties}" th:href="@{/property/{id}(id=${property.propertyID})}">
             <h3 class="property-title" th:text="${property.title}">Property Title</h3>
             <p class="property-city" th:text="${property.city}">City</p>
-            <p class="property-beds" th:text="${property.bedrooms} + ' bed'">Bedrooms</p>
             <p class="property-rent" th:text="'R' + ${property.rent} + ' / month'">Rent</p>
         </a>
     </div>

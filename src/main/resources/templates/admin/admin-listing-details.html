@@ -6,6 +6,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/admin-style.css">
     <script src="/admin-script.js" defer></script>
+    <style>
+        /* Status badges: Suspended = amber like the Suspend/Unsuspend buttons,
+           Rejected = red exactly like the Reject button */
+        .badge-suspended { background: #fff8e1; color: #8a5a00; border: 1px solid #e5a300; }
+        .badge-rejected  { background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border); }
+    </style>
 </head>
 <body>
 <div class="shell">
@@ -27,8 +33,8 @@
                         </div>
                         <span th:if="${property.status == 'Approved' or property.status == 'Active'}" class="badge badge-green"><span class="badge-dot"></span>Approved</span>
                         <span th:if="${property.status == 'Pending' or property.status == null}" class="badge badge-amber"><span class="badge-dot"></span>Pending</span>
-                        <span th:if="${property.status == 'Rejected'}" class="badge badge-red"><span class="badge-dot"></span>Rejected</span>
-                        <span th:if="${property.status == 'Suspended'}" class="badge badge-red"><span class="badge-dot"></span>Suspended</span>
+                        <span th:if="${property.status == 'Rejected'}" class="badge badge-rejected"><span class="badge-dot"></span>Rejected</span>
+                        <span th:if="${property.status == 'Suspended'}" class="badge badge-suspended"><span class="badge-dot"></span>Suspended</span>
                     </div>
 
                     <div style="padding:22px;display:flex;flex-direction:column;gap:18px">
@@ -68,14 +74,7 @@
                                 <div class="stat-num" th:text="${property.rent} ?: 'N/A'">Rent</div>
                                 <div class="stat-label">Rent / month (R)</div>
                             </div>
-                            <div class="stat-card">
-                                <div class="stat-num" th:text="${property.bedrooms} ?: 'N/A'">0</div>
-                                <div class="stat-label">Bedrooms</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-num" th:text="${property.bathrooms} ?: 'N/A'">0</div>
-                                <div class="stat-label">Bathrooms</div>
-                            </div>
+
                             <div class="stat-card">
                                 <div class="stat-num" th:text="${property.rating} ?: 'N/A'">Rating</div>
                                 <div class="stat-label">Avg Rating</div>
@@ -97,32 +96,38 @@
                         </div>
 
                         <div class="field-group">
-                            <label class="field-label">Type / Furnished / Study Friendly</label>
-                            <p th:text="(${property.type} ?: 'Unspecified type') + (${property.furnished} ? ' · Furnished' : ' · Unfurnished') + (${property.studyFriendly} ? ' · Study-friendly' : '')">
-                                Type
-                            </p>
+                            <label class="field-label">Type</label>
+                            <p th:text="${property.type} ?: 'Unspecified type'">Type</p>
                         </div>
 
                         <div class="field-group">
-                            <label class="field-label">Deposit / Area</label>
-                            <p th:text="'R' + (${property.deposit} ?: 'N/A') + ' deposit · ' + (${property.area} ?: 'N/A') + ' m²'">Deposit / Area</p>
+                            <label class="field-label">Deposit</label>
+                            <p th:text="'R' + (${property.deposit} ?: 'N/A') + ' deposit'">Deposit</p>
                         </div>
 
                         <div class="field-group">
-                            <label class="field-label">Suburb / Municipality</label>
-                            <p th:text="(${property.suburb} ?: 'Not specified') + ', ' + (${property.municipality} ?: 'Not specified')">Suburb</p>
+                            <label class="field-label">Suburb</label>
+                            <p th:text="${property.suburb} ?: 'Not specified'">Suburb</p>
                         </div>
 
                         <div class="field-group">
-                            <label class="field-label">Available From / Distance from University</label>
-                            <p th:text="(${property.availableFrom} ?: 'Not specified') + ' · ' + (${property.distanceFromUniversity} ?: 'N/A') + ' km from campus'">Availability</p>
+                            <label class="field-label">Available From</label>
+                            <p th:text="${property.availableFrom} ?: 'Not specified'">Availability</p>
                         </div>
 
                         <div class="field-group">
                             <label class="field-label">Amenities</label>
-                            <p th:if="${property.amenities != null and not #lists.isEmpty(property.amenities)}"
-                               th:text="${#strings.listJoin(property.amenities.![name], ', ')}">Amenities list</p>
-                            <p th:if="${property.amenities == null or #lists.isEmpty(property.amenities)}">No amenities specified</p>
+
+                            <p th:if="${property.amenities != null and not #lists.isEmpty(property.amenities)}">
+                              <span th:each="amenity, iterStat : ${property.amenities}">
+                               <span th:text="${amenity.name}">Amenity</span>
+                               <span th:if="${!iterStat.last}">, </span>
+                               </span>
+                            </p>
+
+                            <p th:if="${property.amenities == null or #lists.isEmpty(property.amenities)}">
+                                No amenities specified
+                            </p>
                         </div>
 
                         <!-- B100 — Approve/Reject only offered while the listing is still Pending.
@@ -159,9 +164,9 @@
                     <div class="review-grid">
                         <div class="review-card" th:each="review : ${reviews}">
                             <div class="review-top">
-                                <div class="r-avatar" th:text="'S' + ${review.studentID}">S#</div>
+                                <div class="r-avatar" th:text="${reviewerInitials.get(review.studentID)} ?: ('S' + ${review.studentID})">S#</div>
                                 <div>
-                                    <div class="review-name" th:text="'Student ID: ' + ${review.studentID}">Student</div>
+                                    <div class="review-name" th:text="${reviewerNames.get(review.studentID)} ?: ('Student ID: ' + ${review.studentID})">Student</div>
                                 </div>
                             </div>
                             <div class="review-text" th:text="${review.comment} ?: 'No comment provided'">Review text</div>

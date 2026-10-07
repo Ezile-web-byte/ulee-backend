@@ -54,7 +54,7 @@ public class SwaiChatService {
 
     private static final String NEIGHBOURHOOD_DATA_UNAVAILABLE_FALLBACK =
             "I don't have reliable neighbourhood information for this property right now. " +
-            "You're welcome to ask me about the property itself, like rent, amenities, or room type.";
+                    "You're welcome to ask me about the property itself, like rent, amenities, or room type.";
 
     private static final String AI_UNAVAILABLE_FALLBACK =
             "I'm having trouble answering right now. Please try again in a moment.";
@@ -65,8 +65,8 @@ public class SwaiChatService {
 
     @Autowired
     public SwaiChatService(PropertyRepository propertyRepository,
-                            PlacesService placesService,
-                            AiService aiService) {
+                           PlacesService placesService,
+                           AiService aiService) {
         this.propertyRepository = propertyRepository;
         this.placesService = placesService;
         this.aiService = aiService;
@@ -74,21 +74,29 @@ public class SwaiChatService {
 
     public ChatResponseDTO handle(ChatRequestDTO request) {
         String message = request == null ? null : request.getMessage();
+
         if (message == null || message.isBlank()) {
-            return new ChatResponseDTO("Please type a question and I'll do my best to help.");
+            return new ChatResponseDTO(
+                    "Please type a question and I'll do my best to help."
+            );
         }
 
         // propertyId is only ever used as a lookup key. Every property
         // fact used below comes from the entity fetched here — never from
         // any other field the browser might have sent alongside it.
         Property property = null;
+
         if (request.getPropertyId() != null) {
-            property = propertyRepository.findById(request.getPropertyId()).orElse(null);
+            property = propertyRepository
+                    .findById(request.getPropertyId())
+                    .orElse(null);
+
             // A stale/unknown id is not an error — it just means this turn
             // proceeds in General_Context, same as no id being supplied.
         }
 
-        boolean isNeighbourhoodQuestion = isNeighbourhoodQuestion(message);
+        boolean isNeighbourhoodQuestion =
+                isNeighbourhoodQuestion(message);
 
         if (isNeighbourhoodQuestion) {
             return handleNeighbourhoodQuestion(message, property);
@@ -97,51 +105,83 @@ public class SwaiChatService {
         return handleGeneralOrPropertyQuestion(message, property);
     }
 
-    /** Pure, deterministic intent check — no network/LLM call. Package-visible for direct unit testing. */
+    /** Pure, deterministic intent check — no network/LLM call. */
     boolean isNeighbourhoodQuestion(String message) {
         String lower = message.toLowerCase(Locale.ROOT);
+
         for (String keyword : NEIGHBOURHOOD_KEYWORDS) {
             if (lower.contains(keyword)) {
                 return true;
             }
         }
+
         return false;
     }
 
-    private ChatResponseDTO handleNeighbourhoodQuestion(String message, Property property) {
-        if (property == null || property.getLatitude() == null || property.getLongitude() == null) {
+    private ChatResponseDTO handleNeighbourhoodQuestion(
+            String message,
+            Property property
+    ) {
+        if (property == null
+                || property.getLatitude() == null
+                || property.getLongitude() == null) {
+
             // No property in context, or no usable coordinates — do not
             // call PlacesService at all, and do not let the LLM improvise
             // neighbourhood facts it has no grounding for.
-            return new ChatResponseDTO(NEIGHBOURHOOD_DATA_UNAVAILABLE_FALLBACK);
+            return new ChatResponseDTO(
+                    NEIGHBOURHOOD_DATA_UNAVAILABLE_FALLBACK
+            );
         }
 
-        PlacesResult placesResult = placesService.findNearbyPlaces(property.getLatitude(), property.getLongitude());
+        PlacesResult placesResult =
+                placesService.findNearbyPlaces(
+                        property.getLatitude(),
+                        property.getLongitude()
+                );
 
         if (!placesResult.isAvailable()) {
             // Lookup failed/timed out/rate-limited/unconfigured — never
             // send this question to the LLM without factual place data.
-            return new ChatResponseDTO(NEIGHBOURHOOD_DATA_UNAVAILABLE_FALLBACK);
+            return new ChatResponseDTO(
+                    NEIGHBOURHOOD_DATA_UNAVAILABLE_FALLBACK
+            );
         }
 
         // A successful lookup — whether or not it found any places — may
         // go to the LLM, since the prompt built below always states
         // explicitly what was and wasn't found.
-        String systemPrompt = buildNeighbourhoodSystemPrompt(property, placesResult.getPlaces());
+        String systemPrompt =
+                buildNeighbourhoodSystemPrompt(
+                        property,
+                        placesResult.getPlaces()
+                );
+
         return generateReplyOrFallback(systemPrompt, message);
     }
 
-    private ChatResponseDTO handleGeneralOrPropertyQuestion(String message, Property property) {
+    private ChatResponseDTO handleGeneralOrPropertyQuestion(
+            String message,
+            Property property
+    ) {
         // Never calls PlacesService here — a non-neighbourhood question
         // has no reason to spend an external Places API call.
-        String systemPrompt = buildPropertyOrGeneralSystemPrompt(property);
+        String systemPrompt =
+                buildPropertyOrGeneralSystemPrompt(property);
+
         return generateReplyOrFallback(systemPrompt, message);
     }
 
-    private ChatResponseDTO generateReplyOrFallback(String systemPrompt, String userMessage) {
+    private ChatResponseDTO generateReplyOrFallback(
+            String systemPrompt,
+            String userMessage
+    ) {
         try {
-            String reply = aiService.generateReply(systemPrompt, userMessage);
+            String reply =
+                    aiService.generateReply(systemPrompt, userMessage);
+
             return new ChatResponseDTO(reply);
+
         } catch (AiServiceException e) {
             // Never expose the exception message, stack trace, provider
             // name, or any key to the user — only this generic fallback.
@@ -150,12 +190,14 @@ public class SwaiChatService {
     }
 
     /**
-     * Builds the grounded prompt for a neighbourhood question. Always
-     * states explicitly what nearby-place facts are and are not
-     * available, so the LLM has no gap to fill with invented content.
+     * Builds the grounded prompt for a neighbourhood question.
      */
-    private String buildNeighbourhoodSystemPrompt(Property property, List<NearbyPlaceDTO> places) {
+    private String buildNeighbourhoodSystemPrompt(
+            Property property,
+            List<NearbyPlaceDTO> places
+    ) {
         StringBuilder prompt = new StringBuilder();
+
         prompt.append("You are ULEE's student accommodation assistant. ");
         prompt.append("Answer only using the facts supplied below about this property and its ");
         prompt.append("nearby places. Do not invent businesses, distances, facilities, transport ");
@@ -167,25 +209,41 @@ public class SwaiChatService {
         appendPropertyFacts(prompt, property);
 
         prompt.append("\nNearby places lookup result: ");
+
         if (places.isEmpty()) {
-            prompt.append("The lookup completed successfully and found NO matching nearby places ");
-            prompt.append("in the supported categories. Tell the student that no matching places ");
-            prompt.append("were found nearby — do not invent any place, and do not imply the area ");
-            prompt.append("has no amenities at all, only that none were found in this lookup.\n");
+            prompt.append(
+                    "The lookup completed successfully and found NO matching nearby places "
+                            + "in the supported categories. Tell the student that no matching places "
+                            + "were found nearby — do not invent any place, and do not imply the area "
+                            + "has no amenities at all, only that none were found in this lookup.\n"
+            );
         } else {
-            prompt.append("The following real nearby places were found (do not add, remove, or ");
-            prompt.append("alter any of these facts):\n");
+            prompt.append(
+                    "The following real nearby places were found (do not add, remove, or "
+                            + "alter any of these facts):\n"
+            );
+
             for (NearbyPlaceDTO place : places) {
                 prompt.append("- ").append(place.getName());
+
                 if (place.getCategory() != null) {
-                    prompt.append(" (").append(place.getCategory()).append(")");
+                    prompt.append(" (")
+                            .append(place.getCategory())
+                            .append(")");
                 }
+
                 if (place.getDistanceMeters() != null) {
-                    prompt.append(", about ").append(Math.round(place.getDistanceMeters())).append("m away");
+                    prompt.append(", about ")
+                            .append(Math.round(place.getDistanceMeters()))
+                            .append("m away");
                 }
-                if (place.getAddress() != null && !place.getAddress().isBlank()) {
-                    prompt.append(", ").append(place.getAddress());
+
+                if (place.getAddress() != null
+                        && !place.getAddress().isBlank()) {
+                    prompt.append(", ")
+                            .append(place.getAddress());
                 }
+
                 prompt.append("\n");
             }
         }
@@ -193,9 +251,10 @@ public class SwaiChatService {
         return prompt.toString();
     }
 
-    /** Builds the prompt for a non-neighbourhood question — property facts only, no Places call. */
+    /** Builds the prompt for a non-neighbourhood question. */
     private String buildPropertyOrGeneralSystemPrompt(Property property) {
         StringBuilder prompt = new StringBuilder();
+
         prompt.append("You are ULEE's student accommodation assistant. ");
         prompt.append("Answer only using the facts supplied below. Do not invent property details, ");
         prompt.append("prices, amenities, or any other facts not explicitly listed here. If the ");
@@ -203,9 +262,11 @@ public class SwaiChatService {
         prompt.append("clearly instead of guessing. Answer in concise, student-friendly language.\n\n");
 
         if (property == null) {
-            prompt.append("No specific property is currently in view. Answer generally about ");
-            prompt.append("ULEE student accommodation, or ask the student to open a specific ");
-            prompt.append("property if their question is about one listing.\n");
+            prompt.append(
+                    "No specific property is currently in view. Answer generally about "
+                            + "ULEE student accommodation, or ask the student to open a specific "
+                            + "property if their question is about one listing.\n"
+            );
         } else {
             appendPropertyFacts(prompt, property);
         }
@@ -213,30 +274,63 @@ public class SwaiChatService {
         return prompt.toString();
     }
 
-    /** Appends the authoritative, database-sourced facts about a property — never client-supplied data. */
-    private void appendPropertyFacts(StringBuilder prompt, Property property) {
-        prompt.append("Property facts (from the ULEE database):\n");
-        prompt.append("- Title: ").append(valueOrUnknown(property.getTitle())).append("\n");
-        prompt.append("- Address: ").append(valueOrUnknown(property.getAddress())).append("\n");
-        prompt.append("- City: ").append(valueOrUnknown(property.getCity())).append("\n");
+    /** Appends authoritative database-sourced property facts. */
+    private void appendPropertyFacts(
+            StringBuilder prompt,
+            Property property
+    ) {
+        prompt.append(
+                "Property facts (from the ULEE database):\n"
+        );
+
+        prompt.append("- Title: ")
+                .append(valueOrUnknown(property.getTitle()))
+                .append("\n");
+
+        prompt.append("- Address: ")
+                .append(valueOrUnknown(property.getAddress()))
+                .append("\n");
+
+        prompt.append("- City: ")
+                .append(valueOrUnknown(property.getCity()))
+                .append("\n");
+
         if (property.getRent() != null) {
-            prompt.append("- Rent: R").append(property.getRent()).append(" per month\n");
+            prompt.append("- Rent: R")
+                    .append(property.getRent())
+                    .append(" per month\n");
         }
+
         if (property.getType() != null) {
-            prompt.append("- Type: ").append(property.getType()).append("\n");
+            prompt.append("- Type: ")
+                    .append(property.getType())
+                    .append("\n");
         }
-        if (property.getBedrooms() != null) {
-            prompt.append("- Bedrooms: ").append(property.getBedrooms()).append("\n");
+
+        // Property now uses capacity rather than bedrooms.
+        if (property.getCapacity() != null) {
+            prompt.append("- Capacity: ")
+                    .append(property.getCapacity())
+                    .append(" student(s)\n");
         }
+
         if (property.getCommuteType() != null) {
-            prompt.append("- Commute type: ").append(property.getCommuteType()).append("\n");
+            prompt.append("- Commute type: ")
+                    .append(property.getCommuteType())
+                    .append("\n");
         }
-        if (property.getDescription() != null && !property.getDescription().isBlank()) {
-            prompt.append("- Description: ").append(property.getDescription()).append("\n");
+
+        if (property.getDescription() != null
+                && !property.getDescription().isBlank()) {
+            prompt.append("- Description: ")
+                    .append(property.getDescription())
+                    .append("\n");
         }
     }
 
     private String valueOrUnknown(String value) {
-        return (value == null || value.isBlank()) ? "not specified" : value;
+        return (value == null || value.isBlank())
+                ? "not specified"
+                : value;
     }
 }

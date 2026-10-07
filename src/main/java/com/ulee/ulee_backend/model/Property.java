@@ -21,19 +21,14 @@ public class Property {
     private java.math.BigDecimal deposit;
     private String address;
     private String city;
-    private String municipality;
     private String suburb;
+
+    // Required for Geoapify nearby-places functionality
     private java.math.BigDecimal latitude;
     private java.math.BigDecimal longitude;
     private String type;
-    private Integer bedrooms;
-    private Integer bathrooms;
-    private java.math.BigDecimal area;
-    private Boolean furnished;
-    private Boolean studyFriendly;
     private Boolean isAvailable;
     private LocalDate availableFrom;
-    private java.math.BigDecimal distanceFromUniversity;
     private java.math.BigDecimal rating;
     private Integer reviewCount;
     private LocalDateTime createdAt;
@@ -42,6 +37,18 @@ public class Property {
     private Boolean isReported;
     private String reportReason;
     private String commuteType;
+
+    // Who the landlord will accept as occupants: "Mixed", "Female Only",
+    // "Male Only", "Seniors Only" or "First Years Only". Set by the landlord
+    // on the list-property wizard and the edit-property page. Existing rows
+    // have NULL here until their landlord edits them (treat NULL as "Mixed"
+    // anywhere you read this).
+    private String occupantRestriction;
+
+    // Which funding type the landlord accepts: "Any", "Bursary", "NSFAS" or
+    // "Self-Paying". "Any" means the landlord takes every funding type.
+    // Existing rows have NULL until edited (treat NULL as "Any").
+    private String acceptedFunding;
 
     // How many students this listing can hold. Landlord sets this when
     // creating the property (defaults to 1 for pre-existing rows via the
@@ -91,6 +98,12 @@ public class Property {
 
     public String getCommuteType() { return commuteType; }
     public void setCommuteType(String commuteType) { this.commuteType = commuteType; }
+
+    public String getOccupantRestriction() { return occupantRestriction; }
+    public void setOccupantRestriction(String occupantRestriction) { this.occupantRestriction = occupantRestriction; }
+
+    public String getAcceptedFunding() { return acceptedFunding; }
+    public void setAcceptedFunding(String acceptedFunding) { this.acceptedFunding = acceptedFunding; }
     // Getters and setters (Spring needs these to read/write each field)
 
     public Integer getPropertyID() { return propertyID; }
@@ -117,9 +130,6 @@ public class Property {
     public String getCity() { return city; }
     public void setCity(String city) { this.city = city; }
 
-    public String getMunicipality() { return municipality; }
-    public void setMunicipality(String municipality) { this.municipality = municipality; }
-
     public String getSuburb() { return suburb; }
     public void setSuburb(String suburb) { this.suburb = suburb; }
 
@@ -132,29 +142,11 @@ public class Property {
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
 
-    public Integer getBedrooms() { return bedrooms; }
-    public void setBedrooms(Integer bedrooms) { this.bedrooms = bedrooms; }
-
-    public Integer getBathrooms() { return bathrooms; }
-    public void setBathrooms(Integer bathrooms) { this.bathrooms = bathrooms; }
-
-    public java.math.BigDecimal getArea() { return area; }
-    public void setArea(java.math.BigDecimal area) { this.area = area; }
-
-    public Boolean getFurnished() { return furnished; }
-    public void setFurnished(Boolean furnished) { this.furnished = furnished; }
-
-    public Boolean getStudyFriendly() { return studyFriendly; }
-    public void setStudyFriendly(Boolean studyFriendly) { this.studyFriendly = studyFriendly; }
-
     public Boolean getIsAvailable() { return isAvailable; }
     public void setIsAvailable(Boolean isAvailable) { this.isAvailable = isAvailable; }
 
     public LocalDate getAvailableFrom() { return availableFrom; }
     public void setAvailableFrom(LocalDate availableFrom) { this.availableFrom = availableFrom; }
-
-    public java.math.BigDecimal getDistanceFromUniversity() { return distanceFromUniversity; }
-    public void setDistanceFromUniversity(java.math.BigDecimal distanceFromUniversity) { this.distanceFromUniversity = distanceFromUniversity; }
 
     public java.math.BigDecimal getRating() { return rating; }
     public void setRating(java.math.BigDecimal rating) { this.rating = rating; }

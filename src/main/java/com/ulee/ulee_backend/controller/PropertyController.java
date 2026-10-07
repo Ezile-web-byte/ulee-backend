@@ -30,6 +30,7 @@ import java.security.Principal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Comparator;
 
 import com.ulee.ulee_backend.repository.PropertyImageRepository;
 
@@ -80,12 +81,12 @@ public class PropertyController {
     // this, the same way LIVE_STATUS marks what's visible to students.
     private static final String DEACTIVATED_STATUS = "Inactive";
 
+    private boolean isVisibleToStudents(Property property) {
+        return LIVE_STATUS.equals(property.getStatus()) && Boolean.TRUE.equals(property.getIsAvailable());
+    }
+
     // The lowest monthly rent a listing is allowed to go live with.
-    // Kept as a constant (not typed inline) so the create path, the update
-    // path, and any future admin tooling can never drift to different
-    // numbers. Mirrored client-side in listProperty.js and edit-property's
-    // validation script — but THIS is the check that actually binds, since
-    // client-side JS can always be bypassed with dev tools or a raw POST.
+
     private static final java.math.BigDecimal MIN_RENT = new java.math.BigDecimal("1000");
 
     // ── Small reusable helpers, used by many endpoints below ──
@@ -235,7 +236,17 @@ public class PropertyController {
     // disappears from the dashboard.
     @GetMapping("/student-dashboard")
     public String viewStudentDashboard(Model model, Principal principal) {
-        List<Property> allProperties = propertyRepository.findByStatus(LIVE_STATUS);
+        // FIX: was findByStatus(LIVE_STATUS) alone. A deactivated landlord's
+        // properties keep status="Active" (deactivation only flips
+        // isAvailable — see AdminController.deactivateUser()), so those
+        // listings kept showing up here and were still applyable even
+        // though the landlord's own dashboard already marked them
+        // "Inactive". isVisibleToStudents() below is now the single place
+        // that decides "can a student see/apply to this" — use it anywhere
+        // else that needs the same rule instead of re-typing the check.
+        List<Property> allProperties = propertyRepository.findByStatus(LIVE_STATUS).stream()
+                .filter(this::isVisibleToStudents)
+                .collect(Collectors.toList());
 
         List<String> categoryOrder = List.of(
                 "On Campus", "Summerstrand", "Humewood", "Town", "North End", "Central", "Pier 14");
@@ -416,6 +427,8 @@ public class PropertyController {
             @RequestParam(required = false) String availableFrom,
             @RequestParam(required = false) String description,
             @RequestParam(required = false) String commuteType,
+            @RequestParam(required = false) String occupantRestriction,
+            @RequestParam(required = false) String acceptedFunding,
             @RequestParam(required = false) Integer capacity,
             @RequestParam(value = "amenityIds", required = false) List<Integer> amenityIds,
             @RequestParam(value = "images", required = false) MultipartFile[] images,
@@ -471,6 +484,12 @@ public class PropertyController {
         property.setDeposit((deposit != null && !deposit.isBlank()) ? new java.math.BigDecimal(deposit) : null);
         property.setDescription(description);
         property.setCommuteType(commuteType);
+        // The two selects always post a value from the edit form, so a
+        // non-null param is the landlord's real choice.
+        // If a request doesn't include the param at all, the stored value
+        // is left alone.
+        if (occupantRestriction != null) property.setOccupantRestriction(occupantRestriction);
+        if (acceptedFunding != null) property.setAcceptedFunding(acceptedFunding.isBlank() ? "Any" : acceptedFunding);
         if (capacity != null) property.setCapacity(capacity);
 
         if (availableFrom != null && !availableFrom.isBlank()) {
@@ -483,9 +502,13 @@ public class PropertyController {
                 ? amenityRepository.findAllById(amenityIds)
                 : new ArrayList<>());
 
+        // True only when a Draft is being finished and sent to the admin, so
+        // the landlord sees "pending approval" instead of a plain "updated".
+        boolean submittedForApproval = false;
         if (isDraft) {
             property.setStatus("Draft");
         } else if ("Draft".equals(property.getStatus())) {
+            submittedForApproval = true;
             // Finishing a draft via "Save Changes" submits it for Admin
             // approval — same as a brand-new listing going Pending. By
             // this point requirements are guaranteed met (STEP 2 returned
@@ -581,8 +604,9 @@ public class PropertyController {
         // Both branches return to the dashboard (not back to the edit
         // form), with a query flag so the dashboard's toast knows which
         // message to show.
-        return isDraft
-                ? "redirect:/landlord-index?toast=draft-saved"
+        if (isDraft) return "redirect:/landlord-index?toast=draft-saved";
+        return submittedForApproval
+                ? "redirect:/landlord-index?toast=submitted"
                 : "redirect:/landlord-index?toast=updated";
     }
 
@@ -703,6 +727,18 @@ public class PropertyController {
         Property property = propertyRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Property not found with id: " + id));
 
+        // NEW — this page never checked status/isAvailable at all, so a
+        // direct link to a suspended listing, or one belonging to a
+        // deactivated landlord, was still fully viewable (and applyable —
+        // see the matching check in applyToProperty below). The owning
+        // landlord can still open their own listing here (e.g. to preview
+        // it), everyone else gets bounced to the dashboard.
+        boolean viewerIsOwner = principal != null
+                && getCurrentUser(principal).getUserID().equals(property.getLandlordID());
+        if (!isVisibleToStudents(property) && !viewerIsOwner) {
+            return "redirect:/student-dashboard?propertyUnavailable=true";
+        }
+
         List<PropertyImage> propertyImages = propertyImageRepository.findByPropertyID(id).stream()
                 .sorted((a, b) -> {
                     Integer orderA = a.getDisplayOrder() != null ? a.getDisplayOrder() : 0;
@@ -767,21 +803,28 @@ public class PropertyController {
 
     // Public search — same LIVE_STATUS rule as the student dashboard, so
     // search never surfaces a Pending/Draft/Inactive property.
+    // FIX: same isAvailable gap as viewStudentDashboard — a deactivated
+    // landlord's properties still pass the repository's status-only
+    // queries, so every branch below now also filters through
+    // isVisibleToStudents() before handing results to the template.
     @GetMapping("/search")
     public String searchProperties(
             @RequestParam(required = false) String query,
             @RequestParam(required = false) java.math.BigDecimal maxRent,
             Model model) {
 
+        List<Property> results;
         if (maxRent != null) {
-            model.addAttribute("properties",
-                    propertyRepository.findByStatusAndRentLessThanEqual(LIVE_STATUS, maxRent));
+            results = propertyRepository.findByStatusAndRentLessThanEqual(LIVE_STATUS, maxRent);
         } else if (query != null && !query.isBlank()) {
-            model.addAttribute("properties",
-                    propertyRepository.searchActive(query));
+            results = propertyRepository.searchActive(query);
         } else {
-            model.addAttribute("properties", propertyRepository.findByStatus(LIVE_STATUS));
+            results = propertyRepository.findByStatus(LIVE_STATUS);
         }
+
+        model.addAttribute("properties", results.stream()
+                .filter(this::isVisibleToStudents)
+                .collect(Collectors.toList()));
         return "properties";
     }
 
@@ -1057,11 +1100,12 @@ public class PropertyController {
         }
 
         // Most recent first
-        rows.sort((a, b) -> {
-            if (a.getApplicationDate() == null) return 1;
-            if (b.getApplicationDate() == null) return -1;
-            return b.getApplicationDate().compareTo(a.getApplicationDate());
-        });
+        // Pending applications first; anything already decided (Accepted or
+// Rejected) drops to the end of the list. Within each group, newest first.
+        rows.sort(Comparator
+                .comparing((ApplicationRowView r) -> "Pending".equalsIgnoreCase(r.getStatus()) ? 0 : 1)
+                .thenComparing(ApplicationRowView::getApplicationDate,
+                        Comparator.nullsLast(Comparator.reverseOrder())));
 
         long totalCount = rows.size();
         long pendingCount = rows.stream().filter(r -> "Pending".equalsIgnoreCase(r.getStatus())).count();
@@ -1147,21 +1191,40 @@ public class PropertyController {
             throw new RuntimeException("You do not have permission to manage this application");
         }
 
-        if ("Accepted".equalsIgnoreCase(status)) {
+        String redirectBase = "redirect:/property-applications/" + property.getPropertyID();
+
+        // Only the three statuses the UI can send are allowed. Anything else is
+        // ignored, so a hand-crafted POST can't write arbitrary text into the column.
+        boolean validStatus = "Accepted".equalsIgnoreCase(status)
+                || "Rejected".equalsIgnoreCase(status)
+                || "Pending".equalsIgnoreCase(status);
+        if (!validStatus) {
+            return redirectBase;
+        }
+
+        // An accepted student can't be rejected. The Reject button is hidden for
+        // accepted cards in the template, and this stops a replayed or
+        // hand-crafted POST from doing it anyway.
+        if ("Rejected".equalsIgnoreCase(status) && "Accepted".equalsIgnoreCase(application.getStatus())) {
+            return redirectBase;
+        }
+
+        // Accepting is capped by the property's capacity. Skipped when the
+        // application is already Accepted, so re-submitting can't trip the cap.
+        if ("Accepted".equalsIgnoreCase(status) && !"Accepted".equalsIgnoreCase(application.getStatus())) {
             long acceptedCount = applicationRepository.findByPropertyIDIn(List.of(property.getPropertyID())).stream()
                     .filter(a -> "Accepted".equalsIgnoreCase(a.getStatus()))
                     .count();
             int capacity = property.getCapacity() != null ? property.getCapacity() : 0;
             if (acceptedCount >= capacity) {
-                // Refuse the accept; the applications page shows a toast
-                // for this exact query flag.
-                return "redirect:/property-applications/" + property.getPropertyID() + "?capacityFull=true";
+                // The applications page shows a toast for this exact query flag.
+                return redirectBase + "?capacityFull=true";
             }
         }
 
         application.setStatus(status);
         applicationRepository.save(application);
-        return "redirect:/property-applications/" + property.getPropertyID();
+        return redirectBase;
     }
 
     // Marks that the landlord has emailed the student directly about their
@@ -1357,6 +1420,20 @@ public class PropertyController {
         // this one field.
 
         Integer studentID = getCurrentUser(principal).getUserID();
+
+        // NEW — nothing here previously stopped a student applying to a
+        // suspended listing or one belonging to a deactivated landlord (the
+        // "Apply" button being hidden on a page they couldn't even load is
+        // one thing, but this endpoint itself had no server-side check —
+        // a direct POST would still go through). Checked before the
+        // duplicate-application check below since there's no point telling
+        // someone "you already applied" to a listing they shouldn't be able
+        // to apply to at all.
+        Property property = propertyRepository.findById(propertyId)
+                .orElseThrow(() -> new RuntimeException("Property not found with id: " + propertyId));
+        if (!isVisibleToStudents(property)) {
+            return "redirect:/student-dashboard?propertyUnavailable=true";
+        }
 
         // One application per student per property — enforced here regardless
         // of what the UI already hides, since a resubmitted/replayed form
@@ -1571,8 +1648,19 @@ public class PropertyController {
 
     // Shows the blank wizard, passing amenities (grouped by category) and
     // the semester dropdown options for the JS to render.
+    // NEW — a deactivated landlord (User.isActive == false, see
+    // AdminController.deactivateUser()) can no longer open this wizard at
+    // all. Previously nothing stopped a deactivated account from still
+    // submitting new listings even though their existing properties were
+    // hidden. Redirects back to the dashboard with a flag the toast can key
+    // off, same pattern as the other ?toast=... redirects on that page.
     @GetMapping({"/listProperty", "/list-property"})
-    public String listPropertyForm(Model model) {
+    public String listPropertyForm(Model model, Principal principal) {
+        User currentUser = getCurrentUser(principal);
+        if (Boolean.FALSE.equals(currentUser.getIsActive())) {
+            return "redirect:/landlord-index?accountDeactivated=true";
+        }
+
         List<Amenity> allAmenities = amenityRepository.findAllByOrderByCategoryAscNameAsc();
         Map<String, List<Amenity>> amenityCategories = allAmenities.stream()
                 .collect(Collectors.groupingBy(Amenity::getCategory, LinkedHashMap::new, Collectors.toList()));
@@ -1617,6 +1705,11 @@ public class PropertyController {
     // always start with isAvailable=false — a property only becomes
     // available once an Admin approves it AND the landlord marks it
     // available (see togglePropertyStatus).
+    // NEW — same deactivated-account block as listPropertyForm() above,
+    // repeated here because a deactivated landlord could otherwise still
+    // POST directly to this endpoint (e.g. resubmitting a form they had
+    // open in another tab, or a raw request) even with the GET wizard
+    // blocked.
     @PostMapping("/listProperty")
     public String listProperty(
             @RequestParam String title,
@@ -1628,16 +1721,27 @@ public class PropertyController {
             @RequestParam(required = false) String availableFrom,
             @RequestParam(required = false) String description,
             @RequestParam(required = false) String commuteType,
+            @RequestParam(required = false) String occupantRestriction,
+            @RequestParam(required = false) String acceptedFunding,
             @RequestParam(required = false) Integer capacity,
             @RequestParam(value = "amenityIds", required = false) List<Integer> amenityIds,
             @RequestParam(value = "featureNames", required = false) List<String> featureNames,
+            @RequestParam(value = "featureImages", required = false) MultipartFile[] featureImages,
             @RequestParam(value = "coverImage", required = false) MultipartFile coverImage,
             @RequestParam(value = "images", required = false) MultipartFile[] images,
             @RequestParam(value = "action", defaultValue = "submit") String action,
             Principal principal) throws IOException {
 
-        Integer landlordID = getCurrentUser(principal).getUserID();
+        User currentUser = getCurrentUser(principal);
+        if (Boolean.FALSE.equals(currentUser.getIsActive())) {
+            return "redirect:/landlord-index?accountDeactivated=true";
+        }
+        Integer landlordID = currentUser.getUserID();
         boolean isDraft = "draft".equals(action);
+
+        // Set when a "submit" had to be saved as a draft because a required
+        // field was missing or the rent was too low — the landlord is told why.
+        boolean downgradedToDraft = false;
 
         Property property = new Property();
         property.setLandlordID(landlordID);
@@ -1649,6 +1753,12 @@ public class PropertyController {
         property.setDeposit(deposit);
         property.setDescription(description);
         property.setCommuteType(commuteType);
+        // Defaults if the wizard didn't send a value: restriction "Mixed",
+        // funding "Any" (landlord takes every funding type).
+        property.setOccupantRestriction(
+                (occupantRestriction != null && !occupantRestriction.isBlank()) ? occupantRestriction : "Mixed");
+        property.setAcceptedFunding(
+                (acceptedFunding != null && !acceptedFunding.isBlank()) ? acceptedFunding : "Any");
         // Defaults to 1 if the wizard didn't send a capacity (shouldn't
         // happen anymore now that Step 0 always includes the field, but
         // this keeps old/partial submissions from crashing).
@@ -1668,6 +1778,7 @@ public class PropertyController {
         // server-rendered and every field persists in the DOM regardless.)
         if (!isDraft && !meetsPublishRequirements(property.getTitle(), property.getRent(), property.getAddress(), property.getCapacity())) {
             isDraft = true;
+            downgradedToDraft = true;
         }
         property.setStatus(isDraft ? "Draft" : "Pending");
 
@@ -1681,24 +1792,41 @@ public class PropertyController {
 
         Property savedProperty = propertyRepository.save(property);
 
-        // Special-feature tags entered in the wizard. Created without
-        // photos here — the landlord attaches photos to each one
-        // afterwards from the Manage Property page.
-        if (featureNames != null) {
-            for (String name : featureNames) {
-                if (name != null && !name.isBlank()) {
-                    PropertyFeature feature = new PropertyFeature();
-                    feature.setPropertyID(savedProperty.getPropertyID());
-                    feature.setName(name.trim());
-                    propertyFeatureRepository.save(feature);
-                }
-            }
-        }
-
         Path uploadPath = Paths.get(uploadDir);
         if (!Files.exists(uploadPath)) {
             Files.createDirectories(uploadPath);
         }
+
+        // Special features entered in the wizard. Each one has a name and a
+        // picture. featureNames[i] and featureImages[i] belong together: the
+        // wizard only lets a feature be added when it has BOTH, so the two
+        // lists always line up by position. Blank names are skipped, and a
+        // missing/empty picture is tolerated (the feature is still saved).
+        if (featureNames != null) {
+            for (int i = 0; i < featureNames.size(); i++) {
+                String name = featureNames.get(i);
+                if (name == null || name.isBlank()) continue;
+
+                PropertyFeature feature = new PropertyFeature();
+                feature.setPropertyID(savedProperty.getPropertyID());
+                feature.setName(name.trim());
+                PropertyFeature savedFeature = propertyFeatureRepository.save(feature);
+
+                if (featureImages != null && i < featureImages.length && !featureImages[i].isEmpty()) {
+                    MultipartFile featureImage = featureImages[i];
+                    String uniqueFileName = "feature_" + savedFeature.getFeatureID() + "_"
+                            + System.currentTimeMillis() + "_" + featureImage.getOriginalFilename();
+                    Files.copy(featureImage.getInputStream(), uploadPath.resolve(uniqueFileName));
+
+                    PropertyFeatureImage img = new PropertyFeatureImage();
+                    img.setFeatureID(savedFeature.getFeatureID());
+                    img.setUrl("/uploads/" + uniqueFileName);
+                    img.setDisplayOrder(1);
+                    propertyFeatureImageRepository.save(img);
+                }
+            }
+        }
+
         int order = 1;
 
         // FIX: previously, if coverImage was empty/not sent (e.g. the
@@ -1756,8 +1884,11 @@ public class PropertyController {
             }
         }
 
-        return isDraft
-                ? "redirect:/landlord-index?draftSaved=true"
-                : "redirect:/landlord-index?added=true";
+        if (isDraft) {
+            return downgradedToDraft
+                    ? "redirect:/landlord-index?draftSaved=true&incomplete=true"
+                    : "redirect:/landlord-index?draftSaved=true";
+        }
+        return "redirect:/landlord-index?added=true";
     }
 }

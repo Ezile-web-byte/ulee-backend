@@ -65,7 +65,7 @@
                             Filter
                         </button>
 
-                        <!-- Filter panel: city, price range, bedrooms -->
+                        <!-- Filter panel: city, price range -->
                         <div id="filterPanel" style="display:none;position:absolute;top:44px;right:0;z-index:20;background:#fff;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.08);padding:16px;width:260px">
                             <label style="display:block;font-size:12px;font-weight:600;color:#555;margin-bottom:4px">City</label>
                             <select id="cityFilter" style="width:100%;padding:7px 8px;border:1px solid #e5e7eb;border-radius:6px;margin-bottom:12px;font-family:inherit;font-size:13px">
@@ -150,9 +150,6 @@
                                 APPROVED
                             </span>
 
-                            <span th:if="${prop.distanceFromUniversity} != null"
-                                  style="position:absolute;top:10px;right:10px;z-index:2;background:rgba(255,255,255,0.92);color:#333;font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px"
-                                  th:text="${prop.distanceFromUniversity} + 'km to NMU'">0.0km to NMU</span>
                         </a>
 
                         <div style="padding:14px">

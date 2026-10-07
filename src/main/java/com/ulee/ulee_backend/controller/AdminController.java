@@ -93,11 +93,6 @@ public class AdminController {
     }
 
     /**
-     * Populates the counts every admin page's sidebar badges need
-     * (Review Properties, Reported, Reviews) so they stay consistent
-     * across pages instead of drifting per-controller-method.
-     */
-    /**
      * Resolves the display name of whoever is currently logged in, so a
      * logged activity can be attributed to the real admin who performed it
      * without threading a Principal parameter through every action method
@@ -140,6 +135,11 @@ public class AdminController {
         return sb.length() > 0 ? sb.toString() : "AD";
     }
 
+    /**
+     * Populates the counts every admin page's sidebar badges need
+     * (Review Properties, Reported, Reviews, Listings) so they stay
+     * consistent across pages instead of drifting per-controller-method.
+     */
     private void addSidebarCounts(Model model) {
         model.addAttribute("totalPending", propertyRepository.findByStatus("Pending").size());
         model.addAttribute("totalReported", propertyRepository.findByIsReportedTrue().size());
@@ -204,6 +204,34 @@ public class AdminController {
                     n.getCreatedAt(),
                     n.getCreatedAt().format(timeFormat),
                     n.getPropertyID() != null ? "/admin/reported-listing/" + n.getPropertyID() : null));
+        }
+
+        // Listings suspended and accounts deactivated. Neither Property
+        // nor User has its own "suspendedAt"/"deactivatedAt" timestamp column,
+        // but suspendListing() and deactivateUser() already call logActivity()
+        // with action "Suspended" / "Deactivated" for the Dashboard's Recent
+        // Activity feed — so this reuses that same AdminActivityLog table
+        // instead of adding new columns just for the bell.
+        for (com.ulee.ulee_backend.model.AdminActivityLog log : adminActivityLogRepository.findAllByOrderByTimestampDesc()) {
+            if (log.getTimestamp() == null || log.getAction() == null) continue;
+
+            if ("Suspended".equals(log.getAction())) {
+                items.add(new NotificationFeedItem(
+                        "suspended-" + log.getId(),
+                        "suspended",
+                        log.getMessage(),
+                        log.getTimestamp(),
+                        log.getTimestamp().format(timeFormat),
+                        "/admin/listings"));
+            } else if ("Deactivated".equals(log.getAction())) {
+                items.add(new NotificationFeedItem(
+                        "deactivated-" + log.getId(),
+                        "deactivated",
+                        log.getMessage(),
+                        log.getTimestamp(),
+                        log.getTimestamp().format(timeFormat),
+                        "/admin/manage-users"));
+            }
         }
 
         items.sort(Comparator.comparing(NotificationFeedItem::getTimestamp, Comparator.reverseOrder()));
@@ -431,7 +459,6 @@ public class AdminController {
                                          @RequestParam(required = false) String city,
                                          @RequestParam(required = false) java.math.BigDecimal minPrice,
                                          @RequestParam(required = false) java.math.BigDecimal maxPrice,
-                                         @RequestParam(required = false) Integer bedrooms,
                                          @RequestParam(required = false) Integer academicYear) {
 
         List<Property> allApproved = propertyRepository.findByStatusIn(List.of("Approved", "Active"));
@@ -453,7 +480,6 @@ public class AdminController {
                 .filter(p -> city == null || city.isBlank() || city.equalsIgnoreCase(p.getCity()))
                 .filter(p -> minPrice == null || (p.getRent() != null && p.getRent().compareTo(minPrice) >= 0))
                 .filter(p -> maxPrice == null || (p.getRent() != null && p.getRent().compareTo(maxPrice) <= 0))
-                .filter(p -> bedrooms == null || (p.getBedrooms() != null && p.getBedrooms().intValue() == bedrooms))
                 .collect(Collectors.toList());
 
         // Selecting an academic year bumps properties available that year to the
@@ -495,7 +521,6 @@ public class AdminController {
         model.addAttribute("selectedCity", city);
         model.addAttribute("minPrice", minPrice);
         model.addAttribute("maxPrice", maxPrice);
-        model.addAttribute("bedrooms", bedrooms);
         model.addAttribute("totalListings", propertyRepository.findAll().size());
         model.addAttribute("academicYearOptions", academicYearOptions);
         model.addAttribute("selectedAcademicYear", selectedYear != null ? selectedYear : currentYear);
@@ -518,7 +543,35 @@ public class AdminController {
         // already maps "Approved" back to Active, so this is the only place
         // that needed to change.
         property.setStatus("Active");
+        // Approving a listing only ever flipped status to "Active" and
+        // never touched isAvailable, so a property created with
+        // isAvailable=false stayed "Unavailable"/"Inactive" on the student
+        // site and the landlord dashboard even after admin approval — those
+        // pages key off isAvailable, not status. Approval is meant to make
+        // the listing live, so it now sets both together, same as
+        // unsuspendListing() already does for the same reason.
+        property.setIsAvailable(true);
         propertyRepository.save(property);
+
+        // Landlords get a notification when a listing is approved. The DB
+        // never stores "Approved" (see the comment above — internally this
+        // is just status="Active"), but the landlord-facing message uses
+        // "Approved" throughout since that's the concept the admin UI
+        // actually shows and acted on; nothing here changes the underlying
+        // status value itself.
+        Optional<User> approvedLandlordOpt = userRepository.findById(property.getLandlordID());
+        approvedLandlordOpt.ifPresent(landlordUser -> {
+            com.ulee.ulee_backend.model.Notification notification = new com.ulee.ulee_backend.model.Notification();
+            notification.setLandlordID(landlordUser.getUserID());
+            notification.setPropertyID(property.getPropertyID());
+            notification.setTitle("Listing Approved: " + property.getTitle());
+            notification.setMessage("Dear " + safeName(landlordUser) + ",\n\nGood news — \"" + property.getTitle()
+                    + "\" has been approved and is now live for students to view and apply to.");
+            notification.setCreatedAt(LocalDateTime.now());
+            notification.setIsRead(false);
+            notificationRepository.save(notification);
+        });
+
         logActivity("Approved", "Approved \"" + property.getTitle() + "\"");
         redirectAttributes.addFlashAttribute("actionMessage", "Approved \"" + property.getTitle() + "\"");
         return "redirect:/admin/pending-listings";
@@ -534,6 +587,23 @@ public class AdminController {
         Property property = propertyOpt.get();
         property.setStatus("Rejected");
         propertyRepository.save(property);
+
+        // Same reasoning as approveListing() above: notify the landlord so a
+        // rejection isn't only visible by the listing silently disappearing
+        // from "Pending" on their own dashboard.
+        Optional<User> rejectedLandlordOpt = userRepository.findById(property.getLandlordID());
+        rejectedLandlordOpt.ifPresent(landlordUser -> {
+            com.ulee.ulee_backend.model.Notification notification = new com.ulee.ulee_backend.model.Notification();
+            notification.setLandlordID(landlordUser.getUserID());
+            notification.setPropertyID(property.getPropertyID());
+            notification.setTitle("Listing Rejected: " + property.getTitle());
+            notification.setMessage("Dear " + safeName(landlordUser) + ",\n\n\"" + property.getTitle()
+                    + "\" was not approved. Please review your listing details and resubmit, or contact support if you have questions.");
+            notification.setCreatedAt(LocalDateTime.now());
+            notification.setIsRead(false);
+            notificationRepository.save(notification);
+        });
+
         logActivity("Rejected", "Rejected \"" + property.getTitle() + "\"");
         redirectAttributes.addFlashAttribute("actionMessage", "Rejected \"" + property.getTitle() + "\"");
         return "redirect:/admin/pending-listings";
@@ -820,9 +890,15 @@ public class AdminController {
 
         redirectAttributes.addFlashAttribute("actionMessage",
                 "Official warning sent to " + safeName(landlordUser) + "'s notifications (warning #" + (current + 1) + ")");
-        return "redirect:/admin/reported-listings";
+        return "redirect:/admin/reported-listing/" + propertyId;
     }
 
+    // Suspending a listing records the action in the Dashboard's Recent
+    // Activity log (via logActivity below) and also notifies the landlord, so
+    // their own bell (fragments/landlord-notifications.html) shows it instead
+    // of them discovering the suspension by noticing the listing is gone.
+    // Mirrors the in-app notification pattern already used by
+    // warnLandlordForListing()/warnUser()/deactivateUser().
     @PostMapping("/admin/suspend-listing/{id}")
     public String suspendListing(@PathVariable Integer id, RedirectAttributes redirectAttributes) {
         Optional<Property> propertyOpt = propertyRepository.findById(id);
@@ -836,6 +912,23 @@ public class AdminController {
         property.setIsReported(false);
         property.setReportReason(null);
         propertyRepository.save(property);
+
+        // Notify the landlord
+        Optional<User> landlordUserOpt = userRepository.findById(property.getLandlordID());
+        if (landlordUserOpt.isPresent()) {
+            User landlordUser = landlordUserOpt.get();
+            com.ulee.ulee_backend.model.Notification notification = new com.ulee.ulee_backend.model.Notification();
+            notification.setLandlordID(landlordUser.getUserID());
+            notification.setPropertyID(id);
+            notification.setTitle("Listing Suspended: " + property.getTitle());
+            notification.setMessage("Dear " + safeName(landlordUser) + ",\n\n\"" + property.getTitle()
+                    + "\" has been suspended by an administrator due to unresolved reports. "
+                    + "It is no longer visible to students. Please contact support if you believe this was done in error.");
+            notification.setCreatedAt(LocalDateTime.now());
+            notification.setIsRead(false);
+            notificationRepository.save(notification);
+        }
+
         logActivity("Suspended", "Suspended \"" + property.getTitle() + "\"");
         redirectAttributes.addFlashAttribute("actionMessage", "Suspended \"" + property.getTitle() + "\"");
         return "redirect:/admin/reported-listings";
@@ -905,6 +998,10 @@ public class AdminController {
         reportRepository.deleteAll(reportRepository.findByPropertyIDOrderByReportedAtAsc(propertyId));
         reviewRepository.deleteAll(reviewRepository.findByPropertyID(propertyId));
         propertyImageRepository.deleteAll(propertyImageRepository.findByPropertyID(propertyId));
+        // application_document has an FK to application.applicationID
+        // (application_document_ibfk_1), so its rows must go before the
+        // applications themselves or the delete fails.
+        jdbcTemplate.update("DELETE FROM application_document WHERE applicationID IN (SELECT applicationID FROM application WHERE propertyID = ?)", propertyId);
         applicationRepository.deleteAll(applicationRepository.findByPropertyIDIn(List.of(propertyId)));
         // Remaining tables with an FK to property.propertyID that don't have
         // a Spring Data repository wired into this controller. NOTE: "report"
@@ -940,19 +1037,55 @@ public class AdminController {
         List<Property> approvedProperties = propertyRepository.findByStatusIn(List.of("Approved", "Active"));
         List<Property> reportedProperties = propertyRepository.findByIsReportedTrue();
 
-        // Hero carousel slides 1 & 2: the 2 most recently submitted pending
-        // listings, each with a real applicant count for its stat pill.
+        // Hero carousel: only the few newest pending listings are featured
+        // here, each with a real applicant count for its stat pill. The rest
+        // of the queue lives on the Review Properties tab — the template adds
+        // a "+ N more awaiting review" slide linking there when
+        // totalPending is larger than what's shown.
+        final int HERO_PENDING_LIMIT = 3;
         List<Property> latestPendingForHero = pendingProperties.stream()
                 .sorted(Comparator.comparing(
                         (Property p) -> p.getCreatedAt() != null ? p.getCreatedAt() : LocalDateTime.MIN,
                         Comparator.reverseOrder()))
-                .limit(2)
+                .limit(HERO_PENDING_LIMIT)
                 .collect(Collectors.toList());
         Map<Integer, Long> heroApplicantCounts = applicationRepository.findAll().stream()
                 .filter(a -> a.getPropertyID() != null)
                 .collect(Collectors.groupingBy(Application::getPropertyID, Collectors.counting()));
         model.addAttribute("latestPendingForHero", latestPendingForHero);
         model.addAttribute("heroApplicantCounts", heroApplicantCounts);
+
+        // Hero slide: the live/approved property with the lowest average rating,
+        // so admins can spot a quality problem, not just a submission waiting for
+        // approval. Separate concept from latestPendingForHero — that's about NEW
+        // listings; this is about ALREADY-LIVE ones that may need a closer look.
+        // Only considered if it has at least one real review, so a brand-new
+        // approved property with zero reviews isn't flagged just for having no
+        // data yet.
+        Map<Integer, List<Review>> reviewsByProperty = allReviews.stream()
+                .filter(r -> r.getPropertyID() != null)
+                .collect(Collectors.groupingBy(Review::getPropertyID));
+
+        Property lowRatedProperty = null;
+        double lowRatedAverage = 0;
+        long lowRatedReviewCount = 0;
+        for (Property approved : approvedProperties) {
+            List<Review> propReviews = reviewsByProperty.get(approved.getPropertyID());
+            if (propReviews == null || propReviews.isEmpty()) continue;
+            double avg = propReviews.stream()
+                    .filter(r -> r.getRating() != null)
+                    .mapToInt(Review::getRating)
+                    .average()
+                    .orElse(0);
+            if (lowRatedProperty == null || avg < lowRatedAverage) {
+                lowRatedProperty = approved;
+                lowRatedAverage = avg;
+                lowRatedReviewCount = propReviews.size();
+            }
+        }
+        model.addAttribute("lowRatedProperty", lowRatedProperty);
+        model.addAttribute("lowRatedAverage", lowRatedAverage);
+        model.addAttribute("lowRatedReviewCount", lowRatedReviewCount);
 
         int currentYear = java.time.Year.now().getValue();
         List<Integer> academicYearOptions = java.util.Arrays.asList(currentYear - 1, currentYear, currentYear + 1);
@@ -1012,7 +1145,7 @@ public class AdminController {
         model.addAttribute("maxPrice", maxPrice);
         model.addAttribute("selectedType", type);
 
-        // NEW: decide which tab to show server-side, instead of relying on the
+        // Decide which tab to show server-side, instead of relying on the
         // URL's #hash. Show Review Properties if explicitly requested via
         // ?section=review-properties (sidebar link), OR if a filter was just
         // submitted (search/academicYear present) — both mean the admin was
@@ -1036,7 +1169,7 @@ public class AdminController {
         long listingsThisMonth = monthlyCountsList.isEmpty() ? 0 : monthlyCountsList.get(monthlyCountsList.size() - 1);
         model.addAttribute("listingsThisMonth", listingsThisMonth);
 
-        // Same idea for the "Approved" stat card's delta — mirrors the exact
+        // Same idea for the "Active" stat card's delta — mirrors the exact
         // calculation already used on the Approved Properties page.
         YearMonth currentMonth = YearMonth.now();
         long approvedThisMonth = approvedProperties.stream()
@@ -1047,7 +1180,7 @@ public class AdminController {
         // Greeting + today's date for the dashboard header. adminName comes
         // from addCurrentAdmin() (a @ModelAttribute method that runs before
         // every request in this controller) and reflects whoever is actually
-        // logged in, instead of a hardcoded "Sarah".
+        // logged in.
         int hour = LocalDateTime.now().getHour();
         String greeting = hour < 12 ? "Good morning" : (hour < 17 ? "Good afternoon" : "Good evening");
         model.addAttribute("greeting", greeting);
@@ -1083,19 +1216,9 @@ public class AdminController {
     }
 
     /**
-     * Builds the Dashboard's Recent Activity feed from real logged admin
-     * actions (see logActivity()), most recent first. Previously this
-     * inferred "activity" from whichever properties had the newest
-     * createdAt/updatedAt timestamp — which surfaced unrelated data changes
-     * (including ones from seed data) as if an admin had just acted, and
-     * never showed user- or review-related actions at all.
-     */
-    /**
      * Full Activity Log page — everything logActivity() has ever recorded,
      * paginated, newest first. This is what the Dashboard's Recent Activity
-     * "View all" link goes to now, instead of the Listings page it pointed
-     * at before (a leftover from when that feed was built from property
-     * timestamps rather than real admin actions).
+     * "View all" link goes to.
      */
     @GetMapping("/admin/activity-log")
     public String viewActivityLog(Model model, @RequestParam(required = false, defaultValue = "1") Integer page) {
@@ -1127,6 +1250,10 @@ public class AdminController {
         return "admin/admin-activity-log";
     }
 
+    /**
+     * Builds the Dashboard's Recent Activity feed from real logged admin
+     * actions (see logActivity()), most recent first.
+     */
     private List<ActivityItem> buildRecentActivity() {
         DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("MMM d, h:mm a");
 
@@ -1205,7 +1332,20 @@ public class AdminController {
         model.addAttribute("property", property);
         model.addAttribute("images", propertyImageRepository.findByPropertyID(id));
         model.addAttribute("landlord", landlordUserOpt.orElse(null));
-        model.addAttribute("reviews", reviewRepository.findByPropertyID(id));
+        var propertyReviews = reviewRepository.findByPropertyID(id);
+        Map<Integer, String> reviewerNames = new HashMap<>();
+        Map<Integer, String> reviewerInitials = new HashMap<>();
+        for (var r : propertyReviews) {
+            if (r.getStudentID() != null && !reviewerNames.containsKey(r.getStudentID())) {
+                userRepository.findById(r.getStudentID()).ifPresent(u -> {
+                    reviewerNames.put(r.getStudentID(), safeName(u));
+                    reviewerInitials.put(r.getStudentID(), initialsFor(u));
+                });
+            }
+        }
+        model.addAttribute("reviews", propertyReviews);
+        model.addAttribute("reviewerNames", reviewerNames);
+        model.addAttribute("reviewerInitials", reviewerInitials);
         model.addAttribute("validationIssues", validationIssues);
         model.addAttribute("isValid", validationIssues.isEmpty());
         model.addAttribute("totalListings", propertyRepository.findAll().size());
@@ -1266,8 +1406,6 @@ public class AdminController {
         if (property.getAddress() == null || property.getAddress().isBlank()) issues.add("Missing address");
         if (property.getCity() == null || property.getCity().isBlank()) issues.add("Missing city");
         if (property.getRent() == null) issues.add("Missing rent amount");
-        if (property.getBedrooms() == null) issues.add("Missing bedroom count");
-        if (property.getBathrooms() == null) issues.add("Missing bathroom count");
         if (property.getDescription() == null || property.getDescription().isBlank()) issues.add("Missing description");
         if (propertyImageRepository.findByPropertyID(property.getPropertyID()).isEmpty()) issues.add("No property images uploaded");
 
@@ -1308,8 +1446,11 @@ public class AdminController {
 
         // Properties owned per landlord — powers the "Properties owned" panel
         // when a landlord's row is expanded.
+        // Rejected listings are left out of this page entirely (the admin
+        // Users view only shows live/pending listings).
         Map<Integer, List<Property>> propertiesByLandlord = allProperties.stream()
                 .filter(p -> p.getLandlordID() != null)
+                .filter(p -> !"Rejected".equalsIgnoreCase(p.getStatus()))
                 .collect(Collectors.groupingBy(Property::getLandlordID));
 
         // Reports across every property a landlord owns — powers the
@@ -1461,6 +1602,9 @@ public class AdminController {
         // already blocks their next login via isActive, but nothing
         // previously told them why. This won't reach them before that
         // blocked attempt, but it's waiting for them once reactivated.
+        // NOTE: message also mentions that new listings can't be added
+        // while deactivated (see PropertyController's listPropertyForm /
+        // listProperty, which check isActive before allowing either).
         com.ulee.ulee_backend.model.Notification notification = new com.ulee.ulee_backend.model.Notification();
         if (landlordRepository.existsById(id)) {
             notification.setLandlordID(id);
@@ -1469,6 +1613,7 @@ public class AdminController {
         }
         notification.setTitle("Account Deactivated");
         notification.setMessage("Dear " + safeName(user) + ",\n\nYour ULEE account has been deactivated by an administrator. "
+                + "While deactivated, you will not be able to add new property listings. "
                 + "If you believe this was done in error, please contact support.");
         notification.setCreatedAt(LocalDateTime.now());
         notification.setIsRead(false);
@@ -1533,7 +1678,7 @@ public class AdminController {
                         .map(s -> new SessionView(
                                 s.getId(),
                                 s.getDeviceLabel() != null ? s.getDeviceLabel() : "Unknown device",
-                                (s.getLocation() != null && !s.getLocation().isBlank()) ? s.getLocation() : "Unknown location",
+                                resolveLocation(s.getIpAddress(), s.getLocation()),
                                 s.getIpAddress() != null ? s.getIpAddress() : "Unknown IP",
                                 currentSessionId.equals(s.getSessionId()),
                                 s.getLastActiveAt() != null ? s.getLastActiveAt().format(timeFormat) : ""))
@@ -1558,6 +1703,68 @@ public class AdminController {
         }
         addSidebarCounts(model);
         return "admin/admin-settings";
+    }
+
+    /** Pulls a simple "name":"value" text field out of a small JSON reply. */
+    private String jsonField(String json, String name) {
+        java.util.regex.Matcher m = java.util.regex.Pattern
+                .compile("\"" + name + "\"\\s*:\\s*\"([^\"]*)\"").matcher(json);
+        return m.find() ? m.group(1) : "";
+    }
+
+    // Remembers lookups so each IP is only looked up once while the app runs.
+    private final java.util.concurrent.ConcurrentHashMap<String, String> ipLocationCache =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
+    /**
+     * Turns a session's IP address into a readable place.
+     * - uses the stored location if one was already saved
+     * - your own computer / home network  -> "Local device"
+     * - a public IP -> looked up on ipwho.is (free, no key), e.g.
+     *   "Gqeberha, South Africa". If the lookup fails, "Unknown location".
+     */
+    private String resolveLocation(String ip, String storedLocation) {
+        if (storedLocation != null && !storedLocation.isBlank()) return storedLocation;
+        if (ip == null || ip.isBlank()) return "Unknown location";
+
+        String cached = ipLocationCache.get(ip);
+        if (cached != null) return cached;
+
+        String result = "Unknown location";
+        try {
+            java.net.InetAddress addr = java.net.InetAddress.getByName(ip);
+            // When the app runs on your own computer, the session IP is the
+            // computer itself (not a real internet address). In that case we
+            // look up this machine's public internet address instead, which
+            // gives the place your connection is in.
+            boolean isLocal = addr.isLoopbackAddress() || addr.isAnyLocalAddress()
+                    || addr.isSiteLocalAddress() || addr.isLinkLocalAddress();
+            if (isLocal) result = "Local device";
+
+            java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder()
+                    .connectTimeout(java.time.Duration.ofSeconds(2))
+                    .build();
+            java.net.http.HttpRequest req = java.net.http.HttpRequest.newBuilder()
+                    .uri(java.net.URI.create("https://ipwho.is/" + (isLocal ? "" : ip) + "?fields=success,city,country"))
+                    .timeout(java.time.Duration.ofSeconds(2))
+                    .GET()
+                    .build();
+            String body = client.send(req, java.net.http.HttpResponse.BodyHandlers.ofString()).body();
+            // Read the few fields we need straight from the text, so no extra
+            // JSON library is required.
+            if (java.util.regex.Pattern.compile("\"success\"\\s*:\\s*true").matcher(body).find()) {
+                String city = jsonField(body, "city");
+                String country = jsonField(body, "country");
+                String place = (city.isBlank() ? "" : city + ", ") + country;
+                if (!place.isBlank()) result = place;
+            }
+        } catch (Exception e) {
+            // lookup failed (no internet, timeout, bad IP) — fall through to
+            // "Unknown location" and do NOT cache it, so it can retry next time.
+            return result;
+        }
+        ipLocationCache.put(ip, result);
+        return result;
     }
 
     /** Read-only row for Settings > Security > Active Sessions. */
@@ -1674,12 +1881,11 @@ public class AdminController {
         }
         User user = userOpt.get();
 
-        // The actual check the person asked for: current password must
-        // match what's in the database. passwordEncoder.matches() hashes
-        // the submitted value the same way it was hashed at signup/last
-        // change and compares hashes — never compare raw strings against
-        // user.getPassword() directly, since that column is a hash, not
-        // plaintext.
+        // The current password must match what's in the database.
+        // passwordEncoder.matches() hashes the submitted value the same way
+        // it was hashed at signup/last change and compares hashes — never
+        // compare raw strings against user.getPassword() directly, since
+        // that column is a hash, not plaintext.
         if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
             return Map.of("success", false, "message", "Current password is incorrect.");
         }
@@ -1740,6 +1946,9 @@ public class AdminController {
                 // only ever cleaned up by propertyID (in deletePropertyCascade),
                 // never here.
                 jdbcTemplate.update("DELETE FROM review WHERE studentID = ?", id);
+                // Clear the documents attached to this student's
+                // applications first (application_document FK).
+                jdbcTemplate.update("DELETE FROM application_document WHERE applicationID IN (SELECT applicationID FROM application WHERE studentID = ?)", id);
                 jdbcTemplate.update("DELETE FROM application WHERE studentID = ?", id);
                 jdbcTemplate.update("DELETE FROM savedproperty WHERE studentID = ?", id);
                 studentRepository.deleteById(id);
