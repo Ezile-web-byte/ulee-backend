@@ -19,6 +19,11 @@
   no badge).
 
   Collapse/expand behaviour lives in landlord-sidebar-toggle.js.
+
+  NEW: the shared popup (css + js) is loaded from here, so EVERY page that
+  uses this sidebar gets the "Log out?" confirmation without each page
+  including it. It is safe if a page also includes fragments/modal itself:
+  ulee-modal.js ignores a second load.
 -->
 <aside class="sidebar" id="sidebar" th:fragment="sidebar(active)">
     <div class="logo">
@@ -52,9 +57,15 @@
         </a>
     </nav>
 
-    <!-- Spring Security expects logout as a POST -->
+    <!-- Spring Security expects logout as a POST.
+         data-confirm: the shared popup asks "Log out?" before the form is sent. -->
     <form th:action="@{/logout}" method="post" class="nav-logout-form">
-        <button type="submit" class="nav-item nav-item--logout">
+        <button type="submit" class="nav-item nav-item--logout"
+                data-confirm
+                data-confirm-title="Log out?"
+                data-confirm-message="You'll need to sign in again to manage your properties."
+                data-confirm-ok="Log out"
+                data-confirm-icon="👋">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 17l5-5-5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
             <span>Log out</span>
         </button>
@@ -74,6 +85,9 @@
             </g>
         </svg>
     </div>
+
+    <!-- Shared popup assets (css + js), so "Log out?" works on every page with this sidebar -->
+    <th:block th:replace="~{fragments/modal :: assets}"></th:block>
 </aside>
 
 </body>

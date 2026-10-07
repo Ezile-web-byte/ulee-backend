@@ -2,11 +2,11 @@
 // Extracted from an inline <script> block.
 //
 // "Save Changes" is BLOCKED entirely if any required field is missing
-// or invalid — the click is cancelled, the landlord is jumped to the
-// step containing the first unanswered required field, that field is
-// highlighted red and scrolled into view. "Save Draft" (elsewhere on
-// this page) is completely untouched by this script — it always saves
-// whatever's filled in, no validation, exactly as before.
+// or invalid — the click is cancelled, a popup lists what's missing, and
+// once it's closed the landlord is jumped to the step containing the first
+// unanswered required field, which is highlighted red and scrolled into
+// view. "Save Draft" (elsewhere on this page) is completely untouched by
+// this script — it always saves whatever's filled in, no validation.
 (function () {
     const REQUIRED_FIELDS_EDIT = [
         { name: 'title', label: 'Property Title', step: 1, validate: v => !!(v && v.trim().length > 0) },
@@ -56,12 +56,22 @@
         const saveChangesBtn = document.getElementById('saveChangesBtn');
         if (!saveChangesBtn) return;
 
-        saveChangesBtn.addEventListener('click', function (e) {
+        saveChangesBtn.addEventListener('click', async function (e) {
             const invalid = getInvalidFields();
             if (invalid.length > 0) {
                 e.preventDefault(); // block the save — do not submit
                 e.stopImmediatePropagation();
                 highlightInvalid(invalid);
+
+                // Tell the landlord what's wrong. The jump to the field happens
+                // AFTER the popup closes, so focus isn't stolen from it.
+                await UleeModal.alert({
+                    tone: 'warn',
+                    title: 'A few required fields need attention',
+                    message: 'These fields (marked *) still need valid values. Fill them in to save changes, or use "Save Draft" to keep your progress without publishing yet.',
+                    list: invalid.map(f => f.label),
+                    okText: 'Fix them'
+                });
 
                 const firstInvalid = invalid[0];
                 revealStep(firstInvalid.step);
@@ -75,10 +85,6 @@
                         el.focus();
                     }
                 }, 60);
-
-                alert('These required fields (marked *) still need valid values:\n\n' +
-                    invalid.map(f => '• ' + f.label).join('\n') +
-                    '\n\nFill them in to save changes, or use "Save Draft" to keep your progress without publishing yet.');
             } else {
                 highlightInvalid([]);
                 // Not forced invalid — let the click proceed normally.

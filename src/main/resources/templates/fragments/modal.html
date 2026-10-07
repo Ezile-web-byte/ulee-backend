@@ -1,0 +1,27 @@
+<!-- Place in src/main/resources/templates/fragments/modal.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- Include once per page, just before </body>, ABOVE your page-specific scripts:
+     <th:block th:replace="~{fragments/modal :: assets}"></th:block> -->
+<th:block th:fragment="assets">
+    <link rel="stylesheet" th:href="@{/ulee-modal.css}">
+    <script th:src="@{/ulee-modal.js}"></script>
+
+    <!-- Shows a popup after a redirect when the controller added flash attributes
+         popupTitle / popupMessage (and optionally popupTone, popupIcon) -->
+    <script th:if="${popupTitle != null}" th:inline="javascript">
+        if (!window.__uleeFlashShown) { window.__uleeFlashShown = true;
+            UleeModal.alert({
+                title: /*[[${popupTitle}]]*/ '',
+                message: /*[[${popupMessage}]]*/ '',
+                tone: /*[[${popupTone}]]*/ 'info',
+                icon: /*[[${popupIcon}]]*/ null
+            });
+        }
+    </script>
+</th:block>
+
+</body>
+</html>
