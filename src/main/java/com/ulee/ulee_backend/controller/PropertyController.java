@@ -427,6 +427,8 @@ public class PropertyController {
             @RequestParam(required = false) String availableFrom,
             @RequestParam(required = false) String description,
             @RequestParam(required = false) String commuteType,
+            @RequestParam(required = false) String occupantRestriction,
+            @RequestParam(required = false) String acceptedFunding,
             @RequestParam(required = false) Integer capacity,
             @RequestParam(value = "amenityIds", required = false) List<Integer> amenityIds,
             @RequestParam(value = "images", required = false) MultipartFile[] images,
@@ -482,6 +484,12 @@ public class PropertyController {
         property.setDeposit((deposit != null && !deposit.isBlank()) ? new java.math.BigDecimal(deposit) : null);
         property.setDescription(description);
         property.setCommuteType(commuteType);
+        // The two selects always post a value from the edit form, so a
+        // non-null param is the landlord's real choice.
+        // If a request doesn't include the param at all, the stored value
+        // is left alone.
+        if (occupantRestriction != null) property.setOccupantRestriction(occupantRestriction);
+        if (acceptedFunding != null) property.setAcceptedFunding(acceptedFunding.isBlank() ? "Any" : acceptedFunding);
         if (capacity != null) property.setCapacity(capacity);
 
         if (availableFrom != null && !availableFrom.isBlank()) {
@@ -494,9 +502,13 @@ public class PropertyController {
                 ? amenityRepository.findAllById(amenityIds)
                 : new ArrayList<>());
 
+        // True only when a Draft is being finished and sent to the admin, so
+        // the landlord sees "pending approval" instead of a plain "updated".
+        boolean submittedForApproval = false;
         if (isDraft) {
             property.setStatus("Draft");
         } else if ("Draft".equals(property.getStatus())) {
+            submittedForApproval = true;
             // Finishing a draft via "Save Changes" submits it for Admin
             // approval — same as a brand-new listing going Pending. By
             // this point requirements are guaranteed met (STEP 2 returned
@@ -592,8 +604,9 @@ public class PropertyController {
         // Both branches return to the dashboard (not back to the edit
         // form), with a query flag so the dashboard's toast knows which
         // message to show.
-        return isDraft
-                ? "redirect:/landlord-index?toast=draft-saved"
+        if (isDraft) return "redirect:/landlord-index?toast=draft-saved";
+        return submittedForApproval
+                ? "redirect:/landlord-index?toast=submitted"
                 : "redirect:/landlord-index?toast=updated";
     }
 
@@ -1708,9 +1721,12 @@ public class PropertyController {
             @RequestParam(required = false) String availableFrom,
             @RequestParam(required = false) String description,
             @RequestParam(required = false) String commuteType,
+            @RequestParam(required = false) String occupantRestriction,
+            @RequestParam(required = false) String acceptedFunding,
             @RequestParam(required = false) Integer capacity,
             @RequestParam(value = "amenityIds", required = false) List<Integer> amenityIds,
             @RequestParam(value = "featureNames", required = false) List<String> featureNames,
+            @RequestParam(value = "featureImages", required = false) MultipartFile[] featureImages,
             @RequestParam(value = "coverImage", required = false) MultipartFile coverImage,
             @RequestParam(value = "images", required = false) MultipartFile[] images,
             @RequestParam(value = "action", defaultValue = "submit") String action,
@@ -1723,6 +1739,10 @@ public class PropertyController {
         Integer landlordID = currentUser.getUserID();
         boolean isDraft = "draft".equals(action);
 
+        // Set when a "submit" had to be saved as a draft because a required
+        // field was missing or the rent was too low — the landlord is told why.
+        boolean downgradedToDraft = false;
+
         Property property = new Property();
         property.setLandlordID(landlordID);
         property.setTitle(title);
@@ -1733,6 +1753,12 @@ public class PropertyController {
         property.setDeposit(deposit);
         property.setDescription(description);
         property.setCommuteType(commuteType);
+        // Defaults if the wizard didn't send a value: restriction "Mixed",
+        // funding "Any" (landlord takes every funding type).
+        property.setOccupantRestriction(
+                (occupantRestriction != null && !occupantRestriction.isBlank()) ? occupantRestriction : "Mixed");
+        property.setAcceptedFunding(
+                (acceptedFunding != null && !acceptedFunding.isBlank()) ? acceptedFunding : "Any");
         // Defaults to 1 if the wizard didn't send a capacity (shouldn't
         // happen anymore now that Step 0 always includes the field, but
         // this keeps old/partial submissions from crashing).
@@ -1752,6 +1778,7 @@ public class PropertyController {
         // server-rendered and every field persists in the DOM regardless.)
         if (!isDraft && !meetsPublishRequirements(property.getTitle(), property.getRent(), property.getAddress(), property.getCapacity())) {
             isDraft = true;
+            downgradedToDraft = true;
         }
         property.setStatus(isDraft ? "Draft" : "Pending");
 
@@ -1765,24 +1792,41 @@ public class PropertyController {
 
         Property savedProperty = propertyRepository.save(property);
 
-        // Special-feature tags entered in the wizard. Created without
-        // photos here — the landlord attaches photos to each one
-        // afterwards from the Manage Property page.
-        if (featureNames != null) {
-            for (String name : featureNames) {
-                if (name != null && !name.isBlank()) {
-                    PropertyFeature feature = new PropertyFeature();
-                    feature.setPropertyID(savedProperty.getPropertyID());
-                    feature.setName(name.trim());
-                    propertyFeatureRepository.save(feature);
-                }
-            }
-        }
-
         Path uploadPath = Paths.get(uploadDir);
         if (!Files.exists(uploadPath)) {
             Files.createDirectories(uploadPath);
         }
+
+        // Special features entered in the wizard. Each one has a name and a
+        // picture. featureNames[i] and featureImages[i] belong together: the
+        // wizard only lets a feature be added when it has BOTH, so the two
+        // lists always line up by position. Blank names are skipped, and a
+        // missing/empty picture is tolerated (the feature is still saved).
+        if (featureNames != null) {
+            for (int i = 0; i < featureNames.size(); i++) {
+                String name = featureNames.get(i);
+                if (name == null || name.isBlank()) continue;
+
+                PropertyFeature feature = new PropertyFeature();
+                feature.setPropertyID(savedProperty.getPropertyID());
+                feature.setName(name.trim());
+                PropertyFeature savedFeature = propertyFeatureRepository.save(feature);
+
+                if (featureImages != null && i < featureImages.length && !featureImages[i].isEmpty()) {
+                    MultipartFile featureImage = featureImages[i];
+                    String uniqueFileName = "feature_" + savedFeature.getFeatureID() + "_"
+                            + System.currentTimeMillis() + "_" + featureImage.getOriginalFilename();
+                    Files.copy(featureImage.getInputStream(), uploadPath.resolve(uniqueFileName));
+
+                    PropertyFeatureImage img = new PropertyFeatureImage();
+                    img.setFeatureID(savedFeature.getFeatureID());
+                    img.setUrl("/uploads/" + uniqueFileName);
+                    img.setDisplayOrder(1);
+                    propertyFeatureImageRepository.save(img);
+                }
+            }
+        }
+
         int order = 1;
 
         // FIX: previously, if coverImage was empty/not sent (e.g. the
@@ -1840,8 +1884,11 @@ public class PropertyController {
             }
         }
 
-        return isDraft
-                ? "redirect:/landlord-index?draftSaved=true"
-                : "redirect:/landlord-index?added=true";
+        if (isDraft) {
+            return downgradedToDraft
+                    ? "redirect:/landlord-index?draftSaved=true&incomplete=true"
+                    : "redirect:/landlord-index?draftSaved=true";
+        }
+        return "redirect:/landlord-index?added=true";
     }
 }

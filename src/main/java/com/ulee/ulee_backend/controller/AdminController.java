@@ -93,11 +93,6 @@ public class AdminController {
     }
 
     /**
-     * Populates the counts every admin page's sidebar badges need
-     * (Review Properties, Reported, Reviews) so they stay consistent
-     * across pages instead of drifting per-controller-method.
-     */
-    /**
      * Resolves the display name of whoever is currently logged in, so a
      * logged activity can be attributed to the real admin who performed it
      * without threading a Principal parameter through every action method
@@ -140,6 +135,11 @@ public class AdminController {
         return sb.length() > 0 ? sb.toString() : "AD";
     }
 
+    /**
+     * Populates the counts every admin page's sidebar badges need
+     * (Review Properties, Reported, Reviews, Listings) so they stay
+     * consistent across pages instead of drifting per-controller-method.
+     */
     private void addSidebarCounts(Model model) {
         model.addAttribute("totalPending", propertyRepository.findByStatus("Pending").size());
         model.addAttribute("totalReported", propertyRepository.findByIsReportedTrue().size());
@@ -206,7 +206,7 @@ public class AdminController {
                     n.getPropertyID() != null ? "/admin/reported-listing/" + n.getPropertyID() : null));
         }
 
-        // NEW — Listings suspended and accounts deactivated. Neither Property
+        // Listings suspended and accounts deactivated. Neither Property
         // nor User has its own "suspendedAt"/"deactivatedAt" timestamp column,
         // but suspendListing() and deactivateUser() already call logActivity()
         // with action "Suspended" / "Deactivated" for the Dashboard's Recent
@@ -459,7 +459,6 @@ public class AdminController {
                                          @RequestParam(required = false) String city,
                                          @RequestParam(required = false) java.math.BigDecimal minPrice,
                                          @RequestParam(required = false) java.math.BigDecimal maxPrice,
-                                         @RequestParam(required = false) Integer bedrooms,
                                          @RequestParam(required = false) Integer academicYear) {
 
         List<Property> allApproved = propertyRepository.findByStatusIn(List.of("Approved", "Active"));
@@ -481,7 +480,6 @@ public class AdminController {
                 .filter(p -> city == null || city.isBlank() || city.equalsIgnoreCase(p.getCity()))
                 .filter(p -> minPrice == null || (p.getRent() != null && p.getRent().compareTo(minPrice) >= 0))
                 .filter(p -> maxPrice == null || (p.getRent() != null && p.getRent().compareTo(maxPrice) <= 0))
-                .filter(p -> bedrooms == null || (p.getBedrooms() != null && p.getBedrooms().intValue() == bedrooms))
                 .collect(Collectors.toList());
 
         // Selecting an academic year bumps properties available that year to the
@@ -523,7 +521,6 @@ public class AdminController {
         model.addAttribute("selectedCity", city);
         model.addAttribute("minPrice", minPrice);
         model.addAttribute("maxPrice", maxPrice);
-        model.addAttribute("bedrooms", bedrooms);
         model.addAttribute("totalListings", propertyRepository.findAll().size());
         model.addAttribute("academicYearOptions", academicYearOptions);
         model.addAttribute("selectedAcademicYear", selectedYear != null ? selectedYear : currentYear);
@@ -546,7 +543,7 @@ public class AdminController {
         // already maps "Approved" back to Active, so this is the only place
         // that needed to change.
         property.setStatus("Active");
-        // FIX: approving a listing only ever flipped status to "Active" and
+        // Approving a listing only ever flipped status to "Active" and
         // never touched isAvailable, so a property created with
         // isAvailable=false stayed "Unavailable"/"Inactive" on the student
         // site and the landlord dashboard even after admin approval — those
@@ -556,12 +553,12 @@ public class AdminController {
         property.setIsAvailable(true);
         propertyRepository.save(property);
 
-        // NEW — landlords previously got zero notification when a listing
-        // was approved. The DB never stores "Approved" (see the comment
-        // above — internally this is just status="Active"), but the
-        // landlord-facing message uses "Approved" throughout since that's
-        // the concept the admin UI actually shows and acted on; nothing
-        // here changes the underlying status value itself.
+        // Landlords get a notification when a listing is approved. The DB
+        // never stores "Approved" (see the comment above — internally this
+        // is just status="Active"), but the landlord-facing message uses
+        // "Approved" throughout since that's the concept the admin UI
+        // actually shows and acted on; nothing here changes the underlying
+        // status value itself.
         Optional<User> approvedLandlordOpt = userRepository.findById(property.getLandlordID());
         approvedLandlordOpt.ifPresent(landlordUser -> {
             com.ulee.ulee_backend.model.Notification notification = new com.ulee.ulee_backend.model.Notification();
@@ -591,9 +588,9 @@ public class AdminController {
         property.setStatus("Rejected");
         propertyRepository.save(property);
 
-        // NEW — same reasoning as approveListing() above: notify the
-        // landlord so a rejection isn't only visible by the listing
-        // silently disappearing from "Pending" on their own dashboard.
+        // Same reasoning as approveListing() above: notify the landlord so a
+        // rejection isn't only visible by the listing silently disappearing
+        // from "Pending" on their own dashboard.
         Optional<User> rejectedLandlordOpt = userRepository.findById(property.getLandlordID());
         rejectedLandlordOpt.ifPresent(landlordUser -> {
             com.ulee.ulee_backend.model.Notification notification = new com.ulee.ulee_backend.model.Notification();
@@ -896,13 +893,12 @@ public class AdminController {
         return "redirect:/admin/reported-listing/" + propertyId;
     }
 
-    // FIX: suspending a listing recorded the action in the Dashboard's
-    // Recent Activity log (via logActivity below) but never actually told
-    // the landlord — no Notification row was created, so the landlord's own
-    // bell (fragments/landlord-notifications.html) never showed anything
-    // and they'd only discover the suspension by noticing the listing was
-    // gone. Now mirrors the same in-app notification pattern already used
-    // by warnLandlordForListing()/warnUser()/deactivateUser().
+    // Suspending a listing records the action in the Dashboard's Recent
+    // Activity log (via logActivity below) and also notifies the landlord, so
+    // their own bell (fragments/landlord-notifications.html) shows it instead
+    // of them discovering the suspension by noticing the listing is gone.
+    // Mirrors the in-app notification pattern already used by
+    // warnLandlordForListing()/warnUser()/deactivateUser().
     @PostMapping("/admin/suspend-listing/{id}")
     public String suspendListing(@PathVariable Integer id, RedirectAttributes redirectAttributes) {
         Optional<Property> propertyOpt = propertyRepository.findById(id);
@@ -917,7 +913,7 @@ public class AdminController {
         property.setReportReason(null);
         propertyRepository.save(property);
 
-        // NEW — notify the landlord
+        // Notify the landlord
         Optional<User> landlordUserOpt = userRepository.findById(property.getLandlordID());
         if (landlordUserOpt.isPresent()) {
             User landlordUser = landlordUserOpt.get();
@@ -1002,7 +998,7 @@ public class AdminController {
         reportRepository.deleteAll(reportRepository.findByPropertyIDOrderByReportedAtAsc(propertyId));
         reviewRepository.deleteAll(reviewRepository.findByPropertyID(propertyId));
         propertyImageRepository.deleteAll(propertyImageRepository.findByPropertyID(propertyId));
-        // FIX: application_document has an FK to application.applicationID
+        // application_document has an FK to application.applicationID
         // (application_document_ibfk_1), so its rows must go before the
         // applications themselves or the delete fails.
         jdbcTemplate.update("DELETE FROM application_document WHERE applicationID IN (SELECT applicationID FROM application WHERE propertyID = ?)", propertyId);
@@ -1041,19 +1037,55 @@ public class AdminController {
         List<Property> approvedProperties = propertyRepository.findByStatusIn(List.of("Approved", "Active"));
         List<Property> reportedProperties = propertyRepository.findByIsReportedTrue();
 
-        // Hero carousel slides 1 & 2: the 2 most recently submitted pending
-        // listings, each with a real applicant count for its stat pill.
+        // Hero carousel: only the few newest pending listings are featured
+        // here, each with a real applicant count for its stat pill. The rest
+        // of the queue lives on the Review Properties tab — the template adds
+        // a "+ N more awaiting review" slide linking there when
+        // totalPending is larger than what's shown.
+        final int HERO_PENDING_LIMIT = 3;
         List<Property> latestPendingForHero = pendingProperties.stream()
                 .sorted(Comparator.comparing(
                         (Property p) -> p.getCreatedAt() != null ? p.getCreatedAt() : LocalDateTime.MIN,
                         Comparator.reverseOrder()))
-                .limit(2)
+                .limit(HERO_PENDING_LIMIT)
                 .collect(Collectors.toList());
         Map<Integer, Long> heroApplicantCounts = applicationRepository.findAll().stream()
                 .filter(a -> a.getPropertyID() != null)
                 .collect(Collectors.groupingBy(Application::getPropertyID, Collectors.counting()));
         model.addAttribute("latestPendingForHero", latestPendingForHero);
         model.addAttribute("heroApplicantCounts", heroApplicantCounts);
+
+        // Hero slide: the live/approved property with the lowest average rating,
+        // so admins can spot a quality problem, not just a submission waiting for
+        // approval. Separate concept from latestPendingForHero — that's about NEW
+        // listings; this is about ALREADY-LIVE ones that may need a closer look.
+        // Only considered if it has at least one real review, so a brand-new
+        // approved property with zero reviews isn't flagged just for having no
+        // data yet.
+        Map<Integer, List<Review>> reviewsByProperty = allReviews.stream()
+                .filter(r -> r.getPropertyID() != null)
+                .collect(Collectors.groupingBy(Review::getPropertyID));
+
+        Property lowRatedProperty = null;
+        double lowRatedAverage = 0;
+        long lowRatedReviewCount = 0;
+        for (Property approved : approvedProperties) {
+            List<Review> propReviews = reviewsByProperty.get(approved.getPropertyID());
+            if (propReviews == null || propReviews.isEmpty()) continue;
+            double avg = propReviews.stream()
+                    .filter(r -> r.getRating() != null)
+                    .mapToInt(Review::getRating)
+                    .average()
+                    .orElse(0);
+            if (lowRatedProperty == null || avg < lowRatedAverage) {
+                lowRatedProperty = approved;
+                lowRatedAverage = avg;
+                lowRatedReviewCount = propReviews.size();
+            }
+        }
+        model.addAttribute("lowRatedProperty", lowRatedProperty);
+        model.addAttribute("lowRatedAverage", lowRatedAverage);
+        model.addAttribute("lowRatedReviewCount", lowRatedReviewCount);
 
         int currentYear = java.time.Year.now().getValue();
         List<Integer> academicYearOptions = java.util.Arrays.asList(currentYear - 1, currentYear, currentYear + 1);
@@ -1113,7 +1145,7 @@ public class AdminController {
         model.addAttribute("maxPrice", maxPrice);
         model.addAttribute("selectedType", type);
 
-        // NEW: decide which tab to show server-side, instead of relying on the
+        // Decide which tab to show server-side, instead of relying on the
         // URL's #hash. Show Review Properties if explicitly requested via
         // ?section=review-properties (sidebar link), OR if a filter was just
         // submitted (search/academicYear present) — both mean the admin was
@@ -1137,7 +1169,7 @@ public class AdminController {
         long listingsThisMonth = monthlyCountsList.isEmpty() ? 0 : monthlyCountsList.get(monthlyCountsList.size() - 1);
         model.addAttribute("listingsThisMonth", listingsThisMonth);
 
-        // Same idea for the "Approved" stat card's delta — mirrors the exact
+        // Same idea for the "Active" stat card's delta — mirrors the exact
         // calculation already used on the Approved Properties page.
         YearMonth currentMonth = YearMonth.now();
         long approvedThisMonth = approvedProperties.stream()
@@ -1148,7 +1180,7 @@ public class AdminController {
         // Greeting + today's date for the dashboard header. adminName comes
         // from addCurrentAdmin() (a @ModelAttribute method that runs before
         // every request in this controller) and reflects whoever is actually
-        // logged in, instead of a hardcoded "Sarah".
+        // logged in.
         int hour = LocalDateTime.now().getHour();
         String greeting = hour < 12 ? "Good morning" : (hour < 17 ? "Good afternoon" : "Good evening");
         model.addAttribute("greeting", greeting);
@@ -1184,19 +1216,9 @@ public class AdminController {
     }
 
     /**
-     * Builds the Dashboard's Recent Activity feed from real logged admin
-     * actions (see logActivity()), most recent first. Previously this
-     * inferred "activity" from whichever properties had the newest
-     * createdAt/updatedAt timestamp — which surfaced unrelated data changes
-     * (including ones from seed data) as if an admin had just acted, and
-     * never showed user- or review-related actions at all.
-     */
-    /**
      * Full Activity Log page — everything logActivity() has ever recorded,
      * paginated, newest first. This is what the Dashboard's Recent Activity
-     * "View all" link goes to now, instead of the Listings page it pointed
-     * at before (a leftover from when that feed was built from property
-     * timestamps rather than real admin actions).
+     * "View all" link goes to.
      */
     @GetMapping("/admin/activity-log")
     public String viewActivityLog(Model model, @RequestParam(required = false, defaultValue = "1") Integer page) {
@@ -1228,6 +1250,10 @@ public class AdminController {
         return "admin/admin-activity-log";
     }
 
+    /**
+     * Builds the Dashboard's Recent Activity feed from real logged admin
+     * actions (see logActivity()), most recent first.
+     */
     private List<ActivityItem> buildRecentActivity() {
         DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("MMM d, h:mm a");
 
@@ -1380,8 +1406,6 @@ public class AdminController {
         if (property.getAddress() == null || property.getAddress().isBlank()) issues.add("Missing address");
         if (property.getCity() == null || property.getCity().isBlank()) issues.add("Missing city");
         if (property.getRent() == null) issues.add("Missing rent amount");
-        if (property.getBedrooms() == null) issues.add("Missing bedroom count");
-        if (property.getBathrooms() == null) issues.add("Missing bathroom count");
         if (property.getDescription() == null || property.getDescription().isBlank()) issues.add("Missing description");
         if (propertyImageRepository.findByPropertyID(property.getPropertyID()).isEmpty()) issues.add("No property images uploaded");
 
@@ -1578,9 +1602,9 @@ public class AdminController {
         // already blocks their next login via isActive, but nothing
         // previously told them why. This won't reach them before that
         // blocked attempt, but it's waiting for them once reactivated.
-        // NOTE: message now also mentions that new listings can't be added
+        // NOTE: message also mentions that new listings can't be added
         // while deactivated (see PropertyController's listPropertyForm /
-        // listProperty, which now check isActive before allowing either).
+        // listProperty, which check isActive before allowing either).
         com.ulee.ulee_backend.model.Notification notification = new com.ulee.ulee_backend.model.Notification();
         if (landlordRepository.existsById(id)) {
             notification.setLandlordID(id);
@@ -1857,12 +1881,11 @@ public class AdminController {
         }
         User user = userOpt.get();
 
-        // The actual check the person asked for: current password must
-        // match what's in the database. passwordEncoder.matches() hashes
-        // the submitted value the same way it was hashed at signup/last
-        // change and compares hashes — never compare raw strings against
-        // user.getPassword() directly, since that column is a hash, not
-        // plaintext.
+        // The current password must match what's in the database.
+        // passwordEncoder.matches() hashes the submitted value the same way
+        // it was hashed at signup/last change and compares hashes — never
+        // compare raw strings against user.getPassword() directly, since
+        // that column is a hash, not plaintext.
         if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
             return Map.of("success", false, "message", "Current password is incorrect.");
         }
@@ -1923,7 +1946,7 @@ public class AdminController {
                 // only ever cleaned up by propertyID (in deletePropertyCascade),
                 // never here.
                 jdbcTemplate.update("DELETE FROM review WHERE studentID = ?", id);
-                // FIX: clear the documents attached to this student's
+                // Clear the documents attached to this student's
                 // applications first (application_document FK).
                 jdbcTemplate.update("DELETE FROM application_document WHERE applicationID IN (SELECT applicationID FROM application WHERE studentID = ?)", id);
                 jdbcTemplate.update("DELETE FROM application WHERE studentID = ?", id);

@@ -69,12 +69,7 @@ public class SwaiApiController {
 
         dto.setSuburb(p.getSuburb());
         dto.setDeposit(p.getDeposit());
-        dto.setBedrooms(p.getBedrooms());
-        dto.setBathrooms(p.getBathrooms());
         dto.setCapacity(p.getCapacity());
-        dto.setFurnished(p.getFurnished());
-        dto.setStudyFriendly(p.getStudyFriendly());
-        dto.setDistanceFromUniversity(p.getDistanceFromUniversity());
         dto.setRating(p.getRating());
         dto.setReviewCount(p.getReviewCount());
         dto.setAvailableFrom(p.getAvailableFrom() == null ? null : p.getAvailableFrom().toString());
