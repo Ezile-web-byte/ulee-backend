@@ -74,14 +74,7 @@
                                 <div class="stat-num" th:text="${property.rent} ?: 'N/A'">Rent</div>
                                 <div class="stat-label">Rent / month (R)</div>
                             </div>
-                            <div class="stat-card">
-                                <div class="stat-num" th:text="${property.bedrooms} ?: 'N/A'">0</div>
-                                <div class="stat-label">Bedrooms</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-num" th:text="${property.bathrooms} ?: 'N/A'">0</div>
-                                <div class="stat-label">Bathrooms</div>
-                            </div>
+
                             <div class="stat-card">
                                 <div class="stat-num" th:text="${property.rating} ?: 'N/A'">Rating</div>
                                 <div class="stat-label">Avg Rating</div>
@@ -103,32 +96,38 @@
                         </div>
 
                         <div class="field-group">
-                            <label class="field-label">Type / Furnished / Study Friendly</label>
-                            <p th:text="(${property.type} ?: 'Unspecified type') + (${property.furnished} ? ' · Furnished' : ' · Unfurnished') + (${property.studyFriendly} ? ' · Study-friendly' : '')">
-                                Type
-                            </p>
+                            <label class="field-label">Type</label>
+                            <p th:text="${property.type} ?: 'Unspecified type'">Type</p>
                         </div>
 
                         <div class="field-group">
-                            <label class="field-label">Deposit / Area</label>
-                            <p th:text="'R' + (${property.deposit} ?: 'N/A') + ' deposit · ' + (${property.area} ?: 'N/A') + ' m²'">Deposit / Area</p>
+                            <label class="field-label">Deposit</label>
+                            <p th:text="'R' + (${property.deposit} ?: 'N/A') + ' deposit'">Deposit</p>
                         </div>
 
                         <div class="field-group">
-                            <label class="field-label">Suburb / Municipality</label>
-                            <p th:text="(${property.suburb} ?: 'Not specified') + ', ' + (${property.municipality} ?: 'Not specified')">Suburb</p>
+                            <label class="field-label">Suburb</label>
+                            <p th:text="${property.suburb} ?: 'Not specified'">Suburb</p>
                         </div>
 
                         <div class="field-group">
-                            <label class="field-label">Available From / Distance from University</label>
-                            <p th:text="(${property.availableFrom} ?: 'Not specified') + ' · ' + (${property.distanceFromUniversity} ?: 'N/A') + ' km from campus'">Availability</p>
+                            <label class="field-label">Available From</label>
+                            <p th:text="${property.availableFrom} ?: 'Not specified'">Availability</p>
                         </div>
 
                         <div class="field-group">
                             <label class="field-label">Amenities</label>
-                            <p th:if="${property.amenities != null and not #lists.isEmpty(property.amenities)}"
-                               th:text="${#strings.listJoin(property.amenities.![name], ', ')}">Amenities list</p>
-                            <p th:if="${property.amenities == null or #lists.isEmpty(property.amenities)}">No amenities specified</p>
+
+                            <p th:if="${property.amenities != null and not #lists.isEmpty(property.amenities)}">
+                              <span th:each="amenity, iterStat : ${property.amenities}">
+                               <span th:text="${amenity.name}">Amenity</span>
+                               <span th:if="${!iterStat.last}">, </span>
+                               </span>
+                            </p>
+
+                            <p th:if="${property.amenities == null or #lists.isEmpty(property.amenities)}">
+                                No amenities specified
+                            </p>
                         </div>
 
                         <!-- B100 — Approve/Reject only offered while the listing is still Pending.

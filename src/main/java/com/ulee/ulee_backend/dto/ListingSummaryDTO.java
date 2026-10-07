@@ -23,12 +23,7 @@ public class ListingSummaryDTO {
     // ---- Extra details so the AI can answer questions about any listing ----
     private String suburb;
     private BigDecimal deposit;
-    private Integer bedrooms;
-    private Integer bathrooms;
     private Integer capacity;
-    private Boolean furnished;
-    private Boolean studyFriendly;
-    private BigDecimal distanceFromUniversity;
     private BigDecimal rating;
     private Integer reviewCount;
     private String availableFrom;   // ISO date text, e.g. "2026-10-01"
@@ -80,23 +75,8 @@ public class ListingSummaryDTO {
     public BigDecimal getDeposit() { return deposit; }
     public void setDeposit(BigDecimal deposit) { this.deposit = deposit; }
 
-    public Integer getBedrooms() { return bedrooms; }
-    public void setBedrooms(Integer bedrooms) { this.bedrooms = bedrooms; }
-
-    public Integer getBathrooms() { return bathrooms; }
-    public void setBathrooms(Integer bathrooms) { this.bathrooms = bathrooms; }
-
     public Integer getCapacity() { return capacity; }
     public void setCapacity(Integer capacity) { this.capacity = capacity; }
-
-    public Boolean getFurnished() { return furnished; }
-    public void setFurnished(Boolean furnished) { this.furnished = furnished; }
-
-    public Boolean getStudyFriendly() { return studyFriendly; }
-    public void setStudyFriendly(Boolean studyFriendly) { this.studyFriendly = studyFriendly; }
-
-    public BigDecimal getDistanceFromUniversity() { return distanceFromUniversity; }
-    public void setDistanceFromUniversity(BigDecimal distanceFromUniversity) { this.distanceFromUniversity = distanceFromUniversity; }
 
     public BigDecimal getRating() { return rating; }
     public void setRating(BigDecimal rating) { this.rating = rating; }

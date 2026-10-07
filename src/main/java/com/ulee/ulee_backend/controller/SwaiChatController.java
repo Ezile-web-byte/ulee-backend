@@ -512,7 +512,7 @@ public class SwaiChatController {
 
         sb.append("\nCurrent available ULEE listings (the only ones you may mention). "
                 + "Some lines show only the basics. If the student wants a detail that is not shown "
-                + "(features, deposit, bedrooms, distance, availability, rating), say you can check it and ask "
+                + "(features, deposit, distance, availability, rating), say you can check it and ask "
                 + "which listing they mean. Never guess a detail that is not listed.\n");
         String block = listingsText(req);
         if (block == null) {
@@ -611,15 +611,8 @@ public class SwaiChatController {
             parts.add("deposit: R" + l.getDeposit().stripTrailingZeros().toPlainString());
         }
         if (notBlank(l.getType())) parts.add("room type: " + l.getType());
-        if (l.getBedrooms() != null) parts.add("bedrooms: " + l.getBedrooms());
-        if (l.getBathrooms() != null) parts.add("bathrooms: " + l.getBathrooms());
         if (l.getCapacity() != null) parts.add("holds " + l.getCapacity() + " student(s)");
-        if (l.getFurnished() != null) parts.add("furnished: " + (l.getFurnished() ? "yes" : "no"));
-        if (l.getStudyFriendly() != null) parts.add("study friendly: " + (l.getStudyFriendly() ? "yes" : "no"));
         if (notBlank(l.getCommuteType())) parts.add("getting to campus: " + l.getCommuteType());
-        if (l.getDistanceFromUniversity() != null) {
-            parts.add("distance from university: " + l.getDistanceFromUniversity().stripTrailingZeros().toPlainString() + " km");
-        }
         if (l.getRating() != null) {
             parts.add("rating: " + l.getRating().stripTrailingZeros().toPlainString()
                     + (l.getReviewCount() != null ? " (" + l.getReviewCount() + " reviews)" : ""));
