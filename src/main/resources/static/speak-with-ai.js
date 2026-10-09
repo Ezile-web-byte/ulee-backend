@@ -111,12 +111,107 @@
    * vs. assistant messages differently.
    */
   function renderMessage(message) {
-    var el = document.createElement('div');
-    el.className = 'swai-msg ' + (message.sender === 'user' ? 'swai-msg-user' : 'swai-msg-assistant');
-    el.textContent = message.text;
-    historyEl.appendChild(el);
-    historyEl.scrollTop = historyEl.scrollHeight;
+      var el = document.createElement('div');
+      el.className = 'swai-msg ' + (message.sender === 'user' ? 'swai-msg-user' : 'swai-msg-assistant');
+
+      var ids = [];
+      if (message.sender === 'user') {
+          el.textContent = message.text;
+      } else {
+          ids = listingIdsIn(message.text);
+          el.textContent = ids.length ? stripListingPaths(message.text) : message.text;
+      }
+
+      historyEl.appendChild(el);
+
+      if (ids.length) {
+          fetchListings().then(function (listings) {
+              ids.forEach(function (id) {
+                  var found = null;
+                  (listings || []).forEach(function (l) {
+                      if (String(l.id) === String(id)) found = l;
+                  });
+                  historyEl.appendChild(buildListingCard(id, found));
+              });
+              historyEl.scrollTop = historyEl.scrollHeight;
+          });
+      }
+
+      historyEl.scrollTop = historyEl.scrollHeight;
   }
+
+    // ---- Clickable cards for rooms the AI recommends ----
+
+    /** Matches the "/property/12" paths the AI writes when it recommends a room. */
+    var LISTING_PATH_RE = /\/property\/(\d+)/g;
+
+    /** Up to 3 distinct room ids mentioned in an AI message. */
+    function listingIdsIn(text) {
+        var ids = [];
+        var m;
+        LISTING_PATH_RE.lastIndex = 0;
+        while ((m = LISTING_PATH_RE.exec(String(text))) !== null) {
+            if (ids.indexOf(m[1]) === -1) ids.push(m[1]);
+        }
+        return ids.slice(0, 3);
+    }
+
+    /** Removes "/property/12" paths (and the empty brackets left behind) from AI text. */
+    function stripListingPaths(text) {
+        return String(text)
+            .replace(/\s*[\(\[]\s*\/property\/\d+\s*[\)\]]/g, '')
+            .replace(/\s*\/property\/\d+/g, '')
+            .replace(/[ \t]{2,}/g, ' ')
+            .trim();
+    }
+
+    /** A card with photo, name, price and a "View & Apply" button for one room. */
+    function buildListingCard(id, listing) {
+        var card = document.createElement('div');
+        card.className = 'swai-result-card';
+        card.style.cssText = 'margin:4px 8px 10px;border:1px solid #d9e2e7;border-radius:12px;overflow:hidden;background:#fff;';
+
+        if (listing && listing.imageUrl) {
+            var img = document.createElement('img');
+            img.src = listing.imageUrl;
+            img.alt = listing.title || 'Room photo';
+            img.style.cssText = 'width:100%;height:110px;object-fit:cover;display:block;';
+            img.onerror = function () { img.style.display = 'none'; };
+            card.appendChild(img);
+        }
+
+        var body = document.createElement('div');
+        body.style.cssText = 'padding:10px 12px;';
+
+        var name = document.createElement('div');
+        name.style.cssText = 'font-weight:600;';
+        name.textContent = listing && listing.title ? listing.title : 'View this room';
+        body.appendChild(name);
+
+        if (listing) {
+            var bits = [];
+            if (listing.rent != null) bits.push('R' + listing.rent + ' per month');
+            if (listing.type) bits.push(listing.type);
+            var area = listing.suburb || listing.city;
+            if (area) bits.push(area);
+            if (bits.length) {
+                var meta = document.createElement('div');
+                meta.style.cssText = 'font-size:13px;opacity:.8;margin-top:2px;';
+                meta.textContent = bits.join(' | ');
+                body.appendChild(meta);
+            }
+        }
+
+        var link = document.createElement('a');
+        link.className = 'swai-result-apply';
+        link.href = '/property/' + id;
+        link.textContent = 'View & Apply';
+        link.style.cssText = 'display:inline-block;margin-top:8px;';
+        body.appendChild(link);
+
+        card.appendChild(body);
+        return card;
+    }
 
   /**
    * Builds a message object, appends it to the closure-scoped `messages`

@@ -72,7 +72,13 @@ public class SwaiChatService {
         this.aiService = aiService;
     }
 
+    /** Chat turn for a visitor whose name is not known. */
     public ChatResponseDTO handle(ChatRequestDTO request) {
+        return handle(request, null);
+    }
+
+    /** Chat turn; studentFirstName is the logged-in student's first name, or null. */
+    public ChatResponseDTO handle(ChatRequestDTO request, String studentFirstName) {
         String message = request == null ? null : request.getMessage();
 
         if (message == null || message.isBlank()) {
@@ -99,10 +105,10 @@ public class SwaiChatService {
                 isNeighbourhoodQuestion(message);
 
         if (isNeighbourhoodQuestion) {
-            return handleNeighbourhoodQuestion(message, property);
+            return handleNeighbourhoodQuestion(message, property, studentFirstName);
         }
 
-        return handleGeneralOrPropertyQuestion(message, property);
+        return handleGeneralOrPropertyQuestion(message, property, studentFirstName);
     }
 
     /** Pure, deterministic intent check — no network/LLM call. */
@@ -120,7 +126,8 @@ public class SwaiChatService {
 
     private ChatResponseDTO handleNeighbourhoodQuestion(
             String message,
-            Property property
+            Property property,
+            String studentFirstName
     ) {
         if (property == null
                 || property.getLatitude() == null
@@ -152,7 +159,8 @@ public class SwaiChatService {
         // go to the LLM, since the prompt built below always states
         // explicitly what was and wasn't found.
         String systemPrompt =
-                buildNeighbourhoodSystemPrompt(
+                friendlyIntro(studentFirstName)
+                        + buildNeighbourhoodSystemPrompt(
                         property,
                         placesResult.getPlaces()
                 );
@@ -162,12 +170,14 @@ public class SwaiChatService {
 
     private ChatResponseDTO handleGeneralOrPropertyQuestion(
             String message,
-            Property property
+            Property property,
+            String studentFirstName
     ) {
         // Never calls PlacesService here — a non-neighbourhood question
         // has no reason to spend an external Places API call.
         String systemPrompt =
-                buildPropertyOrGeneralSystemPrompt(property);
+                friendlyIntro(studentFirstName)
+                        + buildPropertyOrGeneralSystemPrompt(property);
 
         return generateReplyOrFallback(systemPrompt, message);
     }
@@ -187,6 +197,36 @@ public class SwaiChatService {
             // name, or any key to the user — only this generic fallback.
             return new ChatResponseDTO(AI_UNAVAILABLE_FALLBACK);
         }
+    }
+
+    /** Tone, plus (when known) the student's first name, placed at the top of every prompt. */
+    private String friendlyIntro(String studentFirstName) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Tone: be warm, upbeat and encouraging, like a friendly older student helping a ");
+        sb.append("newcomer. Keep replies short (2-5 sentences), in plain text with no markdown. ");
+        sb.append("Ask at most one short follow-up question. ");
+
+        String name = cleanFirstName(studentFirstName);
+        if (name != null) {
+            sb.append("The student's first name is ").append(name);
+            sb.append(". Greet them by name when they greet you, and use it occasionally, ");
+            sb.append("but do not repeat it in every sentence.\n\n");
+        } else {
+            sb.append("You do not know the student's name, so do not guess one.\n\n");
+        }
+        return sb.toString();
+    }
+
+    /** Keeps only letters, spaces, hyphens and apostrophes (max 30 chars) so a name can't carry instructions. */
+    private String cleanFirstName(String raw) {
+        if (raw == null) {
+            return null;
+        }
+        String cleaned = raw.replaceAll("[^\\p{L} '\\-]", "").trim();
+        if (cleaned.isEmpty()) {
+            return null;
+        }
+        return cleaned.length() > 30 ? cleaned.substring(0, 30).trim() : cleaned;
     }
 
     /**
@@ -262,11 +302,7 @@ public class SwaiChatService {
         prompt.append("clearly instead of guessing. Answer in concise, student-friendly language.\n\n");
 
         if (property == null) {
-            prompt.append(
-                    "No specific property is currently in view. Answer generally about "
-                            + "ULEE student accommodation, or ask the student to open a specific "
-                            + "property if their question is about one listing.\n"
-            );
+            prompt.append(buildListingsContext());
         } else {
             appendPropertyFacts(prompt, property);
         }
@@ -326,6 +362,48 @@ public class SwaiChatService {
                     .append(property.getDescription())
                     .append("\n");
         }
+    }
+
+    /** Lists the available ULEE rooms so the AI can recommend real ones when no property is open. */
+    private String buildListingsContext() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("No specific property is currently in view. Below are the ULEE rooms available ")
+                .append("right now. When the student asks about rooms, budget, room type or location, ")
+                .append("recommend ONLY rooms from this list. Name the room, its area, its rent per ")
+                .append("month and its link path exactly as written, for example: Name (/property/12). ")
+                .append("Never invent rooms, prices, lease lengths, facilities or availability. ")
+                .append("If nothing on the list fits, say so plainly. Use plain text, no markdown.\n");
+
+        List<Property> available = propertyRepository.findByIsAvailableTrue();
+        if (available == null || available.isEmpty()) {
+            sb.append("(There are no available rooms listed right now.)\n");
+            return sb.toString();
+        }
+
+        int shown = 0;
+        for (Property p : available) {
+            if (shown >= 40) {
+                break;
+            }
+            shown++;
+            sb.append("- ").append(valueOrUnknown(p.getTitle()))
+                    .append(" (/property/").append(p.getPropertyID()).append(")");
+            String area = (p.getSuburb() != null && !p.getSuburb().isBlank()) ? p.getSuburb() : p.getCity();
+            if (area != null && !area.isBlank()) {
+                sb.append(" | ").append(area);
+            }
+            if (p.getRent() != null) {
+                sb.append(" | R").append(p.getRent().stripTrailingZeros().toPlainString()).append("/month");
+            }
+            if (p.getType() != null && !p.getType().isBlank()) {
+                sb.append(" | ").append(p.getType());
+            }
+            if (p.getCommuteType() != null && !p.getCommuteType().isBlank()) {
+                sb.append(" | to campus: ").append(p.getCommuteType());
+            }
+            sb.append("\n");
+        }
+        return sb.toString();
     }
 
     private String valueOrUnknown(String value) {

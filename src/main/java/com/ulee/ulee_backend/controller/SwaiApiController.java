@@ -9,6 +9,7 @@ import com.ulee.ulee_backend.model.PropertyFeature;
 import com.ulee.ulee_backend.model.PropertyImage;
 import com.ulee.ulee_backend.repository.PropertyImageRepository;
 import com.ulee.ulee_backend.repository.PropertyRepository;
+import com.ulee.ulee_backend.repository.UserRepository;
 import com.ulee.ulee_backend.service.SwaiChatService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +48,8 @@ public class SwaiApiController {
     private PropertyImageRepository propertyImageRepository;
     @Autowired
     private SwaiChatService swaiChatService;
+    @Autowired
+    private UserRepository userRepository;
 
     // Same findByIsAvailableTrue() query the student dashboard uses, and the
     // same "first image per property" lookup pattern from
@@ -78,9 +82,26 @@ public class SwaiApiController {
     // required = false so a missing/empty body becomes a null ChatRequestDTO
     // here rather than a 400 — the service treats a null request the same
     // as a null/blank message.
+    // principal is null for visitors who are not logged in; for logged-in
+    // students it carries their email, which is used only to look up their
+    // first name so the assistant can greet them.
     @PostMapping("/api/swai/chat")
-    public ChatResponseDTO chat(@RequestBody(required = false) ChatRequestDTO request) {
-        return swaiChatService.handle(request);
+    public ChatResponseDTO chat(@RequestBody(required = false) ChatRequestDTO request, Principal principal) {
+        return swaiChatService.handle(request, firstNameOf(principal));
+    }
+
+    /** First name of the logged-in user, or null when nobody is logged in or the lookup fails. */
+    private String firstNameOf(Principal principal) {
+        if (principal == null) {
+            return null;
+        }
+        try {
+            return userRepository.findByEmail(principal.getName())
+                    .map(u -> u.getFirstName())
+                    .orElse(null);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private ListingSummaryDTO toDto(Property p, String imageUrl) {

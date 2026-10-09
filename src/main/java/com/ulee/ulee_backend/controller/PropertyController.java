@@ -1507,8 +1507,40 @@ public class PropertyController {
     // A200 — View Applications (student's own)
     @GetMapping("/my-applications")
     public String viewApplications(Model model, Principal principal) {
-        Integer studentID = getCurrentUser(principal).getUserID();
-        model.addAttribute("applications", applicationRepository.findByStudentID(studentID));
+        User currentUser = getCurrentUser(principal);
+        Integer studentID = currentUser.getUserID();
+
+        // Newest first so the most recent application is at the top.
+        List<Application> applications = applicationRepository.findByStudentID(studentID).stream()
+                .sorted(Comparator.comparing(Application::getApplicationDate,
+                        Comparator.nullsLast(Comparator.reverseOrder())))
+                .collect(Collectors.toList());
+
+        // FIX: the old template read ${propertyNames[...]} and ${currentUserName},
+        // but neither was ever set — indexing the null map threw during render
+        // as soon as a student had an application. Now supplies the full
+        // Property per application (title, photo, suburb, rent) in one
+        // findAllById call; a deleted property is just absent from the map.
+        List<Integer> propertyIds = applications.stream()
+                .map(Application::getPropertyID)
+                .distinct()
+                .collect(Collectors.toList());
+        Map<Integer, Property> applicationProperties = propertyRepository.findAllById(propertyIds).stream()
+                .collect(Collectors.toMap(Property::getPropertyID, p -> p, (a, b) -> a));
+
+        String lastName = currentUser.getLastName();
+        String initials = ("" + currentUser.getFirstName().charAt(0)
+                + (lastName != null && !lastName.isBlank() ? lastName.charAt(0) : "")).toUpperCase();
+
+        model.addAttribute("applications", applications);
+        model.addAttribute("applicationProperties", applicationProperties);
+        model.addAttribute("currentUserName", currentUser.getFirstName());
+        model.addAttribute("userInitials", initials);
+        model.addAttribute("totalApplications", applications.size());
+        model.addAttribute("pendingCount", applications.stream().filter(a -> "Pending".equalsIgnoreCase(a.getStatus())).count());
+        model.addAttribute("acceptedCount", applications.stream().filter(a -> "Accepted".equalsIgnoreCase(a.getStatus())).count());
+        model.addAttribute("rejectedCount", applications.stream().filter(a -> "Rejected".equalsIgnoreCase(a.getStatus())).count());
+        model.addAttribute("savedCount", savedPropertyRepository.findByStudentID(studentID).size());
         // FIX: this template was moved to templates/student/my-applications.html
         // during the frontend reorg — returning "my-applications" here throws
         // Thymeleaf's TemplateInputException ("template might not exist").
@@ -1522,16 +1554,116 @@ public class PropertyController {
         return "redirect:/my-applications";
     }
 
+    // FIX: this always inserted a new row, so clicking the heart repeatedly
+    // (or on an already-saved property) just kept creating duplicates — the
+    // heart never actually "unsaved" anything. Now toggles: if a saved row
+    // already exists for this student+property, every matching row is
+    // removed (self-healing any duplicate rows left over from before this
+    // fix); otherwise exactly one new row is inserted. Also returns to
+    // whichever page the request came from (dashboard or saved-properties)
+    // instead of hardcoding /student-dashboard, so unsaving from the Saved
+    // Properties page doesn't bounce the student away from it.
     @PostMapping("/favorite/{propertyId}")
-    public String addFavorite(@PathVariable Integer propertyId, Principal principal) {
+    public String addFavorite(@PathVariable Integer propertyId,
+                               @RequestParam(required = false) String returnTo,
+                               Principal principal) {
         Integer studentID = getCurrentUser(principal).getUserID();
 
-        SavedProperty saved = new SavedProperty();
-        saved.setStudentID(studentID);
-        saved.setPropertyID(propertyId);
-        saved.setSavedStatus(true);
-        savedPropertyRepository.save(saved);
-        return "redirect:/student-dashboard";
+        List<SavedProperty> existing = savedPropertyRepository.findByStudentIDAndPropertyID(studentID, propertyId);
+        if (!existing.isEmpty()) {
+            savedPropertyRepository.deleteAll(existing);
+        } else {
+            SavedProperty saved = new SavedProperty();
+            saved.setStudentID(studentID);
+            saved.setPropertyID(propertyId);
+            saved.setSavedStatus(true);
+            savedPropertyRepository.save(saved);
+        }
+
+        boolean safeReturnTo = "/saved-properties".equals(returnTo) || "/student-dashboard".equals(returnTo);
+        return "redirect:" + (safeReturnTo ? returnTo : "/student-dashboard");
+    }
+
+    // Saved Properties page — lists every property this student has saved.
+    @GetMapping("/saved-properties")
+    public String viewSavedProperties(Model model, Principal principal) {
+        User currentUser = getCurrentUser(principal);
+        Integer studentID = currentUser.getUserID();
+
+        List<Integer> savedPropertyIds = savedPropertyRepository.findByStudentID(studentID).stream()
+                .map(SavedProperty::getPropertyID)
+                .collect(Collectors.toList());
+
+        List<Property> savedProperties = propertyRepository.findAllById(savedPropertyIds);
+
+        // Sidebar/top-bar data shared with My Dashboard and My Applications.
+        String lastName = currentUser.getLastName();
+        String initials = ("" + currentUser.getFirstName().charAt(0)
+                + (lastName != null && !lastName.isBlank() ? lastName.charAt(0) : "")).toUpperCase();
+        model.addAttribute("currentUserFirstName", currentUser.getFirstName());
+        model.addAttribute("userInitials", initials);
+        model.addAttribute("savedCount", savedProperties.size());
+        model.addAttribute("totalApplications", applicationRepository.findByStudentID(studentID).size());
+
+        model.addAttribute("properties", savedProperties);
+        return "saved-properties";
+    }
+
+    // My Dashboard — the student's personal overview: saved/pending/accepted
+    // counts, a short preview of saved properties, and a short preview of
+    // recent applications. Both previews reuse the exact lists the
+    // dedicated Saved Properties / My Applications pages already load.
+    @GetMapping("/my-dashboard")
+    public String viewMyDashboard(Model model, Principal principal) {
+        User currentUser = getCurrentUser(principal);
+        Integer studentID = currentUser.getUserID();
+
+        List<Integer> savedPropertyIds = savedPropertyRepository.findByStudentID(studentID).stream()
+                .map(SavedProperty::getPropertyID)
+                .collect(Collectors.toList());
+        List<Property> savedProperties = propertyRepository.findAllById(savedPropertyIds);
+
+        List<Application> applications = applicationRepository.findByStudentID(studentID);
+        long pendingCount = applications.stream().filter(a -> "Pending".equalsIgnoreCase(a.getStatus())).count();
+        long acceptedCount = applications.stream().filter(a -> "Accepted".equalsIgnoreCase(a.getStatus())).count();
+
+        long rejectedCount = applications.stream().filter(a -> "Rejected".equalsIgnoreCase(a.getStatus())).count();
+
+        // Most recent applications first, same ordering used elsewhere.
+        List<Application> recentApplications = applications.stream()
+                .sorted(Comparator.comparing(Application::getApplicationDate,
+                        Comparator.nullsLast(Comparator.reverseOrder())))
+                .collect(Collectors.toList());
+        List<Application> applicationsPreview =
+                recentApplications.size() > 4 ? recentApplications.subList(0, 4) : recentApplications;
+
+        // propertyID -> Property for the application cards, so the template
+        // can show the real title / photo / suburb instead of "Property ID: 7".
+        // One findAllById call (same lookup-map pattern as the landlord
+        // dashboard's imageLookup). A deleted property is simply absent from
+        // the map and the template falls back to the ID.
+        List<Integer> appPropertyIds = applicationsPreview.stream()
+                .map(Application::getPropertyID)
+                .distinct()
+                .collect(Collectors.toList());
+        Map<Integer, Property> applicationProperties = propertyRepository.findAllById(appPropertyIds).stream()
+                .collect(Collectors.toMap(Property::getPropertyID, p -> p, (a, b) -> a));
+
+        String lastName = currentUser.getLastName();
+        String initials = ("" + currentUser.getFirstName().charAt(0)
+                + (lastName != null && !lastName.isBlank() ? lastName.charAt(0) : "")).toUpperCase();
+
+        model.addAttribute("currentUserFirstName", currentUser.getFirstName());
+        model.addAttribute("userInitials", initials);
+        model.addAttribute("savedCount", savedProperties.size());
+        model.addAttribute("pendingCount", pendingCount);
+        model.addAttribute("acceptedCount", acceptedCount);
+        model.addAttribute("rejectedCount", rejectedCount);
+        model.addAttribute("totalApplications", applications.size());
+        model.addAttribute("savedPreview", savedProperties.size() > 3 ? savedProperties.subList(0, 3) : savedProperties);
+        model.addAttribute("applicationsPreview", applicationsPreview);
+        model.addAttribute("applicationProperties", applicationProperties);
+        return "student/my-dashboard";
     }
 
     // A500 — Write Review and Rating

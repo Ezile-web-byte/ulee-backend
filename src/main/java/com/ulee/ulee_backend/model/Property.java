@@ -1,6 +1,7 @@
 package com.ulee.ulee_backend.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.BatchSize;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -59,8 +60,12 @@ public class Property {
     // ── Images: read-only link to propertyimage.propertyID.
     //    Uses the existing plain "propertyID" column on PropertyImage directly,
     //    so PropertyImage.java does not need any changes.
+    //    @BatchSize collapses the per-card lazy loads into one IN (...) query per
+    //    page of listings instead of one query per property (N+1 fix for the
+    //    dashboard / browse grids, which read getMainImageUrl() on every card).
     @OneToMany(fetch = FetchType.LAZY)
     @JoinColumn(name = "propertyID", referencedColumnName = "propertyID", insertable = false, updatable = false)
+    @BatchSize(size = 50)
     private List<PropertyImage> images;
 
     // ── Amenities: fixed checklist (Furnished, Private Kitchen, Gym, etc.) via property_amenity join table
@@ -70,11 +75,13 @@ public class Property {
             joinColumns = @JoinColumn(name = "propertyID"),
             inverseJoinColumns = @JoinColumn(name = "amenityID")
     )
+    @BatchSize(size = 50)
     private List<Amenity> amenities;
 
     // ── Special features: landlord-authored extras (Study Hub, Braai Area) each with their own photos
     @OneToMany(fetch = FetchType.LAZY)
     @JoinColumn(name = "propertyID", referencedColumnName = "propertyID", insertable = false, updatable = false)
+    @BatchSize(size = 50)
     private List<PropertyFeature> features;
 
     @Transient

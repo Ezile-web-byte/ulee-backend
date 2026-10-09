@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Saved Properties – ULEE</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
 
     <link rel="stylesheet" href="/speak-with-ai.css">
     <script src="/speak-with-ai-logic.js" defer></script>
@@ -13,266 +15,307 @@
     <script src="/ulee-toast.js" defer></script>
 
     <style>
+        /* ULEE design system palette (ULEE-design-system.md §2) — same as my-dashboard.html */
         :root {
-            --ulee-teal: #006078;
-            --ulee-yellow: #FFDC68;
-            --ulee-yellow-hover: #F8CF4F;
-            --ulee-dark-teal: #004A5E;
-            --ulee-text: #17313A;
-            --ulee-muted: #6E7D83;
-            --ulee-background: #F7F9FA;
-            --ulee-border: #DCE5E8;
-            --ulee-white: #FFFFFF;
-            --hero-yellow: #ffe170;
-            --hero-on-yellow: #221b00;
-            --hero-radius-glass: 16px;
-            --hero-radius-pill: 999px;
+            --primary-dark: #006A6A; --primary-tint: #F4FBFA; --surface-tint: #F0F7F6;
+            --outline-variant: #E6E8E4; --accent-border: #93C0C5;
+            --on-surface: #191c1d; --on-surface-variant: #3f484d; --outline: #6f787d;
+            --accent-yellow: #f5d450; --alert: #ba1a1a;
+            --font-display: 'Plus Jakarta Sans', sans-serif; --font-body: 'Hanken Grotesk', sans-serif;
+            --radius-sm: 10px; --radius-full: 9999px;
+            --sidebar-bg: #071C2D; --sidebar-text: #B7C3CB; --sidebar-logo-teal: #14C8BE;
+            --sidebar-active-bg: #007178; --sidebar-badge-bg: #01A49F;
+            --navy-gradient: linear-gradient(115deg, #071C2D 0%, #0A3A48 55%, #0F6C70 100%);
         }
-
-        * {
-            box-sizing: border-box;
-        }
-
+        * { box-sizing: border-box; }
         body {
-            margin: 0;
-            font-family: 'Hanken Grotesk', sans-serif;
-            background: var(--ulee-background);
-            color: var(--ulee-text);
+            margin: 0; font-family: var(--font-body); color: var(--on-surface); min-height: 100vh;
+            background:
+                radial-gradient(900px 420px at 100% -10%, rgba(20,200,190,.10), transparent 60%),
+                radial-gradient(700px 380px at 20% 110%, rgba(0,113,120,.07), transparent 60%),
+                var(--primary-tint);
         }
+        h1, h2, h3 { font-family: var(--font-display); margin: 0; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; line-height: 1; }
+        .app-shell { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
 
-        .topbar {
-            height: 76px;
-            background: var(--ulee-white);
-            border-bottom: 1px solid var(--ulee-border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 68px;
+        /* Dark sidebar (§5) */
+        .sidebar { background: var(--sidebar-bg); border-right: 1px solid var(--sidebar-active-bg); display: flex; flex-direction: column; height: 100vh; position: sticky; top: 0; overflow-y: auto; padding: 0 20px 24px; }
+        .logo { display: flex; align-items: center; gap: 10px; padding: 26px 0 28px; text-decoration: none; }
+        .logo svg { width: 30px; height: 30px; fill: var(--sidebar-logo-teal); filter: drop-shadow(0 0 6px rgba(20,200,190,.5)); display: block; }
+        .logo-name { font-family: var(--font-display); font-weight: 800; font-size: 22px; line-height: 1; color: var(--sidebar-logo-teal); }
+        .logo-tag { font-size: 10.5px; font-weight: 600; color: var(--sidebar-logo-teal); opacity: .85; margin-top: 3px; }
+        .nav-label { font-size: 10.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: rgba(183,195,203,.55); margin: 8px 0 8px 16px; }
+        .nav-list { display: flex; flex-direction: column; gap: 4px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: var(--radius-sm); font: 600 14px var(--font-body); color: var(--sidebar-text); text-decoration: none; background: none; border: 0; width: 100%; cursor: pointer; text-align: left; transition: background .2s ease, color .2s ease; }
+        .nav-item .material-symbols-outlined { font-size: 20px; }
+        .nav-item:hover { background: rgba(255,255,255,.06); color: #fff; }
+        .nav-item:focus-visible { outline: 2px solid var(--sidebar-logo-teal); outline-offset: 2px; }
+        .nav-item.active { background: var(--sidebar-active-bg); color: #fff; margin: 0 -20px; width: calc(100% + 40px); padding: 12px 36px; border-radius: 0; box-shadow: inset 3px 0 0 var(--sidebar-logo-teal); }
+        .nav-badge { margin-left: auto; background: var(--sidebar-badge-bg); color: #fff; font-size: 11px; font-weight: 700; min-width: 20px; height: 20px; padding: 0 6px; border-radius: var(--radius-full); display: inline-flex; align-items: center; justify-content: center; }
+        .sidebar-foot { margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,.08); }
+        .nav-item.logout { color: #ff9b91; }
+        .nav-item.logout:hover { background: rgba(255,138,128,.08); color: #ffb4ab; }
+
+        /* Main column */
+        .main { min-width: 0; padding: 28px 40px 80px; max-width: 1240px; }
+        .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+        .crumbs { font-size: 13px; color: var(--outline); font-weight: 600; }
+        .crumbs a { color: inherit; text-decoration: none; }
+        .crumbs a:hover { color: var(--primary-dark); }
+        .crumbs strong { color: var(--primary-dark); }
+        .topbar-right { display: flex; align-items: center; gap: 12px; }
+        .chip-btn { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: var(--radius-full); background: #fff; border: 1px solid var(--outline-variant); font-size: 13.5px; font-weight: 700; color: var(--primary-dark); text-decoration: none; transition: border-color .2s, box-shadow .2s; }
+        .chip-btn:hover { border-color: var(--accent-border); box-shadow: 0 4px 14px rgba(7,28,45,.08); }
+        .chip-btn .material-symbols-outlined { font-size: 18px; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #14C8BE, #007178); color: #071C2D; font-family: var(--font-display); font-weight: 800; font-size: 14px; box-shadow: 0 0 0 3px rgba(20,200,190,.25); }
+
+        /* Header banner */
+        .hero { position: relative; overflow: hidden; isolation: isolate; border-radius: 24px; padding: 30px 36px; background: var(--navy-gradient); border: 1.5px solid rgba(20,200,190,.40); box-shadow: 0 18px 40px rgba(7,28,45,.22); color: #fff; margin-bottom: 26px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+        .hero-grid { position: absolute; inset: 0; z-index: -1; background-image: linear-gradient(rgba(20,200,190,.14) 1px, transparent 1px), linear-gradient(90deg, rgba(20,200,190,.14) 1px, transparent 1px); background-size: 44px 44px; -webkit-mask-image: radial-gradient(ellipse 60% 90% at 85% 50%, #000 15%, transparent 75%); mask-image: radial-gradient(ellipse 60% 90% at 85% 50%, #000 15%, transparent 75%); animation: grid-drift 22s linear infinite; }
+        .orb { position: absolute; border-radius: 50%; filter: blur(60px); z-index: -1; pointer-events: none; }
+        .orb.one { width: 300px; height: 300px; right: -60px; top: -120px; background: rgba(20,200,190,.35); animation: orb 14s ease-in-out infinite; }
+        .orb.two { width: 220px; height: 220px; right: 30%; bottom: -120px; background: rgba(245,212,80,.16); animation: orb 18s ease-in-out infinite reverse; }
+        .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 11.5px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: #7DF0E6; margin: 0 0 12px; }
+        .live-dot { position: relative; width: 8px; height: 8px; border-radius: 50%; background: #14C8BE; box-shadow: 0 0 8px #14C8BE; }
+        .live-dot::after { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2px solid #14C8BE; animation: ping 1.8s cubic-bezier(0,0,.2,1) infinite; }
+        .hero h1 { font-size: clamp(28px, 3.2vw, 36px); font-weight: 800; letter-spacing: -.02em; line-height: 1.12; }
+        .text-gradient { background: linear-gradient(90deg, #14C8BE 0%, #7DF0E6 45%, #f5d450 100%); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; animation: text-shine 6s linear infinite; }
+        .lead { margin: 10px 0 0; color: rgba(255,255,255,.72); font-size: 15.5px; line-height: 1.6; max-width: 520px; }
+        .hero-count { text-align: center; padding: 16px 26px; border-radius: 18px; background: rgba(255,255,255,.05); border: 1px solid rgba(20,200,190,.35); }
+        .hero-count-num { font-family: var(--font-display); font-size: 40px; font-weight: 800; line-height: 1; }
+        .hero-count-label { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,.7); margin-top: 6px; display: flex; align-items: center; gap: 6px; justify-content: center; }
+        .hero-count-label .material-symbols-outlined { font-size: 15px; color: #ff8fa3; font-variation-settings: 'FILL' 1; }
+
+        /* Saved property cards */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 20px; }
+        .card { position: relative; background: #fff; border: 1px solid var(--outline-variant); border-radius: 22px; overflow: hidden; box-shadow: 0 6px 24px rgba(7,28,45,.06); transition: border-color .3s, box-shadow .3s, transform .3s; animation: card-in .5s cubic-bezier(.2,.8,.2,1) backwards; display: flex; flex-direction: column; }
+        .card:nth-child(2) { animation-delay: .06s; }
+        .card:nth-child(3) { animation-delay: .12s; }
+        .card:nth-child(4) { animation-delay: .18s; }
+        .card:hover { border-color: rgba(20,200,190,.55); box-shadow: 0 18px 40px rgba(7,28,45,.14), 0 0 0 4px rgba(20,200,190,.06); transform: translateY(-4px); }
+        .card-photo { position: relative; display: block; aspect-ratio: 4 / 3; background: #0A3A48; overflow: hidden; }
+        .card-photo img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .7s ease; }
+        .card:hover .card-photo img { transform: scale(1.08); }
+        .card-photo::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(7,28,45,.65), transparent 55%); pointer-events: none; }
+        .badge { position: absolute; top: 14px; left: 14px; z-index: 2; display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: var(--radius-full); font-size: 10.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #fff; background: rgba(7,28,45,.75); border: 1px solid rgba(20,200,190,.55); backdrop-filter: blur(8px); }
+        .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #14C8BE; box-shadow: 0 0 6px #14C8BE; }
+        .badge.off { background: rgba(186,26,26,.88); border-color: transparent; }
+        .badge.off::before { display: none; }
+        .rent { position: absolute; right: 14px; bottom: 14px; z-index: 2; font-family: var(--font-display); font-weight: 800; font-size: 14px; background: var(--accent-yellow); color: #221b00; padding: 6px 12px; border-radius: var(--radius-full); box-shadow: 0 4px 14px rgba(0,0,0,.25); }
+        .rent small { font-weight: 600; font-size: 11px; }
+        .card-body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+        .card-title { font-size: 17px; font-weight: 800; line-height: 1.3; }
+        .card-title a { color: inherit; text-decoration: none; }
+        .card-title a:hover { color: var(--primary-dark); }
+        .card-loc { margin: 0; font-size: 13px; color: var(--on-surface-variant); display: flex; align-items: center; gap: 4px; }
+        .card-loc .material-symbols-outlined { font-size: 16px; color: #01A49F; }
+        .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+        .chip { padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; background: var(--surface-tint); color: #005454; border: 1px solid rgba(147,192,197,.55); }
+        .card-actions { display: flex; gap: 10px; margin-top: auto; padding-top: 6px; }
+        .card-actions form { margin: 0; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; border-radius: 12px; padding: 10px 16px; font: 700 13.5px var(--font-body); cursor: pointer; text-decoration: none; transition: transform .15s, box-shadow .2s, background .2s, border-color .2s, color .2s; }
+        .btn .material-symbols-outlined { font-size: 17px; }
+        .btn:focus-visible { outline: 2px solid #14C8BE; outline-offset: 2px; }
+        .btn-navy { flex: 1; background: var(--navy-gradient); color: #fff; border: 1px solid rgba(20,200,190,.45); }
+        .btn-navy:hover { box-shadow: 0 8px 22px rgba(7,28,45,.3), 0 0 18px rgba(20,200,190,.25); transform: translateY(-1px); }
+        .btn-remove { width: 44px; height: 44px; padding: 0; border-radius: 50%; background: #fff; border: 1px solid var(--outline-variant); color: #e0526b; }
+        .btn-remove .material-symbols-outlined { font-size: 20px; font-variation-settings: 'FILL' 1; }
+        .btn-remove:hover { border-color: #e0526b; background: #FFF1F3; }
+        .btn-yellow { background: var(--accent-yellow); color: #221b00; border: 1px solid var(--accent-yellow); border-radius: var(--radius-full); }
+        .btn-yellow:hover { box-shadow: 0 0 22px rgba(245,212,80,.5); }
+
+        /* Empty state */
+        .empty { text-align: center; padding: 56px 24px; border-radius: 20px; background: #fff; border: 1.5px dashed var(--accent-border); }
+        .empty-icon { width: 64px; height: 64px; margin: 0 auto 16px; border-radius: 18px; display: flex; align-items: center; justify-content: center; background: var(--navy-gradient); color: #14C8BE; box-shadow: 0 10px 26px rgba(7,28,45,.25); }
+        .empty-icon .material-symbols-outlined { font-size: 30px; }
+        .empty h2 { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+        .empty p { margin: 0 auto 20px; max-width: 420px; color: var(--on-surface-variant); line-height: 1.6; }
+
+        /* Logout modal */
+        .modal { position: fixed; inset: 0; z-index: 1000; display: none; align-items: center; justify-content: center; background: rgba(7,28,45,.6); backdrop-filter: blur(4px); padding: 16px; }
+        .modal.open { display: flex; }
+        .modal-card { background: #fff; border-radius: 22px; padding: 30px; max-width: 380px; width: 100%; text-align: center; border: 1px solid rgba(20,200,190,.3); }
+        .modal-card h2 { font-size: 20px; margin: 12px 0 6px; }
+        .modal-card p { color: var(--on-surface-variant); font-size: 14px; margin: 0 0 22px; }
+        .modal-icon { width: 54px; height: 54px; border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center; background: #FCE9E7; color: var(--alert); }
+        .modal-row { display: flex; gap: 10px; }
+        .modal-row button { flex: 1; padding: 11px; border-radius: var(--radius-full); font: 700 14px var(--font-body); cursor: pointer; }
+        .btn-cancel { background: #fff; border: 1px solid var(--outline-variant); color: var(--on-surface); }
+        .btn-danger { background: var(--alert); border: 1px solid var(--alert); color: #fff; }
+
+        @keyframes grid-drift { to { background-position: 44px 44px; } }
+        @keyframes orb { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-30px,24px) scale(1.12); } }
+        @keyframes text-shine { to { background-position: 200% center; } }
+        @keyframes ping { 75%,100% { transform: scale(2.4); opacity: 0; } }
+        @keyframes card-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+        @media (prefers-reduced-motion: reduce) {
+            .hero-grid, .orb, .text-gradient, .live-dot::after, .card { animation: none !important; }
+            .card:hover, .btn-navy:hover { transform: none; }
         }
-
-        .brand {
-            display: flex;
-            flex-direction: column;
-            line-height: 1;
-            gap: 3px;
-            text-decoration: none;
-            cursor: pointer;
-            transition: opacity 0.2s ease;
-        }
-
-        .brand:hover {
-            opacity: 0.85;
-        }
-
-        .brand-mark {
-            position: relative;
-            display: inline-block;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            font-size: 22px;
-            font-weight: 800;
-            letter-spacing: -0.02em;
-            color: var(--ulee-dark-teal);
-        }
-
-        .brand-mark::after {
-            content: '';
-            position: absolute;
-            top: -3px;
-            right: -9px;
-            width: 9px;
-            height: 9px;
-            background: var(--ulee-yellow);
-            border-radius: 50% 50% 50% 0;
-            transform: rotate(-45deg);
-            box-shadow: 0 1px 2px rgba(0,0,0,0.15);
-        }
-
-        .brand-tagline {
-            font-size: 9px;
-            font-weight: 700;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            color: var(--ulee-muted);
-        }
-
-        .back-link {
-            color: var(--ulee-teal);
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 700;
-        }
-
-        .back-link:hover {
-            text-decoration: underline;
-        }
-
-        .page {
-            max-width: 960px;
-            margin: 0 auto;
-            padding: 52px 28px 90px;
-        }
-
-        h1 {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            font-weight: 800;
-            font-size: 28px;
-            margin: 0 0 28px;
-            color: var(--ulee-dark-teal);
-        }
-
-        .results-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-            gap: 20px;
-        }
-
-        .property-card {
-            background: #ffffff;
-            border-radius: var(--hero-radius-glass);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-            padding: 20px;
-        }
-
-        .property-title {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            font-weight: 700;
-            font-size: 18px;
-            margin: 0 0 6px;
-        }
-
-        .property-city {
-            font-family: 'Hanken Grotesk', sans-serif;
-            color: #666;
-            margin: 0 0 4px;
-        }
-
-        .property-beds {
-            font-family: 'Hanken Grotesk', sans-serif;
-            color: #666;
-            margin: 0 0 10px;
-        }
-
-        .property-rent {
-            display: inline-block;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            font-weight: 700;
-            font-size: 13px;
-            background: var(--hero-yellow);
-            color: var(--hero-on-yellow);
-            border-radius: var(--hero-radius-pill);
-            padding: 4px 12px;
-            margin: 0;
-        }
-
-        .unsave-btn {
-            font-family: 'Hanken Grotesk', sans-serif;
-            font-size: 12px;
-            font-weight: 600;
-            background: transparent;
-            color: var(--ulee-muted);
-            border: 1px solid var(--ulee-border);
-            border-radius: var(--hero-radius-pill);
-            padding: 6px 14px;
-            cursor: pointer;
-            transition: color .15s ease, border-color .15s ease, background .15s ease;
-        }
-
-        .unsave-btn:hover {
-            color: #A83232;
-            border-color: #F0C6C6;
-            background: #FBEAEA;
-        }
-
-        .empty-state {
-            background: var(--ulee-white);
-            border: 1px solid var(--ulee-border);
-            border-radius: 18px;
-            padding: 65px 28px;
-            text-align: center;
-            box-shadow: 0 8px 25px rgba(0, 73, 94, 0.05);
-        }
-
-        .empty-icon {
-            width: 52px;
-            height: 52px;
-            margin: 0 auto 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            background: var(--ulee-yellow);
-            color: var(--ulee-dark-teal);
-            font-size: 24px;
-            font-weight: 800;
-        }
-
-        .empty-state h2 {
-            margin: 0 0 9px;
-            color: var(--ulee-dark-teal);
-            font-size: 22px;
-        }
-
-        .empty-state p {
-            margin: 0 0 18px;
-            color: var(--ulee-muted);
-            line-height: 1.6;
-        }
-
-        @media (max-width: 760px) {
-            .topbar {
-                padding: 0 20px;
-            }
-
-            .page {
-                padding: 34px 16px 70px;
-            }
-
-            h1 {
-                font-size: 24px;
-            }
+        @media (max-width: 860px) {
+            .app-shell { grid-template-columns: 1fr; }
+            .sidebar { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; padding: 0 16px 12px; }
+            .logo { padding: 16px 0 8px; width: 100%; }
+            .nav-label, .sidebar-foot { display: none; }
+            .nav-list { flex-direction: row; flex-wrap: wrap; }
+            .nav-item, .nav-item.active { width: auto; margin: 0; padding: 9px 12px; border-radius: var(--radius-sm); }
+            .main { padding: 20px 16px 70px; }
+            .hero { padding: 24px 22px; }
+            .crumbs { display: none; }
         }
     </style>
 </head>
 
 <body>
+<div class="app-shell">
 
-<header class="topbar">
-    <a class="brand" th:href="@{/student-dashboard}">
-        <span class="brand-mark">ULEE</span>
-        <span class="brand-tagline">Student Living</span>
-    </a>
-    <a class="back-link" th:href="@{/student-dashboard}">Browse Properties</a>
-</header>
+    <!-- Dark sidebar — same as my-dashboard.html -->
+    <aside class="sidebar" id="sidebar" aria-label="Student navigation">
+        <a class="logo" th:href="@{/student-dashboard}" aria-label="ULEE home">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2L3 7v11h14V7L10 2zm0 2.6 5 3.5V16H5V8.1l5-3.5zM8 10h4v6H8z"/></svg>
+            <div>
+                <div class="logo-name">ULEE</div>
+                <div class="logo-tag">Student Living. Simplified.</div>
+            </div>
+        </a>
 
-<main class="page">
-
-    <h1>Saved Properties</h1>
-
-    <div class="results-grid" th:if="${not #lists.isEmpty(properties)}">
-        <div class="property-card" th:each="property : ${properties}">
-            <a th:href="@{/property/{id}(id=${property.propertyID})}" style="display:block; text-decoration:none; color:inherit;">
-                <h3 class="property-title" th:text="${property.title}">Property Title</h3>
-                <p class="property-city" th:text="${property.city}">City</p>
-                <p class="property-beds" th:text="${property.bedrooms} + ' bed'">Bedrooms</p>
-                <p class="property-rent" th:text="'R' + ${property.rent} + ' / month'">Rent</p>
+        <div class="nav-label">Student portal</div>
+        <nav class="nav-list">
+            <a class="nav-item" th:href="@{/my-dashboard}">
+                <span class="material-symbols-outlined" aria-hidden="true">space_dashboard</span><span>My Dashboard</span>
             </a>
-            <form th:action="@{/favorite/{id}(id=${property.propertyID})}" method="post" style="margin-top: 12px;" data-loading-text="Removing...">
-                <input type="hidden" name="returnTo" value="/saved-properties" />
-                <button type="submit" class="unsave-btn">Remove from saved</button>
+            <a class="nav-item" th:href="@{/my-applications}">
+                <span class="material-symbols-outlined" aria-hidden="true">description</span><span>My Applications</span>
+                <span class="nav-badge" th:if="${totalApplications != null and totalApplications > 0}" th:text="${totalApplications}">0</span>
+            </a>
+            <a class="nav-item active" th:href="@{/saved-properties}" aria-current="page">
+                <span class="material-symbols-outlined" aria-hidden="true">favorite</span><span>Saved Properties</span>
+                <span class="nav-badge" th:if="${savedCount != null and savedCount > 0}" th:text="${savedCount}">0</span>
+            </a>
+            <a class="nav-item" th:href="@{/student-dashboard}">
+                <span class="material-symbols-outlined" aria-hidden="true">travel_explore</span><span>Browse Properties</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-foot">
+            <form id="logoutForm" th:action="@{/logout}" method="post">
+                <button type="button" class="nav-item logout" id="openLogout">
+                    <span class="material-symbols-outlined" aria-hidden="true">logout</span><span>Log out</span>
+                </button>
             </form>
         </div>
+    </aside>
+
+    <main class="main">
+        <div class="topbar">
+            <div class="crumbs"><a th:href="@{/my-dashboard}">Student portal</a> / <strong>Saved Properties</strong></div>
+            <div class="topbar-right">
+                <a class="chip-btn" th:href="@{/student-dashboard}">
+                    <span class="material-symbols-outlined" aria-hidden="true">search</span>Find a room
+                </a>
+                <span class="avatar" th:text="${userInitials != null ? userInitials : 'ST'}" aria-hidden="true">ST</span>
+            </div>
+        </div>
+
+        <!-- Header banner -->
+        <section class="hero" aria-labelledby="pageHeading">
+            <div class="hero-grid" aria-hidden="true"></div>
+            <div class="orb one" aria-hidden="true"></div>
+            <div class="orb two" aria-hidden="true"></div>
+            <div>
+                <p class="eyebrow"><span class="live-dot" aria-hidden="true"></span>Your shortlist</p>
+                <h1 id="pageHeading">Saved <span class="text-gradient">Properties</span></h1>
+                <p class="lead">
+                    Rooms you've hearted<span th:if="${currentUserFirstName != null}" th:text="', ' + ${currentUserFirstName}">, Student</span>.
+                    Compare them side by side and apply when you're ready.
+                </p>
+            </div>
+            <div class="hero-count">
+                <div class="hero-count-num" th:text="${#lists.size(properties)}">0</div>
+                <div class="hero-count-label"><span class="material-symbols-outlined" aria-hidden="true">favorite</span>Saved</div>
+            </div>
+        </section>
+
+        <div class="grid" th:if="${not #lists.isEmpty(properties)}">
+            <article class="card" th:each="property : ${properties}">
+                <a class="card-photo" th:href="@{/property/{id}(id=${property.propertyID})}" tabindex="-1" aria-hidden="true">
+                    <img alt="" src="/images/property-placeholder.svg" loading="lazy"
+                         th:src="${property.mainImageUrl} ?: '/images/property-placeholder.svg'"/>
+                    <span class="badge" th:if="${property.isAvailable}">Available</span>
+                    <span class="badge off" th:unless="${property.isAvailable}">Unavailable</span>
+                    <span class="rent" th:if="${property.rent != null}">R<span th:text="${property.rent}">4500</span> <small>/ month</small></span>
+                </a>
+                <div class="card-body">
+                    <h3 class="card-title">
+                        <a th:href="@{/property/{id}(id=${property.propertyID})}" th:text="${property.title}">Property title</a>
+                    </h3>
+                    <p class="card-loc">
+                        <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+                        <span th:text="${property.suburb != null ? property.suburb + ', ' + property.city : property.city}">Summerstrand, Gqeberha</span>
+                    </p>
+                    <div class="chips">
+                        <span class="chip" th:if="${property.type != null and !#strings.isEmpty(property.type)}" th:text="${property.type}">Single Room</span>
+                        <span class="chip" th:if="${property.commuteType != null and !#strings.isEmpty(property.commuteType)}" th:text="${property.commuteType}">Walking distance</span>
+                    </div>
+                    <div class="card-actions">
+                        <a class="btn btn-navy" th:href="@{/property/{id}(id=${property.propertyID})}">
+                            View property<span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+                        </a>
+                        <form th:action="@{/favorite/{id}(id=${property.propertyID})}" method="post" data-loading-text="...">
+                            <input type="hidden" name="returnTo" value="/saved-properties" />
+                            <button type="submit" class="btn btn-remove" title="Remove from saved"
+                                    th:attr="aria-label='Remove ' + ${property.title} + ' from saved'">
+                                <span class="material-symbols-outlined" aria-hidden="true">heart_minus</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <section class="empty" th:if="${#lists.isEmpty(properties)}">
+            <div class="empty-icon"><span class="material-symbols-outlined" aria-hidden="true">favorite</span></div>
+            <h2>No saved properties yet</h2>
+            <p>Tap the heart on any room to save it here for later.</p>
+            <a class="btn btn-yellow" th:href="@{/student-dashboard}">
+                <span class="material-symbols-outlined" aria-hidden="true">travel_explore</span>Browse rooms
+            </a>
+        </section>
+    </main>
+</div>
+
+<!-- Logout confirmation -->
+<div class="modal" id="logoutModal" role="dialog" aria-modal="true" aria-labelledby="logoutTitle">
+    <div class="modal-card">
+        <div class="modal-icon"><span class="material-symbols-outlined" aria-hidden="true">logout</span></div>
+        <h2 id="logoutTitle">Log out of ULEE?</h2>
+        <p>You will need to log in again to see your dashboard, applications and saved rooms.</p>
+        <div class="modal-row">
+            <button type="button" class="btn-cancel" id="cancelLogout">Cancel</button>
+            <button type="button" class="btn-danger" id="confirmLogout">Log out</button>
+        </div>
     </div>
-
-    <section class="empty-state" th:if="${#lists.isEmpty(properties)}">
-        <div class="empty-icon">🤍</div>
-        <h2>No saved properties yet</h2>
-        <p>Tap the heart icon on any property to save it here for later.</p>
-        <a class="back-link" th:href="@{/student-dashboard}">Browse Properties</a>
-    </section>
-
-</main>
+</div>
 
 <div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null, null, null, null)}"></div>
 
+<script>
+    (function () {
+        var modal = document.getElementById('logoutModal');
+        var openBtn = document.getElementById('openLogout');
+        function close() { modal.classList.remove('open'); openBtn.focus(); }
+        openBtn.addEventListener('click', function () {
+            modal.classList.add('open');
+            document.getElementById('cancelLogout').focus();
+        });
+        document.getElementById('cancelLogout').addEventListener('click', close);
+        document.getElementById('confirmLogout').addEventListener('click', function () {
+            document.getElementById('logoutForm').submit();
+        });
+        modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && modal.classList.contains('open')) close(); });
+    })();
+</script>
 </body>
 </html>
