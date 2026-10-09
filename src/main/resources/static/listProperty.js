@@ -8,6 +8,16 @@ const STEPS = [
   { label: 'Review' }
 ];
 
+// NEW: option lists for the two new fields. Values are exactly what the
+// controller stores in Property.occupantRestriction / acceptedFunding.
+const OCCUPANT_OPTIONS = ['Mixed', 'Female only', 'Male only', 'Seniors only', 'First years'];
+const FUNDING_OPTIONS = [
+  { value: 'Any', label: 'Any (all funding types)' },
+  { value: 'NSFAS', label: 'NSFAS' },
+  { value: 'Bursary', label: 'Bursary' },
+  { value: 'Self-Paying', label: 'Self-Paying' }
+];
+
 let currentStep = 0;
 let accumulatedImages = [];
 let coverImageFile = null;          // kept so the preview card can show it
@@ -32,11 +42,13 @@ const state = {
   title: '',
   type: '',
   capacity: '1',
+  occupantRestriction: 'Mixed',   // NEW
   city: '',
   address: '',
   commuteType: '',
   rent: '',
   deposit: '',
+  acceptedFunding: 'Any',         // NEW
   availableFrom: '',
   description: ''
 };
@@ -44,9 +56,9 @@ const state = {
 // ── Required-field validation ──
 // Fields that MUST be filled with a valid value before a listing can be
 // Published. If any of these fail validation when the landlord hits
-// "Publish listing", the submission is silently redirected to Draft instead
-// of being blocked outright — see updateNavButtons() below. The readiness
-// checklist in the right column surfaces this BEFORE they get there.
+// "Publish listing", they are asked whether to fix them or save as a draft
+// instead — see updateNavButtons() below. The readiness checklist in the
+// right column surfaces this BEFORE they get there.
 const REQUIRED_FIELDS = [
   { key: 'title', label: 'Property title', step: 0, validate: v => !!(v && v.trim().length > 0) },
   { key: 'capacity', label: 'Capacity', step: 0, validate: v => !!(v && Number(v) >= 1) },
@@ -79,7 +91,7 @@ function getInvalidRequiredFields() {
 // Also repaints the preview card on every keystroke — that live link is
 // the whole point of the right-hand column.
 function wireValidationListeners() {
-  const stepFieldNames = ['title', 'capacity', 'rent', 'address', 'city', 'type', 'commuteType', 'deposit', 'description'];
+  const stepFieldNames = ['title', 'capacity', 'occupantRestriction', 'rent', 'address', 'city', 'type', 'commuteType', 'deposit', 'acceptedFunding', 'description'];
 
   stepFieldNames.forEach(name => {
     const el = document.querySelector(`[name="${name}"]`);
@@ -96,6 +108,8 @@ function wireValidationListeners() {
           el.classList.add('field-invalid');
         }
       }
+      // popup validation highlight (from UleeModal.collectProblems) clears once the browser says it's valid
+      if (el.checkValidity && el.checkValidity()) el.classList.remove('ul-invalid');
 
       renderPreview();
       renderReadiness();
@@ -116,17 +130,26 @@ function injectValidationStyles() {
 
 function syncStateFromDOM() {
   const getVal = (name) => {
+    // FIX: for radio groups, read the CHECKED one. The old code read the
+    // first radio's value, which silently reset "Sharing"/"Commune" back to
+    // "Single Room" every time the preview repainted.
+    if (document.querySelector(`input[type="radio"][name="${name}"]`)) {
+      const checked = document.querySelector(`input[type="radio"][name="${name}"]:checked`);
+      return checked ? checked.value : (state[name] || '');
+    }
     const el = document.querySelector(`[name="${name}"]`);
     return el ? el.value : (state[name] || '');
   };
   state.title = getVal('title');
   state.type = getVal('type');
   state.capacity = getVal('capacity');
+  state.occupantRestriction = getVal('occupantRestriction') || 'Mixed';
   state.city = getVal('city');
   state.address = getVal('address');
   state.commuteType = getVal('commuteType');
   state.rent = getVal('rent');
   state.deposit = getVal('deposit');
+  state.acceptedFunding = getVal('acceptedFunding') || 'Any';
   state.availableFrom = getVal('availableFrom');
   state.description = getVal('description');
 }
@@ -208,6 +231,13 @@ function renderStepContent() {
             <input type="number" name="capacity" min="1" step="1" placeholder="e.g. 4" value="${escapeHtml(state.capacity)}" required class="${invalidClass('capacity')}" />
             <p class="hint-text">How many students this listing can hold. This caps how many applications you can accept.</p>
           </div>
+          <div class="field f-col-2">
+            <label for="occupantRestriction">Who can stay here?</label>
+            <select id="occupantRestriction" name="occupantRestriction">
+              ${OCCUPANT_OPTIONS.map(o => `<option value="${o}" ${state.occupantRestriction === o ? 'selected' : ''}>${o}</option>`).join('')}
+            </select>
+            <p class="hint-text">Tell students who this place is for.</p>
+          </div>
         </div>`;
       break;
 
@@ -226,6 +256,13 @@ function renderStepContent() {
           <div class="field">
             <label>Deposit (R)</label>
             <input type="number" step="0.01" name="deposit" placeholder="4500.00" value="${escapeHtml(state.deposit)}" />
+          </div>
+          <div class="field f-col-2">
+            <label for="acceptedFunding">Accepted funding</label>
+            <select id="acceptedFunding" name="acceptedFunding">
+              ${FUNDING_OPTIONS.map(o => `<option value="${o.value}" ${state.acceptedFunding === o.value ? 'selected' : ''}>${o.label}</option>`).join('')}
+            </select>
+            <p class="hint-text">Choose "Any" if you take every funding type.</p>
           </div>
           <div class="field">
             <label>Suburb</label>
@@ -340,8 +377,10 @@ function renderStepContent() {
           <div class="review-row"><span class="review-key">Title</span><span class="review-val">${escapeHtml(state.title) || '—'}</span></div>
           <div class="review-row"><span class="review-key">Room type</span><span class="review-val">${escapeHtml(state.type) || '—'}</span></div>
           <div class="review-row"><span class="review-key">Capacity</span><span class="review-val">${escapeHtml(state.capacity) || '—'} student(s)</span></div>
+          <div class="review-row"><span class="review-key">Who can stay</span><span class="review-val">${escapeHtml(state.occupantRestriction) || 'Mixed'}</span></div>
           <div class="review-row"><span class="review-key">Monthly rent</span><span class="review-val price">R${escapeHtml(state.rent || '0')} / mo</span></div>
           <div class="review-row"><span class="review-key">Deposit</span><span class="review-val">R${escapeHtml(state.deposit || '0')}</span></div>
+          <div class="review-row"><span class="review-key">Accepted funding</span><span class="review-val">${escapeHtml(state.acceptedFunding) || 'Any'}</span></div>
           <div class="review-row"><span class="review-key">Location</span><span class="review-val">${escapeHtml(state.address)}${state.city ? ', ' + escapeHtml(state.city) : ''}</span></div>
           <div class="review-row"><span class="review-key">Commute</span><span class="review-val">${escapeHtml(state.commuteType) || '—'}</span></div>
           <div class="review-row"><span class="review-key">Amenities</span><span class="review-val">${selectedAmenityIds.size} selected</span></div>
@@ -361,11 +400,6 @@ function renderStepContent() {
 //    browse grid, so the landlord is never guessing what they're building. ──
 function renderPreview() {
   syncStateFromDOM();
-
-  const setText = (id, text) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = text;
-  };
 
   const titleEl = document.getElementById('previewTitle');
   if (titleEl) {
@@ -419,7 +453,7 @@ function renderPreview() {
   }
 }
 
-// ── Readiness checklist: makes the silent draft-downgrade rule visible
+// ── Readiness checklist: makes the draft-downgrade rule visible
 //    before the landlord hits Publish, instead of after. ──
 function renderReadiness() {
   const list = document.getElementById('readinessList');
@@ -499,12 +533,22 @@ function navigateStep(dir) {
   syncStateFromDOM();
 
   if (dir === 1 && currentStep === 0 && (!state.title || !state.title.trim())) {
-    alert('Please enter a property title before continuing.');
+    UleeModal.alert({
+      tone: 'warn',
+      title: 'Add a property title',
+      message: 'Students see the title first, so please enter one before continuing.',
+      okText: 'Got it'
+    });
     return;
   }
 
   if (dir === 1 && currentStep === 0 && (!state.capacity || Number(state.capacity) < 1)) {
-    alert('Please enter how many students this listing can hold (at least 1).');
+    UleeModal.alert({
+      tone: 'warn',
+      title: 'Add the capacity',
+      message: 'Enter how many students this listing can hold (at least 1).',
+      okText: 'Got it'
+    });
     return;
   }
 
@@ -525,7 +569,12 @@ function navigateStep(dir) {
 function jumpToStep(idx) {
   syncStateFromDOM();
   if (idx > currentStep && (!state.title || !state.title.trim())) {
-    alert('Please complete the basic info step first.');
+    UleeModal.alert({
+      tone: 'warn',
+      title: 'Finish the basic info first',
+      message: 'Add a property title before jumping ahead.',
+      okText: 'Got it'
+    });
     return;
   }
   currentStep = idx;
@@ -565,29 +614,44 @@ function updateNavButtons() {
   if (nextBtn) {
     if (currentStep === STEPS.length - 1) {
       nextBtn.textContent = 'Publish listing';
-      nextBtn.onclick = () => {
+      nextBtn.onclick = async () => {
         const invalid = getInvalidRequiredFields();
         const form = document.getElementById('listPropertyForm');
 
-        if (invalid.length > 0) {
-          // At least one required field is missing or invalid — don't block
-          // the landlord, but don't publish either: fall back to saving as a
-          // draft, jump them to the first problem field, and say what's needed.
-          validationAttempted = true;
-          setSubmitAction('draft');
-          currentStep = invalid[0].step;
-          renderTracker();
-          renderStepContent();
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-          alert('These still need valid values:\n\n' +
-              invalid.map(f => '• ' + f.label).join('\n') +
-              '\n\nSaving as a draft for now — fill these in and click Publish listing again.');
-          if (form) form.requestSubmit();
+        if (invalid.length === 0) {
+          setSubmitAction('submit');
+          if (form) form.requestSubmit(); // fires the 'submit' listener, unlike form.submit()
           return;
         }
 
-        setSubmitAction('submit');
-        if (form) form.requestSubmit(); // fires the 'submit' listener, unlike form.submit()
+        // At least one required field is missing or invalid. The landlord
+        // chooses: fix it now (default), or save what they have as a draft.
+        validationAttempted = true;
+        const pick = await UleeModal.choice({
+          tone: 'warn',
+          title: "This listing isn't ready to publish",
+          message: 'These still need valid values:',
+          list: invalid.map(f => f.label),
+          buttons: [
+            { label: 'Save as draft', value: 'draft', style: 'ghost' },
+            { label: 'Fix them now', value: 'fix', style: 'primary' }
+          ]
+        });
+
+        if (pick === 'draft') {
+          setSubmitAction('draft');
+          // Pass the draft button as the submitter: it has formnovalidate,
+          // so the browser doesn't block the draft on empty required fields.
+          const draftBtn = document.getElementById('draftBtn');
+          if (form) form.requestSubmit(draftBtn || undefined);
+          return;
+        }
+
+        // Anything else (Fix them now / Esc / click outside): jump to the first problem.
+        currentStep = invalid[0].step;
+        renderTracker();
+        renderStepContent();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       };
     } else {
       nextBtn.textContent = 'Continue';
@@ -712,6 +776,8 @@ function prepareFormForSubmit(form) {
   // the same field twice when the user submits while sitting on that step).
   const hasLiveField = (name) => !!form.querySelector(`[name="${name}"]:not(.js-injected-field)`);
 
+  // state now includes occupantRestriction and acceptedFunding, so both are
+  // sent from any step (as hidden fields) or natively when their step is showing.
   Object.keys(state).forEach(key => {
     if (!hasLiveField(key)) addHidden(key, state[key]);
   });

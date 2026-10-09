@@ -383,6 +383,24 @@
                                        th:value="${property.capacity}" placeholder="e.g. 30" required />
                                 <p class="hint-text">This is what caps how many applications you can accept for this property.</p>
                             </div>
+
+                            <!-- NEW: who can stay here (property.occupantRestriction; empty/null counts as Mixed) -->
+                            <div class="field f-col-2">
+                                <label for="occupantRestriction">Who can stay here?</label>
+                                <select id="occupantRestriction" name="occupantRestriction">
+                                    <option value="Mixed"
+                                            th:selected="${property.occupantRestriction == null or property.occupantRestriction == '' or property.occupantRestriction == 'Mixed'}">Mixed</option>
+                                    <option value="Female only"
+                                            th:selected="${property.occupantRestriction == 'Female only'}">Female only</option>
+                                    <option value="Male only"
+                                            th:selected="${property.occupantRestriction == 'Male only'}">Male only</option>
+                                    <option value="Seniors only"
+                                            th:selected="${property.occupantRestriction == 'Seniors only'}">Seniors only</option>
+                                    <option value="First years"
+                                            th:selected="${property.occupantRestriction == 'First years'}">First years</option>
+                                </select>
+                                <p class="hint-text">Tell students who this place is for.</p>
+                            </div>
                         </div>
                     </div>
 
@@ -401,6 +419,23 @@
                                 <label>Deposit (R)</label>
                                 <input type="number" step="0.01" name="deposit" th:value="${property.deposit}" />
                             </div>
+
+                            <!-- NEW: accepted funding (property.acceptedFunding; empty/null counts as Any) -->
+                            <div class="field f-col-2">
+                                <label for="acceptedFunding">Accepted funding</label>
+                                <select id="acceptedFunding" name="acceptedFunding">
+                                    <option value="Any"
+                                            th:selected="${property.acceptedFunding == null or property.acceptedFunding == '' or property.acceptedFunding == 'Any'}">Any (all funding types)</option>
+                                    <option value="NSFAS"
+                                            th:selected="${property.acceptedFunding == 'NSFAS'}">NSFAS</option>
+                                    <option value="Bursary"
+                                            th:selected="${property.acceptedFunding == 'Bursary'}">Bursary</option>
+                                    <option value="Self-Paying"
+                                            th:selected="${property.acceptedFunding == 'Self-Paying'}">Self-Paying</option>
+                                </select>
+                                <p class="hint-text">Choose "Any" if you take every funding type.</p>
+                            </div>
+
                             <div class="field">
                                 <label>Suburb</label>
                                 <input type="text" name="city" th:value="${property.city}" placeholder="e.g. Summerstrand" />
@@ -481,6 +516,8 @@
                         Each delete button is bound to THIS form via form="editPropertyForm"
                         plus formaction/formmethod — it is NOT a nested <form>
                         (nested forms are invalid HTML and would orphan the Save buttons).
+                        The data-confirm attributes make the shared popup ask first
+                        (handled in ulee-modal.js); the old confirm() is gone.
                     -->
                     <div class="edit-step" data-step="5">
                         <div class="panel-header">
@@ -499,7 +536,11 @@
                                         th:formaction="@{/delete-property-image/{imageId}(imageId=${img.imageID})}"
                                         formmethod="post"
                                         formnovalidate
-                                        onclick="return confirm('Remove this photo?');">&times;</button>
+                                        data-confirm
+                                        data-confirm-title="Remove this photo?"
+                                        data-confirm-message="It will be deleted from this listing."
+                                        data-confirm-ok="Remove"
+                                        data-confirm-tone="danger">&times;</button>
                             </div>
                         </div>
                         <p class="gallery-empty" th:if="${images.isEmpty()}">No photos uploaded yet.</p>
@@ -531,7 +572,11 @@
                             th:formaction="@{/toggle-property-status/{id}(id=${property.propertyID}, isAvailable=false)}"
                             formmethod="post"
                             formnovalidate
-                            th:attr="onclick=|return confirm('Deactivate &quot;${#strings.escapeJavaScript(property.title)}&quot;? It will stop showing to students until you reactivate it.');|">Delete</button>
+                            data-confirm
+                            data-confirm-title="Deactivate this property?"
+                            data-confirm-ok="Deactivate"
+                            data-confirm-tone="danger"
+                            th:attr="data-confirm-message=${'“' + property.title + '” will stop showing to students until you reactivate it.'}">Delete</button>
                 </div>
 
             </form>
@@ -585,6 +630,10 @@
         });
     }
 </script>
+
+<!-- Shared popup (css + js + post-redirect popup). Must come BEFORE edit-property-validation.js. -->
+<th:block th:replace="~{fragments/modal :: assets}"></th:block>
+
 <script th:src="@{/edit-property-validation.js}" src="/edit-property-validation.js"></script>
 </body>
 </html>

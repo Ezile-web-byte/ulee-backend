@@ -1,0 +1,106 @@
+/* ULEE shared modal: place in src/main/resources/static/css/ulee-modal.css */
+
+.ul-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(10, 35, 40, 0.55);
+    backdrop-filter: blur(2px);
+}
+.ul-modal-overlay.is-open { display: flex; }
+
+.ul-modal {
+    width: 100%;
+    max-width: 460px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 32px 32px 28px;
+    border-radius: 20px;
+    background: #fff;
+    text-align: center;
+    font-family: inherit;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+    animation: ul-modal-in 0.18s ease-out;
+}
+
+.ul-modal-icon {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #d9f5f4;
+    font-size: 26px;
+}
+.ul-modal.is-danger .ul-modal-icon { background: #fde4e4; }
+.ul-modal.is-warn .ul-modal-icon { background: #fff1d6; }
+
+.ul-modal-title {
+    margin: 0 0 8px;
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a7f7c;
+}
+.ul-modal.is-danger .ul-modal-title { color: #c62828; }
+
+.ul-modal-message {
+    margin: 0;
+    font-size: 14.5px;
+    line-height: 1.5;
+    color: #6b7780;
+}
+
+.ul-modal-list {
+    margin: 14px 0 0;
+    padding: 12px 16px 12px 32px;
+    border-radius: 10px;
+    background: #fff6f6;
+    text-align: left;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #8a2c2c;
+}
+.ul-modal-list li + li { margin-top: 4px; }
+
+.ul-modal-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 24px;
+}
+.ul-modal-actions button {
+    flex: 1 1 140px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter 0.15s, background 0.15s;
+}
+.ul-btn-primary { background: #1e9a98; color: #fff; box-shadow: 0 6px 16px rgba(30, 154, 152, 0.3); }
+.ul-btn-danger  { background: #d93636; color: #fff; }
+.ul-btn-ghost   { background: #fff; color: #1b2a33; border-color: #dfe5e8; }
+.ul-modal-actions button:hover { filter: brightness(0.95); }
+.ul-modal-actions button:focus-visible { outline: 3px solid rgba(30, 154, 152, 0.45); outline-offset: 2px; }
+
+/* highlight fields that failed validation */
+.ul-invalid { border-color: #d93636 !important; box-shadow: 0 0 0 3px rgba(217, 54, 54, 0.15) !important; }
+
+@keyframes ul-modal-in {
+    from { opacity: 0; transform: translateY(8px) scale(0.98); }
+    to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ul-modal { animation: none; }
+}
+@media (max-width: 480px) {
+    .ul-modal { padding: 24px 20px 20px; }
+    .ul-modal-actions button { flex-basis: 100%; }
+}
