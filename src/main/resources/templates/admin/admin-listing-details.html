@@ -2,15 +2,193 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8" />
-    <title th:text="'ULEE — ' + ${property.title}">ULEE — Listing Detail</title>
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title th:text="'ULEE — ' + ${property.title}">ULEE — Listing Details</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/admin-style.css">
     <script src="/admin-script.js" defer></script>
     <style>
-        /* Status badges: Suspended = amber like the Suspend/Unsuspend buttons,
-           Rejected = red exactly like the Reject button */
-        .badge-suspended { background: #fff8e1; color: #8a5a00; border: 1px solid #e5a300; }
-        .badge-rejected  { background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border); }
+        :root {
+            --primary-dark: #006A6A;
+            --primary: #096C6C;
+            --primary-tint: #F4FBFA;
+            --surface-tint: #F0F7F6;
+            --outline-variant: #E6E8E4;
+            --accent-border: #93C0C5;
+            --on-surface: #191c1d;
+            --on-surface-variant: #3f484d;
+            --outline: #6f787d;
+            --alert: #ba1a1a;
+            --font-display: 'Plus Jakarta Sans', sans-serif;
+            --font-body: 'Hanken Grotesk', sans-serif;
+            --radius-sm: 10px;
+            --radius-md: 14px;
+            --radius-lg: 20px;
+            --sidebar-bg: #071C2D;
+            --sidebar-logo-teal: #14C8BE;
+            --sidebar-active-bg: #007178;
+            --sidebar-badge-bg: #01A49F;
+        }
+
+        .ld { font-family: var(--font-body); color: var(--on-surface); }
+        .ld h1, .ld h2, .ld h3, .ld .ld-title, .ld .ld-card-title { font-family: var(--font-display); }
+
+        /* Back link */
+        .ld-back {
+            display: inline-flex; align-items: center; gap: 8px; margin-bottom: 18px;
+            font-size: 13.5px; font-weight: 600; color: var(--primary-dark); text-decoration: none;
+        }
+        .ld-back:hover { text-decoration: underline; }
+        .ld-back svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+        /* Layout */
+        .ld-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; align-items: start; }
+        @media (max-width: 1050px) { .ld-grid { grid-template-columns: 1fr; } }
+
+        /* Title row */
+        .ld-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 14px; }
+        .ld-title { font-size: 26px; font-weight: 800; margin: 0 0 6px; color: var(--sidebar-bg); }
+        .ld-address { font-size: 14px; color: var(--on-surface-variant); display: flex; align-items: center; gap: 6px; }
+        .ld-address svg { width: 15px; height: 15px; stroke: var(--primary-dark); fill: none; stroke-width: 2; }
+
+        /* Status badges */
+        .ld-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 9999px;
+            font-size: 12px; font-weight: 700; white-space: nowrap; }
+        .ld-badge i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; display: inline-block; }
+        .ld-badge.approved  { background: var(--primary-tint); color: var(--primary-dark); border: 1px solid var(--accent-border); }
+        .ld-badge.pending   { background: #fff8e1; color: #8a5a00; border: 1px solid #e5a300; }
+        .ld-badge.rejected  { background: #fdecec; color: var(--alert); border: 1px solid #f1b3b3; }
+        .ld-badge.suspended { background: #eef1f3; color: #3f484d; border: 1px solid #c4cbd0; }
+
+        /* Cards */
+        .ld-card { background: #fff; border: 1px solid var(--outline-variant); border-radius: var(--radius-md); overflow: hidden; margin-bottom: 20px; }
+        .ld-card-head { padding: 16px 20px; border-bottom: 1px solid var(--outline-variant); }
+        .ld-card-title { font-size: 15px; font-weight: 700; margin: 0; color: var(--sidebar-bg); }
+        .ld-card-body { padding: 18px 20px; }
+
+        /* Gallery */
+        .ld-gallery img#mainListingImg { width: 100%; height: 380px; object-fit: cover; border-radius: var(--radius-md); display: block; }
+        .ld-thumbs { display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; }
+        .ld-thumbs img { width: 84px; height: 62px; object-fit: cover; border-radius: 8px; cursor: pointer; flex-shrink: 0;
+            border: 2px solid transparent; opacity: .7; transition: opacity .15s, border-color .15s; }
+        .ld-thumbs img.active { opacity: 1; border-color: var(--sidebar-logo-teal); }
+        .ld-nophoto { background: var(--surface-tint); border: 1px dashed var(--accent-border); border-radius: var(--radius-md);
+            padding: 56px 20px; text-align: center; color: var(--outline); font-size: 14px; }
+
+        /* Clean key-facts strip */
+        .ld-metrics { display: grid; grid-template-columns: repeat(3, 1fr); margin: 18px 0 8px;
+            padding: 6px 0; border-bottom: 1px solid var(--outline-variant); }
+        .ld-metric { padding: 10px 28px; border-left: 1px solid var(--outline-variant); min-width: 0; }
+        .ld-metric:first-child { border-left: 0; padding-left: 0; }
+        .ld-metric-label { display: flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 500; color: var(--outline); }
+        .ld-metric-label svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.8;
+            stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+        .ld-metric-value { font-family: var(--font-display); font-size: 19px; font-weight: 800; color: var(--on-surface); margin-top: 10px; }
+        .ld-metric-sub { font-family: var(--font-body); font-size: 12.5px; font-weight: 400; color: var(--outline); }
+        .ld-metric-none { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 12.5px; color: var(--outline); }
+        .ld-metric-none i { width: 10px; height: 2px; background: var(--outline); display: inline-block; }
+        @media (max-width: 700px) {
+            .ld-metrics { grid-template-columns: 1fr; }
+            .ld-metric, .ld-metric:first-child { border-left: 0; padding: 12px 0; border-top: 1px solid var(--outline-variant); }
+            .ld-metric:first-child { border-top: 0; }
+        }
+
+        @keyframes ulee-metric-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+
+        /* Sections */
+        .ld-section { padding: 22px 0; border-top: 1px solid var(--outline-variant); }
+        .ld-section:first-of-type { border-top: none; }
+        .ld-section h3 { font-size: 16px; font-weight: 700; margin: 0 0 12px; color: var(--sidebar-bg); display: flex; align-items: center; justify-content: space-between; }
+        .ld-section h3 small { font-family: var(--font-body); font-size: 12.5px; font-weight: 500; color: var(--outline); }
+        .ld-text { font-size: 14.5px; line-height: 1.65; color: var(--on-surface-variant); margin: 0; }
+        .ld-facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+        @media (max-width: 700px) { .ld-facts { grid-template-columns: 1fr; } }
+        .ld-fact-label { font-size: 12px; color: var(--outline); margin-bottom: 4px; }
+        .ld-fact-value { font-size: 14.5px; font-weight: 600; color: var(--on-surface); }
+        .ld-amenities { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 18px; }
+        @media (max-width: 700px) { .ld-amenities { grid-template-columns: 1fr 1fr; } }
+        .ld-amenity { display: flex; align-items: center; gap: 9px; font-size: 14px; color: var(--on-surface-variant); }
+        .ld-amenity svg { width: 16px; height: 16px; stroke: var(--primary-dark); fill: none; stroke-width: 2.4; flex-shrink: 0; }
+
+        /* Validation banner */
+        .ld-check { border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 16px; font-size: 13.5px; }
+        .ld-check.ok   { background: var(--primary-tint); border: 1px solid var(--accent-border); color: var(--primary-dark); }
+        .ld-check.warn { background: #fff8e1; border: 1px solid #e5a300; color: #8a5a00; }
+        .ld-check strong { display: block; font-family: var(--font-display); font-size: 13.5px; margin-bottom: 2px; }
+        .ld-check ul { margin: 8px 0 0 18px; padding: 0; }
+        .ld-check.ok { display: flex; align-items: flex-start; gap: 10px; background: #e6f6ec; border-color: #b9e2c7; color: #1f6b3f; }
+        .ld-check-icon svg { width: 20px; height: 20px; stroke: #1f6b3f; fill: none; stroke-width: 1.8; margin-top: 1px; }
+        .ld-check.ok strong { font-size: 13px; }
+
+        .ld-checklist { list-style: none; margin: 0 0 14px; padding: 0 0 14px; border-bottom: 1px solid var(--outline-variant); }
+        .ld-checklist li { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; font-size: 13px; color: var(--on-surface); }
+        .ld-checklist svg { width: 16px; height: 16px; fill: none; stroke: var(--primary-dark); stroke-width: 2.2; }
+        .ld-checklist li.bad { color: var(--alert); }
+        .ld-checklist li.bad svg { stroke: var(--alert); }
+
+        .ld-hint { font-size: 12px; color: var(--outline); margin: 0 0 14px; line-height: 1.5; }
+
+        /* Buttons */
+        .ld-btn { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            padding: 11px 16px; border-radius: var(--radius-sm); font-family: var(--font-display); font-size: 14px; font-weight: 700;
+            cursor: pointer; transition: background .2s, transform .1s; border: 1.5px solid transparent; }
+        .ld-btn:active { transform: translateY(1px); }
+        .ld-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2.4; }
+        .ld-btn.approve { background: var(--primary-dark); color: #fff; }
+        .ld-btn.approve:hover { background: var(--sidebar-active-bg); }
+        .ld-btn.reject { background: var(--surface-tint); color: var(--on-surface); border-color: var(--outline-variant);
+            box-shadow: 0 1px 3px rgba(7, 28, 45, .12); margin-top: 10px; font-weight: 600; }
+        .ld-btn.reject:hover { background: #fdecec; color: var(--alert); border-color: #f1b3b3; }
+        .ld-btn.ghost { background: #fff; color: var(--on-surface-variant); border-color: var(--outline-variant); }
+
+        /* Landlord */
+        .ld-landlord { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+        .ld-avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--primary-tint); color: var(--primary-dark);
+            border: 1px solid var(--accent-border); display: flex; align-items: center; justify-content: center;
+            font-family: var(--font-display); font-weight: 800; font-size: 14px; flex-shrink: 0; }
+        .ld-landlord-name { font-family: var(--font-display); font-weight: 700; font-size: 14.5px; }
+        .ld-landlord-role { font-size: 12px; color: var(--outline); }
+        .ld-contact { display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: var(--on-surface-variant); padding: 6px 0; word-break: break-all; }
+        .ld-contact svg { width: 16px; height: 16px; stroke: var(--primary-dark); fill: none; stroke-width: 2; flex-shrink: 0; }
+
+        /* Summary rows */
+        .ld-row { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; font-size: 13.5px; border-bottom: 1px solid var(--outline-variant); }
+        .ld-row:last-child { border-bottom: none; }
+        .ld-row span:first-child { color: var(--outline); }
+        .ld-row span:last-child { font-weight: 600; text-align: right; }
+
+        /* Reviews */
+        .ld-review { padding: 14px 0; border-top: 1px solid var(--outline-variant); }
+        .ld-review:first-child { border-top: none; }
+        .ld-review-top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .ld-review-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--sidebar-bg); color: var(--sidebar-logo-teal);
+            display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 12px; font-weight: 800; }
+        .ld-review-name { font-weight: 700; font-size: 14px; }
+        .ld-review-date { font-size: 12px; color: var(--outline); }
+        .ld-empty { display: flex; align-items: center; gap: 14px; padding: 6px 0; font-size: 13.5px; color: var(--outline); }
+        .ld-empty strong { display: block; color: var(--on-surface); font-family: var(--font-display); font-size: 14px; }
+
+        .ld-foot { margin-top: 8px; padding-top: 18px; border-top: 1px solid var(--outline-variant); font-size: 12px; color: var(--outline); }
+
+        /* Confirmation popup */
+        .ld-modal { position: fixed; inset: 0; background: rgba(7, 28, 45, .55); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+        .ld-modal.open { display: flex; }
+        .ld-modal-box { background: #fff; border-radius: var(--radius-lg); max-width: 420px; width: 100%; padding: 28px 26px 22px; text-align: center;
+            border-top: 5px solid var(--sidebar-logo-teal); box-shadow: 0 24px 60px rgba(7, 28, 45, .35); animation: ulee-metric-in .25s ease; }
+        .ld-modal-icon { width: 54px; height: 54px; border-radius: 50%; background: var(--primary-tint); border: 1px solid var(--accent-border);
+            display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
+        .ld-modal-icon svg { width: 26px; height: 26px; stroke: var(--primary-dark); fill: none; stroke-width: 2.4; }
+        .ld-modal.danger .ld-modal-box { border-top-color: var(--alert); }
+        .ld-modal.danger .ld-modal-icon { background: #fdecec; border-color: #f1b3b3; }
+        .ld-modal.danger .ld-modal-icon svg { stroke: var(--alert); }
+        .ld-modal h3 { font-family: var(--font-display); font-size: 19px; font-weight: 800; margin: 0 0 8px; color: var(--sidebar-bg); }
+        .ld-modal p { font-size: 14px; line-height: 1.55; color: var(--on-surface-variant); margin: 0 0 22px; }
+        .ld-modal-actions { display: flex; gap: 10px; }
+        .ld-modal-actions form { flex: 1; margin: 0; }
+        .ld-modal-actions .ld-btn { margin: 0; }
+        .ld-modal-confirm.reject-confirm { background: var(--alert); color: #fff; }
     </style>
 </head>
 <body>
@@ -18,169 +196,305 @@
 
     <div th:replace="~{fragments/admin-sidebar :: sidebar(${activeSection})}"></div>
     <div class="main">
+        <!-- Same heading style/class as the Dashboard page heading -->
         <header class="topbar">
-            <div class="topbar-title">Listing Detail <span th:text="'— ' + ${property.title}">— Property Name</span></div>
+            <div class="topbar-title">Listing Details</div>
         </header>
 
         <div class="content">
-            <div class="section active">
+            <div class="section active ld">
 
-                <div class="panel">
-                    <div class="panel-header">
-                        <div>
-                            <span class="panel-title" th:text="${property.title}">Listing Name</span>
-                            <span class="panel-sub" th:text="${property.address} + ', ' + ${property.city}">Address</span>
-                        </div>
-                        <span th:if="${property.status == 'Approved' or property.status == 'Active'}" class="badge badge-green"><span class="badge-dot"></span>Approved</span>
-                        <span th:if="${property.status == 'Pending' or property.status == null}" class="badge badge-amber"><span class="badge-dot"></span>Pending</span>
-                        <span th:if="${property.status == 'Rejected'}" class="badge badge-rejected"><span class="badge-dot"></span>Rejected</span>
-                        <span th:if="${property.status == 'Suspended'}" class="badge badge-suspended"><span class="badge-dot"></span>Suspended</span>
-                    </div>
+                <!-- Back goes to wherever the admin came from (controller sets backUrl / backLabel) -->
+                <a th:href="@{${backUrl}}" class="ld-back">
+                    <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                    <span th:text="${backLabel} ?: 'Back'">Back</span>
+                </a>
 
-                    <div style="padding:22px;display:flex;flex-direction:column;gap:18px">
+                <div class="ld-grid">
 
-                        <!-- Auto-validation result (Basic Flow step 2) -->
-                        <div th:unless="${isValid}" style="background:#fff3e0;border:1px solid #ffb74d;border-radius:8px;padding:14px 18px">
-                            <strong style="color:#e65100">⚠ This listing has missing information:</strong>
-                            <ul style="margin:8px 0 0 20px;color:#e65100">
-                                <li th:each="issue : ${validationIssues}" th:text="${issue}">Issue</li>
-                            </ul>
-                        </div>
-                        <div th:if="${isValid}" style="background:#e8f5e9;border:1px solid #81c784;border-radius:8px;padding:10px 18px">
-                            <strong style="color:#2e7d32">✓ All required information present</strong>
-                        </div>
-
-                        <!-- Photo gallery, same as the images the landlord uploaded when listing -->
-                        <div th:if="${not #lists.isEmpty(images)}">
-                            <img id="mainListingImg" th:src="@{${images[0].url}}" alt="Property photo"
-                                 style="width:100%;max-height:360px;object-fit:cover;border-radius:10px;display:block" />
-                            <div th:if="${images.size() > 1}"
-                                 class="thumb-row"
-                                 style="display:flex;gap:8px;margin-top:8px;overflow-x:auto">
-                                <img th:each="img, iter : ${images}" th:src="@{${img.url}}" alt="Thumbnail"
-                                     th:classappend="${iter.index == 0} ? 'active-thumb' : ''"
-                                     style="width:76px;height:58px;object-fit:cover;border-radius:6px;cursor:pointer;flex-shrink:0;border:2px solid transparent;opacity:0.75"
-                                     onclick="document.getElementById('mainListingImg').src=this.src;
-                                              document.querySelectorAll('.thumb-row img').forEach(t=>{t.style.opacity='0.75';t.style.borderColor='transparent'});
-                                              this.style.opacity='1';this.style.borderColor='#14b8a6';" />
-                            </div>
-                        </div>
-                        <div th:if="${#lists.isEmpty(images)}" style="background:#f5f5f5;border-radius:10px;padding:40px;text-align:center;color:var(--muted)">
-                            No photos were uploaded with this listing.
-                        </div>
-
-                        <div class="stats">
-                            <div class="stat-card">
-                                <div class="stat-num" th:text="${property.rent} ?: 'N/A'">Rent</div>
-                                <div class="stat-label">Rent / month (R)</div>
-                            </div>
-
-                            <div class="stat-card">
-                                <div class="stat-num" th:text="${property.rating} ?: 'N/A'">Rating</div>
-                                <div class="stat-label">Avg Rating</div>
-                            </div>
-                        </div>
-
-                        <div class="field-group">
-                            <label class="field-label">Description</label>
-                            <p th:text="${property.description} ?: 'No description provided'">Description text</p>
-                        </div>
-
-                        <div class="field-group">
-                            <label class="field-label">Landlord</label>
-                            <p th:if="${landlord != null}"
-                               th:text="${landlord.firstName} + ' ' + ${landlord.lastName} + ' — ' + (${landlord.email} ?: 'no email on file') + (${landlord.phone} != null ? ' — ' + ${landlord.phone} : '')">
-                                Landlord Name
-                            </p>
-                            <p th:if="${landlord == null}">Not linked to a registered landlord (ID: <span th:text="${property.landlordID}">?</span>)</p>
-                        </div>
-
-                        <div class="field-group">
-                            <label class="field-label">Type</label>
-                            <p th:text="${property.type} ?: 'Unspecified type'">Type</p>
-                        </div>
-
-                        <div class="field-group">
-                            <label class="field-label">Deposit</label>
-                            <p th:text="'R' + (${property.deposit} ?: 'N/A') + ' deposit'">Deposit</p>
-                        </div>
-
-                        <div class="field-group">
-                            <label class="field-label">Suburb</label>
-                            <p th:text="${property.suburb} ?: 'Not specified'">Suburb</p>
-                        </div>
-
-                        <div class="field-group">
-                            <label class="field-label">Available From</label>
-                            <p th:text="${property.availableFrom} ?: 'Not specified'">Availability</p>
-                        </div>
-
-                        <div class="field-group">
-                            <label class="field-label">Amenities</label>
-
-                            <p th:if="${property.amenities != null and not #lists.isEmpty(property.amenities)}">
-                              <span th:each="amenity, iterStat : ${property.amenities}">
-                               <span th:text="${amenity.name}">Amenity</span>
-                               <span th:if="${!iterStat.last}">, </span>
-                               </span>
-                            </p>
-
-                            <p th:if="${property.amenities == null or #lists.isEmpty(property.amenities)}">
-                                No amenities specified
-                            </p>
-                        </div>
-
-                        <!-- B100 — Approve/Reject only offered while the listing is still Pending.
-                             "Approved" and "Active" both count as already-moderated, same as everywhere
-                             else in the admin controller, so neither shows these buttons. -->
-                        <div style="display:flex;gap:10px">
-                            <div th:if="${property.status == 'Pending' or property.status == null}" style="display:flex;gap:10px">
-                                <form th:action="@{/admin/approve-listing/{id}(id=${property.propertyID})}" method="post">
-                                    <button type="submit" class="btn btn-primary" style="padding:9px 22px;font-size:13px;border-radius:8px">Approve</button>
-                                </form>
-                                <form th:action="@{/admin/reject-listing/{id}(id=${property.propertyID})}" method="post"
-                                      onsubmit="return confirm('Reject this listing?');">
-                                    <button type="submit" class="btn btn-danger" style="padding:9px 22px;font-size:13px;border-radius:8px">Reject</button>
-                                </form>
-                            </div>
-                            <a th:href="${backUrl}"
-                               class="btn btn-view"
-                               style="padding:9px 22px;font-size:13px;border-radius:8px;text-decoration:none">
-                                Back
-                            </a>
-                        </div>
-
-                    </div>
-                </div>
-
-                <!-- B101 — reviews scoped to this listing -->
-                <div class="panel">
-                    <div class="panel-header">
-                        <div>
-                            <span class="panel-title">Reviews for this Listing</span>
-                            <span class="panel-sub" th:text="${#lists.size(reviews)} + ' review(s)'">0 reviews</span>
-                        </div>
-                    </div>
-                    <div class="review-grid">
-                        <div class="review-card" th:each="review : ${reviews}">
-                            <div class="review-top">
-                                <div class="r-avatar" th:text="${reviewerInitials.get(review.studentID)} ?: ('S' + ${review.studentID})">S#</div>
-                                <div>
-                                    <div class="review-name" th:text="${reviewerNames.get(review.studentID)} ?: ('Student ID: ' + ${review.studentID})">Student</div>
+                    <!-- ============ MAIN COLUMN ============ -->
+                    <div>
+                        <div class="ld-head">
+                            <div>
+                                <h1 class="ld-title" th:text="${property.title}">Listing Name</h1>
+                                <div class="ld-address">
+                                    <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                    <span th:text="${property.address} + ', ' + ${property.city}">Address</span>
                                 </div>
                             </div>
-                            <div class="review-text" th:text="${review.comment} ?: 'No comment provided'">Review text</div>
-                            <div class="review-footer">
-                                <span class="review-date" th:text="${review.reviewDate} ?: 'Date not recorded'">Date</span>
+                            <div>
+                                <span th:if="${property.status == 'Approved' or property.status == 'Active'}" class="ld-badge approved"><i></i>Approved</span>
+                                <span th:if="${property.status == 'Pending' or property.status == null}" class="ld-badge pending"><i></i>Pending review</span>
+                                <span th:if="${property.status == 'Rejected'}" class="ld-badge rejected"><i></i>Rejected</span>
+                                <span th:if="${property.status == 'Suspended'}" class="ld-badge suspended"><i></i>Suspended</span>
                             </div>
                         </div>
-                        <p th:if="${#lists.isEmpty(reviews)}" style="padding:22px;color:var(--muted)">No reviews yet for this listing.</p>
-                    </div>
-                </div>
 
+                        <!-- Gallery -->
+                        <div class="ld-gallery" th:if="${not #lists.isEmpty(images)}">
+                            <img id="mainListingImg" th:src="@{${images[0].url}}" alt="Property photo" />
+                            <div class="ld-thumbs" th:if="${images.size() > 1}">
+                                <img th:each="img, iter : ${images}" th:src="@{${img.url}}" alt="Thumbnail"
+                                     th:classappend="${iter.index == 0} ? 'active' : ''" />
+                            </div>
+                        </div>
+                        <div class="ld-nophoto" th:if="${#lists.isEmpty(images)}">No photos were uploaded with this listing.</div>
+
+                        <!-- Key numbers -->
+                        <div class="ld-metrics">
+                            <div class="ld-metric">
+                                <div class="ld-metric-label">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="2.5"/><path d="M6 12.5h.01M18 12.5h.01"/></svg>
+                                    Monthly rent
+                                </div>
+                                <div class="ld-metric-value">
+                                    <span th:text="${property.rent != null} ? 'R ' + ${#numbers.formatDecimal(property.rent, 1, 'COMMA', 2, 'POINT')} : 'N/A'">R 0.00</span>
+                                    <span class="ld-metric-sub" th:if="${property.rent != null}">/ month</span>
+                                </div>
+                            </div>
+                            <div class="ld-metric">
+                                <div class="ld-metric-label">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4"/><path d="M2 17v-4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4"/><path d="M2 17h20M5 17v2M19 17v2"/></svg>
+                                    Room type
+                                </div>
+                                <div class="ld-metric-value" th:text="${property.type} ?: 'Unspecified'">Single room</div>
+                            </div>
+                            <div class="ld-metric">
+                                <div class="ld-metric-label">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>
+                                    Average rating
+                                </div>
+                                <div class="ld-metric-value" th:if="${property.rating != null}" th:text="${property.rating}">4.5</div>
+                                <div class="ld-metric-none" th:if="${property.rating == null}"><i></i>No ratings yet</div>
+                            </div>
+                        </div>
+
+                        <!-- About -->
+                        <div class="ld-section">
+                            <h3>About this property</h3>
+                            <p class="ld-text" th:text="${property.description} ?: 'No description provided'">Description</p>
+                        </div>
+
+                        <!-- Property details -->
+                        <div class="ld-section">
+                            <h3>Property details</h3>
+                            <div class="ld-facts">
+                                <div>
+                                    <div class="ld-fact-label">Security deposit</div>
+                                    <div class="ld-fact-value" th:text="${property.deposit != null} ? 'R ' + ${#numbers.formatDecimal(property.deposit, 1, 'COMMA', 2, 'POINT')} : 'N/A'">R 0.00</div>
+                                </div>
+                                <div>
+                                    <div class="ld-fact-label">Available from</div>
+                                    <div class="ld-fact-value" th:text="${property.availableFrom} ?: 'Not specified'">Date</div>
+                                </div>
+                                <div>
+                                    <div class="ld-fact-label">Suburb</div>
+                                    <div class="ld-fact-value" th:text="${property.suburb} ?: 'Not specified'">Suburb</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Amenities -->
+                        <div class="ld-section">
+                            <h3>
+                                Amenities
+                                <small th:if="${property.amenities != null and not #lists.isEmpty(property.amenities)}"
+                                       th:text="${#lists.size(property.amenities)} + ' included'">0 included</small>
+                            </h3>
+                            <div class="ld-amenities" th:if="${property.amenities != null and not #lists.isEmpty(property.amenities)}">
+                                <div class="ld-amenity" th:each="amenity : ${property.amenities}">
+                                    <svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+                                    <span th:text="${amenity.name}">Amenity</span>
+                                </div>
+                            </div>
+                            <p class="ld-text" th:if="${property.amenities == null or #lists.isEmpty(property.amenities)}">No amenities specified</p>
+                        </div>
+
+                        <!-- Student reviews: only for approved listings. Pending / rejected / suspended listings don't render this at all. -->
+                        <div class="ld-section" th:if="${property.status == 'Approved' or property.status == 'Active'}">
+                            <h3>
+                                Student reviews
+                                <small th:text="${#lists.size(reviews)} + ' review(s)'">0 reviews</small>
+                            </h3>
+
+                            <div th:each="review : ${reviews}" class="ld-review">
+                                <div class="ld-review-top">
+                                    <div class="ld-review-avatar"
+                                         th:text="${reviewerInitials.get(review.studentID)} ?: ('S' + ${review.studentID})">S#</div>
+                                    <div>
+                                        <div class="ld-review-name"
+                                             th:text="${reviewerNames.get(review.studentID)} ?: ('Student ID: ' + ${review.studentID})">Student</div>
+                                        <div class="ld-review-date" th:text="${review.reviewDate} ?: 'Date not recorded'">Date</div>
+                                    </div>
+                                </div>
+                                <p class="ld-text" th:text="${review.comment} ?: 'No comment provided'">Review text</p>
+                            </div>
+
+                            <div class="ld-empty" th:if="${#lists.isEmpty(reviews)}">
+                                <div>
+                                    <strong>No reviews just yet</strong>
+                                    Student reviews will appear here once they're submitted.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="ld-foot">Only administrators can review and approve listings.</div>
+                    </div>
+
+                    <!-- ============ SIDE COLUMN ============ -->
+                    <aside>
+
+                        <!-- Review & decision: only while still Pending -->
+                        <div class="ld-card" th:if="${property.status == 'Pending' or property.status == null}">
+                            <div class="ld-card-head"><h2 class="ld-card-title">Review &amp; decision</h2></div>
+                            <div class="ld-card-body">
+                                <div class="ld-check ok" th:if="${isValid}">
+                                    <span class="ld-check-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12.5l3 3 5-6"/></svg></span>
+                                    <div>
+                                        <strong>Ready for your review</strong>
+                                        All required information is present.
+                                    </div>
+                                </div>
+                                <div class="ld-check warn" th:unless="${isValid}">
+                                    <strong>This listing has missing information</strong>
+                                    <ul><li th:each="issue : ${validationIssues}" th:text="${issue}">Issue</li></ul>
+                                </div>
+
+                                <!-- Checklist: each row ticks or flags itself from the listing's real data -->
+                                <ul class="ld-checklist">
+                                    <li th:with="ok=${!#strings.isEmpty(property.title) and !#strings.isEmpty(property.address) and !#strings.isEmpty(property.city) and !#strings.isEmpty(property.description)}"
+                                        th:classappend="${ok} ? '' : 'bad'">
+                                        <span>Property information</span>
+                                        <svg th:if="${ok}" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+                                        <svg th:unless="${ok}" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                                    </li>
+                                    <li th:with="ok=${not #lists.isEmpty(images)}"
+                                        th:classappend="${ok} ? '' : 'bad'">
+                                        <span>Photos uploaded</span>
+                                        <svg th:if="${ok}" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+                                        <svg th:unless="${ok}" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                                    </li>
+                                    <li th:with="ok=${landlord != null and !#strings.isEmpty(landlord.email)}"
+                                        th:classappend="${ok} ? '' : 'bad'">
+                                        <span>Landlord contact details</span>
+                                        <svg th:if="${ok}" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+                                        <svg th:unless="${ok}" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                                    </li>
+                                    <li th:with="ok=${property.rent != null and property.availableFrom != null}"
+                                        th:classappend="${ok} ? '' : 'bad'">
+                                        <span>Pricing &amp; availability</span>
+                                        <svg th:if="${ok}" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+                                        <svg th:unless="${ok}" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                                    </li>
+                                </ul>
+
+                                <p class="ld-hint">Review the property details before making your decision.</p>
+
+                                <button type="button" class="ld-btn approve" onclick="openModal('approveModal')">
+                                    <svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>Approve listing
+                                </button>
+                                <button type="button" class="ld-btn reject" onclick="openModal('rejectModal')">
+                                    <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>Reject listing
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Landlord (no contact button) -->
+                        <div class="ld-card">
+                            <div class="ld-card-head"><h2 class="ld-card-title">Landlord</h2></div>
+                            <div class="ld-card-body">
+                                <div th:if="${landlord != null}">
+                                    <div class="ld-landlord">
+                                        <div class="ld-avatar"
+                                             th:text="${#strings.toUpperCase(#strings.substring(landlord.firstName ?: ' ', 0, 1) + #strings.substring(landlord.lastName ?: ' ', 0, 1))}">LL</div>
+                                        <div>
+                                            <div class="ld-landlord-name" th:text="${landlord.firstName} + ' ' + ${landlord.lastName}">Landlord Name</div>
+                                            <div class="ld-landlord-role">Property owner</div>
+                                        </div>
+                                    </div>
+                                    <div class="ld-contact">
+                                        <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z" stroke-linejoin="round"/><path d="M22 6l-10 7L2 6"/></svg>
+                                        <span th:text="${landlord.email} ?: 'No email on file'">email</span>
+                                    </div>
+                                    <div class="ld-contact" th:if="${landlord.phone != null}">
+                                        <svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>
+                                        <span th:text="${landlord.phone}">phone</span>
+                                    </div>
+                                </div>
+                                <p class="ld-text" th:if="${landlord == null}">
+                                    Not linked to a registered landlord (ID: <span th:text="${property.landlordID}">?</span>)
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Listing summary -->
+                        <div class="ld-card">
+                            <div class="ld-card-head"><h2 class="ld-card-title">Listing summary</h2></div>
+                            <div class="ld-card-body">
+                                <div class="ld-row"><span>Listing ID</span><span th:text="'#' + ${property.propertyID}">#0</span></div>
+                                <div class="ld-row"><span>Availability</span><span th:text="${property.availableFrom} ?: 'Not specified'">Date</span></div>
+                                <div class="ld-row"><span>Status</span>
+                                    <span th:text="${property.status == 'Active'} ? 'Approved' : (${property.status} ?: 'Pending')">Pending</span></div>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Approve confirmation popup -->
+<div class="ld-modal" id="approveModal" role="dialog" aria-modal="true" aria-labelledby="approveTitle"
+     th:if="${property.status == 'Pending' or property.status == null}">
+    <div class="ld-modal-box">
+        <div class="ld-modal-icon"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></div>
+        <h3 id="approveTitle">Approve this listing?</h3>
+        <p><strong th:text="${property.title}">Listing</strong> will go live for students to view and apply to, and the landlord will be notified.</p>
+        <div class="ld-modal-actions">
+            <button type="button" class="ld-btn ghost" onclick="closeModal('approveModal')">Cancel</button>
+            <form th:action="@{/admin/approve-listing/{id}(id=${property.propertyID})}" method="post">
+                <button type="submit" class="ld-btn approve">Yes, approve</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Reject confirmation popup -->
+<div class="ld-modal danger" id="rejectModal" role="dialog" aria-modal="true" aria-labelledby="rejectTitle"
+     th:if="${property.status == 'Pending' or property.status == null}">
+    <div class="ld-modal-box">
+        <div class="ld-modal-icon"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></div>
+        <h3 id="rejectTitle">Reject this listing?</h3>
+        <p><strong th:text="${property.title}">Listing</strong> will not be published and the landlord will be notified.</p>
+        <div class="ld-modal-actions">
+            <button type="button" class="ld-btn ghost" onclick="closeModal('rejectModal')">Cancel</button>
+            <form th:action="@{/admin/reject-listing/{id}(id=${property.propertyID})}" method="post">
+                <button type="submit" class="ld-btn ld-modal-confirm reject-confirm">Yes, reject</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openModal(id)  { var m = document.getElementById(id); if (m) m.classList.add('open'); }
+    function closeModal(id) { var m = document.getElementById(id); if (m) m.classList.remove('open'); }
+    document.querySelectorAll('.ld-modal').forEach(function (m) {
+        m.addEventListener('click', function (e) { if (e.target === m) m.classList.remove('open'); });
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') document.querySelectorAll('.ld-modal.open').forEach(function (m) { m.classList.remove('open'); });
+    });
+
+    // Gallery: click a thumbnail to swap the main photo
+    var main = document.getElementById('mainListingImg');
+    document.querySelectorAll('.ld-thumbs img').forEach(function (t) {
+        t.addEventListener('click', function () {
+            main.src = t.src;
+            document.querySelectorAll('.ld-thumbs img').forEach(function (x) { x.classList.remove('active'); });
+            t.classList.add('active');
+        });
+    });
+</script>
 </body>
 </html>

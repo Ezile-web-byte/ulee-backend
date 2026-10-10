@@ -4,81 +4,185 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ULEE — Settings</title>
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/admin-style.css">
     <script src="/admin-script.js" defer></script>
+    <script src="/landlord-sidebar-toggle.js" defer></script>
 
-    <!-- Settings-page-only styles. admin-style.css already defines .shell,
-         .main, .topbar, .content etc. for the rest of the admin panel — this
-         block only adds what's specific to Settings (tabs, panels, form
-         fields, session/activity rows) so nothing here fights those. -->
     <style>
-        .stg-tabs{display:flex;gap:26px;padding:0 0 0;border-bottom:1px solid var(--border);margin:20px 0 0}
-        .stg-tab{
-            display:flex;align-items:center;gap:6px;padding-bottom:12px;font-size:13.5px;font-weight:600;
-            color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;background:none;border-top:none;border-left:none;border-right:none;
-            font-family:inherit;
+        /* ── ULEE palette (ULEE-design-system.md), prefixed so it never clashes with admin-style.css ── */
+        :root {
+            --u-navy: #071C2D; --u-teal-bright: #14C8BE; --u-teal-active: #007178; --u-primary-dark: #006A6A;
+            --u-tint: #F4FBFA; --u-surface: #F0F7F6; --u-outline: #E6E8E4; --u-accent-border: #93C0C5;
+            --u-on-surface: #191c1d; --u-on-variant: #3f484d; --u-muted: #6f787d; --u-alert: #ba1a1a;
+            --u-font-display: 'Plus Jakarta Sans', sans-serif; --u-font-body: 'Hanken Grotesk', sans-serif;
         }
-        .stg-tab svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.7}
-        .stg-tab.active{color:var(--text);border-bottom-color:var(--pdp)}
-        .stg-panel-group{display:none;padding-top:22px;max-width:760px}
-        .stg-panel-group.active{display:block}
+        .main { font-family: var(--u-font-body); }
+        /* Page-name header: identical on every admin page (Plus Jakarta Sans, bold) */
+        header.topbar .topbar-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; letter-spacing: -0.01em; color: #191c1d; }
+        .topbar-title, .stg-panel-head h3, .stg-hero-name, .stg-btn-primary { font-family: var(--u-font-display); }
 
-        .stg-panel{background:var(--white);border:1px solid var(--border);border-radius:12px;margin-bottom:18px;overflow:hidden}
-        .stg-panel-head{display:flex;gap:12px;align-items:flex-start;padding:18px 20px}
-        .stg-panel-head .ic{width:34px;height:34px;border-radius:9px;background:var(--pp);color:var(--pdp);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-        .stg-panel-head .ic svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8}
-        .stg-panel-head h3{margin:0 0 2px;font-size:14.5px}
-        .stg-panel-head p{margin:0;font-size:12.5px;color:var(--muted)}
-        .stg-panel-div{border-top:1px solid var(--border)}
-        .stg-panel-body{padding:18px 20px 20px}
+        /* ── Top bar: bell · avatar (avatar is display-only) ── */
+        .topbar-right { display: flex; align-items: center; gap: 14px; margin-left: auto; }
+        .stg-avatar { pointer-events: none; cursor: default; user-select: none; }
 
-        .stg-field{display:flex;flex-direction:column;gap:6px}
-        .stg-field label{font-size:11px;font-weight:600;color:var(--pdp);text-transform:uppercase;letter-spacing:.03em}
-        .stg-field input{
-            border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13.5px;
-            font-family:inherit;color:var(--text);background:#fdfdfd;
+        /* ── Page width: fills the page and sits in the centre ── */
+        .content.stg-content { width: 100%; max-width: 1180px; margin: 0 auto; box-sizing: border-box; padding: 28px 32px 40px; }
+        @media (max-width: 640px) { .content.stg-content { padding: 20px 16px 32px; } }
+
+        /* ── Flash messages ── */
+        .stg-flash { border-radius: 12px; padding: 12px 18px; margin-bottom: 16px; font-size: 14px; font-weight: 600; }
+        .stg-flash.ok { background: #E3F6F3; border: 1px solid var(--u-accent-border); color: var(--u-primary-dark); }
+        .stg-flash.err { background: #fdeceb; border: 1px solid #f0b4b0; color: var(--u-alert); }
+
+        .stg-sub { margin: 0 0 18px; font-size: 14px; color: var(--u-muted); }
+
+        /* ── Profile hero: the ULEE navy card ── */
+        .ulee-metric-card {
+            position: relative; overflow: hidden; padding: 22px 26px 36px;
+            border: 1.5px solid rgba(20, 200, 190, 0.45); border-radius: 16px;
+            background: linear-gradient(115deg, #071C2D 0%, #0A3A48 55%, #0F6C70 100%);
+            box-shadow: 0 6px 18px rgba(7, 28, 45, 0.18); color: #fff;
+            animation: ulee-metric-in .6s cubic-bezier(.2, .8, .2, 1) backwards;
         }
-        .stg-field input:focus{outline:none;border-color:var(--pdp);background:#fff}
-        .stg-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-        .stg-hint{font-size:11.5px;color:var(--muted);margin-top:6px}
-        .stg-form-actions{display:flex;justify-content:flex-end;margin-top:16px;align-items:center;gap:12px}
-        .stg-btn-primary{
-            background:#f5c344;color:#0d2b3e;border:none;padding:10px 18px;border-radius:8px;
-            font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;
+        .ulee-metric-card::before {
+            content: ''; position: absolute; top: 0; left: -60%; width: 40%; height: 100%;
+            background: linear-gradient(100deg, transparent, rgba(255,255,255,.12), transparent);
+            transform: skewX(-20deg); animation: ulee-metric-shine 7s ease-in-out infinite;
         }
-        .stg-btn-primary:hover{filter:brightness(1.08)}
-        .stg-btn-primary:disabled{opacity:.6;cursor:default}
-        .stg-form-msg{font-size:12px;font-weight:600}
-        .stg-form-msg.ok{color:#1a9b5b}
-        .stg-form-msg.err{color:#d3453b}
-
-        .stg-row{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid #f2f3f4}
-        .stg-row:last-child{border-bottom:none}
-        .stg-row-ic{width:36px;height:36px;border-radius:9px;background:#f3f4f5;color:#666;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-        .stg-row-ic.ok{background:#e6f6ec;color:#1a9b5b}
-        .stg-row-ic.bad{background:#fdecea;color:#d3453b}
-        .stg-row-ic svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7}
-        .stg-row-main{flex:1;min-width:0}
-        .stg-row-title{font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:8px}
-        .stg-row-sub{font-size:12px;color:var(--muted);margin-top:2px}
-        .stg-row-side{text-align:right;flex-shrink:0}
-        .stg-row-time{font-size:12px;color:var(--muted)}
-        .stg-chip{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:999px;background:#e6f6ec;color:#1a9b5b}
-        .stg-link-danger{background:none;border:none;padding:0;font-family:inherit;font-size:12.5px;font-weight:600;color:#d3453b;cursor:pointer}
-        .stg-link-danger:hover{text-decoration:underline}
-        .stg-link-danger:disabled{opacity:.5;cursor:default;text-decoration:none}
-
-        .stg-panel-foot{padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end}
-        .stg-btn-outline-danger{
-            background:#fff;border:1px solid #f0b4b0;color:#d3453b;padding:9px 16px;border-radius:8px;
-            font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;
+        .ulee-metric-card::after {
+            content: ''; position: absolute; top: -60px; right: -40px; width: 170px; height: 170px;
+            border-radius: 50%; background: radial-gradient(circle, rgba(20,200,190,.28) 0%, transparent 70%);
+            animation: ulee-metric-pulse 4.5s ease-in-out infinite;
         }
-        .stg-btn-outline-danger:hover{background:#fdecea}
-        .stg-btn-outline-danger:disabled{opacity:.5;cursor:default}
+        .ulee-metric-stars { position: absolute; top: 0; right: 0; width: 40%; height: 80%; z-index: 1; }
+        .ulee-metric-stars .star { animation: ulee-metric-twinkle 4s ease-in-out infinite; animation-delay: var(--d, 0s); }
+        .ulee-metric-wave { position: absolute; left: 0; bottom: 0; width: 200%; height: 22px; z-index: 1; animation: ulee-metric-wave 16s linear infinite; }
+        .ulee-metric-wave .w-back  { fill: rgba(14,116,128,.55); }
+        .ulee-metric-wave .w-front { fill: #071C2D; stroke: #14C8BE; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+        @keyframes ulee-metric-in      { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+        @keyframes ulee-metric-shine   { 0%,55% { left: -60%; } 100% { left: 130%; } }
+        @keyframes ulee-metric-pulse   { 0%,100% { opacity: .6; transform: scale(1); } 50% { opacity: 1; transform: scale(1.12); } }
+        @keyframes ulee-metric-twinkle { 0%,100% { opacity: .25; } 50% { opacity: 1; } }
+        @keyframes ulee-metric-wave    { to { transform: translateX(-50%); } }
+        @media (prefers-reduced-motion: reduce) {
+            .ulee-metric-card, .ulee-metric-card::before, .ulee-metric-card::after,
+            .ulee-metric-wave, .ulee-metric-stars .star { animation: none !important; }
+        }
+        .stg-hero { display: flex; align-items: center; gap: 18px; position: relative; z-index: 2; }
+        .stg-hero-av {
+            width: 60px; height: 60px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+            background: rgba(20, 200, 190, .16); border: 1.5px solid rgba(20, 200, 190, .6);
+            font-family: var(--u-font-display); font-size: 20px; font-weight: 800; color: var(--u-teal-bright);
+        }
+        .stg-hero-label { font-size: 12.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: rgba(255,255,255,.78); }
+        .stg-hero-name { font-size: 24px; font-weight: 800; margin-top: 2px; }
+        .stg-hero-sub { font-size: 13px; color: #7DF0E6; margin-top: 2px; word-break: break-all; }
 
-        .stg-placeholder{background:var(--white);border:1px dashed var(--border);border-radius:12px;padding:32px;text-align:center;color:var(--muted);font-size:13px}
+        /* ── Tabs ── */
+        .stg-tabs { display: flex; gap: 26px; border-bottom: 1px solid var(--u-outline); margin: 24px 0 0; }
+        .stg-tab {
+            display: flex; align-items: center; gap: 6px; padding-bottom: 12px; font-size: 14px; font-weight: 600;
+            color: var(--u-muted); border: none; border-bottom: 2px solid transparent; background: none; cursor: pointer;
+            font-family: var(--u-font-body); transition: color .15s ease;
+        }
+        .stg-tab:hover { color: var(--u-on-surface); }
+        .stg-tab:focus-visible { outline: 2px solid var(--u-teal-bright); outline-offset: 4px; border-radius: 4px; }
+        .stg-tab svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.7; }
+        .stg-tab.active { color: var(--u-navy); border-bottom-color: var(--u-teal-active); }
+        .stg-tab.active svg { stroke: var(--u-teal-active); }
+        .stg-panel-group { display: none; padding-top: 22px; }
+        .stg-panel-group.active { display: block; }
+
+        /* ── Panels ── */
+        .stg-panel { background: #fff; border: 1px solid var(--u-outline); border-radius: 16px; margin-bottom: 18px; overflow: hidden; }
+        .stg-panel-head { display: flex; gap: 14px; align-items: flex-start; padding: 18px 22px; }
+        .stg-panel-head .ic {
+            width: 38px; height: 38px; border-radius: 10px; background: var(--u-navy); color: var(--u-teal-bright);
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .stg-panel-head .ic svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+        .stg-panel-head h3 { margin: 0 0 2px; font-size: 16px; font-weight: 700; color: var(--u-on-surface); }
+        .stg-panel-head p { margin: 0; font-size: 13px; color: var(--u-muted); }
+        .stg-panel-div { border-top: 1px solid var(--u-outline); }
+        .stg-panel-body { padding: 20px 22px 22px; }
+
+        /* ── Form fields ── */
+        .stg-field { display: flex; flex-direction: column; gap: 6px; }
+        .stg-field label { font-size: 12px; font-weight: 700; color: var(--u-primary-dark); text-transform: uppercase; letter-spacing: .07em; }
+        .stg-field input {
+            height: 44px; box-sizing: border-box; border: 1px solid var(--u-outline); border-radius: 10px; padding: 0 14px;
+            font-size: 14.5px; font-family: var(--u-font-body); color: var(--u-on-surface); background: #fff;
+            transition: border-color .15s ease, box-shadow .15s ease;
+        }
+        .stg-field input:focus { outline: none; border-color: var(--u-primary-dark); box-shadow: 0 0 0 3px rgba(20, 200, 190, .2); }
+        .stg-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 640px) { .stg-grid2 { grid-template-columns: 1fr; } }
+        .stg-hint { font-size: 12.5px; color: var(--u-muted); margin: 10px 0 0; }
+        .stg-form-actions { display: flex; justify-content: flex-end; margin-top: 18px; align-items: center; gap: 12px; }
+        .stg-btn-primary {
+            background: var(--u-primary-dark); color: #fff; border: 1px solid var(--u-primary-dark); height: 42px; padding: 0 22px;
+            border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; transition: background .2s ease;
+        }
+        .stg-btn-primary:hover { background: var(--u-teal-active); }
+        .stg-btn-primary:focus-visible { outline: 2px solid var(--u-teal-bright); outline-offset: 3px; }
+        .stg-btn-primary:disabled { opacity: .6; cursor: default; }
+        .stg-form-msg { font-size: 13px; font-weight: 600; }
+        .stg-form-msg.ok { color: var(--u-primary-dark); }
+        .stg-form-msg.err { color: var(--u-alert); }
+
+        /* ── Session / activity rows ── */
+        .stg-row { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid #f0f2f1; }
+        .stg-row:last-child { border-bottom: none; }
+        .stg-row-ic { width: 38px; height: 38px; border-radius: 10px; background: var(--u-surface); color: var(--u-primary-dark); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .stg-row-ic.ok { background: #E3F6F3; color: var(--u-primary-dark); }
+        .stg-row-ic.bad { background: #fdeceb; color: var(--u-alert); }
+        .stg-row-ic svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 1.7; }
+        .stg-row-main { flex: 1; min-width: 0; }
+        .stg-row-title { font-size: 14.5px; font-weight: 600; color: var(--u-on-surface); display: flex; align-items: center; gap: 8px; }
+        .stg-row-sub { font-size: 13px; color: var(--u-muted); margin-top: 2px; }
+        .stg-row-side { text-align: right; flex-shrink: 0; }
+        .stg-row-time { font-size: 12.5px; color: var(--u-muted); }
+        .stg-row-time.now { color: var(--u-primary-dark); font-weight: 700; }
+        .stg-chip { font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px; background: #E3F6F3; color: var(--u-primary-dark); border: 1px solid rgba(147, 192, 197, .6); }
+        .stg-empty-note { color: var(--u-muted); font-size: 13.5px; }
+
+        /* ── Logout confirm (same dialog as the dashboard) ── */
+        .ulee-confirm-backdrop {
+            position: fixed; inset: 0; z-index: 1000; display: none; align-items: center; justify-content: center;
+            background: rgba(10, 30, 38, 0.45); backdrop-filter: blur(3px); padding: 20px;
+        }
+        .ulee-confirm-backdrop.open { display: flex; animation: uleeFade .18s ease-out; }
+        .ulee-confirm-card {
+            width: 100%; max-width: 420px; background: #fff; border-radius: 18px;
+            padding: 28px 26px 22px; text-align: center; font-family: inherit;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25); animation: uleePop .22s cubic-bezier(.2, .9, .3, 1.2);
+        }
+        .ulee-confirm-icon { width: 60px; height: 60px; border-radius: 50%; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; }
+        .ulee-confirm-icon svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+        .ulee-confirm-card h3 { margin: 0 0 6px; font-size: 19px; font-weight: 700; color: #12262d; }
+        .ulee-confirm-card p { margin: 0 0 22px; font-size: 13.5px; line-height: 1.6; color: #5b6b71; }
+        .ulee-confirm-actions { display: flex; gap: 10px; }
+        .ulee-confirm-actions button { flex: 1; padding: 12px 0; border-radius: 10px; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; transition: transform .1s ease, filter .15s ease; }
+        .ulee-confirm-actions button:hover { filter: brightness(0.96); }
+        .ulee-confirm-actions button:active { transform: scale(0.97); }
+        /* Result popup: same look as the dashboard "Log out?" popup */
+        #stgResultCard { padding: 0; overflow: hidden; border: none; }
+        #stgResultCard .stg-pop-top { padding: 28px 26px 0; background: none; }
+        #stgResultCard .ulee-confirm-icon { margin: 0 auto 16px; background: #E3F6F3; border: none; color: #006A6A; }
+        #stgResultCard.tone-error .ulee-confirm-icon { background: #fdeceb; color: #ba1a1a; }
+        #stgResultCard .stg-pop-body { padding: 0 26px 24px; }
+        #stgResultCard h3 { font-family: 'Plus Jakarta Sans', sans-serif; color: #12262d; }
+        #stgResultCard p { color: #5b6b71; font-family: 'Hanken Grotesk', sans-serif; }
+        #stgResultOk { background: #006A6A; border: 1px solid #006A6A; color: #fff; font-weight: 600; }
+        #stgResultOk:hover { background: #006A6A; }
+        #stgResultOk:focus-visible { outline: 2px solid #14C8BE; outline-offset: 3px; }
+        @keyframes uleeFade { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes uleePop { from { opacity: 0; transform: translateY(12px) scale(.94); } to { opacity: 1; transform: none; } }
     </style>
+    <link rel="stylesheet" href="/admin-theme.css">
 </head>
 <body>
 <div class="shell">
@@ -88,30 +192,42 @@
     <div class="main">
         <header class="topbar">
             <div class="topbar-title">Settings</div>
-            <div th:replace="~{fragments/notification-bell :: bell}"></div>
-            <button class="logout-btn" onclick="confirmAdminLogout()">
-                <svg viewBox="0 0 20 20"><path d="M13 3h4v14h-4M9 14l4-4-4-4M13 10H5"/></svg>
-                <span>Log out</span>
-            </button>
+            <div class="topbar-right">
+                <div th:replace="~{fragments/notification-bell :: bell}"></div>
+                <span class="avatar stg-avatar" th:text="${adminInitials} ?: 'AD'">UG</span>
+            </div>
         </header>
 
-        <div class="content">
+        <div class="content stg-content">
 
-            <div th:if="${actionMessage}" style="background:#e8f5e9;border:1px solid #81c784;border-radius:8px;padding:12px 18px;margin-bottom:16px">
-                <strong style="color:#2e7d32" th:text="${actionMessage}">Success</strong>
-            </div>
-            <div th:if="${actionError}" style="background:#ffebee;border:1px solid #ef5350;border-radius:8px;padding:12px 18px;margin-bottom:16px">
-                <strong style="color:#c62828" th:text="${actionError}">Error</strong>
-            </div>
+            <div th:if="${actionMessage}" class="stg-flash ok" th:text="${actionMessage}">Success</div>
+            <div th:if="${actionError}" class="stg-flash err" th:text="${actionError}">Error</div>
 
-            <p style="margin:0;color:var(--muted);font-size:13px">Manage your admin account and platform preferences</p>
+            <p class="stg-sub">Manage your admin account and platform preferences</p>
+
+            <!-- Profile hero (ULEE navy card) -->
+            <div class="ulee-metric-card">
+                <div class="stg-hero">
+                    <div class="stg-hero-av" th:text="${adminInitials} ?: 'AD'">UG</div>
+                    <div>
+                        <div class="stg-hero-label">Administrator</div>
+                        <div class="stg-hero-name" th:text="${adminName} ?: 'Admin'">Admin</div>
+                        <div class="stg-hero-sub" th:if="${currentUser != null and currentUser.email != null}" th:text="${currentUser.email}">admin@ulee.co.za</div>
+                    </div>
+                </div>
+                <svg class="ulee-metric-stars" viewBox="0 0 200 90" aria-hidden="true"><g fill="#9FF0E8"><circle class="star" cx="150" cy="20" r="1.6" style="--d:0s"/><circle class="star" cx="180" cy="44" r="1.3" style="--d:1.2s"/><circle class="star" cx="120" cy="52" r="1.2" style="--d:.5s"/><circle class="star" cx="190" cy="12" r="1.4" style="--d:1.8s"/></g></svg>
+                <svg class="ulee-metric-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true">
+                    <path class="w-back"  d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+                    <path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+                </svg>
+            </div>
 
             <div class="stg-tabs">
                 <button type="button" class="stg-tab active" data-tab="account" onclick="stgShowTab('account')">
                     <svg viewBox="0 0 20 20"><circle cx="10" cy="7" r="3"/><path d="M4 17c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>Account
                 </button>
                 <button type="button" class="stg-tab" data-tab="security" onclick="stgShowTab('security')">
-                    <svg viewBox="0 0 20 20"><rect x="4" y="9" width="12" height="8" rx="2"/><path d="M6.5 9V6a3.5 3.5 0 017 0v3"/></svg>Security
+                    <svg viewBox="0 0 20 20"><rect x="4" y="9" width="12" height="8" rx="2"/><path d="M6.5 9V6a3.5 3.5 0 017 0v3"/></svg>Password
                 </button>
             </div>
 
@@ -186,59 +302,22 @@
                     </div>
                 </div>
 
-                <div class="stg-panel">
-                    <div class="stg-panel-head">
-                        <div class="ic"><svg viewBox="0 0 20 20"><rect x="2" y="4" width="16" height="10" rx="1.5"/><path d="M7 17h6M10 14v3"/></svg></div>
-                        <div><h3>Active Sessions</h3><p>Devices currently signed in to your account</p></div>
-                    </div>
-                    <div class="stg-panel-div"></div>
-                    <div class="stg-panel-body" style="padding-top:6px" id="stg-sessions-body">
-                        <div class="stg-row" th:each="sess : ${activeSessions}" th:attr="data-session-id=${sess.id}">
-                            <div class="stg-row-ic"><svg viewBox="0 0 20 20"><rect x="2" y="4" width="16" height="10" rx="1.5"/><path d="M7 17h6M10 14v3"/></svg></div>
-                            <div class="stg-row-main">
-                                <div class="stg-row-title">
-                                    <span th:text="${sess.deviceLabel}">Device</span>
-                                    <span class="stg-chip" th:if="${sess.current}">This device</span>
-                                </div>
-                                <div class="stg-row-sub" th:text="${sess.location}">Location</div>
-                            </div>
-                            <div class="stg-row-side">
-                                <div class="stg-row-time" th:if="${sess.current}" style="color:#1a9b5b;font-weight:600">Active now</div>
-                                <div class="stg-row-time" th:unless="${sess.current}" th:text="${sess.lastActive}">Last active</div>
-                            </div>
-                        </div>
-                        <div class="stg-row" th:if="${activeSessions == null or #lists.isEmpty(activeSessions)}">
-                            <div class="stg-row-main" style="color:var(--muted);font-size:12.5px">Session tracking isn't set up yet, so this can't show your devices.</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="stg-panel">
-                    <div class="stg-panel-head">
-                        <div class="ic"><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7.5"/><path d="M10 5.5v5l3.5 2"/></svg></div>
-                        <div><h3>Recent Login Activity</h3><p>The last logins made to your account</p></div>
-                    </div>
-                    <div class="stg-panel-div"></div>
-                    <div class="stg-panel-body" style="padding-top:6px">
-                        <div class="stg-row" th:each="login : ${loginActivity}">
-                            <div class="stg-row-ic" th:classappend="${login.success} ? 'ok' : 'bad'">
-                                <svg th:if="${login.success}" viewBox="0 0 20 20"><path d="M4 10l4 4 8-8"/></svg>
-                                <svg th:unless="${login.success}" viewBox="0 0 20 20"><path d="M6 6l8 8M14 6l-8 8"/></svg>
-                            </div>
-                            <div class="stg-row-main">
-                                <div class="stg-row-title" th:text="${login.success} ? 'Successful login' : 'Failed login attempt'">Successful login</div>
-                                <div class="stg-row-sub" th:text="${login.deviceLabel + ' · ' + login.location}">Device · Location</div>
-                            </div>
-                            <div class="stg-row-side"><div class="stg-row-time" th:text="${login.timeLabel}">Time</div></div>
-                        </div>
-                        <div class="stg-row" th:if="${loginActivity == null or #lists.isEmpty(loginActivity)}">
-                            <div class="stg-row-main" style="color:var(--muted);font-size:12.5px">Login history isn't tracked yet, so there's nothing to show here.</div>
-                        </div>
-                    </div>
-                </div>
-
             </div>
 
+        </div>
+    </div>
+</div>
+
+<!-- Result popup: shown after Save changes / Update password -->
+<div id="stgResultBackdrop" class="ulee-confirm-backdrop" aria-hidden="true">
+    <div id="stgResultCard" class="ulee-confirm-card tone-success" role="alertdialog" aria-modal="true" aria-labelledby="stgResultTitle" aria-describedby="stgResultText">
+        <div class="stg-pop-top"><div id="stgResultIcon" class="ulee-confirm-icon"></div></div>
+        <div class="stg-pop-body">
+            <h3 id="stgResultTitle">Done</h3>
+            <p id="stgResultText"></p>
+            <div class="ulee-confirm-actions">
+                <button type="button" id="stgResultOk">OK</button>
+            </div>
         </div>
     </div>
 </div>
@@ -268,6 +347,32 @@
         return headers;
     }
 
+    // ---- ULEE result popup ----
+    var STG_ICONS = {
+        success: '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+        error: '<svg viewBox="0 0 24 24"><path d="M12 3l9.5 16.5h-19L12 3z"/><path d="M12 10v4.5M12 17.5v.01"/></svg>'
+    };
+    function stgPopup(kind, title, text) {
+        var bd = document.getElementById('stgResultBackdrop');
+        document.getElementById('stgResultCard').className = 'ulee-confirm-card tone-' + kind;
+        document.getElementById('stgResultIcon').innerHTML = STG_ICONS[kind];
+        document.getElementById('stgResultTitle').textContent = title;
+        document.getElementById('stgResultText').textContent = text || '';
+        bd.classList.add('open');
+        bd.setAttribute('aria-hidden', 'false');
+        document.getElementById('stgResultOk').focus();
+    }
+    function stgClosePopup() {
+        var bd = document.getElementById('stgResultBackdrop');
+        bd.classList.remove('open');
+        bd.setAttribute('aria-hidden', 'true');
+    }
+    document.addEventListener('DOMContentLoaded', function () {
+        document.getElementById('stgResultOk').addEventListener('click', stgClosePopup);
+        document.getElementById('stgResultBackdrop').addEventListener('click', function (e) { if (e.target === this) stgClosePopup(); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') stgClosePopup(); });
+    });
+
     function stgSetMsg(el, text, ok) {
         el.textContent = text || '';
         el.classList.toggle('ok', !!ok);
@@ -292,9 +397,11 @@
             });
             var payload = await res.json().catch(function () { return {}; });
             if (!res.ok || payload.success === false) throw new Error(payload.message || 'Save failed');
-            stgSetMsg(msg, payload.message || 'Saved.', true);
+            stgSetMsg(msg, '', true);
+            stgPopup('success', 'Profile updated', payload.message || 'Your changes have been saved.');
         } catch (err) {
-            stgSetMsg(msg, err.message || 'Could not save changes.', false);
+            stgSetMsg(msg, '', false);
+            stgPopup('error', 'Could not save changes', err.message || 'Something went wrong. Please try again.');
         } finally {
             btn.disabled = false;
         }
@@ -310,11 +417,11 @@
         var data = Object.fromEntries(new FormData(form).entries());
 
         if (data.newPassword !== data.confirmPassword) {
-            stgSetMsg(msg, 'New passwords do not match.', false);
+            stgPopup('error', 'Passwords do not match', 'Enter the same new password in both fields.');
             return false;
         }
         if (data.newPassword.length < 8) {
-            stgSetMsg(msg, 'New password must be at least 8 characters.', false);
+            stgPopup('error', 'Password too short', 'Your new password must be at least 8 characters.');
             return false;
         }
 
@@ -329,10 +436,12 @@
             });
             var payload = await res.json().catch(function () { return {}; });
             if (!res.ok || payload.success === false) throw new Error(payload.message || 'Update failed');
-            stgSetMsg(msg, payload.message || 'Password updated.', true);
+            stgSetMsg(msg, '', true);
+            stgPopup('success', 'Password updated', payload.message || 'Your password has been changed. You stay signed in on this device.');
             form.reset();
         } catch (err) {
-            stgSetMsg(msg, err.message || 'Could not update password.', false);
+            stgSetMsg(msg, '', false);
+            stgPopup('error', 'Could not update password', err.message || 'Check your current password and try again.');
         } finally {
             btn.disabled = false;
         }

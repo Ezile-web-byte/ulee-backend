@@ -4,51 +4,172 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ULEE — All Listings</title>
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/admin-style.css">
     <script src="/admin-script.js" defer></script>
     <style>
-        /* Unsuspend button: same amber as the "Suspend Listing" button on the report page */
-        .btn-unsuspend {
-            background: #fff; border: 1px solid #e5a300; color: #8a5a00;
-            padding: 6px 12px; border-radius: 6px; font-size: 12.5px; font-weight: 600;
-            font-family: inherit; cursor: pointer; white-space: nowrap;
-            transition: background .15s ease;
+        /* ULEE design system tokens (self-contained so this page never depends on load order) */
+        .lst {
+            --primary-dark: #006A6A; --primary: #096C6C; --primary-tint: #F4FBFA; --surface-tint: #F0F7F6;
+            --outline-variant: #E6E8E4; --accent-border: #93C0C5; --on-surface: #191c1d;
+            --on-surface-variant: #3f484d; --outline: #6f787d; --accent-yellow: #f5d450; --alert: #ba1a1a;
+            --navy: #071C2D;
+            font-family: 'Hanken Grotesk', sans-serif; color: var(--on-surface);
         }
-        .btn-unsuspend:hover { background: #fff8e1; }
+        header.topbar .topbar-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; letter-spacing: -0.01em; color: #191c1d; }
 
-        /* Status badges: Suspended = amber like the Suspend/Unsuspend buttons,
-           Rejected = red exactly like the Reject button */
-        .badge-suspended { background: #fff8e1; color: #8a5a00; border: 1px solid #e5a300; }
-        .badge-rejected  { background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border); }
+        /* UG avatar: display only, not clickable */
+        .avatar.avatar-static { pointer-events: none; cursor: default; user-select: none; font-family: 'Plus Jakarta Sans', sans-serif; }
 
-        /* Custom confirm dialog (replaces the browser's plain popup) */
-        .ulee-confirm-backdrop {
-            position: fixed; inset: 0; z-index: 1000;
-            display: none; align-items: center; justify-content: center;
-            background: rgba(10, 30, 38, 0.45); backdrop-filter: blur(3px); padding: 20px;
+        .lst-sub { margin: 0 0 18px; font-size: 14.5px; color: var(--on-surface-variant); }
+
+        /* ULEE navy wave stat card (design system section 4) */
+        .lst { --font-display: 'Plus Jakarta Sans', sans-serif; }
+        .lst-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
+        .ulee-metric-card {
+            position: relative; overflow: hidden; padding: 20px 24px 34px;
+            border: 1.5px solid rgba(20, 200, 190, 0.45); border-radius: 16px;
+            background: linear-gradient(115deg, #071C2D 0%, #0A3A48 55%, #0F6C70 100%);
+            box-shadow: 0 6px 18px rgba(7, 28, 45, 0.18); color: #fff;
+            transition: transform .2s ease, box-shadow .2s ease;
+            animation: ulee-metric-in .6s cubic-bezier(.2, .8, .2, 1) backwards;
         }
-        .ulee-confirm-backdrop.open { display: flex; animation: uleeFade .18s ease-out; }
-        .ulee-confirm-card {
-            width: 100%; max-width: 420px; background: #fff; border-radius: 18px;
-            padding: 28px 26px 22px; text-align: center; font-family: inherit;
-            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
-            animation: uleePop .22s cubic-bezier(.2, .9, .3, 1.2);
+        .ulee-metric-card:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(7, 28, 45, .28); }
+        .ulee-metric-card::before {
+            content: ''; position: absolute; top: 0; left: -60%; width: 40%; height: 100%;
+            background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .12), transparent);
+            transform: skewX(-20deg); animation: ulee-metric-shine 7s ease-in-out infinite;
         }
-        .ulee-confirm-icon { width: 60px; height: 60px; border-radius: 50%; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; }
-        .ulee-confirm-icon svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-        .ulee-confirm-card h3 { margin: 0 0 6px; font-size: 19px; font-weight: 700; color: #12262d; }
-        .ulee-confirm-prop { display: inline-block; margin: 2px 0 10px; padding: 4px 12px; border-radius: 999px; background: #f2f5f6; color: #006078; font-size: 12.5px; font-weight: 600; }
-        .ulee-confirm-card p { margin: 0 0 22px; font-size: 13.5px; line-height: 1.6; color: #5b6b71; }
-        .ulee-confirm-actions { display: flex; gap: 10px; }
-        .ulee-confirm-actions button { flex: 1; padding: 12px 0; border-radius: 10px; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; transition: transform .1s ease, filter .15s ease; }
-        .ulee-confirm-actions button:hover { filter: brightness(0.96); }
-        .ulee-confirm-actions button:active { transform: scale(0.97); }
-        #uleeConfirmCancel { background: #fff; border: 1px solid #d9dfe2; color: #444; }
-        .ulee-confirm-card.tone-warning .ulee-confirm-icon { background: #fff4d6; color: #b57a00; }
-        .ulee-confirm-card.tone-warning #uleeConfirmOk { background: #FFDC68; border: 1px solid #F8CF4F; color: #4a3500; }
-        @keyframes uleeFade { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes uleePop { from { opacity: 0; transform: translateY(12px) scale(.94); } to { opacity: 1; transform: none; } }
+        .ulee-metric-card::after {
+            content: ''; position: absolute; top: -60px; right: -40px; width: 170px; height: 170px;
+            border-radius: 50%; background: radial-gradient(circle, rgba(20, 200, 190, .28) 0%, transparent 70%);
+            animation: ulee-metric-pulse 4.5s ease-in-out infinite;
+        }
+        .ulee-metric-label { position: relative; z-index: 2; font-size: 12.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: rgba(255, 255, 255, .78); }
+        .ulee-metric-value { position: relative; z-index: 2; font-family: var(--font-display); font-size: 32px; font-weight: 800; margin-top: 8px; }
+        .ulee-metric-sub { position: relative; z-index: 2; font-size: 12px; color: #7DF0E6; margin-top: 2px; }
+        .ulee-metric-stars { position: absolute; top: 0; right: 0; width: 52%; height: 80%; z-index: 1; }
+        .ulee-metric-stars .star { animation: ulee-metric-twinkle 4s ease-in-out infinite; animation-delay: var(--d, 0s); }
+        .ulee-metric-wave { position: absolute; left: 0; bottom: 0; width: 200%; height: 22px; animation: ulee-metric-wave 16s linear infinite; }
+        .ulee-metric-wave .w-back  { fill: rgba(14, 116, 128, .55); }
+        .ulee-metric-wave .w-front { fill: #071C2D; stroke: #14C8BE; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+        .ulee-metric-card:nth-child(2) { animation-delay: .08s; }
+        .ulee-metric-card:nth-child(3) { animation-delay: .16s; }
+        .ulee-metric-card:nth-child(4) { animation-delay: .24s; }
+        /* yellow dot on the Pending card, same as the dashboard's alert dot */
+        .ulee-metric-dot { position: absolute; top: 16px; right: 18px; z-index: 3; width: 10px; height: 10px; border-radius: 50%; background: #f5d450; box-shadow: 0 0 0 4px rgba(245, 212, 80, .22); }
+        @keyframes ulee-metric-in      { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+        @keyframes ulee-metric-shine   { 0%, 55% { left: -60%; } 100% { left: 130%; } }
+        @keyframes ulee-metric-pulse   { 0%, 100% { opacity: .6; transform: scale(1); } 50% { opacity: 1; transform: scale(1.12); } }
+        @keyframes ulee-metric-twinkle { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
+        @keyframes ulee-metric-wave    { to { transform: translateX(-50%); } }
+        @media (prefers-reduced-motion: reduce) {
+            .ulee-metric-card, .ulee-metric-card::before, .ulee-metric-card::after,
+            .ulee-metric-wave, .ulee-metric-stars .star { animation: none !important; }
+        }
+
+        /* Status tabs (segmented pills) */
+        .lst-tabs { align-self: flex-start; display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 5px; border-radius: 9999px; background: var(--surface-tint); border: 1px solid var(--outline-variant); }
+        .lst-tab {
+            border: none; background: transparent; cursor: pointer; padding: 9px 18px; border-radius: 9999px;
+            font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13.5px; font-weight: 600; color: var(--on-surface-variant);
+            transition: background .15s ease, color .15s ease;
+        }
+        .lst-tab:hover { background: rgba(0, 106, 106, .08); color: var(--primary-dark); }
+        .lst-tab.active { background: var(--primary-dark); color: #fff; box-shadow: 0 2px 6px rgba(0, 106, 106, .28); }
+        .lst-tab:focus-visible { outline: 2px solid var(--primary-dark); outline-offset: 2px; }
+
+        /* Panel */
+        .lst-panel { background: #fff; border: 1px solid var(--outline-variant); border-radius: 20px; box-shadow: 0 1px 2px rgba(7, 28, 45, .04); overflow: hidden; }
+        .lst-toolbar { display: flex; flex-direction: column; gap: 14px; padding: 16px 18px; border-bottom: 1px solid var(--outline-variant); }
+        .lst-toolbar-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .lst-search { position: relative; flex: 1; min-width: 240px; max-width: 460px; margin: 0; }
+        .lst-search svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; stroke: var(--outline); fill: none; stroke-width: 1.7; }
+        .lst-search input {
+            width: 100%; box-sizing: border-box; padding: 11px 14px 11px 40px; border-radius: 9999px;
+            border: 1px solid var(--outline-variant); background: var(--primary-tint);
+            font-family: inherit; font-size: 14px; color: var(--on-surface); outline: none;
+            transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+        }
+        .lst-search input:focus { border-color: var(--primary-dark); background: #fff; box-shadow: 0 0 0 3px rgba(0, 106, 106, .12); }
+        .lst-count { margin-left: auto; font-size: 13px; color: var(--outline); }
+
+        /* Table */
+        .lst-wrap { overflow-x: auto; }
+        .lst-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        .lst-table thead th {
+            text-align: left; padding: 13px 18px; font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 11.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+            color: var(--outline); background: var(--primary-tint); border-bottom: 1px solid var(--outline-variant);
+        }
+        .lst-table tbody td { padding: 14px 18px; border-bottom: 1px solid var(--outline-variant); vertical-align: middle; }
+        .lst-table tbody tr:last-child td { border-bottom: none; }
+        .lst-table tbody tr { transition: background .15s ease; }
+        .lst-table tbody tr:hover { background: var(--primary-tint); }
+
+        .lst-prop { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }
+        .lst-thumb {
+            width: 46px; height: 46px; border-radius: 12px; flex: none; object-fit: cover;
+            display: flex; align-items: center; justify-content: center;
+            background: #E3F6F3; color: #006A6A; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 14px;
+        }
+        .lst-name { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 14.5px; color: var(--navy); }
+        .lst-prop:hover .lst-name { color: var(--primary-dark); }
+        .lst-loc { display: flex; white-space: nowrap; align-items: center; gap: 4px; margin-top: 2px; font-size: 12.5px; color: var(--outline); }
+        .lst-loc svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+        .lst-rent { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; color: var(--navy); white-space: nowrap; }
+        .lst-applied b { font-weight: 700; color: var(--navy); }
+        .lst-applied span { color: var(--outline); }
+
+        /* Status pills */
+        .lst-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 9999px; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+        .lst-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+        .b-approved  { background: #E3F6F3; color: #006A6A; }
+        .b-pending   { background: #FDF3C9; color: #7a5b00; }
+        .b-rejected  { background: #FBE4E2; color: #ba1a1a; }
+        .b-suspended { background: #EEF2F3; color: #3f484d; }
+
+        /* Empty state */
+        .lst-empty { margin: 22px; padding: 38px 20px; text-align: center; border: 2px dashed var(--accent-border); border-radius: 18px; background: var(--primary-tint); }
+        .lst-empty h3 { margin: 0 0 4px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 17px; color: var(--primary-dark); }
+        .lst-empty p { margin: 0; font-size: 13.5px; color: var(--outline); }
+
+        .lst-flash { border-radius: 12px; padding: 12px 18px; margin-bottom: 16px; font-weight: 600; font-size: 14px; }
+        .lst-flash.ok  { background: #E3F6F3; border: 1px solid #93C0C5; color: #006A6A; }
+        .lst-flash.err { background: #FBE4E2; border: 1px solid #f0b7b2; color: #ba1a1a; }
+
+        @media (max-width: 980px) { .lst-stats { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 520px) { .lst-stats { grid-template-columns: 1fr; } .lst-count { margin-left: 0; } }
+
+        /* ── Empty state (same look as Review Properties) ── */
+        .ap-empty {
+            display: flex; flex-direction: column; align-items: center; text-align: center;
+            padding: 40px 20px 44px;
+            background: linear-gradient(180deg, #ffffff 0%, #F4FBFA 100%);
+            border: 2px dashed #93C0C5; border-radius: 20px;
+        }
+        .ap-empty-art { width: 220px; max-width: 70%; height: auto; overflow: visible; }
+        .ap-empty-title, .ap-empty-sub { font-family: 'Fredoka', 'Plus Jakarta Sans', sans-serif; }
+        .ap-empty-title { font-size: 27px; font-weight: 600; color: #006A6A; margin: 14px 0 4px; }
+        .ap-empty-sub { font-size: 17px; font-weight: 500; color: #6f787d; margin: 0; }
+        .ap-empty-clear {
+            margin-top: 18px; height: 42px; padding: 0 22px; display: inline-flex; align-items: center; cursor: pointer;
+            background: #071C2D; color: #fff; border: 1.5px solid #007178; border-radius: 12px;
+            font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 700; text-decoration: none;
+            transition: background .2s ease, border-color .2s ease;
+        }
+        .ap-empty-clear:hover { background: #0A3A48; border-color: #14C8BE; }
+        .ap-empty-clear:focus-visible { outline: 2px solid #14C8BE; outline-offset: 3px; }
+        .ap-float { transform-box: fill-box; transform-origin: 50% 100%; animation: ap-float 3.6s ease-in-out infinite; }
+        .ap-shadow { transform-box: fill-box; transform-origin: center; animation: ap-shadow 3.6s ease-in-out infinite; }
+        .ap-spark { transform-box: fill-box; transform-origin: center; animation: ap-spark 2.6s ease-in-out infinite; animation-delay: var(--d, 0s); }
+        @keyframes ap-float  { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+        @keyframes ap-shadow { 0%,100% { transform: scaleX(1); opacity: .12; } 50% { transform: scaleX(.9); opacity: .08; } }
+        @keyframes ap-spark  { 0%,100% { opacity: .2; transform: scale(.6) rotate(0deg); } 50% { opacity: 1; transform: scale(1) rotate(20deg); } }
+        @media (prefers-reduced-motion: reduce) { .ap-float, .ap-shadow, .ap-spark { animation: none !important; } }
     </style>
 </head>
 <body>
@@ -60,237 +181,198 @@
         <header class="topbar">
             <div class="topbar-title">All Listings</div>
             <div th:replace="~{fragments/notification-bell :: bell}"></div>
-            <button type="button" class="logout-btn" onclick="openLogoutModal()">
-                <svg viewBox="0 0 20 20">
-                    <path d="M7 4H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>
-                    <path d="M13 14l4-4-4-4"/>
-                    <path d="M17 10H7"/>
-                </svg>
-                Log out
-            </button>
+            <!-- Display-only avatar: a span, not a button, and pointer-events are off -->
+            <span class="avatar avatar-static" aria-hidden="true" th:text="${adminInitials} ?: 'UG'">UG</span>
         </header>
+
         <div class="content">
-            <div class="section active">
+            <div class="section active lst">
 
-                <div th:if="${actionMessage}" style="background:#e8f5e9;border:1px solid #81c784;border-radius:8px;padding:12px 18px;margin-bottom:16px">
-                    <strong style="color:#2e7d32" th:text="${actionMessage}">Success</strong>
+                <div th:if="${actionMessage}" class="lst-flash ok" th:text="${actionMessage}">Success</div>
+                <div th:if="${actionError}" class="lst-flash err" th:text="${actionError}">Error</div>
+
+                <p class="lst-sub">Every property on ULEE, in one place.</p>
+
+                <!-- Totals across ALL listings (ULEE navy wave cards) -->
+                <div class="lst-stats">
+                    <div class="ulee-metric-card">
+
+                        <div class="ulee-metric-label">Approved</div>
+                        <div class="ulee-metric-value" th:text="${approvedCount} ?: 0">0</div>
+                        <div class="ulee-metric-sub">Live on ULEE</div>
+                        <svg class="ulee-metric-stars" viewBox="0 0 200 90" aria-hidden="true"><g fill="#9FF0E8"><circle class="star" cx="150" cy="20" r="1.6" style="--d:0s"/><circle class="star" cx="180" cy="44" r="1.3" style="--d:1.2s"/><circle class="star" cx="120" cy="52" r="1.2" style="--d:.5s"/></g></svg>
+                        <svg class="ulee-metric-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true"><path class="w-back" d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/><path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/></svg>
+                    </div>
+                    <div class="ulee-metric-card">
+                        <span class="ulee-metric-dot"></span>
+                        <div class="ulee-metric-label">Pending</div>
+                        <div class="ulee-metric-value" th:text="${pendingCount} ?: 0">0</div>
+                        <div class="ulee-metric-sub">Awaiting review</div>
+                        <svg class="ulee-metric-stars" viewBox="0 0 200 90" aria-hidden="true"><g fill="#9FF0E8"><circle class="star" cx="150" cy="20" r="1.6" style="--d:0s"/><circle class="star" cx="180" cy="44" r="1.3" style="--d:1.2s"/><circle class="star" cx="120" cy="52" r="1.2" style="--d:.5s"/></g></svg>
+                        <svg class="ulee-metric-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true"><path class="w-back" d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/><path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/></svg>
+                    </div>
+                    <div class="ulee-metric-card">
+
+                        <div class="ulee-metric-label">Rejected</div>
+                        <div class="ulee-metric-value" th:text="${rejectedCount} ?: 0">0</div>
+                        <div class="ulee-metric-sub">Not approved</div>
+                        <svg class="ulee-metric-stars" viewBox="0 0 200 90" aria-hidden="true"><g fill="#9FF0E8"><circle class="star" cx="150" cy="20" r="1.6" style="--d:0s"/><circle class="star" cx="180" cy="44" r="1.3" style="--d:1.2s"/><circle class="star" cx="120" cy="52" r="1.2" style="--d:.5s"/></g></svg>
+                        <svg class="ulee-metric-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true"><path class="w-back" d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/><path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/></svg>
+                    </div>
+                    <div class="ulee-metric-card">
+
+                        <div class="ulee-metric-label">Suspended</div>
+                        <div class="ulee-metric-value" th:text="${suspendedCount} ?: 0">0</div>
+                        <div class="ulee-metric-sub">Hidden from students</div>
+                        <svg class="ulee-metric-stars" viewBox="0 0 200 90" aria-hidden="true"><g fill="#9FF0E8"><circle class="star" cx="150" cy="20" r="1.6" style="--d:0s"/><circle class="star" cx="180" cy="44" r="1.3" style="--d:1.2s"/><circle class="star" cx="120" cy="52" r="1.2" style="--d:.5s"/></g></svg>
+                        <svg class="ulee-metric-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true"><path class="w-back" d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/><path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/></svg>
+                    </div>
                 </div>
-                <div th:if="${actionError}" style="background:#ffebee;border:1px solid #ef5350;border-radius:8px;padding:12px 18px;margin-bottom:16px">
-                    <strong style="color:#c62828" th:text="${actionError}">Error</strong>
-                </div>
 
-                <!-- Search by area / property name / address + Status filter -->
-                <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+                <div class="lst-panel">
+                    <!-- One GET form: search box + status tabs. The tabs set the hidden "status" field and
+                         submit, so the current search text is always carried along (and Enter keeps the tab). -->
+                    <form class="lst-toolbar" id="lstForm" th:action="@{/admin/listings}" method="get">
+                        <input type="hidden" name="status" id="lstStatus" th:value="${status}" />
+                        <div class="lst-toolbar-row">
+                            <div class="lst-search">
+                                <svg viewBox="0 0 20 20"><circle cx="9" cy="9" r="6"/><path d="M14 14l4 4"/></svg>
+                                <input type="text" name="search" th:value="${search}"
+                                       placeholder="Search by area, address or property name" autocomplete="off" />
+                            </div>
+                            <span class="lst-count" th:text="'Showing ' + ${#lists.size(properties)} + ' of ' + ${totalListings} + ' listings'">Showing 0 of 0 listings</span>
+                        </div>
+                        <div class="lst-tabs" role="tablist">
+                            <button type="button" class="lst-tab" data-status="" th:classappend="${status == null or #strings.isEmpty(status)} ? 'active'">All</button>
+                            <button type="button" class="lst-tab" data-status="Approved" th:classappend="${status != null and #strings.equalsIgnoreCase(status,'Approved')} ? 'active'">Approved</button>
+                            <button type="button" class="lst-tab" data-status="Pending" th:classappend="${status != null and #strings.equalsIgnoreCase(status,'Pending')} ? 'active'">In review</button>
+                            <button type="button" class="lst-tab" data-status="Rejected" th:classappend="${status != null and #strings.equalsIgnoreCase(status,'Rejected')} ? 'active'">Rejected</button>
+                            <button type="button" class="lst-tab" data-status="Suspended" th:classappend="${status != null and #strings.equalsIgnoreCase(status,'Suspended')} ? 'active'">Suspended</button>
+                        </div>
+                    </form>
 
-                    <div style="max-width:360px;flex:1;min-width:220px;position:relative">
-                        <svg viewBox="0 0 20 20" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;stroke:#9aa1a9;fill:none;stroke-width:1.6">
-                            <circle cx="9" cy="9" r="6"/><path d="M14 14l4 4"/>
+                    <div class="lst-wrap" th:unless="${#lists.isEmpty(properties)}">
+                        <table class="lst-table">
+                            <thead>
+                            <tr>
+                                <th>Property</th>
+                                <th>Rent / month</th>
+                                <th>Status</th>
+                                <th>Applicants</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="property : ${properties}">
+                                <td>
+                                    <a class="lst-prop" th:href="@{/admin/listing/{id}(id=${property.propertyID},from='listings')}">
+                                        <img th:if="${property.mainImageUrl != null}" th:src="${property.mainImageUrl}" class="lst-thumb" alt="" />
+                                        <span th:if="${property.mainImageUrl == null}" class="lst-thumb"
+                                              th:text="${property.title != null and #strings.length(property.title) >= 2} ? ${#strings.toUpperCase(#strings.substring(property.title,0,2))} : '–'">UL</span>
+                                        <span>
+                                            <div class="lst-name" th:text="${property.title}">Property name</div>
+                                            <div class="lst-loc">
+                                                <svg viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.4"/></svg>
+                                                <span th:text="${property.suburb != null and !#strings.isEmpty(property.suburb)} ? ${property.suburb} : ${property.city}">Suburb</span>
+                                                <span th:if="${property.capacity != null}" th:text="'· ' + ${property.capacity} + ' beds'">· 4 beds</span>
+                                            </div>
+                                        </span>
+                                    </a>
+                                </td>
+                                <td class="lst-rent"
+                                    th:text="${property.rent != null} ? 'R' + ${#numbers.formatDecimal(property.rent, 1, 'WHITESPACE', 0, 'POINT')} : '–'">R3 950</td>
+                                <td>
+                                    <span th:if="${property.status == 'Approved' or property.status == 'Active'}" class="lst-badge b-approved">Approved</span>
+                                    <span th:if="${property.status == 'Pending'}" class="lst-badge b-pending">Pending</span>
+                                    <span th:if="${property.status == 'Rejected'}" class="lst-badge b-rejected">Rejected</span>
+                                    <span th:if="${property.status == 'Suspended'}" class="lst-badge b-suspended">Suspended</span>
+                                    <span th:if="${property.status == null or !(property.status == 'Approved' or property.status == 'Active' or property.status == 'Pending' or property.status == 'Rejected' or property.status == 'Suspended')}"
+                                          class="lst-badge b-suspended" th:text="${property.status} ?: 'Unknown'">Unknown</span>
+                                </td>
+                                <td class="lst-applied">
+                                    <b th:text="${applicationCounts.get(property.propertyID)} ?: 0">0</b>
+                                    <span>applied</span>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="ap-empty" th:if="${#lists.isEmpty(properties)}" style="margin:22px">
+                        <svg class="ap-empty-art" viewBox="0 0 240 170" fill="none" aria-hidden="true">
+                            <ellipse class="ap-shadow" cx="120" cy="156" rx="64" ry="7" fill="#0b3b4a" opacity=".12"/>
+                            <g class="ap-float">
+                                <path d="M52 92L108 48l56 44v50a8 8 0 0 1-8 8H60a8 8 0 0 1-8-8V92Z" fill="#dcf1ef" stroke="#93C0C5" stroke-width="2.5" stroke-linejoin="round"/>
+                                <path d="M44 96l64-52 64 52" stroke="#0f8a8a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                                <rect x="96" y="108" width="24" height="42" rx="4" fill="#fff" stroke="#93C0C5" stroke-width="2"/>
+                                <circle cx="162" cy="88" r="26" fill="#ffffff" stroke="#0f8a8a" stroke-width="4"/>
+                                <path d="M181 107l22 22" stroke="#071C2D" stroke-width="7" stroke-linecap="round"/>
+                                <circle cx="153" cy="85" r="2.6" fill="#0f8a8a"/>
+                                <circle cx="171" cy="85" r="2.6" fill="#0f8a8a"/>
+                                <path d="M154 97q8-7 16 0" stroke="#0f8a8a" stroke-width="2.6" stroke-linecap="round"/>
+                            </g>
+                            <path class="ap-spark" style="--d:0s" d="M206 30l3 8 8 3-8 3-3 8-3-8-8-3 8-3z" fill="#14C8BE"/>
+                            <path class="ap-spark" style="--d:1s" d="M32 70l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#F5D450"/>
+                            <path class="ap-spark" style="--d:1.8s" d="M214 130l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#9FF0E8"/>
                         </svg>
-                        <input type="text" id="listingsSearchInput" th:value="${search}"
-                               placeholder="Search by area, address, or property name…"
-                               onkeydown="if(event.key==='Enter'){applyListingFilters();}"
-                               style="width:100%;padding:9px 12px 9px 34px;border:1px solid #e5e7eb;border-radius:8px;font-family:inherit;font-size:14px;box-sizing:border-box" />
+                        <p class="ap-empty-title" th:text="${(search != null and !#strings.isEmpty(search)) or (status != null and !#strings.isEmpty(status))} ? 'No listing matches this filter' : 'No listings yet'">No listings yet</p>
+                        <p class="ap-empty-sub" th:text="${(search != null and !#strings.isEmpty(search)) or (status != null and !#strings.isEmpty(status))} ? 'Try a different search or another status tab.' : 'Listings will appear here once landlords add properties.'">Listings will appear here once landlords add properties.</p>
+                        <a class="ap-empty-clear" th:if="${(search != null and !#strings.isEmpty(search)) or (status != null and !#strings.isEmpty(status))}" th:href="@{/admin/listings}">Clear filters</a>
                     </div>
-
-                    <select id="listingsStatusFilter"
-                            onchange="applyListingFilters();"
-                            style="padding:9px 32px 9px 12px;border:1px solid var(--hero-yellow);border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;background:var(--hero-yellow);color:var(--on-yellow);cursor:pointer">
-                        <option value="" th:selected="${status == null or status == ''}">All statuses</option>
-                        <option value="Approved" th:selected="${status == 'Approved'}">Approved</option>
-                        <option value="Pending" th:selected="${status == 'Pending'}">Pending</option>
-                        <option value="Rejected" th:selected="${status == 'Rejected'}">Rejected</option>
-                        <option value="Suspended" th:selected="${status == 'Suspended'}">Suspended</option>
-                    </select>
-                </div>
-
-                <div class="panel">
-                    <div class="panel-header">
-                        <span class="panel-title">All Listings</span>
-                        <span class="panel-sub" th:text="${#lists.size(properties)} + ' of ' + ${totalListings} + ' total'">0 total</span>
-                    </div>
-                    <table>
-                        <thead>
-                        <tr>
-                            <th style="width:56px">PHOTO</th>
-                            <th>Property Name</th>
-                            <th>Location</th>
-                            <th>Rent</th>
-                            <th>Status</th>
-                            <th>Applicants</th>
-                            <th>Actions</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr th:each="property : ${properties}">
-                            <td>
-                                <a th:href="@{/admin/listing/{id}(id=${property.propertyID},from='listings')}" style="display:inline-block">
-                                    <img th:if="${property.mainImageUrl} != null" th:src="${property.mainImageUrl}"
-                                         style="width:40px;height:40px;object-fit:cover;border-radius:8px" />
-                                    <span th:if="${property.mainImageUrl} == null"
-                                          style="display:inline-block;width:40px;height:40px;background:#eee;border-radius:8px"></span>
-                                </a>
-                            </td>
-                            <td>
-                                <a th:href="@{/admin/listing/{id}(id=${property.propertyID},from='listings')}"
-                                   th:text="${property.title}"
-                                   style="font-weight:600;color:#1a1a1a;text-decoration:none">Name</a>
-                            </td>
-                            <td th:text="${property.city}">Location</td>
-                            <td th:text="'R' + ${property.rent}">Rent</td>
-                            <td>
-                                <span th:if="${property.status} == 'Approved' or ${property.status} == 'Active'" class="badge badge-green"><span class="badge-dot"></span>Approved</span>
-                                <span th:if="${property.status} == 'Pending'" class="badge badge-amber"><span class="badge-dot"></span>Pending</span>
-                                <span th:if="${property.status} == 'Rejected'" class="badge badge-rejected"><span class="badge-dot"></span>Rejected</span>
-                                <span th:if="${property.status} == 'Suspended'" class="badge badge-suspended"><span class="badge-dot"></span>Suspended</span>
-                                <span th:if="${property.status} == null" class="badge badge-amber">Unknown</span>
-                            </td>
-                            <td>
-                                <span th:text="${applicationCounts.get(property.propertyID)} ?: 0">0</span>
-                                <span style="color:var(--muted)">applied</span>
-                            </td>
-                            <td>
-                                <form th:if="${property.status} == 'Suspended'"
-                                      th:action="@{/admin/unsuspend-listing/{id}(id=${property.propertyID})}"
-                                      method="post"
-                                      class="confirm-form" th:attr="data-property=${property.title}"
-                                      data-tone="warning" data-icon="eye" data-title="Unsuspend this listing?"
-                                      data-text="It will become visible to students again straight away."
-                                      data-button="Yes, unsuspend">
-                                    <button type="submit" class="btn-unsuspend">
-                                        Unsuspend
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
-                    <p th:if="${#lists.isEmpty(properties)}" style="padding:22px;color:var(--muted)">No listings found.</p>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Logout confirmation modal — matches the confirm dialog used elsewhere
-     in the admin app ("Log out of ULEE?"). The visible "Log out" button in
-     the topbar just opens this; the real POST to /logout only happens when
-     the admin confirms inside the modal. -->
-<div id="logoutModalOverlay" style="display:none;position:fixed;inset:0;background:rgba(23,49,58,0.45);z-index:1000;align-items:center;justify-content:center">
-    <div style="background:var(--white);border-radius:16px;box-shadow:var(--shadow-md);padding:32px 28px 24px;width:340px;max-width:90vw;text-align:center">
-        <div style="width:52px;height:52px;border-radius:50%;background:var(--danger-bg);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
-            <svg viewBox="0 0 20 20" style="width:22px;height:22px;stroke:var(--danger);fill:none;stroke-width:1.8">
-                <path d="M7 4H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>
-                <path d="M13 14l4-4-4-4"/>
-                <path d="M17 10H7"/>
+<!-- Logout confirmation (opened from the sidebar's Log out button; the real POST only happens on confirm) -->
+<div id="logoutModalOverlay" style="display:none;position:fixed;inset:0;background:rgba(7,28,45,0.5);z-index:1000;align-items:center;justify-content:center">
+    <div style="background:#fff;border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.25);padding:30px 26px 22px;width:360px;max-width:90vw;text-align:center;font-family:'Hanken Grotesk',sans-serif">
+        <div style="width:56px;height:56px;border-radius:50%;background:#E3F6F3;display:flex;align-items:center;justify-content:center;margin:0 auto 14px">
+            <svg viewBox="0 0 20 20" style="width:24px;height:24px;stroke:#006A6A;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round">
+                <path d="M7 4H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/><path d="M13 14l4-4-4-4"/><path d="M17 10H7"/>
             </svg>
         </div>
-        <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px">Log out of ULEE?</div>
-        <div style="font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:22px">You'll need to sign in again to access the admin dashboard.</div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:800;color:#191c1d;margin-bottom:6px">Log out of ULEE?</div>
+        <div style="font-size:13.5px;color:#6f787d;line-height:1.55;margin-bottom:20px">You'll need to sign in again to access the admin dashboard.</div>
         <div style="display:flex;gap:10px">
-            <button type="button" onclick="closeLogoutModal()"
-                    style="flex:1;padding:11px;border-radius:10px;border:none;background:var(--pp);color:var(--text);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">
-                Cancel
-            </button>
-            <button type="button" onclick="document.getElementById('logoutForm').submit()"
-                    style="flex:1;padding:11px;border-radius:10px;border:none;background:var(--danger);color:#fff;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">
-                Log out
-            </button>
+            <button type="button" onclick="closeLogoutModal()" style="flex:1;padding:12px;border-radius:10px;border:1px solid #d9dfe2;background:#fff;color:#444;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">Cancel</button>
+            <button type="button" onclick="document.getElementById('logoutForm').submit()" style="flex:1;padding:12px;border-radius:10px;border:1px solid #006A6A;background:#006A6A;color:#fff;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">Log out</button>
         </div>
     </div>
 </div>
 <form id="logoutForm" th:action="@{/logout}" method="post" style="display:none"></form>
 
-<script th:inline="javascript">
-    function applyListingFilters() {
-        var search = document.getElementById('listingsSearchInput').value;
-        var status = document.getElementById('listingsStatusFilter').value;
-        var params = new URLSearchParams();
-        if (search) params.set('search', search);
-        if (status) params.set('status', status);
-        var qs = params.toString();
-        window.location.href = '/admin/listings' + (qs ? '?' + qs : '');
-    }
-
-    function openLogoutModal() {
-        document.getElementById('logoutModalOverlay').style.display = 'flex';
-    }
-    function closeLogoutModal() {
-        document.getElementById('logoutModalOverlay').style.display = 'none';
-    }
-    document.addEventListener('DOMContentLoaded', function () {
-        var overlay = document.getElementById('logoutModalOverlay');
-        overlay.addEventListener('click', function (e) {
-            if (e.target === overlay) closeLogoutModal();
+<script>
+    // Status tabs: set the hidden status field, then submit the form (search text rides along)
+    document.querySelectorAll('.lst-tab').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            document.getElementById('lstStatus').value = btn.getAttribute('data-status');
+            document.getElementById('lstForm').submit();
         });
     });
-</script>
-<!-- Custom confirm dialog (used by Unsuspend) -->
-<div id="ulee-confirm" class="ulee-confirm-backdrop" aria-hidden="true">
-    <div id="uleeConfirmCard" class="ulee-confirm-card tone-warning" role="dialog" aria-modal="true" aria-labelledby="uleeConfirmTitle">
-        <div id="uleeConfirmIcon" class="ulee-confirm-icon"></div>
-        <h3 id="uleeConfirmTitle">Are you sure?</h3>
-        <div id="uleeConfirmProperty" class="ulee-confirm-prop"></div>
-        <p id="uleeConfirmText"></p>
-        <div class="ulee-confirm-actions">
-            <button type="button" id="uleeConfirmCancel">Cancel</button>
-            <button type="button" id="uleeConfirmOk">Confirm</button>
-        </div>
-    </div>
-</div>
-
-<script>
-    // Nice-looking confirm dialog for forms marked class="confirm-form".
-    // Clicking the form's button opens the dialog; only the confirm button submits.
-    (function () {
-        var backdrop = document.getElementById('ulee-confirm');
-        var card = document.getElementById('uleeConfirmCard');
-        var pendingForm = null;
-
-        var ICONS = {
-            eye: '<svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
-            warning: '<svg viewBox="0 0 24 24"><path d="M12 3l9.5 16.5h-19L12 3z"/><path d="M12 10v4.5M12 17.5v.01"/></svg>'
-        };
-
-        function openConfirm(form) {
-            var tone = form.getAttribute('data-tone') || 'warning';
-            var icon = form.getAttribute('data-icon') || tone;
-            pendingForm = form;
-            card.className = 'ulee-confirm-card tone-' + tone;
-            document.getElementById('uleeConfirmIcon').innerHTML = ICONS[icon] || ICONS.warning;
-            document.getElementById('uleeConfirmTitle').textContent = form.getAttribute('data-title') || 'Are you sure?';
-            document.getElementById('uleeConfirmText').textContent = form.getAttribute('data-text') || '';
-            document.getElementById('uleeConfirmOk').textContent = form.getAttribute('data-button') || 'Confirm';
-            var prop = form.getAttribute('data-property');
-            var propEl = document.getElementById('uleeConfirmProperty');
-            propEl.textContent = prop || '';
-            propEl.style.display = prop ? 'inline-block' : 'none';
-            backdrop.classList.add('open');
-            backdrop.setAttribute('aria-hidden', 'false');
-            document.getElementById('uleeConfirmCancel').focus();
-        }
-
-        function closeConfirm() {
-            backdrop.classList.remove('open');
-            backdrop.setAttribute('aria-hidden', 'true');
-            pendingForm = null;
-        }
-
-        document.querySelectorAll('form.confirm-form').forEach(function (form) {
-            form.addEventListener('submit', function (e) {
-                e.preventDefault();
-                openConfirm(form);
-            });
+    // Count the stat numbers up from 0 (skipped when reduced motion is on)
+    window.addEventListener('load', function () {
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        document.querySelectorAll('.ulee-metric-value').forEach(function (el) {
+            var target = parseFloat(el.textContent);
+            if (!(target > 0)) return;
+            var start = null, dur = 900;
+            el.textContent = '0';
+            function tick(now) {
+                if (start === null) start = now;
+                var t = Math.min((now - start) / dur, 1);
+                el.textContent = Math.round(target * (1 - Math.pow(1 - t, 3)));
+                if (t < 1) requestAnimationFrame(tick);
+            }
+            requestAnimationFrame(tick);
         });
-
-        document.getElementById('uleeConfirmCancel').addEventListener('click', closeConfirm);
-        document.getElementById('uleeConfirmOk').addEventListener('click', function () {
-            var form = pendingForm;
-            closeConfirm();
-            if (form) form.submit(); // form.submit() skips the submit event, so no loop
-        });
-        backdrop.addEventListener('click', function (e) { if (e.target === backdrop) closeConfirm(); });
-        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeConfirm(); });
-    })();
+    });
+    function openLogoutModal() { document.getElementById('logoutModalOverlay').style.display = 'flex'; }
+    function closeLogoutModal() { document.getElementById('logoutModalOverlay').style.display = 'none'; }
+    document.addEventListener('DOMContentLoaded', function () {
+        var overlay = document.getElementById('logoutModalOverlay');
+        overlay.addEventListener('click', function (e) { if (e.target === overlay) closeLogoutModal(); });
+    });
 </script>
 </body>
 </html>

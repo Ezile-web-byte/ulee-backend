@@ -62,6 +62,9 @@ public class AdminController {
     private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     @Autowired
+    private com.ulee.ulee_backend.repository.AccountSuspensionRepository accountSuspensionRepository;
+
+    @Autowired
     private com.ulee.ulee_backend.repository.NotificationRepository notificationRepository;
 
     @Autowired
@@ -349,6 +352,17 @@ public class AdminController {
                 .filter(a -> a.getPropertyID() != null)
                 .collect(Collectors.groupingBy(Application::getPropertyID, Collectors.counting()));
 
+        // Headline counts for the four stat cards (always across ALL listings, not the search result)
+        long approvedCount = allProperties.stream()
+                .filter(p -> "Approved".equalsIgnoreCase(p.getStatus()) || "Active".equalsIgnoreCase(p.getStatus())).count();
+        long pendingCount = allProperties.stream().filter(p -> "Pending".equalsIgnoreCase(p.getStatus())).count();
+        long rejectedCount = allProperties.stream().filter(p -> "Rejected".equalsIgnoreCase(p.getStatus())).count();
+        long suspendedCount = allProperties.stream().filter(p -> "Suspended".equalsIgnoreCase(p.getStatus())).count();
+        model.addAttribute("approvedCount", approvedCount);
+        model.addAttribute("pendingCount", pendingCount);
+        model.addAttribute("rejectedCount", rejectedCount);
+        model.addAttribute("suspendedCount", suspendedCount);
+
         model.addAttribute("properties", filtered);
         model.addAttribute("totalListings", allProperties.size());
         model.addAttribute("applicationCounts", applicationCounts);
@@ -358,79 +372,17 @@ public class AdminController {
         return "admin/admin-listings";
     }
 
+    /**
+     * Review Properties now lives inside the dashboard (/admin-index). Anyone who lands on the
+     * old standalone URL (bookmark, old link) is sent to that tab, keeping their search text.
+     */
     @GetMapping("/admin/pending-listings")
-    public String viewPendingListings(Model model,
-                                      @RequestParam(required = false) Integer academicYear,
-                                      @RequestParam(required = false) String search,
-                                      @RequestParam(required = false, defaultValue = "1") Integer page,
-                                      jakarta.servlet.http.HttpServletResponse response) {
-        // Force the browser to never cache this page. We hit a case where
-        // navigating here via the sidebar link showed a stale, older version
-        // of this page while typing the URL directly showed the current one
-        // — classic symptom of the browser serving a cached response instead
-        // of re-fetching. This header makes that impossible regardless of
-        // how the page was navigated to.
-        response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
-        response.setHeader("Pragma", "no-cache");
-        response.setHeader("Expires", "0");
-
-        List<Property> allPending = propertyRepository.findByStatus("Pending");
-
-        String searchLower = search != null ? search.trim().toLowerCase() : null;
-        List<Property> filtered = allPending.stream()
-                .filter(p -> academicYear == null
-                        || (p.getAvailableFrom() != null && p.getAvailableFrom().getYear() == academicYear))
-                .filter(p -> searchLower == null || searchLower.isBlank()
-                        || (p.getTitle() != null && p.getTitle().toLowerCase().contains(searchLower))
-                        || (p.getCity() != null && p.getCity().toLowerCase().contains(searchLower))
-                        || (p.getAddress() != null && p.getAddress().toLowerCase().contains(searchLower)))
-                .sorted(Comparator.comparing(
-                        (Property p) -> p.getCreatedAt() != null ? p.getCreatedAt() : LocalDateTime.MIN,
-                        Comparator.reverseOrder()))
-                .collect(Collectors.toList());
-
-        long flaggedCount = propertyRepository.findByIsReportedTrue().size();
-
-        int currentYear = java.time.Year.now().getValue();
-        List<Integer> academicYearOptions = java.util.Arrays.asList(currentYear - 1, currentYear, currentYear + 1);
-
-        // Pagination
-        int pageSize = 10;
-        int totalPending = filtered.size();
-        int totalPages = Math.max(1, (int) Math.ceil(totalPending / (double) pageSize));
-        int currentPage = Math.min(Math.max(page, 1), totalPages);
-        int fromIndex = Math.min((currentPage - 1) * pageSize, totalPending);
-        int toIndex = Math.min(fromIndex + pageSize, totalPending);
-        List<Property> pageProperties = filtered.subList(fromIndex, toIndex);
-
-        // Build row view models: landlord name + a synthetic reference number
-        // + a trust label derived from Landlord.verified (this project has no
-        // separate "corporate/individual" distinction, so it's binary).
-        List<PendingRowView> rows = new ArrayList<>();
-        for (Property property : pageProperties) {
-            Optional<User> landlordUserOpt = userRepository.findById(property.getLandlordID());
-            Optional<Landlord> landlordRecordOpt = landlordRepository.findById(property.getLandlordID());
-            boolean verified = landlordRecordOpt.isPresent() && Boolean.TRUE.equals(landlordRecordOpt.get().getVerified());
-            String landlordName = landlordUserOpt.map(this::safeName).orElse("Landlord #" + property.getLandlordID());
-            String trustLabel = verified ? "Verified Partner" : "Individual Owner";
-            int refYear = property.getCreatedAt() != null ? property.getCreatedAt().getYear() : currentYear;
-            String ref = "Ref: NMU " + refYear + "-" + String.format("%03d", property.getPropertyID());
-            rows.add(new PendingRowView(property, landlordName, trustLabel, ref));
+    public String viewPendingListings(@RequestParam(required = false) String search) {
+        String url = "/admin-index?section=review-properties";
+        if (search != null && !search.isBlank()) {
+            url += "&search=" + java.net.URLEncoder.encode(search, java.nio.charset.StandardCharsets.UTF_8);
         }
-
-        model.addAttribute("rows", rows);
-        model.addAttribute("totalPendingAll", allPending.size());
-        model.addAttribute("flaggedCount", flaggedCount);
-        model.addAttribute("academicYearOptions", academicYearOptions);
-        model.addAttribute("selectedAcademicYear", academicYear);
-        model.addAttribute("search", search);
-        model.addAttribute("currentPage", currentPage);
-        model.addAttribute("totalPages", totalPages);
-        model.addAttribute("fromIndex", totalPending == 0 ? 0 : fromIndex + 1);
-        model.addAttribute("toIndex", toIndex);
-        model.addAttribute("totalPending", totalPending);
-        addSidebarCounts(model);
-        return "admin/admin-pending-listings";
+        return "redirect:" + url;
     }
 
     /** Read-only row view model for the Review Properties submissions table. */
@@ -457,8 +409,10 @@ public class AdminController {
     public String viewApprovedProperties(Model model,
                                          @RequestParam(required = false) String search,
                                          @RequestParam(required = false) String city,
+                                         @RequestParam(required = false) String suburb,
                                          @RequestParam(required = false) java.math.BigDecimal minPrice,
                                          @RequestParam(required = false) java.math.BigDecimal maxPrice,
+                                         @RequestParam(required = false) String type,
                                          @RequestParam(required = false) Integer academicYear) {
 
         List<Property> allApproved = propertyRepository.findByStatusIn(List.of("Approved", "Active"));
@@ -470,17 +424,49 @@ public class AdminController {
                 .sorted()
                 .collect(Collectors.toList());
 
+        // Suburb dropdown (Humewood, Summerstrand, ...): every distinct suburb actually stored
+        // on an approved property, read straight from the database. Compared case-insensitively
+        // so "humewood" and "Humewood" are one entry.
+        List<String> suburbOptions = new ArrayList<>(allApproved.stream()
+                .map(Property::getSuburb)
+                .filter(sb -> sb != null && !sb.isBlank())
+                .map(String::trim)
+                .collect(Collectors.toMap(String::toLowerCase, sb -> sb, (a, b) -> a,
+                        () -> new java.util.TreeMap<String, String>()))
+                .values());
+
         String searchLower = search != null ? search.trim().toLowerCase() : null;
 
         List<Property> filtered = allApproved.stream()
                 .filter(p -> searchLower == null || searchLower.isBlank()
                         || (p.getTitle() != null && p.getTitle().toLowerCase().contains(searchLower))
                         || (p.getCity() != null && p.getCity().toLowerCase().contains(searchLower))
+                        || (p.getSuburb() != null && p.getSuburb().toLowerCase().contains(searchLower))
                         || (p.getAddress() != null && p.getAddress().toLowerCase().contains(searchLower)))
                 .filter(p -> city == null || city.isBlank() || city.equalsIgnoreCase(p.getCity()))
+                .filter(p -> suburb == null || suburb.isBlank()
+                        || (p.getSuburb() != null && suburb.trim().equalsIgnoreCase(p.getSuburb().trim())))
                 .filter(p -> minPrice == null || (p.getRent() != null && p.getRent().compareTo(minPrice) >= 0))
                 .filter(p -> maxPrice == null || (p.getRent() != null && p.getRent().compareTo(maxPrice) <= 0))
+                .filter(p -> roomTypeMatches(p.getType(), type))
                 .collect(Collectors.toList());
+
+        // Room Type dropdown: always offer Single / Sharing / Commune, plus any other
+        // type actually stored on an approved listing (so nothing is un-filterable).
+        List<String> typeOptions = new ArrayList<>(List.of("Single", "Sharing", "Commune"));
+        allApproved.stream()
+                .map(Property::getType)
+                .filter(t -> t != null && !t.isBlank())
+                .map(String::trim)
+                .filter(t -> typeOptions.stream().noneMatch(o -> roomTypeMatches(t, o)))
+                .distinct()
+                .sorted()
+                .forEach(typeOptions::add);
+        boolean hasActiveFilters = (search != null && !search.isBlank())
+                || (city != null && !city.isBlank())
+                || (suburb != null && !suburb.isBlank())
+                || minPrice != null || maxPrice != null
+                || (type != null && !type.isBlank());
 
         // Selecting an academic year bumps properties available that year to the
         // top, rather than hiding the rest — sort is stable so order within each
@@ -521,6 +507,11 @@ public class AdminController {
         model.addAttribute("selectedCity", city);
         model.addAttribute("minPrice", minPrice);
         model.addAttribute("maxPrice", maxPrice);
+        model.addAttribute("selectedType", type);
+        model.addAttribute("selectedSuburb", suburb);
+        model.addAttribute("suburbOptions", suburbOptions);
+        model.addAttribute("typeOptions", typeOptions);
+        model.addAttribute("hasActiveFilters", hasActiveFilters);
         model.addAttribute("totalListings", propertyRepository.findAll().size());
         model.addAttribute("academicYearOptions", academicYearOptions);
         model.addAttribute("selectedAcademicYear", selectedYear != null ? selectedYear : currentYear);
@@ -533,7 +524,7 @@ public class AdminController {
         Optional<Property> propertyOpt = propertyRepository.findById(id);
         if (propertyOpt.isEmpty()) {
             redirectAttributes.addFlashAttribute("actionError", "Listing #" + id + " could not be found.");
-            return "redirect:/admin/pending-listings";
+            return "redirect:/admin-index?section=review-properties";
         }
         Property property = propertyOpt.get();
         // DB only allows Active / Pending / Rejected — there is no
@@ -574,7 +565,7 @@ public class AdminController {
 
         logActivity("Approved", "Approved \"" + property.getTitle() + "\"");
         redirectAttributes.addFlashAttribute("actionMessage", "Approved \"" + property.getTitle() + "\"");
-        return "redirect:/admin/pending-listings";
+        return "redirect:/admin-index?section=review-properties";
     }
 
     @PostMapping("/admin/reject-listing/{id}")
@@ -582,7 +573,7 @@ public class AdminController {
         Optional<Property> propertyOpt = propertyRepository.findById(id);
         if (propertyOpt.isEmpty()) {
             redirectAttributes.addFlashAttribute("actionError", "Listing #" + id + " could not be found.");
-            return "redirect:/admin/pending-listings";
+            return "redirect:/admin-index?section=review-properties";
         }
         Property property = propertyOpt.get();
         property.setStatus("Rejected");
@@ -606,7 +597,7 @@ public class AdminController {
 
         logActivity("Rejected", "Rejected \"" + property.getTitle() + "\"");
         redirectAttributes.addFlashAttribute("actionMessage", "Rejected \"" + property.getTitle() + "\"");
-        return "redirect:/admin/pending-listings";
+        return "redirect:/admin-index?section=review-properties";
     }
 
     @GetMapping("/admin/reviews")
@@ -636,7 +627,9 @@ public class AdminController {
         double accreditedPercent = totalLandlords > 0 ? (verifiedLandlords * 100.0 / totalLandlords) : 0;
 
         // Pagination
-        int pageSize = 10;
+        // The redesigned Reviews page filters/searches in the browser, so it needs every review on
+        // the page at once (one "page" holding them all) rather than 10 at a time.
+        int pageSize = Math.max(10, sortedReviews.size());
         int totalReviews = sortedReviews.size();
         int totalPages = Math.max(1, (int) Math.ceil(totalReviews / (double) pageSize));
         int currentPage = Math.min(Math.max(page, 1), totalPages);
@@ -660,6 +653,14 @@ public class AdminController {
                     review.getComment(), review.getReviewDate(),
                     Boolean.TRUE.equals(review.getIsReported())));
         }
+
+        // How many reviews gave each star rating (1..5) - powers the clickable rating breakdown
+        Map<Integer, Long> ratingCounts = new LinkedHashMap<>();
+        for (int star = 1; star <= 5; star++) {
+            final int st = star;
+            ratingCounts.put(st, allReviews.stream().filter(r -> r.getRating() != null && r.getRating() == st).count());
+        }
+        model.addAttribute("ratingCounts", ratingCounts);
 
         model.addAttribute("reviewCards", reviewCards);
         model.addAttribute("totalReviews", totalReviews);
@@ -734,20 +735,110 @@ public class AdminController {
         public boolean isReported() { return reported; }
     }
 
+    /** One card on the Reported Listings page (read by admin-reported-listings.html). */
+    public static class ReportedItem {
+        private final Property property;
+        private final String reason;
+        private final String description;
+        private final LocalDateTime reportedAt;
+        private final String reporterName;
+        private final String handledStatus;   // "Warned" | "Suspended" | null for unhandled
+
+        public ReportedItem(Property property, String reason, String description,
+                            LocalDateTime reportedAt, String reporterName, String handledStatus) {
+            this.property = property;
+            this.reason = reason;
+            this.description = description;
+            this.reportedAt = reportedAt;
+            this.reporterName = reporterName;
+            this.handledStatus = handledStatus;
+        }
+
+        public Property getProperty()        { return property; }
+        public String getReason()            { return reason; }
+        public String getDescription()       { return description; }
+        public LocalDateTime getReportedAt() { return reportedAt; }
+        public String getReporterName()      { return reporterName; }
+        public String getHandledStatus()     { return handledStatus; }
+    }
+
+    // How "handled" is worked out from what the code already does:
+    //   • Warn    -> sets isReported=false, but writes an "Official Warning…" Notification for that property
+    //   • Suspend -> sets status "Suspended" and isReported=false
+    //   • Remove  -> the property row is deleted, so it can never appear (removeListing already logs it)
+    // So: Unhandled = isReported is true.  Handled = has reports, isReported is false, and is Suspended or was warned.
     @GetMapping("/admin/reported-listings")
     public String viewReportedListings(Model model) {
-        List<Property> reportedProperties = propertyRepository.findByIsReportedTrue();
-        model.addAttribute("reportedProperties", reportedProperties);
+        Map<Integer, List<Report>> reportsByProperty = reportRepository.findAll().stream()
+                .filter(r -> r.getPropertyID() != null)
+                .collect(Collectors.groupingBy(Report::getPropertyID));
+
+        java.util.Set<Integer> warnedPropertyIds = notificationRepository.findAll().stream()
+                .filter(n -> n.getPropertyID() != null && n.getTitle() != null
+                        && n.getTitle().startsWith("Official Warning"))
+                .map(com.ulee.ulee_backend.model.Notification::getPropertyID)
+                .collect(Collectors.toSet());
+
+        // Still flagged = needs a decision
+        List<ReportedItem> unhandled = new ArrayList<>();
+        for (Property p : propertyRepository.findByIsReportedTrue()) {
+            unhandled.add(buildReportedItem(p, reportsByProperty.getOrDefault(p.getPropertyID(), List.of()), null));
+        }
+
+        // Warned or suspended
+        List<ReportedItem> handled = new ArrayList<>();
+        for (Property p : propertyRepository.findAllById(reportsByProperty.keySet())) {
+            if (Boolean.TRUE.equals(p.getIsReported())) continue;
+            String status = null;
+            if ("Suspended".equalsIgnoreCase(p.getStatus())) status = "Suspended";
+            else if (warnedPropertyIds.contains(p.getPropertyID())) status = "Warned";
+            if (status == null) continue;
+            handled.add(buildReportedItem(p, reportsByProperty.get(p.getPropertyID()), status));
+        }
+
+        Comparator<ReportedItem> newestFirst = Comparator.comparing(
+                ReportedItem::getReportedAt, Comparator.nullsLast(Comparator.reverseOrder()));
+        unhandled.sort(newestFirst);
+        handled.sort(newestFirst);
+
+        model.addAttribute("unhandledReports", unhandled);
+        model.addAttribute("handledReports", handled);
+        model.addAttribute("activeSection", "reported");
         addSidebarCounts(model);
         return "admin/admin-reported-listings";
     }
 
+    /** Builds a card from the property's latest report (or the legacy reportReason text if no Report rows exist). */
+    private ReportedItem buildReportedItem(Property p, List<Report> reports, String handledStatus) {
+        Report latest = reports.stream()
+                .max(Comparator.comparing(Report::getReportedAt, Comparator.nullsFirst(Comparator.naturalOrder())))
+                .orElse(null);
+
+        if (latest == null) {
+            LocalDateTime when = p.getUpdatedAt() != null ? p.getUpdatedAt() : p.getCreatedAt();
+            return new ReportedItem(p, "Reported", p.getReportReason(), when, "A student", handledStatus);
+        }
+
+        String reporter = latest.getStudentID() == null ? "A student"
+                : userRepository.findById(latest.getStudentID()).map(this::safeName).orElse("A student");
+        return new ReportedItem(p, latest.getReason(), latest.getDescription(),
+                latest.getReportedAt(), reporter, handledStatus);
+    }
+
+    /**
+     * Reported listing detail. `from` says which page the admin came from
+     * (from=approved when they clicked "Review Report" on Approved Properties,
+     * from=listings from the Listings page; nothing = the Reported list). It
+     * drives the Back link, its label and which sidebar item stays highlighted.
+     */
     @GetMapping("/admin/reported-listing/{id}")
-    public String viewReportedListingDetail(@PathVariable Integer id, Model model, RedirectAttributes redirectAttributes) {
+    public String viewReportedListingDetail(@PathVariable Integer id,
+                                            @RequestParam(required = false) String from,
+                                            Model model, RedirectAttributes redirectAttributes) {
         Optional<Property> propertyOpt = propertyRepository.findById(id);
         if (propertyOpt.isEmpty()) {
             redirectAttributes.addFlashAttribute("actionError", "Listing #" + id + " could not be found.");
-            return "redirect:/admin/reported-listings";
+            return "redirect:" + reportedBackUrl(from);
         }
         Property property = propertyOpt.get();
         Optional<User> landlordUserOpt = userRepository.findById(property.getLandlordID());
@@ -813,22 +904,59 @@ public class AdminController {
         model.addAttribute("prevReportedId", prevId);
         model.addAttribute("nextReportedId", nextId);
         model.addAttribute("isFlagged", Boolean.TRUE.equals(property.getIsReported()));
+
+        // Where the admin came from: drives the Back link, its label and the sidebar highlight
+        model.addAttribute("from", normalizeReportedFrom(from));
+        model.addAttribute("backUrl", reportedBackUrl(from));
+        model.addAttribute("backLabel", reportedBackLabel(from));
+        model.addAttribute("activeSection", reportedActiveSection(from));
         addSidebarCounts(model);
         return "admin/admin-reported-listing-detail";
     }
 
+    /** Only these two values are remembered; anything else means "came from the Reported list". */
+    private String normalizeReportedFrom(String from) {
+        return ("approved".equals(from) || "listings".equals(from)) ? from : null;
+    }
+
+    private String reportedBackUrl(String from) {
+        if ("approved".equals(from)) return "/admin/approved-properties";
+        if ("listings".equals(from)) return "/admin/listings";
+        return "/admin/reported-listings";
+    }
+
+    private String reportedBackLabel(String from) {
+        if ("approved".equals(from)) return "Back to approved properties";
+        if ("listings".equals(from)) return "Back to listings";
+        return "Back to reported properties";
+    }
+
+    private String reportedActiveSection(String from) {
+        if ("approved".equals(from)) return "approved-properties";
+        if ("listings".equals(from)) return "listings";
+        return "reported";
+    }
+
+    /** "?from=approved" for redirects that must stay in the same context, or "" */
+    private String reportedFromQuery(String from) {
+        String f = normalizeReportedFrom(from);
+        return f == null ? "" : "?from=" + f;
+    }
+
     @PostMapping("/admin/warn-landlord-for-listing/{propertyId}")
-    public String warnLandlordForListing(@PathVariable Integer propertyId, RedirectAttributes redirectAttributes) {
+    public String warnLandlordForListing(@PathVariable Integer propertyId,
+                                         @RequestParam(required = false) String from,
+                                         RedirectAttributes redirectAttributes) {
         Optional<Property> propertyOpt = propertyRepository.findById(propertyId);
         if (propertyOpt.isEmpty()) {
             redirectAttributes.addFlashAttribute("actionError", "Listing #" + propertyId + " could not be found.");
-            return "redirect:/admin/reported-listings";
+            return "redirect:" + reportedBackUrl(from);
         }
         Property property = propertyOpt.get();
         Optional<User> landlordUserOpt = userRepository.findById(property.getLandlordID());
         if (landlordUserOpt.isEmpty()) {
             redirectAttributes.addFlashAttribute("actionError", "Landlord for this listing could not be found.");
-            return "redirect:/admin/reported-listing/" + propertyId;
+            return "redirect:/admin/reported-listing/" + propertyId + reportedFromQuery(from);
         }
         User landlordUser = landlordUserOpt.get();
 
@@ -879,6 +1007,7 @@ public class AdminController {
         int current = landlordUser.getWarningCount() != null ? landlordUser.getWarningCount() : 0;
         landlordUser.setWarningCount(current + 1);
         userRepository.save(landlordUser);
+        enforceWarningLimit(landlordUser, current + 1);
 
         // Warning sent = this report is considered handled, so it drops off
         // the Reported queue (same as suspend/remove).
@@ -890,7 +1019,7 @@ public class AdminController {
 
         redirectAttributes.addFlashAttribute("actionMessage",
                 "Official warning sent to " + safeName(landlordUser) + "'s notifications (warning #" + (current + 1) + ")");
-        return "redirect:/admin/reported-listing/" + propertyId;
+        return "redirect:/admin/reported-listing/" + propertyId + reportedFromQuery(from);
     }
 
     // Suspending a listing records the action in the Dashboard's Recent
@@ -934,17 +1063,25 @@ public class AdminController {
         return "redirect:/admin/reported-listings";
     }
 
+    // Returns the admin to where they came from (the detail page sends
+    // from=reported / approved / listings) and tells the landlord.
     @PostMapping("/admin/unsuspend-listing/{id}")
-    public String unsuspendListing(@PathVariable Integer id, RedirectAttributes redirectAttributes) {
+    public String unsuspendListing(@PathVariable Integer id,
+                                   @RequestParam(required = false) String from,
+                                   RedirectAttributes redirectAttributes) {
+        String back = "/admin/listings";
+        if ("reported".equals(from))      back = "/admin/reported-listings#handled";
+        else if ("approved".equals(from)) back = "/admin/approved-properties";
+
         Optional<Property> propertyOpt = propertyRepository.findById(id);
         if (propertyOpt.isEmpty()) {
             redirectAttributes.addFlashAttribute("actionError", "Listing #" + id + " could not be found.");
-            return "redirect:/admin/listings";
+            return "redirect:" + back;
         }
         Property property = propertyOpt.get();
         if (!"Suspended".equals(property.getStatus())) {
             redirectAttributes.addFlashAttribute("actionError", "\"" + property.getTitle() + "\" is not currently suspended.");
-            return "redirect:/admin/listings";
+            return "redirect:" + back;
         }
         // Back to Active — the DB has no "Approved" value, only
         // Active/Pending/Rejected. Active is the normal "live/moderated"
@@ -953,9 +1090,23 @@ public class AdminController {
         property.setStatus("Active");
         property.setIsAvailable(true);
         propertyRepository.save(property);
+
+        // Tell the landlord it's live again (same pattern as suspendListing)
+        userRepository.findById(property.getLandlordID()).ifPresent(landlordUser -> {
+            com.ulee.ulee_backend.model.Notification notification = new com.ulee.ulee_backend.model.Notification();
+            notification.setLandlordID(landlordUser.getUserID());
+            notification.setPropertyID(id);
+            notification.setTitle("Listing Live Again: " + property.getTitle());
+            notification.setMessage("Dear " + safeName(landlordUser) + ",\n\n\"" + property.getTitle()
+                    + "\" is no longer suspended and is visible to students again.");
+            notification.setCreatedAt(LocalDateTime.now());
+            notification.setIsRead(false);
+            notificationRepository.save(notification);
+        });
+
         logActivity("Unsuspended", "Unsuspended \"" + property.getTitle() + "\"");
         redirectAttributes.addFlashAttribute("actionMessage", "Unsuspended \"" + property.getTitle() + "\" — it's live again");
-        return "redirect:/admin/listings";
+        return "redirect:" + back;
     }
 
     @PostMapping("/admin/remove-listing/{id}")
@@ -1022,12 +1173,26 @@ public class AdminController {
         propertyRepository.deleteById(propertyId);
     }
 
+    /**
+     * Room-type filter match. Tolerant on purpose: the stored value may be "Single",
+     * "Single Room", "single room" etc., while the dropdown sends "Single".
+     * Blank filter = match everything.
+     */
+    private static boolean roomTypeMatches(String stored, String wanted) {
+        if (wanted == null || wanted.isBlank()) return true;
+        if (stored == null || stored.isBlank()) return false;
+        String s = stored.trim().toLowerCase();
+        String w = wanted.trim().toLowerCase();
+        return s.equals(w) || s.contains(w) || w.contains(s);
+    }
+
     @GetMapping("/admin-index")
     public String viewAdminDashboard(Model model,
                                      @RequestParam(required = false) Integer academicYear,
                                      @RequestParam(required = false) String search,
                                      @RequestParam(required = false) String section,
                                      @RequestParam(required = false) String city,
+                                     @RequestParam(required = false) String suburb,
                                      @RequestParam(required = false) java.math.BigDecimal minPrice,
                                      @RequestParam(required = false) java.math.BigDecimal maxPrice,
                                      @RequestParam(required = false) String type) {
@@ -1100,6 +1265,17 @@ public class AdminController {
                 .sorted()
                 .collect(Collectors.toList());
 
+        // Suburb dropdown (Humewood, Summerstrand, ...): every distinct suburb actually stored on a
+        // pending listing, from the full pending set so the list never shrinks while filtering.
+        // Compared case-insensitively so "humewood" and "Humewood" are one entry.
+        List<String> suburbOptions = new ArrayList<>(pendingProperties.stream()
+                .map(Property::getSuburb)
+                .filter(sb -> sb != null && !sb.isBlank())
+                .map(String::trim)
+                .collect(Collectors.toMap(String::toLowerCase, sb -> sb, (a, b) -> a,
+                        () -> new java.util.TreeMap<String, String>()))
+                .values());
+
         String searchLower = search != null ? search.trim().toLowerCase() : null;
         List<Property> filteredPendingProperties = pendingProperties.stream()
                 .filter(p -> academicYear == null
@@ -1107,12 +1283,32 @@ public class AdminController {
                 .filter(p -> searchLower == null || searchLower.isBlank()
                         || (p.getTitle() != null && p.getTitle().toLowerCase().contains(searchLower))
                         || (p.getCity() != null && p.getCity().toLowerCase().contains(searchLower))
+                        || (p.getSuburb() != null && p.getSuburb().toLowerCase().contains(searchLower))
                         || (p.getAddress() != null && p.getAddress().toLowerCase().contains(searchLower)))
                 .filter(p -> city == null || city.isBlank() || city.equalsIgnoreCase(p.getCity()))
+                .filter(p -> suburb == null || suburb.isBlank()
+                        || (p.getSuburb() != null && suburb.trim().equalsIgnoreCase(p.getSuburb().trim())))
                 .filter(p -> minPrice == null || (p.getRent() != null && p.getRent().compareTo(minPrice) >= 0))
                 .filter(p -> maxPrice == null || (p.getRent() != null && p.getRent().compareTo(maxPrice) <= 0))
-                .filter(p -> type == null || type.isBlank() || type.equalsIgnoreCase(p.getType()))
+                .filter(p -> roomTypeMatches(p.getType(), type))
                 .collect(Collectors.toList());
+
+        // Room Type dropdown: always offer Single / Sharing / Commune, plus any other
+        // type actually stored on a pending listing (so nothing is un-filterable).
+        List<String> typeOptions = new ArrayList<>(List.of("Single", "Sharing", "Commune"));
+        pendingProperties.stream()
+                .map(Property::getType)
+                .filter(t -> t != null && !t.isBlank())
+                .map(String::trim)
+                .filter(t -> typeOptions.stream().noneMatch(o -> roomTypeMatches(t, o)))
+                .distinct()
+                .sorted()
+                .forEach(typeOptions::add);
+        boolean hasActiveFilters = (search != null && !search.isBlank())
+                || (city != null && !city.isBlank())
+                || (suburb != null && !suburb.isBlank())
+                || minPrice != null || maxPrice != null
+                || (type != null && !type.isBlank());
 
         Map<Integer, Property> propertyLookup = allProperties.stream()
                 .collect(Collectors.toMap(Property::getPropertyID, p -> p));
@@ -1141,9 +1337,14 @@ public class AdminController {
         model.addAttribute("reviewSearch", search);
         model.addAttribute("cityOptions", cityOptions);
         model.addAttribute("selectedCity", city);
+        model.addAttribute("selectedSuburb", suburb);
+        model.addAttribute("suburbOptions", suburbOptions);
         model.addAttribute("minPrice", minPrice);
         model.addAttribute("maxPrice", maxPrice);
         model.addAttribute("selectedType", type);
+        model.addAttribute("typeOptions", typeOptions);
+        model.addAttribute("hasActiveFilters", hasActiveFilters);
+        model.addAttribute("filteredCount", filteredPendingProperties.size());
 
         // Decide which tab to show server-side, instead of relying on the
         // URL's #hash. Show Review Properties if explicitly requested via
@@ -1152,7 +1353,11 @@ public class AdminController {
         // just looking at that tab and expects to land back on it.
         boolean showReviewTab = "review-properties".equals(section)
                 || (search != null && !search.isBlank())
-                || academicYear != null;
+                || academicYear != null
+                || (city != null && !city.isBlank())
+                || (suburb != null && !suburb.isBlank())
+                || minPrice != null || maxPrice != null
+                || (type != null && !type.isBlank());
         model.addAttribute("activeSection", showReviewTab ? "review-properties" : "dashboard");
 
         Map<YearMonth, Long> monthlyCounts = buildMonthlyListingCounts(allProperties);
@@ -1364,7 +1569,7 @@ public class AdminController {
      */
     private String resolveBackUrl(String from) {
         if ("pending".equals(from)) {
-            return "/admin-index#review-properties";
+            return "/admin-index?section=review-properties";
         }
         if ("approved".equals(from)) {
             return "/admin/approved-properties";
@@ -1487,6 +1692,18 @@ public class AdminController {
         Map<Integer, User> landlordUserLookup = landlordUsers.stream()
                 .collect(Collectors.toMap(User::getUserID, u -> u));
 
+        // Pending / active account suspensions, keyed by userID (newest one wins). The template
+        // reads suspensions.get(user.userID) for every landlord row, so this MUST be in the model.
+        Map<Integer, AccountSuspension> suspensions = new HashMap<>();
+        for (AccountSuspension sus : accountSuspensionRepository.findByStateIn(List.of("PENDING", "ACTIVE"))) {
+            AccountSuspension prev = suspensions.get(sus.getUserID());
+            if (prev == null || prev.getCreatedAt() == null
+                    || (sus.getCreatedAt() != null && sus.getCreatedAt().isAfter(prev.getCreatedAt()))) {
+                suspensions.put(sus.getUserID(), sus);
+            }
+        }
+        model.addAttribute("suspensions", suspensions);
+
         model.addAttribute("studentUsers", studentUsers);
         model.addAttribute("landlordUsers", landlordUsers);
         model.addAttribute("totalUsers", studentUsers.size() + landlordUsers.size());
@@ -1517,6 +1734,7 @@ public class AdminController {
         int newCount = current + 1;
         user.setWarningCount(newCount);
         userRepository.save(user);
+        boolean autoSuspended = enforceWarningLimit(user, newCount);
 
         // Actually deliver the warning, not just increment a counter only the
         // admin can see. Targets studentID or landlordID on the Notification
@@ -1536,7 +1754,8 @@ public class AdminController {
 
         logActivity("Warned user", "Warned " + safeName(user) + " (warning #" + newCount + ")");
 
-        redirectAttributes.addFlashAttribute("actionMessage", "Warned " + safeName(user) + " (warning #" + newCount + ")");
+        redirectAttributes.addFlashAttribute("actionMessage", "Warned " + safeName(user) + " (warning #" + newCount + ")"
+                + (autoSuspended ? ". Warning limit exceeded: the account was suspended automatically." : ""));
         return "redirect:/admin/manage-users";
     }
 
@@ -1581,6 +1800,38 @@ public class AdminController {
             return "redirect:/admin/manage-users";
         }
         User user = userOpt.get();
+
+        // Landlords: schedule the deactivation 10 minutes ahead (the existing scheduler applies it
+        // when scheduledFor passes), tell them, and let the admin cancel in the meantime.
+        if (landlordRepository.existsById(id)) {
+            if (accountSuspensionRepository.findFirstByUserIDAndStateInOrderByCreatedAtDesc(id, List.of("PENDING", "ACTIVE")).isPresent()) {
+                redirectAttributes.addFlashAttribute("actionError", safeName(user) + " is already deactivated or has a deactivation scheduled.");
+                return "redirect:/admin/manage-users";
+            }
+            AccountSuspension suspension = new AccountSuspension();
+            suspension.setUserID(id);
+            suspension.setState("PENDING");
+            suspension.setReason("ADMIN");
+            suspension.setCreatedAt(LocalDateTime.now());
+            suspension.setScheduledFor(LocalDateTime.now().plusMinutes(10));
+            accountSuspensionRepository.save(suspension);
+
+            com.ulee.ulee_backend.model.Notification scheduled = new com.ulee.ulee_backend.model.Notification();
+            scheduled.setLandlordID(id);
+            scheduled.setTitle("Account Deactivation Scheduled");
+            scheduled.setMessage("Dear " + safeName(user) + ",\n\nYour ULEE account will be deactivated by an administrator in 10 minutes. "
+                    + "Once deactivated, your properties are hidden from students and you cannot add new listings. "
+                    + "If you believe this is a mistake, please contact support.");
+            scheduled.setCreatedAt(LocalDateTime.now());
+            scheduled.setIsRead(false);
+            notificationRepository.save(scheduled);
+
+            logActivity("Scheduled deactivation", "Scheduled deactivation of " + safeName(user) + " in 10 minutes");
+            redirectAttributes.addFlashAttribute("actionMessage",
+                    safeName(user) + " will be deactivated in 10 minutes. You can cancel until then.");
+            return "redirect:/admin/manage-users";
+        }
+
         user.setIsActive(false);
         userRepository.save(user);
 
@@ -1625,6 +1876,34 @@ public class AdminController {
         return "redirect:/admin/manage-users";
     }
 
+    @PostMapping("/admin/cancel-deactivation/{id}")
+    public String cancelDeactivation(@PathVariable Integer id, RedirectAttributes redirectAttributes) {
+        Optional<User> userOpt = userRepository.findById(id);
+        Optional<AccountSuspension> pending = accountSuspensionRepository
+                .findFirstByUserIDAndStateInOrderByCreatedAtDesc(id, List.of("PENDING"));
+        if (userOpt.isEmpty() || pending.isEmpty()) {
+            redirectAttributes.addFlashAttribute("actionError", "There is no scheduled deactivation to cancel (it may already have happened).");
+            return "redirect:/admin/manage-users";
+        }
+        AccountSuspension suspension = pending.get();
+        suspension.setState("CANCELLED");
+        suspension.setEndedAt(LocalDateTime.now());
+        accountSuspensionRepository.save(suspension);
+
+        User user = userOpt.get();
+        com.ulee.ulee_backend.model.Notification note = new com.ulee.ulee_backend.model.Notification();
+        note.setLandlordID(id);
+        note.setTitle("Deactivation Cancelled");
+        note.setMessage("Dear " + safeName(user) + ",\n\nThe scheduled deactivation of your ULEE account has been cancelled. Your account stays active.");
+        note.setCreatedAt(LocalDateTime.now());
+        note.setIsRead(false);
+        notificationRepository.save(note);
+
+        logActivity("Cancelled deactivation", "Cancelled the scheduled deactivation of " + safeName(user));
+        redirectAttributes.addFlashAttribute("actionMessage", "Deactivation cancelled. " + safeName(user) + " stays active.");
+        return "redirect:/admin/manage-users";
+    }
+
     @PostMapping("/admin/reactivate-user/{id}")
     public String reactivateUser(@PathVariable Integer id, RedirectAttributes redirectAttributes) {
         Optional<User> userOpt = userRepository.findById(id);
@@ -1636,19 +1915,33 @@ public class AdminController {
         user.setIsActive(true);
         userRepository.save(user);
 
-        // Restore visibility for a reactivated landlord's properties. This
-        // makes every one of their properties available again — there's no
-        // separate flag distinguishing "was already hidden before
-        // deactivation" from "hidden because of deactivation", so this is a
-        // simple, honest restore-all rather than guessing which ones to skip.
+        // Close the suspension record. Only the properties THAT deactivation hid are restored
+        // (hiddenPropertyIds); with no record (older deactivations) every property is restored.
+        java.util.Set<Integer> hiddenIds = null;
+        Optional<AccountSuspension> activeOpt = accountSuspensionRepository
+                .findFirstByUserIDAndStateInOrderByCreatedAtDesc(id, List.of("ACTIVE", "PENDING"));
+        if (activeOpt.isPresent()) {
+            AccountSuspension suspension = activeOpt.get();
+            if ("ACTIVE".equals(suspension.getState()) && suspension.getHiddenPropertyIds() != null) {
+                hiddenIds = new java.util.HashSet<>();
+                java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\d+").matcher(suspension.getHiddenPropertyIds());
+                while (m.find()) hiddenIds.add(Integer.valueOf(m.group()));
+            }
+            suspension.setState("ENDED");
+            suspension.setEndedAt(LocalDateTime.now());
+            accountSuspensionRepository.save(suspension);
+        }
+
         if (landlordRepository.existsById(id)) {
-            List<Property> ownedProperties = propertyRepository.findAll().stream()
+            final java.util.Set<Integer> only = hiddenIds;
+            List<Property> toRestore = propertyRepository.findAll().stream()
                     .filter(p -> id.equals(p.getLandlordID()))
+                    .filter(p -> only == null || only.contains(p.getPropertyID()))
                     .collect(Collectors.toList());
-            for (Property p : ownedProperties) {
+            for (Property p : toRestore) {
                 p.setIsAvailable(true);
             }
-            propertyRepository.saveAll(ownedProperties);
+            propertyRepository.saveAll(toRestore);
         }
 
         logActivity("Reactivated", "Reactivated " + safeName(user));
@@ -1954,6 +2247,7 @@ public class AdminController {
                 studentRepository.deleteById(id);
             }
 
+            accountSuspensionRepository.deleteAll(accountSuspensionRepository.findByUserID(id));
             userRepository.deleteById(id);
             logActivity("Deleted", "Deleted " + name);
             redirectAttributes.addFlashAttribute("actionMessage", "Deleted " + name);
@@ -1967,6 +2261,54 @@ public class AdminController {
         }
 
         return "redirect:/admin/manage-users";
+    }
+
+
+    /** Landlords may collect up to this many warnings; going over it suspends the account automatically. */
+    private static final int WARNING_LIMIT = 5;
+
+    /**
+     * Auto-suspends a landlord who has gone over the warning limit: the account is deactivated
+     * straight away, the properties that were live are hidden (and remembered in hiddenPropertyIds
+     * so reactivating restores only those), and the landlord is told. Returns true if it suspended.
+     */
+    private boolean enforceWarningLimit(User user, int warningCount) {
+        Integer id = user.getUserID();
+        if (warningCount <= WARNING_LIMIT || id == null || !landlordRepository.existsById(id)) return false;
+        if (accountSuspensionRepository.findFirstByUserIDAndStateInOrderByCreatedAtDesc(id, List.of("PENDING", "ACTIVE")).isPresent()) return false;
+
+        List<Property> live = propertyRepository.findAll().stream()
+                .filter(p -> id.equals(p.getLandlordID()))
+                .filter(p -> "Approved".equalsIgnoreCase(p.getStatus()) || "Active".equalsIgnoreCase(p.getStatus()))
+                .collect(Collectors.toList());
+        for (Property p : live) {
+            p.setIsAvailable(false);
+        }
+        propertyRepository.saveAll(live);
+
+        user.setIsActive(false);
+        userRepository.save(user);
+
+        AccountSuspension suspension = new AccountSuspension();
+        suspension.setUserID(id);
+        suspension.setState("ACTIVE");
+        suspension.setReason("WARNING_LIMIT");
+        suspension.setCreatedAt(LocalDateTime.now());
+        suspension.setAppliedAt(LocalDateTime.now());
+        suspension.setHiddenPropertyIds(live.stream().map(p -> String.valueOf(p.getPropertyID())).collect(Collectors.joining(",")));
+        accountSuspensionRepository.save(suspension);
+
+        com.ulee.ulee_backend.model.Notification note = new com.ulee.ulee_backend.model.Notification();
+        note.setLandlordID(id);
+        note.setTitle("Account Suspended");
+        note.setMessage("Dear " + safeName(user) + ",\n\nYour ULEE account has been suspended because you went over the limit of "
+                + WARNING_LIMIT + " warnings. Your properties are hidden from students. Please contact support.");
+        note.setCreatedAt(LocalDateTime.now());
+        note.setIsRead(false);
+        notificationRepository.save(note);
+
+        logActivity("Auto-suspended", "Auto-suspended " + safeName(user) + " (warning limit exceeded)");
+        return true;
     }
 
 }

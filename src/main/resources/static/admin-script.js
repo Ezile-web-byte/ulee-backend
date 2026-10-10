@@ -6,12 +6,12 @@ document.getElementById('sidebar-toggle').addEventListener('click', () => {
 
 /* ── Navigation ─────────────────────────── */
 const topbarTitles = {
-  dashboard: 'Dashboard <span>— Overview</span>',
-  'review-properties': 'Review Properties <span>— Pending Listings</span>',
-  listings:  'Listings <span>— All Properties</span>',
-  users:     'Users <span>— All Accounts</span>',
-  reviews:   'Reviews <span>— Moderation</span>',
-  settings:  'Settings <span>— Platform Config</span>',
+  dashboard: 'Dashboard',
+  'review-properties': 'Review Properties',
+  listings:  'Listings',
+  users:     'Users',
+  reviews:   'Reviews',
+  settings:  'Settings',
 };
 
 function activateSection(section) {
@@ -24,7 +24,7 @@ function activateSection(section) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   sec.classList.add('active');
   const titleEl = document.getElementById('topbar-title');
-  if (titleEl) titleEl.innerHTML = topbarTitles[section] || 'Dashboard';
+  if (titleEl) titleEl.textContent = topbarTitles[section] || 'Dashboard';
 }
 
 document.querySelectorAll('.nav-item').forEach(item => {

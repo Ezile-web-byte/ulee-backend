@@ -4,11 +4,161 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ULEE — Reported Listings</title>
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=Fredoka:wght@500;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/admin-style.css">
     <link rel="stylesheet" href="/speak-with-ai.css">
     <script src="/speak-with-ai-logic.js" defer></script>
     <script src="/speak-with-ai.js" defer></script>
+    <script src="/admin-script.js" defer></script>
+    <script src="/landlord-sidebar-toggle.js" defer></script>
+    <!--
+      MODEL EXPECTED FROM THE CONTROLLER
+        unhandledReports : List<item>   (listing still flagged, needs action)
+        handledReports   : List<item>   (warned or suspended; permanently removed listings no longer exist, so they never appear)
+      where each item exposes:
+        item.property        -> Property (propertyID, title, suburb, mainImageUrl)
+        item.reason          -> latest report reason (String)
+        item.description     -> latest report description (String)
+        item.reportedAt      -> LocalDateTime of latest report
+        item.reporterName    -> String
+        item.handledStatus   -> 'Warned' | 'Suspended'   (handled items only)
+    -->
+    <style>
+        :root {
+            --primary-dark: #006A6A; --primary: #096C6C; --primary-tint: #F4FBFA; --surface-tint: #F0F7F6;
+            --outline-variant: #E6E8E4; --accent-border: #93C0C5;
+            --on-surface: #191c1d; --on-surface-variant: #3f484d; --outline: #6f787d; --alert: #ba1a1a;
+            --font-display: 'Plus Jakarta Sans', sans-serif; --font-body: 'Hanken Grotesk', sans-serif;
+            --radius-sm: 10px; --radius-md: 14px; --radius-lg: 20px; --radius-full: 9999px;
+            --sidebar-bg: #071C2D; --sidebar-logo-teal: #14C8BE; --sidebar-active-bg: #007178;
+        }
+
+        /* Top bar: same as admin-index. Initials circle is display-only (log out lives in the sidebar). */
+        .topbar-right { display: flex; align-items: center; gap: 14px; margin-left: auto; }
+        .avatar { cursor: default; pointer-events: none; user-select: none; }
+        header.topbar .topbar-title { font-family: var(--font-display); font-weight: 800; letter-spacing: -0.01em; color: var(--on-surface); }
+
+        .rl { font-family: var(--font-body); color: var(--on-surface); }
+        .rl-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+        .rl-head h2 { font-family: var(--font-display); font-size: 26px; font-weight: 800; margin: 0 0 4px; color: var(--sidebar-bg); }
+        .rl-head p { margin: 0; font-size: 14px; color: var(--on-surface-variant); }
+        .rl-search { display: flex; align-items: center; gap: 8px; width: 300px; max-width: 100%; height: 42px; padding: 0 16px;
+            background: #fff; border: 1px solid var(--outline-variant); border-radius: var(--radius-full); }
+        .rl-search:focus-within { border-color: var(--sidebar-logo-teal); }
+        .rl-search svg { width: 16px; height: 16px; fill: none; stroke: var(--outline); stroke-width: 1.8; flex-shrink: 0; }
+        .rl-search input { flex: 1; border: 0; outline: 0; background: transparent; font-family: inherit; font-size: 14px; color: var(--on-surface); }
+
+        /* ── Two big tabs (ULEE navy stat cards) that span the whole page ── */
+        .rl-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 24px; }
+        .rl-tab {
+            position: relative; display: block; width: 100%; overflow: hidden; text-align: left; cursor: pointer; font-family: inherit;
+            padding: 20px 24px 34px; border: 1.5px solid rgba(20,200,190,.3); border-radius: 16px; color: #fff;
+            background: linear-gradient(115deg, #071C2D 0%, #0A3A48 55%, #0F6C70 100%);
+            box-shadow: 0 6px 18px rgba(7,28,45,.14); opacity: .72;
+            transition: transform .2s ease, box-shadow .2s ease, opacity .2s ease, border-color .2s ease;
+            animation: rl-in .6s cubic-bezier(.2,.8,.2,1) backwards;
+        }
+        .rl-tab:nth-child(2) { animation-delay: .08s; }
+        .rl-tab:hover { opacity: 1; transform: translateY(-3px); box-shadow: 0 12px 28px rgba(7,28,45,.28); }
+        .rl-tab:focus-visible { outline: 2px solid var(--sidebar-logo-teal); outline-offset: 3px; }
+        .rl-tab.active { opacity: 1; border-color: var(--sidebar-logo-teal); box-shadow: 0 0 0 3px rgba(20,200,190,.22), 0 12px 28px rgba(7,28,45,.28); }
+        .rl-tab::before { content: ''; position: absolute; top: 0; left: -60%; width: 40%; height: 100%;
+            background: linear-gradient(100deg, transparent, rgba(255,255,255,.12), transparent); transform: skewX(-20deg); animation: rl-shine 7s ease-in-out infinite; }
+        .rl-tab::after { content: ''; position: absolute; top: -60px; right: -40px; width: 170px; height: 170px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(20,200,190,.28) 0%, transparent 70%); animation: rl-pulse 4.5s ease-in-out infinite; }
+        .rl-tab-label { position: relative; z-index: 2; font-size: 12.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: rgba(255,255,255,.78); }
+        .rl-tab-value { position: relative; z-index: 2; margin-top: 8px; font-family: var(--font-display); font-size: 32px; font-weight: 800; }
+        .rl-tab-sub { position: relative; z-index: 2; font-size: 12px; color: #7DF0E6; margin-top: 2px; }
+        .rl-tab-stars { position: absolute; top: 0; right: 0; width: 52%; height: 80%; z-index: 1; }
+        .rl-tab-stars .star { animation: rl-twinkle 4s ease-in-out infinite; animation-delay: var(--d, 0s); }
+        .rl-tab-dot { position: absolute; top: 14px; right: 16px; z-index: 3; width: 9px; height: 9px; border-radius: 50%; background: #f5d450;
+            box-shadow: 0 0 0 3px rgba(245,212,80,.28), 0 0 10px rgba(245,212,80,.8); }
+        .rl-tab-wave { position: absolute; left: 0; bottom: 0; width: 200%; height: 22px; z-index: 1; animation: rl-wave 16s linear infinite; }
+        .rl-tab-wave .w-back  { fill: rgba(14,116,128,.55); }
+        .rl-tab-wave .w-front { fill: #071C2D; stroke: #14C8BE; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+        @keyframes rl-in { from { opacity: 0; transform: translateY(16px); } to { opacity: .72; transform: none; } }
+        @keyframes rl-shine { 0%,55% { left: -60%; } 100% { left: 130%; } }
+        @keyframes rl-pulse { 0%,100% { opacity: .6; transform: scale(1); } 50% { opacity: 1; transform: scale(1.12); } }
+        @keyframes rl-twinkle { 0%,100% { opacity: .25; } 50% { opacity: 1; } }
+        @keyframes rl-wave { to { transform: translateX(-50%); } }
+        @media (max-width: 700px) { .rl-tabs { grid-template-columns: 1fr; } }
+        @media (prefers-reduced-motion: reduce) { .rl-tab, .rl-tab::before, .rl-tab::after, .rl-tab-wave, .rl-tab-stars .star { animation: none !important; } }
+
+        /* ── Filter pills (same style as the Approved / In review / Rejected pills) ── */
+        .rl-filters { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px; margin-bottom: 22px; background: var(--surface-tint); border: 1px solid var(--outline-variant); border-radius: 28px; }
+        .rl-filters:empty { display: none; }
+        .rl-chip { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border: 0; border-radius: var(--radius-full); background: transparent;
+            font-family: var(--font-body); font-size: 14.5px; font-weight: 600; color: var(--on-surface); cursor: pointer; transition: background .15s ease, color .15s ease; }
+        .rl-chip:hover { background: rgba(0,106,106,.1); }
+        .rl-chip.active { background: var(--primary-dark); color: #fff; }
+        .rl-chip:focus-visible { outline: 2px solid var(--sidebar-logo-teal); outline-offset: 2px; }
+        .rl-chip small { font-size: 12px; font-weight: 700; opacity: .7; }
+
+        /* ── Pagination ── */
+        .rl-pager { display: none; justify-content: center; align-items: center; gap: 6px; margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--outline-variant); flex-wrap: wrap; }
+        .rl-pager.show { display: flex; }
+        .rl-pg { min-width: 36px; height: 36px; padding: 0 10px; border-radius: var(--radius-sm); display: inline-flex; align-items: center; justify-content: center;
+            font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid var(--outline-variant); background: #fff; color: var(--on-surface-variant); }
+        .rl-pg:hover:not(:disabled):not(.current) { background: var(--primary-tint); border-color: var(--accent-border); }
+        .rl-pg.current { background: var(--primary-dark); border-color: var(--primary-dark); color: #fff; font-weight: 700; }
+        .rl-pg:disabled { color: #c4cbd0; background: transparent; cursor: default; }
+        .rl-pg-gap { color: var(--outline); padding: 0 2px; }
+        .rl-pg-info { width: 100%; text-align: center; font-size: 12.5px; color: var(--outline); margin-top: 6px; }
+
+        /* ── Card grid fills the page width ── */
+        .rl-pane { display: none; }
+        .rl-pane.active { display: block; }
+        .rl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 22px; }
+        .rl-card { display: flex; flex-direction: column; background: #fff; border: 1px solid var(--outline-variant); border-radius: var(--radius-lg);
+            overflow: hidden; transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
+        .rl-card:hover { transform: translateY(-3px); border-color: var(--accent-border); box-shadow: 0 12px 28px rgba(7,28,45,.14); }
+        .rl-card.is-hidden { display: none; }
+        .rl-photo { position: relative; display: block; height: 170px; background: var(--surface-tint); }
+        .rl-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .rl-photo:focus-visible { outline: 2px solid var(--sidebar-logo-teal); outline-offset: -2px; }
+        .rl-noimg { height: 100%; display: flex; align-items: center; justify-content: center; color: var(--accent-border); }
+        .rl-noimg svg { width: 40px; height: 40px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+        .rl-badge { position: absolute; top: 12px; left: 12px; display: inline-flex; align-items: center; gap: 6px; max-width: calc(100% - 24px);
+            padding: 6px 12px; border-radius: var(--radius-full); font-family: var(--font-display); font-size: 11.5px; font-weight: 800;
+            letter-spacing: .04em; text-transform: uppercase; color: #fff; background: var(--alert); box-shadow: 0 2px 8px rgba(7,28,45,.25); }
+        .rl-badge span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .rl-badge svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; flex-shrink: 0; }
+        .rl-badge.warned { background: var(--primary-dark); }
+        .rl-badge.suspended { background: #3f484d; }
+        .rl-body { flex: 1; display: flex; flex-direction: column; padding: 16px 18px 18px; }
+        .rl-title { font-family: var(--font-display); font-size: 18px; font-weight: 800; color: var(--sidebar-bg); text-decoration: none; margin: 0 0 6px; line-height: 1.25; }
+        .rl-title:hover { color: var(--primary-dark); text-decoration: underline; }
+        .rl-meta { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--outline); margin-bottom: 12px; flex-wrap: wrap; }
+        .rl-meta span { display: inline-flex; align-items: center; gap: 5px; }
+        .rl-meta svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+        .rl-quote { flex: 1; min-height: 78px; margin: 0 0 14px; padding: 12px 14px; border-radius: var(--radius-md); background: var(--surface-tint);
+            font-size: 14px; line-height: 1.55; color: var(--on-surface-variant);
+            display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+        .rl-by { display: flex; align-items: center; gap: 10px; padding-top: 14px; border-top: 1px solid var(--outline-variant); }
+        .rl-av { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+            background: var(--primary-tint); color: var(--primary-dark); border: 1px solid var(--accent-border); font-family: var(--font-display); font-weight: 800; font-size: 12px; }
+        .rl-by-label { font-size: 11px; color: var(--outline); }
+        .rl-by-name { font-family: var(--font-display); font-weight: 700; font-size: 13.5px; }
+        .rl-open { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; font-size: 12.5px; font-weight: 700; color: var(--primary-dark); text-decoration: none; }
+        .rl-open svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; }
+        .rl-open:hover { text-decoration: underline; }
+
+        /* Empty state (ULEE dashed card) */
+        .ap-empty { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 48px 20px 52px;
+            background: linear-gradient(180deg, #fff 0%, #F4FBFA 100%); border: 2px dashed #93C0C5; border-radius: 20px; }
+        .ap-empty-icon { width: 76px; height: 76px; border-radius: 50%; background: var(--primary-tint); border: 1px solid var(--accent-border);
+            display: flex; align-items: center; justify-content: center; }
+        .ap-empty-icon svg { width: 34px; height: 34px; fill: none; stroke: var(--primary-dark); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+        .ap-empty-title { font-family: 'Fredoka', var(--font-display); font-size: 27px; font-weight: 600; color: #006A6A; margin: 14px 0 4px; }
+        .ap-empty-sub { font-family: 'Fredoka', var(--font-display); font-size: 17px; font-weight: 500; color: #6f787d; margin: 0; }
+        .rl-nomatch { display: none; margin-top: 18px; text-align: center; font-size: 14px; color: var(--outline); }
+
+        .rl-flash { border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 16px; font-size: 13.5px; font-weight: 600; }
+        .rl-flash.ok  { background: var(--primary-tint); border: 1px solid var(--accent-border); color: var(--primary-dark); }
+        .rl-flash.err { background: #fdecec; border: 1px solid #f1b3b3; color: var(--alert); }
+    </style>
 </head>
 <body>
 <div class="shell">
@@ -18,47 +168,279 @@
     <div class="main">
         <header class="topbar">
             <div class="topbar-title">Reported Listings</div>
-            <div th:replace="~{fragments/notification-bell :: bell}"></div>
-            <!--
-              FIX: this page had no Log out button at all. The admin-sidebar
-              fragment above already defines confirmAdminLogout() (opens the
-              same styled "Log out of ULEE?" confirmation used elsewhere and
-              submits the real /logout form on confirm), so this just wires
-              a button to it — same pattern as the other admin pages.
-            -->
-            <button class="logout-btn" onclick="confirmAdminLogout()">
-                <svg viewBox="0 0 20 20"><path d="M13 3h4v14h-4M9 14l4-4-4-4M13 10H5"/></svg>
-                <span>Log out</span>
-            </button>
+            <div class="topbar-right">
+                <div th:replace="~{fragments/notification-bell :: bell}"></div>
+                <div class="avatar" id="adminAvatar" th:text="${adminInitials} ?: 'UG'">UG</div>
+            </div>
         </header>
+
         <div class="content">
-            <div class="section active">
-                <div th:if="${actionMessage}" style="background:#e3eef1;border:1px solid #a9c9d1;border-radius:8px;padding:12px 18px;margin-bottom:16px">
-                    <strong style="color:#006078" th:text="${actionMessage}">Success</strong>
-                </div>
-                <div th:if="${actionError}" style="background:#ffebee;border:1px solid #ef5350;border-radius:8px;padding:12px 18px;margin-bottom:16px">
-                    <strong style="color:#c62828" th:text="${actionError}">Error</strong>
-                </div>
-                <div class="panel">
-                    <div class="panel-header">
-                        <span class="panel-title">Reported Listings</span>
-                        <span class="panel-sub" th:text="${#lists.size(reportedProperties)} + ' flagged'">0 flagged</span>
+            <div class="section active rl">
+
+                <div class="rl-flash ok"  th:if="${actionMessage}" th:text="${actionMessage}">Success</div>
+                <div class="rl-flash err" th:if="${actionError}"   th:text="${actionError}">Error</div>
+
+                <div class="rl-head">
+                    <div>
+                        <h2>Reported listings</h2>
+                        <p>Properties students have raised a concern about.</p>
                     </div>
-                    <table>
-                        <thead><tr><th>Property</th><th>Reason</th><th>Actions</th></tr></thead>
-                        <tbody>
-                        <tr th:each="property : ${reportedProperties}">
-                            <td th:text="${property.title}">Name</td>
-                            <td th:text="${property.reportReason} ?: 'No reason provided'">Reason</td>
-                            <td><a th:href="@{/admin/reported-listing/{id}(id=${property.propertyID})}" class="btn btn-view">Handle</a></td>
-                        </tr>
-                        </tbody>
-                    </table>
-                    <p th:if="${#lists.isEmpty(reportedProperties)}" style="padding:22px;color:var(--muted)">All caught up. There are no reported listings waiting for action.</p>
+                    <label class="rl-search">
+                        <svg viewBox="0 0 20 20"><circle cx="9" cy="9" r="6"/><path d="M14 14l4 4"/></svg>
+                        <input type="text" id="rlSearch" placeholder="Search reports" autocomplete="off" />
+                    </label>
                 </div>
+
+                <!-- ============ TWO TABS ============ -->
+                <div class="rl-tabs" role="tablist">
+                    <button type="button" class="rl-tab active" role="tab" id="tab-unhandled" data-pane="unhandled" aria-selected="true">
+                        <div class="rl-tab-label">Unhandled</div>
+                        <div class="rl-tab-value" id="rlCountUnhandled" th:text="${#lists.size(unhandledReports)}">0</div>
+                        <div class="rl-tab-sub">Waiting for an admin decision</div>
+                        <svg class="rl-tab-stars" viewBox="0 0 200 90" aria-hidden="true"><g fill="#9FF0E8"><circle class="star" cx="150" cy="20" r="1.6" style="--d:0s"/><circle class="star" cx="180" cy="44" r="1.3" style="--d:.6s"/><circle class="star" cx="120" cy="52" r="1.2" style="--d:1.2s"/><circle class="star" cx="190" cy="12" r="1.4" style="--d:1.8s"/><circle class="star" cx="95" cy="18" r="1.1" style="--d:2.4s"/></g></svg>
+                        <span class="rl-tab-dot" th:hidden="${#lists.isEmpty(unhandledReports)}" aria-hidden="true"></span>
+                        <svg class="rl-tab-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true">
+                            <path class="w-back"  d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+                            <path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+                        </svg>
+                    </button>
+                    <button type="button" class="rl-tab" role="tab" id="tab-handled" data-pane="handled" aria-selected="false">
+                        <div class="rl-tab-label">Handled</div>
+                        <div class="rl-tab-value" id="rlCountHandled" th:text="${#lists.size(handledReports)}">0</div>
+                        <div class="rl-tab-sub">Warned or suspended</div>
+                        <svg class="rl-tab-stars" viewBox="0 0 200 90" aria-hidden="true"><g fill="#9FF0E8"><circle class="star" cx="150" cy="20" r="1.6" style="--d:.9s"/><circle class="star" cx="180" cy="44" r="1.3" style="--d:1.5s"/><circle class="star" cx="120" cy="52" r="1.2" style="--d:2.1s"/><circle class="star" cx="190" cy="12" r="1.4" style="--d:.1s"/><circle class="star" cx="95" cy="18" r="1.1" style="--d:.7s"/></g></svg>
+                        <svg class="rl-tab-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true">
+                            <path class="w-back"  d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+                            <path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Filter pills: built from the cards on the open tab -->
+                <div class="rl-filters" id="rlFilters" role="group" aria-label="Filter reports"></div>
+
+                <!-- ============ UNHANDLED ============ -->
+                <div class="rl-pane active" id="pane-unhandled" role="tabpanel" aria-labelledby="tab-unhandled">
+                    <div class="rl-grid" th:unless="${#lists.isEmpty(unhandledReports)}">
+                        <article class="rl-card" th:each="item : ${unhandledReports}"
+                                 th:attr="data-search=${#strings.toLowerCase((item.property.title ?: '') + ' ' + (item.property.suburb ?: '') + ' ' + (item.reason ?: '') + ' ' + (item.reporterName ?: '') + ' ' + (item.description ?: '')),data-reason=${item.reason ?: 'Other'}">
+                            <a class="rl-photo" th:href="@{/admin/reported-listing/{id}(id=${item.property.propertyID}, from='reported')}" th:attr="aria-label='Open report for ' + ${item.property.title}">
+                                <img th:if="${item.property.mainImageUrl != null}" th:src="${item.property.mainImageUrl}" alt="" />
+                                <div class="rl-noimg" th:if="${item.property.mainImageUrl == null}">
+                                    <svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9H4z"/><path d="M10 20v-5h4v5"/></svg>
+                                </div>
+                                <span class="rl-badge">
+                                    <svg viewBox="0 0 24 24"><path d="M12 3l9.5 16.5h-19L12 3z"/><path d="M12 10v4.5M12 17.5v.01"/></svg>
+                                    <span th:text="${item.reason} ?: 'Reported'">Safety hazard</span>
+                                </span>
+                            </a>
+                            <div class="rl-body">
+                                <a class="rl-title" th:href="@{/admin/reported-listing/{id}(id=${item.property.propertyID}, from='reported')}" th:text="${item.property.title}">Property</a>
+                                <div class="rl-meta">
+                                    <span><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span th:text="${item.property.suburb} ?: 'N/A'">Suburb</span></span>
+                                    <span><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span th:text="${item.reportedAt != null} ? ${#temporals.format(item.reportedAt, 'dd MMM')} : 'Undated'">09 Oct</span></span>
+                                </div>
+                                <p class="rl-quote" th:text="'“' + (${item.description} ?: 'No details provided') + '”'">“Details”</p>
+                                <div class="rl-by">
+                                    <div class="rl-av" th:text="${item.reporterName != null and #strings.length(item.reporterName) > 0} ? ${#strings.toUpperCase(#strings.substring(item.reporterName,0,1))} : '?'">LM</div>
+                                    <div>
+                                        <div class="rl-by-label">Reported by</div>
+                                        <div class="rl-by-name" th:text="${item.reporterName} ?: 'A student'">Student</div>
+                                    </div>
+                                    <a class="rl-open" th:href="@{/admin/reported-listing/{id}(id=${item.property.propertyID}, from='reported')}">View full report
+                                        <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+
+                    <div class="ap-empty" th:if="${#lists.isEmpty(unhandledReports)}">
+                        <div class="ap-empty-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
+                        <p class="ap-empty-title">All caught up</p>
+                        <p class="ap-empty-sub">There are no reported listings waiting for action.</p>
+                    </div>
+                </div>
+
+                <!-- ============ HANDLED ============ -->
+                <div class="rl-pane" id="pane-handled" role="tabpanel" aria-labelledby="tab-handled">
+                    <div class="rl-grid" th:unless="${#lists.isEmpty(handledReports)}">
+                        <article class="rl-card" th:each="item : ${handledReports}"
+                                 th:attr="data-search=${#strings.toLowerCase((item.property.title ?: '') + ' ' + (item.property.suburb ?: '') + ' ' + (item.reason ?: '') + ' ' + (item.reporterName ?: '') + ' ' + (item.description ?: '') + ' ' + (item.handledStatus ?: '')),data-reason=${item.handledStatus ?: 'Warned'}">
+                            <a class="rl-photo" th:href="@{/admin/reported-listing/{id}(id=${item.property.propertyID}, from='reported')}" th:attr="aria-label='Open report for ' + ${item.property.title}">
+                                <img th:if="${item.property.mainImageUrl != null}" th:src="${item.property.mainImageUrl}" alt="" />
+                                <div class="rl-noimg" th:if="${item.property.mainImageUrl == null}">
+                                    <svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9H4z"/><path d="M10 20v-5h4v5"/></svg>
+                                </div>
+                                <span class="rl-badge" th:classappend="${item.handledStatus == 'Suspended'} ? 'suspended' : 'warned'">
+                                    <svg th:if="${item.handledStatus == 'Suspended'}" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                                    <svg th:unless="${item.handledStatus == 'Suspended'}" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                                    <span th:text="${item.handledStatus == 'Suspended'} ? 'Suspended' : 'Warning sent'">Suspended</span>
+                                </span>
+                            </a>
+                            <div class="rl-body">
+                                <a class="rl-title" th:href="@{/admin/reported-listing/{id}(id=${item.property.propertyID}, from='reported')}" th:text="${item.property.title}">Property</a>
+                                <div class="rl-meta">
+                                    <span><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span th:text="${item.property.suburb} ?: 'N/A'">Suburb</span></span>
+                                    <span><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span th:text="${item.reportedAt != null} ? ${#temporals.format(item.reportedAt, 'dd MMM')} : 'Undated'">09 Oct</span></span>
+                                </div>
+                                <p class="rl-quote" th:text="'“' + (${item.description} ?: 'No details provided') + '”'">“Details”</p>
+                                <div class="rl-by">
+                                    <div class="rl-av" th:text="${item.reporterName != null and #strings.length(item.reporterName) > 0} ? ${#strings.toUpperCase(#strings.substring(item.reporterName,0,1))} : '?'">LM</div>
+                                    <div>
+                                        <div class="rl-by-label">Reported by</div>
+                                        <div class="rl-by-name" th:text="${item.reporterName} ?: 'A student'">Student</div>
+                                    </div>
+                                    <a class="rl-open" th:href="@{/admin/reported-listing/{id}(id=${item.property.propertyID}, from='reported')}">View full report
+                                        <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+
+                    <div class="ap-empty" th:if="${#lists.isEmpty(handledReports)}">
+                        <div class="ap-empty-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg></div>
+                        <p class="ap-empty-title">Nothing handled yet</p>
+                        <p class="ap-empty-sub">Warned and suspended listings will show up here.</p>
+                    </div>
+                </div>
+
+                <p class="rl-nomatch" id="rlNoMatch">No reports match your search or filter.</p>
+
+                <nav class="rl-pager" id="rlPager" aria-label="Pages"></nav>
+
             </div>
         </div>
     </div>
 </div>
+
+<script>
+    (function () {
+        var tabs = document.querySelectorAll('.rl-tab');
+        var panes = { unhandled: document.getElementById('pane-unhandled'), handled: document.getElementById('pane-handled') };
+        var search = document.getElementById('rlSearch');
+        var noMatch = document.getElementById('rlNoMatch');
+
+        function show(name) {
+            if (!panes[name]) name = 'unhandled';
+            tabs.forEach(function (t) {
+                var on = t.getAttribute('data-pane') === name;
+                t.classList.toggle('active', on);
+                t.setAttribute('aria-selected', on ? 'true' : 'false');
+            });
+            Object.keys(panes).forEach(function (k) { panes[k].classList.toggle('active', k === name); });
+            try { history.replaceState(null, '', '#' + name); } catch (e) {}
+            activeFilter = 'all'; page = 1;
+            buildFilters();
+            applySearch();
+        }
+        tabs.forEach(function (t) { t.addEventListener('click', function () { show(t.getAttribute('data-pane')); }); });
+
+        var PER_PAGE = 12, activeFilter = 'all', page = 1;
+        var filtersEl = document.getElementById('rlFilters');
+        var pagerEl = document.getElementById('rlPager');
+
+        function activeCards() {
+            var pane = document.querySelector('.rl-pane.active');
+            return pane ? Array.prototype.slice.call(pane.querySelectorAll('.rl-card')) : [];
+        }
+
+        // One pill per reason (or status) found on this tab, with a count
+        function buildFilters() {
+            var cards = activeCards(), counts = {}, order = [];
+            cards.forEach(function (c) {
+                var r = c.getAttribute('data-reason') || 'Other';
+                if (!counts[r]) { counts[r] = 0; order.push(r); }
+                counts[r]++;
+            });
+            filtersEl.innerHTML = '';
+            if (order.length < 2) return;           // nothing to filter by
+            function chip(key, label, n) {
+                var b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'rl-chip' + (activeFilter === key ? ' active' : '');
+                b.setAttribute('data-filter', key);
+                b.innerHTML = '';
+                b.appendChild(document.createTextNode(label + ' '));
+                var s = document.createElement('small'); s.textContent = n; b.appendChild(s);
+                b.addEventListener('click', function () { activeFilter = key; page = 1; buildFilters(); applySearch(); });
+                filtersEl.appendChild(b);
+            }
+            chip('all', 'All', cards.length);
+            order.sort().forEach(function (r) { chip(r, r, counts[r]); });
+        }
+
+        function applySearch() {
+            var q = (search.value || '').trim().toLowerCase();
+            var cards = activeCards(), matches = [];
+            cards.forEach(function (c) {
+                var okSearch = !q || (c.getAttribute('data-search') || '').indexOf(q) !== -1;
+                var okFilter = activeFilter === 'all' || c.getAttribute('data-reason') === activeFilter;
+                c.classList.add('is-hidden');
+                if (okSearch && okFilter) matches.push(c);
+            });
+            var pages = Math.max(1, Math.ceil(matches.length / PER_PAGE));
+            if (page > pages) page = pages;
+            matches.slice((page - 1) * PER_PAGE, page * PER_PAGE).forEach(function (c) { c.classList.remove('is-hidden'); });
+            noMatch.style.display = (cards.length && !matches.length) ? 'block' : 'none';
+            renderPager(matches.length, pages);
+        }
+
+        function renderPager(total, pages) {
+            pagerEl.innerHTML = '';
+            pagerEl.classList.toggle('show', pages > 1);
+            if (pages <= 1) return;
+            function btn(label, target, opts) {
+                opts = opts || {};
+                var b = document.createElement('button');
+                b.type = 'button'; b.className = 'rl-pg' + (opts.current ? ' current' : '');
+                b.textContent = label; b.disabled = !!opts.disabled;
+                if (opts.aria) b.setAttribute('aria-label', opts.aria);
+                if (opts.current) b.setAttribute('aria-current', 'page');
+                b.addEventListener('click', function () { page = target; applySearch(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
+                pagerEl.appendChild(b);
+            }
+            function gap() { var s = document.createElement('span'); s.className = 'rl-pg-gap'; s.textContent = '…'; pagerEl.appendChild(s); }
+            btn('‹', page - 1, { disabled: page === 1, aria: 'Previous page' });
+            var shown = {};
+            [1, pages, page - 1, page, page + 1].forEach(function (p) { if (p >= 1 && p <= pages) shown[p] = true; });
+            var last = 0;
+            Object.keys(shown).map(Number).sort(function (a, b) { return a - b; }).forEach(function (p) {
+                if (last && p - last > 1) gap();
+                btn(String(p), p, { current: p === page });
+                last = p;
+            });
+            btn('›', page + 1, { disabled: page === pages, aria: 'Next page' });
+            var info = document.createElement('div');
+            info.className = 'rl-pg-info';
+            info.textContent = 'Showing ' + ((page - 1) * PER_PAGE + 1) + '–' + Math.min(page * PER_PAGE, total) + ' of ' + total;
+            pagerEl.appendChild(info);
+        }
+
+        search.addEventListener('input', function () { page = 1; applySearch(); });
+
+        // Open on the right tab: #handled or ?tab=handled (e.g. after un-suspending)
+        var want = (location.hash || '').replace('#', '') || new URLSearchParams(location.search).get('tab') || 'unhandled';
+        show(want);
+
+        // Counts rise from 0 (ULEE design system)
+        window.addEventListener('load', function () {
+            if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+            document.querySelectorAll('.rl-tab-value').forEach(function (el) {
+                var target = parseInt(el.textContent.trim(), 10);
+                if (!(target > 0)) return;
+                var start = null, dur = 900;
+                el.textContent = '0';
+                function tick(now) {
+                    if (start === null) start = now;
+                    var t = Math.min((now - start) / dur, 1);
+                    el.textContent = Math.round(target * (1 - Math.pow(1 - t, 3)));
+                    if (t < 1) requestAnimationFrame(tick);
+                }
+                requestAnimationFrame(tick);
+            });
+        });
+    })();
+</script>
+
 </body>
 </html>
