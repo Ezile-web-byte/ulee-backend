@@ -4,474 +4,574 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Dashboard – ULEE</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
 
     <link rel="stylesheet" href="/speak-with-ai.css">
     <script src="/speak-with-ai-logic.js" defer></script>
     <script src="/speak-with-ai.js" defer></script>
 
     <style>
+        /* ULEE design system palette (ULEE-design-system.md §2) */
         :root {
-            --ulee-teal: #006078;
-            --ulee-yellow: #FFDC68;
-            --ulee-yellow-hover: #F8CF4F;
-            --ulee-dark-teal: #004A5E;
-            --ulee-text: #17313A;
-            --ulee-muted: #6E7D83;
-            --ulee-background: #F7F9FA;
-            --ulee-border: #DCE5E8;
-            --ulee-white: #FFFFFF;
-            --hero-yellow: #ffe170;
-            --hero-on-yellow: #221b00;
-            --hero-radius-glass: 16px;
-            --hero-radius-pill: 999px;
+            --primary-dark: #006A6A; --primary-tint: #F4FBFA; --surface-tint: #F0F7F6;
+            --outline-variant: #E6E8E4; --accent-border: #93C0C5;
+            --on-surface: #191c1d; --on-surface-variant: #3f484d; --outline: #6f787d;
+            --accent-yellow: #f5d450; --alert: #ba1a1a;
+            --font-display: 'Plus Jakarta Sans', sans-serif; --font-body: 'Hanken Grotesk', sans-serif;
+            --radius-sm: 10px; --radius-full: 9999px;
+            --sidebar-bg: #071C2D; --sidebar-text: #B7C3CB; --sidebar-logo-teal: #14C8BE;
+            --sidebar-active-bg: #007178; --sidebar-badge-bg: #01A49F;
+            --navy-gradient: linear-gradient(115deg, #071C2D 0%, #0A3A48 55%, #0F6C70 100%);
         }
-
         * { box-sizing: border-box; }
-
         body {
-            margin: 0;
-            font-family: 'Hanken Grotesk', sans-serif;
-            background: var(--ulee-background);
-            color: var(--ulee-text);
+            margin: 0; font-family: var(--font-body); color: var(--on-surface); min-height: 100vh;
+            background:
+                radial-gradient(900px 420px at 100% -10%, rgba(20,200,190,.10), transparent 60%),
+                radial-gradient(700px 380px at 20% 110%, rgba(0,113,120,.07), transparent 60%),
+                var(--primary-tint);
+        }
+        h1, h2, h3 { font-family: var(--font-display); margin: 0; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; line-height: 1; }
+
+        /* App shell */
+        .app-shell { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+
+        /* Dark sidebar (§5) */
+        .sidebar {
+            background: var(--sidebar-bg); border-right: 1px solid var(--sidebar-active-bg);
+            display: flex; flex-direction: column; height: 100vh; position: sticky; top: 0;
+            overflow-y: auto; padding: 0 20px 24px;
+        }
+        .logo { display: flex; align-items: center; gap: 10px; padding: 26px 0 28px; text-decoration: none; }
+        .logo svg { width: 30px; height: 30px; fill: var(--sidebar-logo-teal); filter: drop-shadow(0 0 6px rgba(20,200,190,.5)); display: block; }
+        .logo-name { font-family: var(--font-display); font-weight: 800; font-size: 22px; line-height: 1; color: var(--sidebar-logo-teal); }
+        .logo-tag { font-size: 10.5px; font-weight: 600; color: var(--sidebar-logo-teal); opacity: .85; margin-top: 3px; }
+        .nav-label { font-size: 10.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: rgba(183,195,203,.55); margin: 8px 0 8px 16px; }
+        .nav-list { display: flex; flex-direction: column; gap: 4px; }
+        .nav-item {
+            display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: var(--radius-sm);
+            font: 600 14px var(--font-body); color: var(--sidebar-text); text-decoration: none;
+            background: none; border: 0; width: 100%; cursor: pointer; text-align: left;
+            transition: background .2s ease, color .2s ease;
+        }
+        .nav-item .material-symbols-outlined { font-size: 20px; }
+        .nav-item:hover { background: rgba(255,255,255,.06); color: #fff; }
+        .nav-item:focus-visible { outline: 2px solid var(--sidebar-logo-teal); outline-offset: 2px; }
+        .nav-item.active {
+            background: var(--sidebar-active-bg); color: #fff;
+            margin: 0 -20px; width: calc(100% + 40px); padding: 12px 36px; border-radius: 0;
+            box-shadow: inset 3px 0 0 var(--sidebar-logo-teal);
+        }
+        .nav-badge {
+            margin-left: auto; background: var(--sidebar-badge-bg); color: #fff; font-size: 11px; font-weight: 700;
+            min-width: 20px; height: 20px; padding: 0 6px; border-radius: var(--radius-full);
+            display: inline-flex; align-items: center; justify-content: center;
+        }
+        .sidebar-foot { margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,.08); }
+        .nav-item.logout { color: #ff9b91; }
+        .nav-item.logout:hover { background: rgba(255,138,128,.08); color: #ffb4ab; }
+
+        /* Main column */
+        .main { min-width: 0; padding: 28px 40px 80px; max-width: 1240px; }
+        .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+        .crumbs { font-size: 13px; color: var(--outline); font-weight: 600; }
+        .crumbs strong { color: var(--primary-dark); }
+        .topbar-right { display: flex; align-items: center; gap: 12px; }
+        .chip-btn {
+            display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: var(--radius-full);
+            background: #fff; border: 1px solid var(--outline-variant); font-size: 13.5px; font-weight: 700;
+            color: var(--primary-dark); text-decoration: none; transition: border-color .2s, box-shadow .2s;
+        }
+        .chip-btn:hover { border-color: var(--accent-border); box-shadow: 0 4px 14px rgba(7,28,45,.08); }
+        .chip-btn .material-symbols-outlined { font-size: 18px; }
+        .avatar {
+            width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+            background: linear-gradient(135deg, #14C8BE, #007178); color: #071C2D;
+            font-family: var(--font-display); font-weight: 800; font-size: 14px; box-shadow: 0 0 0 3px rgba(20,200,190,.25);
         }
 
-        .topbar {
-            height: 76px;
-            background: var(--ulee-white);
-            border-bottom: 1px solid var(--ulee-border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 68px;
+        /* Welcome banner */
+        .hero {
+            position: relative; overflow: hidden; isolation: isolate; border-radius: 24px; padding: 34px 36px;
+            background: var(--navy-gradient); border: 1.5px solid rgba(20,200,190,.40);
+            box-shadow: 0 18px 40px rgba(7,28,45,.22); color: #fff;
+            display: grid; grid-template-columns: 1fr auto; gap: 28px; align-items: center; margin-bottom: 24px;
         }
+        .hero-grid {
+            position: absolute; inset: 0; z-index: -1;
+            background-image: linear-gradient(rgba(20,200,190,.14) 1px, transparent 1px), linear-gradient(90deg, rgba(20,200,190,.14) 1px, transparent 1px);
+            background-size: 44px 44px;
+            -webkit-mask-image: radial-gradient(ellipse 60% 90% at 85% 50%, #000 15%, transparent 75%);
+                    mask-image: radial-gradient(ellipse 60% 90% at 85% 50%, #000 15%, transparent 75%);
+            animation: grid-drift 22s linear infinite;
+        }
+        .orb { position: absolute; border-radius: 50%; filter: blur(60px); z-index: -1; pointer-events: none; }
+        .orb.one { width: 300px; height: 300px; right: -60px; top: -120px; background: rgba(20,200,190,.35); animation: orb 14s ease-in-out infinite; }
+        .orb.two { width: 220px; height: 220px; right: 30%; bottom: -120px; background: rgba(245,212,80,.16); animation: orb 18s ease-in-out infinite reverse; }
+        .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 11.5px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: #7DF0E6; margin: 0 0 12px; }
+        .live-dot { position: relative; width: 8px; height: 8px; border-radius: 50%; background: #14C8BE; box-shadow: 0 0 8px #14C8BE; }
+        .live-dot::after { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2px solid #14C8BE; animation: ping 1.8s cubic-bezier(0,0,.2,1) infinite; }
+        .hero h1 { font-size: clamp(28px, 3.2vw, 38px); font-weight: 800; letter-spacing: -.02em; line-height: 1.12; }
+        .text-gradient {
+            background: linear-gradient(90deg, #14C8BE 0%, #7DF0E6 45%, #f5d450 100%); background-size: 200% auto;
+            -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent;
+            animation: text-shine 6s linear infinite;
+        }
+        .lead { margin: 10px 0 22px; color: rgba(255,255,255,.72); font-size: 15.5px; line-height: 1.6; max-width: 520px; }
+        .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+        .btn {
+            display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: var(--radius-full);
+            font-weight: 700; font-size: 14px; text-decoration: none; transition: transform .15s, box-shadow .2s, background .2s;
+        }
+        .btn .material-symbols-outlined { font-size: 18px; }
+        .btn:hover { transform: translateY(-1px); }
+        .btn-yellow { background: var(--accent-yellow); color: #221b00; }
+        .btn-yellow:hover { box-shadow: 0 0 24px rgba(245,212,80,.5); }
+        .btn-ghost { background: rgba(255,255,255,.06); color: #fff; border: 1px solid rgba(255,255,255,.22); }
+        .btn-ghost:hover { background: rgba(255,255,255,.12); border-color: rgba(20,200,190,.6); }
 
-        .brand {
-            display: flex;
-            flex-direction: column;
-            line-height: 1;
-            gap: 3px;
-            text-decoration: none;
-            cursor: pointer;
-            transition: opacity 0.2s ease;
+        /* Acceptance ring */
+        .ring-wrap { position: relative; width: 150px; height: 150px; }
+        .ring-wrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+        .ring-track { fill: none; stroke: rgba(255,255,255,.10); stroke-width: 10; }
+        .ring-fill {
+            fill: none; stroke: url(#ringGrad); stroke-width: 10; stroke-linecap: round;
+            stroke-dasharray: 339.3; transition: stroke-dashoffset 1.3s cubic-bezier(.2,.8,.2,1);
+            filter: drop-shadow(0 0 6px rgba(20,200,190,.6));
         }
+        .ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .ring-num { font-family: var(--font-display); font-weight: 800; font-size: 30px; line-height: 1; }
+        .ring-label { font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,.65); margin-top: 6px; font-weight: 700; }
 
-        .brand:hover {
-            opacity: 0.85;
+        /* Navy metric cards (§4) */
+        .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+        .ulee-metric-card {
+            position: relative; overflow: hidden; display: block; padding: 20px 24px 34px;
+            border: 1.5px solid rgba(20,200,190,.45); border-radius: 16px; background: var(--navy-gradient);
+            box-shadow: 0 6px 18px rgba(7,28,45,.18); color: #fff; text-decoration: none;
+            transition: transform .2s ease, box-shadow .2s ease;
+            animation: ulee-metric-in .6s cubic-bezier(.2,.8,.2,1) backwards;
         }
+        .ulee-metric-card:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(7,28,45,.28); }
+        .ulee-metric-card:focus-visible { outline: 3px solid #14C8BE; outline-offset: 3px; }
+        .ulee-metric-card::before {
+            content: ''; position: absolute; top: 0; left: -60%; width: 40%; height: 100%;
+            background: linear-gradient(100deg, transparent, rgba(255,255,255,.12), transparent);
+            transform: skewX(-20deg); animation: ulee-metric-shine 7s ease-in-out infinite;
+        }
+        .ulee-metric-card::after {
+            content: ''; position: absolute; top: -60px; right: -40px; width: 170px; height: 170px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(20,200,190,.28) 0%, transparent 70%); animation: ulee-metric-pulse 4.5s ease-in-out infinite;
+        }
+        .ulee-metric-card:nth-child(2) { animation-delay: .08s; }
+        .ulee-metric-card:nth-child(3) { animation-delay: .16s; }
+        .ulee-metric-card:nth-child(4) { animation-delay: .24s; }
+        .ulee-metric-label { position: relative; z-index: 2; font-size: 12.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: rgba(255,255,255,.78); display: flex; align-items: center; gap: 8px; }
+        .ulee-metric-label .material-symbols-outlined { font-size: 18px; color: #14C8BE; }
+        .ulee-metric-value { position: relative; z-index: 2; font-family: var(--font-display); font-size: 32px; font-weight: 800; margin-top: 8px; line-height: 1.1; }
+        .ulee-metric-sub { position: relative; z-index: 2; font-size: 12px; color: #7DF0E6; margin-top: 2px; }
+        .ulee-metric-wave { position: absolute; left: 0; bottom: 0; width: 200%; height: 22px; animation: ulee-metric-wave 16s linear infinite; }
+        .ulee-metric-wave .w-back  { fill: rgba(14,116,128,.55); }
+        .ulee-metric-wave .w-front { fill: #071C2D; stroke: #14C8BE; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
 
-        .brand-mark {
-            position: relative;
-            display: inline-block;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            font-size: 22px;
-            font-weight: 800;
-            letter-spacing: -0.02em;
-            color: var(--ulee-dark-teal);
+        /* Content panels */
+        .grid-2 { display: grid; grid-template-columns: 1.35fr 1fr; gap: 20px; align-items: start; }
+        .panel { background: #fff; border: 1px solid var(--outline-variant); border-radius: 20px; padding: 22px 22px 18px; box-shadow: 0 6px 24px rgba(7,28,45,.06); }
+        .panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        .panel-title { font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+        .panel-title .material-symbols-outlined {
+            width: 34px; height: 34px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center;
+            background: var(--surface-tint); color: var(--primary-dark); font-size: 19px; border: 1px solid rgba(147,192,197,.5);
         }
+        .view-all { font-size: 13.5px; font-weight: 700; color: var(--primary-dark); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+        .view-all:hover { color: #01A49F; }
+        .view-all .material-symbols-outlined { font-size: 16px; transition: transform .2s; }
+        .view-all:hover .material-symbols-outlined { transform: translateX(3px); }
 
-        .brand-mark::after {
-            content: '';
-            position: absolute;
-            top: -3px;
-            right: -9px;
-            width: 9px;
-            height: 9px;
-            background: var(--ulee-yellow);
-            border-radius: 50% 50% 50% 0;
-            transform: rotate(-45deg);
-            box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+        /* Application timeline */
+        .apps { list-style: none; margin: 0; padding: 0; position: relative; }
+        .apps::before { content: ''; position: absolute; left: 31px; top: 12px; bottom: 12px; width: 2px; background: linear-gradient(#14C8BE, rgba(20,200,190,0)); opacity: .35; }
+        .app {
+            position: relative; display: grid; grid-template-columns: 64px 1fr auto; gap: 14px; align-items: center;
+            padding: 10px; border-radius: 14px; text-decoration: none; color: inherit; transition: background .2s;
         }
+        .app:hover { background: var(--surface-tint); }
+        .app-thumb { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; background: #0A3A48; border: 2px solid #fff; box-shadow: 0 0 0 1.5px rgba(20,200,190,.45); position: relative; }
+        .app-title { font-family: var(--font-display); font-weight: 700; font-size: 15px; margin: 0 0 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .app-meta { font-size: 12.5px; color: var(--outline); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .app-meta .material-symbols-outlined { font-size: 15px; color: #01A49F; }
+        .status { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: var(--radius-full); font-size: 12px; font-weight: 800; white-space: nowrap; background: var(--surface-tint); color: var(--primary-dark); }
+        .status::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+        .status.pending  { background: #FFF6D6; color: #7A5E00; }
+        .status.accepted { background: #DDF7F3; color: #006A6A; box-shadow: 0 0 0 1px rgba(20,200,190,.4); }
+        .status.accepted::before { box-shadow: 0 0 6px #14C8BE; }
+        .status.rejected { background: #FCE9E7; color: var(--alert); }
 
-        .brand-tagline {
-            font-size: 9px;
-            font-weight: 700;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            color: var(--ulee-muted);
+        /* Saved properties */
+        .saved { display: grid; gap: 12px; }
+        .saved-card {
+            position: relative; display: block; height: 128px; border-radius: 16px; overflow: hidden; text-decoration: none; color: #fff;
+            background: #0A3A48; box-shadow: 0 0 0 1px rgba(20,200,190,.25); transition: box-shadow .3s, transform .3s;
         }
+        .saved-card:hover { transform: translateY(-2px); box-shadow: 0 0 0 1.5px rgba(20,200,190,.8), 0 0 26px rgba(20,200,190,.22); }
+        .saved-card img { width: 100%; height: 100%; object-fit: cover; transition: transform .7s ease; }
+        .saved-card:hover img { transform: scale(1.08); }
+        .saved-card .shade { position: absolute; inset: 0; background: linear-gradient(to top, rgba(7,28,45,.92), rgba(7,28,45,.15) 65%); }
+        .saved-card .info { position: absolute; left: 16px; right: 16px; bottom: 12px; display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; }
+        .saved-card h3 { font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .saved-card .city { font-size: 12px; color: rgba(255,255,255,.72); margin-top: 2px; }
+        .saved-card .rent { flex-shrink: 0; font-family: var(--font-display); font-weight: 800; font-size: 13px; background: var(--accent-yellow); color: #221b00; padding: 5px 11px; border-radius: var(--radius-full); }
 
-        .back-link {
-            color: var(--ulee-teal);
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 700;
-        }
-
-        .back-link:hover {
-            text-decoration: underline;
-        }
-
-        .page {
-            max-width: 1120px;
-            margin: 0 auto;
-            padding: 52px 28px 90px;
-        }
-
-        .page-header {
-            margin-bottom: 36px;
-        }
-
-        .eyebrow {
-            margin: 0 0 9px;
-            color: var(--ulee-teal);
-            font-size: 12px;
-            font-weight: 800;
-            letter-spacing: 1.4px;
-            text-transform: uppercase;
-        }
-
-        .page-header h1 {
-            margin: 0;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            color: var(--ulee-dark-teal);
-            font-size: 36px;
-            font-weight: 800;
-            line-height: 1.15;
-            letter-spacing: -0.8px;
-        }
-
-        .welcome {
-            margin: 10px 0 0;
-            color: var(--ulee-muted);
-            font-size: 16px;
-            line-height: 1.6;
-        }
-
-        .welcome strong {
-            color: var(--ulee-teal);
-        }
-
-        /* Stats row */
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-            margin-bottom: 40px;
-        }
-
-        .stat-card {
-            background: var(--ulee-white);
-            border: 1px solid var(--ulee-border);
-            border-radius: 18px;
-            padding: 24px;
-            text-align: center;
-            box-shadow: 0 8px 25px rgba(0, 73, 94, 0.07);
-        }
-
-        .stat-number {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            font-size: 32px;
-            font-weight: 800;
-            color: var(--ulee-dark-teal);
-            margin: 0 0 6px;
-        }
-
-        .stat-label {
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--ulee-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-        }
-
-        /* Section headings */
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 18px;
-        }
-
-        .section-header h2 {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            font-size: 22px;
-            font-weight: 800;
-            color: var(--ulee-dark-teal);
-            margin: 0;
-        }
-
-        .view-all {
-            color: var(--ulee-teal);
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 700;
-        }
-
-        .view-all:hover {
-            text-decoration: underline;
-        }
-
-        /* Property cards (matches saved-properties.html) */
-        .preview-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-            gap: 20px;
-            margin-bottom: 40px;
-        }
-
-        .property-card {
-            background: var(--ulee-white);
-            border-radius: var(--hero-radius-glass);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-            padding: 20px;
-            text-decoration: none;
-            color: inherit;
-            display: block;
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
-        }
-
-        .property-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
-        }
-
-        .property-title {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            font-weight: 700;
-            font-size: 18px;
-            margin: 0 0 6px;
-        }
-
-        .property-city {
-            font-family: 'Hanken Grotesk', sans-serif;
-            color: #666;
-            margin: 0 0 4px;
-        }
-
-        .property-rent {
-            display: inline-block;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            font-weight: 700;
-            font-size: 13px;
-            background: var(--hero-yellow);
-            color: var(--hero-on-yellow);
-            border-radius: var(--hero-radius-pill);
-            padding: 4px 12px;
-            margin: 0;
-        }
-
-        /* Application cards (matches my-applications.html) */
-        .applications-list {
-            display: grid;
-            gap: 16px;
-            margin-bottom: 40px;
-        }
-
-        .app-card {
-            background: var(--ulee-white);
-            border: 1px solid var(--ulee-border);
-            border-radius: 18px;
-            padding: 22px 26px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 8px 25px rgba(0, 73, 94, 0.07);
-        }
-
-        .app-card-info {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .app-property-id {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            font-weight: 700;
-            font-size: 16px;
-            color: var(--ulee-dark-teal);
-        }
-
-        .app-date {
-            font-size: 13px;
-            color: var(--ulee-muted);
-        }
-
-        .status {
-            display: inline-flex;
-            align-items: center;
-            padding: 8px 15px;
-            border-radius: 999px;
-            background: #E8F2F4;
-            color: var(--ulee-teal);
-            font-size: 13px;
-            font-weight: 800;
-            white-space: nowrap;
-        }
-
-        .status.pending {
-            background: #FFF3C7;
-            color: #806300;
-        }
-
-        .status.accepted {
-            background: #E6F4EE;
-            color: #17704D;
-        }
-
-        .status.rejected {
-            background: #FBEAEA;
-            color: #A83232;
-        }
-
-        /* Empty note */
-        .empty-note {
-            color: var(--ulee-muted);
-            font-size: 14px;
-            padding: 18px 0;
-        }
+        /* Empty states */
+        .empty { text-align: center; padding: 26px 16px; border: 1.5px dashed var(--accent-border); border-radius: 16px; background: var(--surface-tint); }
+        .empty .material-symbols-outlined { font-size: 34px; color: #01A49F; }
+        .empty p { margin: 8px 0 14px; color: var(--on-surface-variant); font-size: 14px; }
+        .empty a { font-weight: 700; font-size: 13.5px; color: var(--primary-dark); }
 
         /* Quick actions */
-        .quick-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-top: 10px;
+        .actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 20px; }
+        .action {
+            display: flex; align-items: center; gap: 14px; padding: 16px 18px; border-radius: 16px; text-decoration: none; color: var(--on-surface);
+            background: #fff; border: 1px solid var(--outline-variant); transition: border-color .2s, box-shadow .2s, transform .2s;
+        }
+        .action:hover { border-color: rgba(20,200,190,.7); box-shadow: 0 10px 26px rgba(7,28,45,.10); transform: translateY(-2px); }
+        .action-icon { width: 44px; height: 44px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; background: var(--navy-gradient); color: #14C8BE; flex-shrink: 0; }
+        .action strong { display: block; font-family: var(--font-display); font-size: 14.5px; }
+        .action small { color: var(--outline); font-size: 12.5px; }
+
+        /* Logout modal */
+        .modal { position: fixed; inset: 0; z-index: 1000; display: none; align-items: center; justify-content: center; background: rgba(7,28,45,.6); backdrop-filter: blur(4px); padding: 16px; }
+        .modal.open { display: flex; }
+        .modal-card { background: #fff; border-radius: 22px; padding: 30px; max-width: 380px; width: 100%; text-align: center; border: 1px solid rgba(20,200,190,.3); }
+        .modal-card h2 { font-size: 20px; margin: 12px 0 6px; }
+        .modal-card p { color: var(--on-surface-variant); font-size: 14px; margin: 0 0 22px; }
+        .modal-icon { width: 54px; height: 54px; border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center; background: #FCE9E7; color: var(--alert); }
+        .modal-row { display: flex; gap: 10px; }
+        .modal-row button { flex: 1; padding: 11px; border-radius: var(--radius-full); font: 700 14px var(--font-body); cursor: pointer; }
+        .btn-cancel { background: #fff; border: 1px solid var(--outline-variant); color: var(--on-surface); }
+        .btn-danger { background: var(--alert); border: 1px solid var(--alert); color: #fff; }
+
+        @keyframes grid-drift { to { background-position: 44px 44px; } }
+        @keyframes orb { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-30px,24px) scale(1.12); } }
+        @keyframes text-shine { to { background-position: 200% center; } }
+        @keyframes ping { 75%,100% { transform: scale(2.4); opacity: 0; } }
+        @keyframes ulee-metric-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+        @keyframes ulee-metric-shine { 0%,55% { left: -60%; } 100% { left: 130%; } }
+        @keyframes ulee-metric-pulse { 0%,100% { opacity: .6; transform: scale(1); } 50% { opacity: 1; transform: scale(1.12); } }
+        @keyframes ulee-metric-wave { to { transform: translateX(-50%); } }
+
+        @media (prefers-reduced-motion: reduce) {
+            .ulee-metric-card, .ulee-metric-card::before, .ulee-metric-card::after, .ulee-metric-wave,
+            .hero-grid, .orb, .text-gradient, .live-dot::after { animation: none !important; }
+            .ring-fill { transition: none; }
         }
 
-        .pill-btn {
-            display: inline-block;
-            padding: 12px 22px;
-            border-radius: 999px;
-            font-size: 14px;
-            font-weight: 750;
-            text-decoration: none;
-            transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+        /* Responsive: sidebar becomes a top bar on small screens */
+        @media (max-width: 1100px) {
+            .metrics { grid-template-columns: repeat(2, 1fr); }
+            .grid-2 { grid-template-columns: 1fr; }
         }
-
-        .pill-btn:hover {
-            transform: translateY(-1px);
+        @media (max-width: 860px) {
+            .app-shell { grid-template-columns: 1fr; }
+            .sidebar { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; padding: 0 16px 12px; }
+            .logo { padding: 16px 0 8px; width: 100%; }
+            .nav-label, .sidebar-foot { display: none; }
+            .nav-list { flex-direction: row; flex-wrap: wrap; }
+            .nav-item, .nav-item.active { width: auto; margin: 0; padding: 9px 12px; border-radius: var(--radius-sm); }
+            .main { padding: 20px 16px 70px; }
+            .hero { grid-template-columns: 1fr; padding: 26px 22px; }
+            .ring-wrap { margin: 0 auto; }
+            .actions { grid-template-columns: 1fr; }
+            .crumbs { display: none; }
         }
-
-        .pill-btn-primary {
-            background: var(--ulee-yellow);
-            color: #172000;
-            border: 1px solid var(--ulee-yellow);
-            box-shadow: 0 4px 12px rgba(255, 220, 104, 0.28);
-        }
-
-        .pill-btn-primary:hover {
-            background: var(--ulee-yellow-hover);
-            box-shadow: 0 6px 16px rgba(255, 220, 104, 0.35);
-        }
-
-        .pill-btn-outline {
-            background: var(--ulee-white);
-            color: var(--ulee-teal);
-            border: 1px solid var(--ulee-border);
-        }
-
-        .pill-btn-outline:hover {
-            border-color: var(--ulee-teal);
-            background: #F3F8F9;
-        }
-
-        @media (max-width: 760px) {
-            .topbar { padding: 0 20px; }
-            .page { padding: 34px 16px 70px; }
-            .page-header h1 { font-size: 30px; }
-            .stats-row { grid-template-columns: 1fr; }
-            .app-card { flex-direction: column; align-items: flex-start; gap: 12px; }
+        @media (max-width: 520px) {
+            .metrics { grid-template-columns: 1fr 1fr; gap: 10px; }
+            .ulee-metric-card { padding: 16px 16px 30px; }
+            .ulee-metric-value { font-size: 26px; }
+            .app { grid-template-columns: 52px 1fr; }
+            .app-thumb { width: 52px; height: 52px; }
+            .app .status { grid-column: 2; justify-self: start; }
+            .apps::before { left: 25px; }
         }
     </style>
 </head>
 
 <body>
+<div class="app-shell">
 
-<header class="topbar">
-    <a class="brand" th:href="@{/student-dashboard}">
-        <span class="brand-mark">ULEE</span>
-        <span class="brand-tagline">Student Living</span>
-    </a>
-    <a class="back-link" th:href="@{/student-dashboard}">Browse Properties</a>
-</header>
+    <!-- Dark sidebar (ULEE-design-system.md §5) -->
+    <aside class="sidebar" id="sidebar" aria-label="Student navigation">
+        <a class="logo" th:href="@{/student-dashboard}" aria-label="ULEE home">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2L3 7v11h14V7L10 2zm0 2.6 5 3.5V16H5V8.1l5-3.5zM8 10h4v6H8z"/></svg>
+            <div>
+                <div class="logo-name">ULEE</div>
+                <div class="logo-tag">Student Living. Simplified.</div>
+            </div>
+        </a>
 
-<main class="page">
-
-    <!-- Page header -->
-    <header class="page-header">
-        <p class="eyebrow">Student Portal</p>
-        <h1>Student Dashboard</h1>
-        <p class="welcome">
-            Welcome back, <strong th:text="${currentUserFirstName}">Student</strong>!
-        </p>
-    </header>
-
-    <!-- Stats row -->
-    <section class="stats-row">
-        <div class="stat-card">
-            <p class="stat-number" th:text="${savedCount}">0</p>
-            <p class="stat-label">Saved</p>
-        </div>
-        <div class="stat-card">
-            <p class="stat-number" th:text="${pendingCount}">0</p>
-            <p class="stat-label">Pending</p>
-        </div>
-        <div class="stat-card">
-            <p class="stat-number" th:text="${acceptedCount}">0</p>
-            <p class="stat-label">Accepted</p>
-        </div>
-    </section>
-
-    <!-- Saved Properties preview -->
-    <section>
-        <div class="section-header">
-            <h2>Saved Properties</h2>
-            <a class="view-all" th:href="@{/saved-properties}">View all &rarr;</a>
-        </div>
-
-        <div class="preview-grid" th:if="${not #lists.isEmpty(savedPreview)}">
-            <a class="property-card" th:each="property : ${savedPreview}" th:href="@{/property/{id}(id=${property.propertyID})}">
-                <h3 class="property-title" th:text="${property.title}">Property Title</h3>
-                <p class="property-city" th:text="${property.city}">City</p>
-                <p class="property-rent" th:text="'R' + ${property.rent} + ' / month'">Rent</p>
+        <div class="nav-label">Student portal</div>
+        <nav class="nav-list">
+            <a class="nav-item active" th:href="@{/my-dashboard}" aria-current="page">
+                <span class="material-symbols-outlined" aria-hidden="true">space_dashboard</span><span>My Dashboard</span>
             </a>
+            <a class="nav-item" th:href="@{/my-applications}">
+                <span class="material-symbols-outlined" aria-hidden="true">description</span><span>My Applications</span>
+                <span class="nav-badge" th:if="${totalApplications > 0}" th:text="${totalApplications}">0</span>
+            </a>
+            <a class="nav-item" th:href="@{/saved-properties}">
+                <span class="material-symbols-outlined" aria-hidden="true">favorite</span><span>Saved Properties</span>
+                <span class="nav-badge" th:if="${savedCount > 0}" th:text="${savedCount}">0</span>
+            </a>
+            <a class="nav-item" th:href="@{/student-dashboard}">
+                <span class="material-symbols-outlined" aria-hidden="true">travel_explore</span><span>Browse Properties</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-foot">
+            <form id="logoutForm" th:action="@{/logout}" method="post">
+                <button type="button" class="nav-item logout" id="openLogout">
+                    <span class="material-symbols-outlined" aria-hidden="true">logout</span><span>Log out</span>
+                </button>
+            </form>
         </div>
+    </aside>
 
-        <p class="empty-note" th:if="${#lists.isEmpty(savedPreview)}">No saved properties yet.</p>
-    </section>
-
-    <!-- Recent Applications preview -->
-    <section>
-        <div class="section-header">
-            <h2>Recent Applications</h2>
-            <a class="view-all" th:href="@{/my-applications}">View all &rarr;</a>
-        </div>
-
-        <div class="applications-list" th:if="${not #lists.isEmpty(applicationsPreview)}">
-            <div class="app-card" th:each="app : ${applicationsPreview}">
-                <div class="app-card-info">
-                    <span class="app-property-id" th:text="'Property ID: ' + ${app.propertyID}">Property ID: 1</span>
-                    <span class="app-date" th:text="${app.applicationDate}">2026-08-17</span>
-                </div>
-                <span class="status"
-                      th:classappend="${#strings.equalsIgnoreCase(app.status, 'Pending')} ? ' pending' :
-                                     (${#strings.equalsIgnoreCase(app.status, 'Accepted')} ? ' accepted' :
-                                     (${#strings.equalsIgnoreCase(app.status, 'Rejected')} ? ' rejected' : ''))"
-                      th:text="${app.status}">
-                    Pending
-                </span>
+    <main class="main">
+        <div class="topbar">
+            <div class="crumbs">Student portal / <strong>Dashboard</strong></div>
+            <div class="topbar-right">
+                <a class="chip-btn" th:href="@{/student-dashboard}">
+                    <span class="material-symbols-outlined" aria-hidden="true">search</span>Find a room
+                </a>
+                <span class="avatar" th:text="${userInitials != null ? userInitials : 'ST'}" aria-hidden="true">ST</span>
             </div>
         </div>
 
-        <p class="empty-note" th:if="${#lists.isEmpty(applicationsPreview)}">No applications yet.</p>
-    </section>
+        <!-- Welcome banner + acceptance ring -->
+        <section class="hero" aria-labelledby="welcomeHeading">
+            <div class="hero-grid" aria-hidden="true"></div>
+            <div class="orb one" aria-hidden="true"></div>
+            <div class="orb two" aria-hidden="true"></div>
+            <div>
+                <p class="eyebrow"><span class="live-dot" aria-hidden="true"></span>Your housing hub</p>
+                <h1 id="welcomeHeading">Welcome back, <span class="text-gradient" th:text="${currentUserFirstName}">Student</span></h1>
+                <p class="lead" th:if="${pendingCount > 0}"
+                   th:text="'You have ' + ${pendingCount} + (${pendingCount == 1} ? ' application' : ' applications') + ' waiting on a landlord. We will keep you posted here.'">
+                    You have applications waiting on a landlord.
+                </p>
+                <p class="lead" th:if="${pendingCount == 0 and totalApplications > 0}">
+                    No applications waiting right now. Keep exploring rooms near campus.
+                </p>
+                <p class="lead" th:if="${totalApplications == 0}">
+                    You have not applied anywhere yet. Find a room you love and send your first application.
+                </p>
+                <div class="hero-actions">
+                    <a class="btn btn-yellow" th:href="@{/student-dashboard}"><span class="material-symbols-outlined" aria-hidden="true">travel_explore</span>Browse rooms</a>
+                    <a class="btn btn-ghost" th:href="@{/my-applications}"><span class="material-symbols-outlined" aria-hidden="true">description</span>Track applications</a>
+                </div>
+            </div>
 
-    <!-- Quick actions -->
-    <section>
-        <div class="section-header">
-            <h2>Quick Actions</h2>
-        </div>
-        <div class="quick-actions">
-            <a class="pill-btn pill-btn-primary" th:href="@{/student-dashboard}">Browse Properties</a>
-            <a class="pill-btn pill-btn-outline" th:href="@{/my-applications}">My Applications</a>
-            <a class="pill-btn pill-btn-outline" th:href="@{/saved-properties}">Saved Properties</a>
-        </div>
-    </section>
+            <!-- Share of this student's applications that were accepted -->
+            <div class="ring-wrap" role="img"
+                 th:with="pct=${totalApplications > 0 ? (acceptedCount * 100 / totalApplications) : 0}"
+                 th:attr="data-pct=${pct},aria-label=${pct} + ' percent of your applications accepted'">
+                <svg viewBox="0 0 120 120" aria-hidden="true">
+                    <defs>
+                        <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stop-color="#14C8BE"/><stop offset="100%" stop-color="#f5d450"/>
+                        </linearGradient>
+                    </defs>
+                    <circle class="ring-track" cx="60" cy="60" r="54"/>
+                    <circle class="ring-fill" cx="60" cy="60" r="54" style="stroke-dashoffset: 339.3"/>
+                </svg>
+                <div class="ring-center">
+                    <div class="ring-num"><span th:text="${pct}">0</span>%</div>
+                    <div class="ring-label">Accepted</div>
+                </div>
+            </div>
+        </section>
 
-</main>
+        <!-- Metric cards -->
+        <section class="metrics" aria-label="Your numbers">
+            <a class="ulee-metric-card" th:href="@{/saved-properties}">
+                <div class="ulee-metric-label"><span class="material-symbols-outlined" aria-hidden="true">favorite</span>Saved</div>
+                <div class="ulee-metric-value" th:text="${savedCount}">0</div>
+                <div class="ulee-metric-sub">Rooms on your shortlist</div>
+                <svg class="ulee-metric-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true"><path class="w-back" d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/><path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/></svg>
+            </a>
+            <a class="ulee-metric-card" th:href="@{/my-applications}">
+                <div class="ulee-metric-label"><span class="material-symbols-outlined" aria-hidden="true">hourglass_top</span>Pending</div>
+                <div class="ulee-metric-value" th:text="${pendingCount}">0</div>
+                <div class="ulee-metric-sub">Awaiting landlord reply</div>
+                <svg class="ulee-metric-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true"><path class="w-back" d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/><path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/></svg>
+            </a>
+            <a class="ulee-metric-card" th:href="@{/my-applications}">
+                <div class="ulee-metric-label"><span class="material-symbols-outlined" aria-hidden="true">verified</span>Accepted</div>
+                <div class="ulee-metric-value" th:text="${acceptedCount}">0</div>
+                <div class="ulee-metric-sub">Offers you have received</div>
+                <svg class="ulee-metric-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true"><path class="w-back" d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/><path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/></svg>
+            </a>
+            <a class="ulee-metric-card" th:href="@{/my-applications}">
+                <div class="ulee-metric-label"><span class="material-symbols-outlined" aria-hidden="true">send</span>Applied</div>
+                <div class="ulee-metric-value" th:text="${totalApplications}">0</div>
+                <div class="ulee-metric-sub" th:text="${rejectedCount} + ' not successful'">0 not successful</div>
+                <svg class="ulee-metric-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true"><path class="w-back" d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/><path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/></svg>
+            </a>
+        </section>
+
+        <div class="grid-2">
+            <!-- Recent applications -->
+            <section class="panel" aria-labelledby="appsHeading">
+                <div class="panel-head">
+                    <h2 class="panel-title" id="appsHeading"><span class="material-symbols-outlined" aria-hidden="true">timeline</span>Recent applications</h2>
+                    <a class="view-all" th:href="@{/my-applications}">View all<span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a>
+                </div>
+
+                <ul class="apps" th:if="${not #lists.isEmpty(applicationsPreview)}">
+                    <li th:each="app : ${applicationsPreview}" th:with="prop=${applicationProperties[app.propertyID]}">
+                        <a class="app" th:href="@{/property/{id}(id=${app.propertyID})}">
+                            <img class="app-thumb" alt="" src="/images/property-placeholder.svg"
+                                 th:src="${prop != null and prop.mainImageUrl != null} ? ${prop.mainImageUrl} : '/images/property-placeholder.svg'" loading="lazy"/>
+                            <div style="min-width:0">
+                                <p class="app-title" th:text="${prop != null} ? ${prop.title} : ('Property #' + ${app.propertyID})">Property title</p>
+                                <div class="app-meta">
+                                    <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+                                    <span th:text="${prop != null and prop.suburb != null} ? ${prop.suburb} : 'Gqeberha'">Summerstrand</span>
+                                    <span aria-hidden="true">&middot;</span>
+                                    <span th:text="${app.applicationDate != null} ? ${#temporals.format(app.applicationDate, 'dd MMM yyyy')} : 'Date not recorded'">17 Aug 2026</span>
+                                </div>
+                            </div>
+                            <span class="status"
+                                  th:classappend="${#strings.equalsIgnoreCase(app.status, 'Pending')} ? ' pending' :
+                                                 (${#strings.equalsIgnoreCase(app.status, 'Accepted')} ? ' accepted' :
+                                                 (${#strings.equalsIgnoreCase(app.status, 'Rejected')} ? ' rejected' : ''))"
+                                  th:text="${app.status}">Pending</span>
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="empty" th:if="${#lists.isEmpty(applicationsPreview)}">
+                    <span class="material-symbols-outlined" aria-hidden="true">rocket_launch</span>
+                    <p>No applications yet. Your progress will show up here.</p>
+                    <a th:href="@{/student-dashboard}">Find a room to apply for &rarr;</a>
+                </div>
+            </section>
+
+            <!-- Saved properties -->
+            <section class="panel" aria-labelledby="savedHeading">
+                <div class="panel-head">
+                    <h2 class="panel-title" id="savedHeading"><span class="material-symbols-outlined" aria-hidden="true">favorite</span>Saved rooms</h2>
+                    <a class="view-all" th:href="@{/saved-properties}">View all<span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a>
+                </div>
+
+                <div class="saved" th:if="${not #lists.isEmpty(savedPreview)}">
+                    <a class="saved-card" th:each="property : ${savedPreview}" th:href="@{/property/{id}(id=${property.propertyID})}">
+                        <img alt="" src="/images/property-placeholder.svg"
+                             th:src="${property.mainImageUrl} ?: '/images/property-placeholder.svg'" loading="lazy"/>
+                        <div class="shade" aria-hidden="true"></div>
+                        <div class="info">
+                            <div style="min-width:0">
+                                <h3 th:text="${property.title}">Property title</h3>
+                                <div class="city" th:text="${property.suburb != null ? property.suburb + ', ' + property.city : property.city}">Summerstrand, Gqeberha</div>
+                            </div>
+                            <span class="rent" th:text="'R' + ${property.rent}">R4500</span>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="empty" th:if="${#lists.isEmpty(savedPreview)}">
+                    <span class="material-symbols-outlined" aria-hidden="true">favorite</span>
+                    <p>Tap the heart on any room to save it here.</p>
+                    <a th:href="@{/student-dashboard}">Browse rooms &rarr;</a>
+                </div>
+            </section>
+        </div>
+
+        <!-- Quick actions -->
+        <section class="actions" aria-label="Quick actions">
+            <a class="action" th:href="@{/student-dashboard}">
+                <span class="action-icon"><span class="material-symbols-outlined" aria-hidden="true">travel_explore</span></span>
+                <span><strong>Explore rooms</strong><small>Live listings near campus</small></span>
+            </a>
+            <a class="action" th:href="@{/my-applications}">
+                <span class="action-icon"><span class="material-symbols-outlined" aria-hidden="true">upload_file</span></span>
+                <span><strong>Manage applications</strong><small>Documents, status, cancel</small></span>
+            </a>
+            <a class="action" th:href="@{/saved-properties}">
+                <span class="action-icon"><span class="material-symbols-outlined" aria-hidden="true">bookmark_heart</span></span>
+                <span><strong>Compare saved</strong><small>Your shortlisted rooms</small></span>
+            </a>
+        </section>
+    </main>
+</div>
+
+<!-- Logout confirmation -->
+<div class="modal" id="logoutModal" role="dialog" aria-modal="true" aria-labelledby="logoutTitle">
+    <div class="modal-card">
+        <div class="modal-icon"><span class="material-symbols-outlined" aria-hidden="true">logout</span></div>
+        <h2 id="logoutTitle">Log out of ULEE?</h2>
+        <p>You will need to log in again to see your dashboard, applications and saved rooms.</p>
+        <div class="modal-row">
+            <button type="button" class="btn-cancel" id="cancelLogout">Cancel</button>
+            <button type="button" class="btn-danger" id="confirmLogout">Log out</button>
+        </div>
+    </div>
+</div>
 
 <div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null, null, null, null)}"></div>
 
+<script>
+    (function () {
+        var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        // Acceptance ring: fill to the server-computed percentage
+        var ring = document.querySelector('.ring-wrap');
+        if (ring) {
+            var pct = Math.max(0, Math.min(100, parseFloat(ring.dataset.pct) || 0));
+            var fill = ring.querySelector('.ring-fill');
+            var offset = 339.3 * (1 - pct / 100);
+            if (reduce) fill.style.strokeDashoffset = offset;
+            else requestAnimationFrame(function () { setTimeout(function () { fill.style.strokeDashoffset = offset; }, 150); });
+        }
+
+        // Count numbers up from 0. Only whole numbers are animated, so a
+        // decimal value is never rounded into a different number.
+        if (!reduce) {
+            document.querySelectorAll('.ulee-metric-value, .ring-num span').forEach(function (el) {
+                var raw = el.textContent.trim();
+                if (!/^\d+$/.test(raw)) return;
+                var target = parseInt(raw, 10);
+                if (target <= 0) return;
+                var start = null, dur = 900;
+                el.textContent = '0';
+                function tick(now) {
+                    if (start === null) start = now;
+                    var t = Math.min((now - start) / dur, 1);
+                    el.textContent = Math.round(target * (1 - Math.pow(1 - t, 3)));
+                    if (t < 1) requestAnimationFrame(tick);
+                }
+                requestAnimationFrame(tick);
+            });
+        }
+
+        // Logout confirmation (POSTs the real /logout form only on confirm)
+        var modal = document.getElementById('logoutModal');
+        var openBtn = document.getElementById('openLogout');
+        function close() { modal.classList.remove('open'); openBtn.focus(); }
+        openBtn.addEventListener('click', function () {
+            modal.classList.add('open');
+            document.getElementById('cancelLogout').focus();
+        });
+        document.getElementById('cancelLogout').addEventListener('click', close);
+        document.getElementById('confirmLogout').addEventListener('click', function () {
+            document.getElementById('logoutForm').submit();
+        });
+        modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && modal.classList.contains('open')) close(); });
+    })();
+</script>
 </body>
 </html>

@@ -4,25 +4,35 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title th:text="${property.title} + ' – ULEE'">Property Details</title>
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/speak-with-ai.css">
     <script src="/speak-with-ai-logic.js" defer></script>
     <script src="/speak-with-ai.js" defer></script>
     <link rel="stylesheet" href="/ulee-toast.css">
     <script src="/ulee-toast.js" defer></script>
     <style>
+        /* Remapped to the ULEE navy/teal design system (ULEE-design-system.md §2).
+           Variable names are unchanged so every existing rule below still works. */
         :root {
-            --primary:        hsl(180, 67%, 47%);
-            --primary-dark:   hsl(180, 67%, 36%);
-            --primary-deeper: hsl(180, 67%, 28%);
-            --primary-light:  hsl(180, 67%, 90%);
-            --primary-pale:   hsl(180, 67%, 96%);
-            --accent-purple:  hsl(262, 47%, 55%);
-            --bg:             hsl(0, 0%, 99%);
-            --text:           #1a1a1a;
-            --muted:          #777;
+            --primary:        #006A6A;
+            --primary-dark:   #005454;
+            --primary-deeper: #003f3f;
+            --primary-light:  #BFF3EE;
+            --primary-pale:   #F0F7F6;
+            --accent-purple:  #01A49F;
+            --bg:             #F4FBFA;
+            --text:           #191c1d;
+            --muted:          #6f787d;
             --white:          #ffffff;
-            --border:         hsl(180, 20%, 88%);
+            --border:         #E6E8E4;
+            --navy:           #071C2D;
+            --teal-glow:      #14C8BE;
+            --accent-yellow:  #f5d450;
+            --navy-gradient:  linear-gradient(115deg, #071C2D 0%, #0A3A48 55%, #0F6C70 100%);
+            --font-display:   'Plus Jakarta Sans', sans-serif;
+            --font-body:      'Hanken Grotesk', sans-serif;
             --danger:         #dc2626;
             --shadow-sm:      0 2px 12px rgba(0,0,0,0.08);
             --shadow-md:      0 6px 28px rgba(0,0,0,0.13);
@@ -678,6 +688,155 @@
             .apply-form-grid { grid-template-columns: 1fr; }
             .reviews-grid { grid-template-columns: 1fr; }
         }
+
+        /* ═══════════ ULEE navy/teal theme (overrides the rules above) ═══════════ */
+        body {
+            font-family: var(--font-body);
+            background:
+                radial-gradient(900px 420px at 100% -10%, rgba(20,200,190,.10), transparent 60%),
+                radial-gradient(700px 380px at 0% 60%, rgba(0,113,120,.06), transparent 60%),
+                var(--bg);
+        }
+        .detail-title, .detail-description h2, .detail-features h2, .detail-vr h2,
+        .detail-map-card h2, .detail-reviews h2, .detail-apply-card h2, .review-quote-mark,
+        .validation-modal-title { font-family: var(--font-display); }
+        .back-btn, .header-apply-btn, .apply-btn, .validation-modal-ok,
+        .form-field input[type="text"], .form-field input[type="email"], .form-field input[type="number"],
+        .form-field input[type="file"], .form-field textarea { font-family: var(--font-body); }
+
+        /* Top bar: dark glass with the ULEE logo */
+        .detail-topbar {
+            background: rgba(7,28,45,.88);
+            border-bottom: 1px solid rgba(20,200,190,.25);
+            backdrop-filter: blur(18px) saturate(140%);
+            -webkit-backdrop-filter: blur(18px) saturate(140%);
+        }
+        .back-btn { background: rgba(255,255,255,.06); color: #fff; border-color: rgba(255,255,255,.18); box-shadow: none; }
+        .back-btn:hover { background: rgba(255,255,255,.12); border-color: rgba(20,200,190,.6); }
+        .topbar-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+        .topbar-logo svg { width: 28px; height: 28px; fill: var(--teal-glow); filter: drop-shadow(0 0 6px rgba(20,200,190,.55)); }
+        .topbar-logo-name { font-family: var(--font-display); font-weight: 800; font-size: 20px; line-height: 1; color: var(--teal-glow); }
+        .topbar-logo-tag { font-size: 10px; font-weight: 600; color: var(--teal-glow); opacity: .85; margin-top: 2px; }
+        .header-apply-btn { background: var(--accent-yellow); color: #221b00; font-family: var(--font-body); }
+        .header-apply-btn:hover { background: var(--accent-yellow); box-shadow: 0 0 22px rgba(245,212,80,.55); }
+        .header-apply-btn.applied { background: rgba(20,200,190,.14); color: #7DF0E6; border: 1px solid rgba(20,200,190,.5); }
+        .header-apply-btn.applied:hover { background: rgba(20,200,190,.2); box-shadow: none; }
+
+        .detail-wrap { padding-top: 28px; gap: 24px; }
+
+        /* Gallery */
+        .detail-img-wrap { border-radius: 22px; background: #0A3A48; box-shadow: 0 18px 40px rgba(7,28,45,.18); border: 1px solid rgba(20,200,190,.25); }
+        .detail-img-wrap::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(7,28,45,.45), transparent 40%); pointer-events: none; z-index: 1; }
+        .detail-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(7,28,45,.75); border: 1px solid rgba(20,200,190,.6);
+            backdrop-filter: blur(8px); font-weight: 800; font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
+        }
+        .detail-badge.is-available::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--teal-glow); box-shadow: 0 0 6px var(--teal-glow); }
+        .detail-badge.is-unavailable { background: rgba(186,26,26,.88); border-color: transparent; }
+        .gallery-nav-btn { background: rgba(7,28,45,.6); border: 1px solid rgba(20,200,190,.4); backdrop-filter: blur(6px); }
+        .gallery-nav-btn:hover { background: rgba(7,28,45,.85); }
+        .gallery-nav-btn svg { color: #fff; }
+        .gallery-counter { background: rgba(7,28,45,.75); border: 1px solid rgba(20,200,190,.4); }
+        .detail-thumb { border-radius: 10px; }
+        .detail-thumb.active { border-color: var(--teal-glow); box-shadow: 0 0 10px rgba(20,200,190,.45); }
+
+        /* Info card: navy metric-card style (§4) */
+        .detail-info-card {
+            position: relative; overflow: hidden; isolation: isolate;
+            background: var(--navy-gradient); color: #fff;
+            border: 1.5px solid rgba(20,200,190,.45); border-radius: 22px;
+            box-shadow: 0 18px 40px rgba(7,28,45,.25);
+        }
+        .detail-info-card::before {
+            content: ''; position: absolute; inset: 0; z-index: -1;
+            background-image: linear-gradient(rgba(20,200,190,.12) 1px, transparent 1px), linear-gradient(90deg, rgba(20,200,190,.12) 1px, transparent 1px);
+            background-size: 36px 36px;
+            -webkit-mask-image: radial-gradient(ellipse 70% 80% at 100% 0%, #000 10%, transparent 70%);
+                    mask-image: radial-gradient(ellipse 70% 80% at 100% 0%, #000 10%, transparent 70%);
+        }
+        .detail-info-card::after {
+            content: ''; position: absolute; top: -70px; right: -50px; width: 200px; height: 200px; border-radius: 50%; z-index: -1;
+            background: radial-gradient(circle, rgba(20,200,190,.3) 0%, transparent 70%);
+            animation: ulee-pulse 4.5s ease-in-out infinite;
+        }
+        .detail-title { font-size: 28px; font-weight: 800; letter-spacing: -.02em; line-height: 1.15; color: #fff; }
+        .detail-location { color: rgba(255,255,255,.72); }
+        .info-row-grid { border-color: rgba(255,255,255,.12); }
+        .info-label { color: rgba(255,255,255,.62); font-weight: 700; letter-spacing: .1em; }
+        .info-value { color: #fff; font-family: var(--font-display); font-weight: 800; }
+        .info-value.price { color: var(--accent-yellow); }
+        .info-value small { color: rgba(255,255,255,.6); }
+        .applied-note { color: #7DF0E6; }
+        .info-cta {
+            display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 20px;
+            padding: 13px; border: 0; border-radius: 999px; cursor: pointer;
+            background: var(--accent-yellow); color: #221b00; font: 700 14px var(--font-body);
+            transition: box-shadow .2s ease, transform .15s ease;
+        }
+        .info-cta:hover { box-shadow: 0 0 24px rgba(245,212,80,.5); transform: translateY(-1px); }
+        .info-cta:focus-visible { outline: 2px solid var(--teal-glow); outline-offset: 3px; }
+        .info-cta .material-symbols-outlined { font-size: 18px; }
+
+        /* Content panels */
+        .detail-description, .detail-features, .detail-vr, .detail-map-card, .detail-reviews, .detail-apply-card {
+            border: 1px solid var(--border); border-radius: 22px; box-shadow: 0 6px 24px rgba(7,28,45,.06);
+        }
+        .detail-description h2, .detail-features h2, .detail-vr h2, .detail-map-card h2, .detail-reviews h2, .detail-apply-card h2 {
+            display: flex; align-items: center; gap: 10px; font-size: 19px; font-weight: 800;
+        }
+        .detail-description h2::before, .detail-features h2::before, .detail-vr h2::before,
+        .detail-map-card h2::before, .detail-reviews h2::before, .detail-apply-card h2::before {
+            content: ''; width: 4px; height: 20px; border-radius: 4px;
+            background: linear-gradient(var(--teal-glow), #007178); box-shadow: 0 0 8px rgba(20,200,190,.55);
+        }
+        .detail-description p { color: var(--on-surface-variant, #3f484d); font-size: 15px; }
+        .amenity-category-title { color: var(--primary); border-color: var(--border); }
+        .amenity-item-list { flex-direction: row; flex-wrap: wrap; gap: 8px; }
+        .amenity-item { padding: 7px 12px; border-radius: 10px; background: var(--primary-pale); border: 1px solid rgba(147,192,197,.55); font-size: 13.5px; font-weight: 600; color: #005454; }
+        .map-embed-frame { border-radius: 16px; border: 1px solid var(--border); }
+        .vr-viewer { border-radius: 16px; border: 1px solid rgba(20,200,190,.35); }
+        .vr-badge { background: rgba(7,28,45,.75); border: 1px solid rgba(20,200,190,.5); }
+        .vr-tour-btn { background: var(--navy-gradient); border: 1px solid rgba(20,200,190,.45); }
+        .vr-tour-btn:hover { box-shadow: 0 8px 22px rgba(7,28,45,.3), 0 0 18px rgba(20,200,190,.25); }
+
+        /* Reviews */
+        .no-reviews-card { background: var(--primary-pale); border: 1.5px dashed #93C0C5; color: var(--primary); border-radius: 16px; }
+        .no-reviews { font-size: 14px; color: var(--muted); }
+        .review-quote-card { border-radius: 16px; }
+        .review-quote-card::before { background: linear-gradient(var(--teal-glow), #007178); }
+        .review-quote-card.alt::before { background: linear-gradient(var(--accent-yellow), #e3c03a); }
+        .review-avatar { background: var(--navy-gradient); color: var(--teal-glow); }
+        .review-rating-badge { color: #7A5E00; background: #FFF6D6; padding: 4px 10px; border-radius: 999px; }
+
+        /* Buttons + apply form */
+        .apply-btn { background: var(--navy-gradient); border: 1px solid rgba(20,200,190,.45); border-radius: 14px; font-weight: 700; }
+        .apply-btn:hover { background: var(--navy-gradient); box-shadow: 0 8px 22px rgba(7,28,45,.3), 0 0 18px rgba(20,200,190,.25); transform: translateY(-1px); }
+        .detail-apply-card { border-color: rgba(20,200,190,.35); }
+        .form-field input[type="text"], .form-field input[type="email"], .form-field input[type="number"],
+        .form-field input[type="file"], .form-field textarea { background: #fff; border-radius: 10px; }
+        .form-field input[type="file"] { border-style: dashed; border-color: #93C0C5; background: var(--primary-pale); }
+        .form-field input:focus, .form-field textarea:focus { outline: none; border-color: var(--teal-glow); box-shadow: 0 0 0 3px rgba(20,200,190,.18); }
+        .form-field input:read-only { background: var(--primary-pale); }
+        .funding-option label { border-radius: 10px; }
+        .funding-option input[type="radio"]:checked + label { background: var(--navy-gradient); border-color: var(--teal-glow); box-shadow: 0 0 12px rgba(20,200,190,.3); }
+        .funding-option input[type="radio"]:focus-visible + label { outline: 2px solid var(--teal-glow); outline-offset: 2px; }
+        .apply-status-banner.success { background: #DDF7F3; color: #005454; border: 1px solid rgba(20,200,190,.4); }
+        .apply-status-banner.info { background: var(--primary-pale); color: var(--primary); border: 1px solid rgba(147,192,197,.55); }
+        .validation-modal-backdrop { background: rgba(7,28,45,.55); }
+        .validation-modal-card { border: 1px solid rgba(20,200,190,.3); }
+        .validation-modal-ok { background: var(--navy-gradient); }
+        .validation-modal-ok:hover { background: var(--navy-gradient); box-shadow: 0 0 18px rgba(20,200,190,.3); }
+
+        @keyframes ulee-pulse { 0%,100% { opacity: .6; transform: scale(1); } 50% { opacity: 1; transform: scale(1.12); } }
+        @media (prefers-reduced-motion: reduce) { .detail-info-card::after { animation: none; } }
+        @media (max-width: 800px) {
+            .topbar-logo-tag { display: none; }
+            .detail-wrap { padding-top: 18px; }
+        }
+        @media (max-width: 520px) {
+            .topbar-logo { display: none; }
+        }
     </style>
 </head>
 <body>
@@ -688,6 +847,14 @@
             <path d="M15 18l-6-6 6-6"/>
         </svg>
         <span>Back to Dashboard</span>
+    </a>
+
+    <a class="topbar-logo" href="/student-dashboard" aria-label="ULEE home">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2L3 7v11h14V7L10 2zm0 2.6 5 3.5V16H5V8.1l5-3.5zM8 10h4v6H8z"/></svg>
+        <span>
+            <span class="topbar-logo-name" style="display:block">ULEE</span>
+            <span class="topbar-logo-tag" style="display:block">Student Living. Simplified.</span>
+        </span>
     </a>
 
     <!-- Real <button>, not an <a href="#...">, so there's no native anchor
@@ -709,7 +876,12 @@
                  th:if="${not #lists.isEmpty(images)}"
                  th:src="${images[0].url}"
                  th:alt="${property.title}" />
-            <span class="detail-badge" th:text="${property.isAvailable} ? 'Available' : 'Unavailable'">Available</span>
+            <!-- No photos uploaded yet: show the branded placeholder instead of an empty grey box -->
+            <img class="detail-img" th:if="${#lists.isEmpty(images)}"
+                 src="/images/property-placeholder.svg" th:alt="${property.title} + ' (no photos yet)'" />
+            <span class="detail-badge"
+                  th:classappend="${property.isAvailable} ? ' is-available' : ' is-unavailable'"
+                  th:text="${property.isAvailable} ? 'Available' : 'Unavailable'">Available</span>
 
             <button type="button" id="galleryPrevBtn" class="gallery-nav-btn prev" th:if="${images != null and images.size() > 1}" aria-label="Previous photo">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
@@ -733,7 +905,10 @@
 
     <div class="detail-info-card">
         <div class="detail-title" th:text="${property.title}">Property Title</div>
-        <div class="detail-location" th:text="'📍 ' + ${property.address} + ', ' + ${property.city}">Location</div>
+        <div class="detail-location" style="display:flex;align-items:center;gap:6px">
+            <span class="material-symbols-outlined" style="font-size:18px;color:#14C8BE" aria-hidden="true">location_on</span>
+            <span th:text="${property.address} + ', ' + ${property.city}">Location</span>
+        </div>
 
         <div class="info-row-grid">
             <div class="info-item">
@@ -757,6 +932,10 @@
         <p th:if="${hasApplied}" class="applied-note">
             &#10003; You've already applied for this property
         </p>
+        <!-- Same smooth-scroll target as the top-bar Apply button -->
+        <button type="button" class="info-cta" id="infoApplyBtn" th:unless="${hasApplied}">
+            <span class="material-symbols-outlined" aria-hidden="true">send</span>Apply for this room
+        </button>
     </div>
 
     <!-- 1. DESCRIPTION -->
@@ -1014,13 +1193,14 @@
         const nextBtn = document.getElementById('galleryNextBtn');
         if (nextBtn) nextBtn.addEventListener('click', function () { renderImage(currentImageIndex + 1); });
 
-        const headerApplyBtn = document.getElementById('headerApplyBtn');
-        if (headerApplyBtn) {
-            headerApplyBtn.addEventListener('click', function () {
+        ['headerApplyBtn', 'infoApplyBtn'].forEach(function (id) {
+            const btn = document.getElementById(id);
+            if (!btn) return;
+            btn.addEventListener('click', function () {
                 const card = document.getElementById('applyCard');
                 if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
             });
-        }
+        });
     })();
 
     // ── Validation modal: reusable across every form on the site ──

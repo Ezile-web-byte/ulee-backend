@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Applications – ULEE</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
 
     <link rel="stylesheet" href="/speak-with-ai.css">
     <script src="/speak-with-ai-logic.js" defer></script>
@@ -12,470 +15,501 @@
     <script src="/ulee-toast.js" defer></script>
 
     <style>
+        /* ULEE design system palette (ULEE-design-system.md §2) — same as my-dashboard.html */
         :root {
-            --ulee-teal: #006078;
-            --ulee-yellow: #FFDC68;
-            --ulee-yellow-hover: #F8CF4F;
-            --ulee-dark-teal: #004A5E;
-            --ulee-text: #17313A;
-            --ulee-muted: #6E7D83;
-            --ulee-background: #F7F9FA;
-            --ulee-border: #DCE5E8;
-            --ulee-white: #FFFFFF;
+            --primary-dark: #006A6A; --primary-tint: #F4FBFA; --surface-tint: #F0F7F6;
+            --outline-variant: #E6E8E4; --accent-border: #93C0C5;
+            --on-surface: #191c1d; --on-surface-variant: #3f484d; --outline: #6f787d;
+            --accent-yellow: #f5d450; --alert: #ba1a1a;
+            --font-display: 'Plus Jakarta Sans', sans-serif; --font-body: 'Hanken Grotesk', sans-serif;
+            --radius-sm: 10px; --radius-full: 9999px;
+            --sidebar-bg: #071C2D; --sidebar-text: #B7C3CB; --sidebar-logo-teal: #14C8BE;
+            --sidebar-active-bg: #007178; --sidebar-badge-bg: #01A49F;
+            --navy-gradient: linear-gradient(115deg, #071C2D 0%, #0A3A48 55%, #0F6C70 100%);
         }
-
-        * {
-            box-sizing: border-box;
-        }
-
+        * { box-sizing: border-box; }
         body {
-            margin: 0;
-            font-family: Arial, Helvetica, sans-serif;
-            background: var(--ulee-background);
-            color: var(--ulee-text);
+            margin: 0; font-family: var(--font-body); color: var(--on-surface); min-height: 100vh;
+            background:
+                radial-gradient(900px 420px at 100% -10%, rgba(20,200,190,.10), transparent 60%),
+                radial-gradient(700px 380px at 20% 110%, rgba(0,113,120,.07), transparent 60%),
+                var(--primary-tint);
         }
+        h1, h2, h3 { font-family: var(--font-display); margin: 0; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; line-height: 1; }
+        .app-shell { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
 
-        .topbar {
-            height: 76px;
-            background: var(--ulee-white);
-            border-bottom: 1px solid var(--ulee-border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 68px;
+        /* Dark sidebar (§5) */
+        .sidebar { background: var(--sidebar-bg); border-right: 1px solid var(--sidebar-active-bg); display: flex; flex-direction: column; height: 100vh; position: sticky; top: 0; overflow-y: auto; padding: 0 20px 24px; }
+        .logo { display: flex; align-items: center; gap: 10px; padding: 26px 0 28px; text-decoration: none; }
+        .logo svg { width: 30px; height: 30px; fill: var(--sidebar-logo-teal); filter: drop-shadow(0 0 6px rgba(20,200,190,.5)); display: block; }
+        .logo-name { font-family: var(--font-display); font-weight: 800; font-size: 22px; line-height: 1; color: var(--sidebar-logo-teal); }
+        .logo-tag { font-size: 10.5px; font-weight: 600; color: var(--sidebar-logo-teal); opacity: .85; margin-top: 3px; }
+        .nav-label { font-size: 10.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: rgba(183,195,203,.55); margin: 8px 0 8px 16px; }
+        .nav-list { display: flex; flex-direction: column; gap: 4px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: var(--radius-sm); font: 600 14px var(--font-body); color: var(--sidebar-text); text-decoration: none; background: none; border: 0; width: 100%; cursor: pointer; text-align: left; transition: background .2s ease, color .2s ease; }
+        .nav-item .material-symbols-outlined { font-size: 20px; }
+        .nav-item:hover { background: rgba(255,255,255,.06); color: #fff; }
+        .nav-item:focus-visible { outline: 2px solid var(--sidebar-logo-teal); outline-offset: 2px; }
+        .nav-item.active { background: var(--sidebar-active-bg); color: #fff; margin: 0 -20px; width: calc(100% + 40px); padding: 12px 36px; border-radius: 0; box-shadow: inset 3px 0 0 var(--sidebar-logo-teal); }
+        .nav-badge { margin-left: auto; background: var(--sidebar-badge-bg); color: #fff; font-size: 11px; font-weight: 700; min-width: 20px; height: 20px; padding: 0 6px; border-radius: var(--radius-full); display: inline-flex; align-items: center; justify-content: center; }
+        .sidebar-foot { margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,.08); }
+        .nav-item.logout { color: #ff9b91; }
+        .nav-item.logout:hover { background: rgba(255,138,128,.08); color: #ffb4ab; }
+
+        /* Main column */
+        .main { min-width: 0; padding: 28px 40px 80px; max-width: 1240px; }
+        .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+        .crumbs { font-size: 13px; color: var(--outline); font-weight: 600; }
+        .crumbs a { color: inherit; text-decoration: none; }
+        .crumbs a:hover { color: var(--primary-dark); }
+        .crumbs strong { color: var(--primary-dark); }
+        .topbar-right { display: flex; align-items: center; gap: 12px; }
+        .chip-btn { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: var(--radius-full); background: #fff; border: 1px solid var(--outline-variant); font-size: 13.5px; font-weight: 700; color: var(--primary-dark); text-decoration: none; transition: border-color .2s, box-shadow .2s; }
+        .chip-btn:hover { border-color: var(--accent-border); box-shadow: 0 4px 14px rgba(7,28,45,.08); }
+        .chip-btn .material-symbols-outlined { font-size: 18px; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #14C8BE, #007178); color: #071C2D; font-family: var(--font-display); font-weight: 800; font-size: 14px; box-shadow: 0 0 0 3px rgba(20,200,190,.25); }
+
+        /* Header banner */
+        .hero { position: relative; overflow: hidden; isolation: isolate; border-radius: 24px; padding: 30px 36px; background: var(--navy-gradient); border: 1.5px solid rgba(20,200,190,.40); box-shadow: 0 18px 40px rgba(7,28,45,.22); color: #fff; margin-bottom: 20px; }
+        .hero-grid { position: absolute; inset: 0; z-index: -1; background-image: linear-gradient(rgba(20,200,190,.14) 1px, transparent 1px), linear-gradient(90deg, rgba(20,200,190,.14) 1px, transparent 1px); background-size: 44px 44px; -webkit-mask-image: radial-gradient(ellipse 60% 90% at 85% 50%, #000 15%, transparent 75%); mask-image: radial-gradient(ellipse 60% 90% at 85% 50%, #000 15%, transparent 75%); animation: grid-drift 22s linear infinite; }
+        .orb { position: absolute; border-radius: 50%; filter: blur(60px); z-index: -1; pointer-events: none; }
+        .orb.one { width: 300px; height: 300px; right: -60px; top: -120px; background: rgba(20,200,190,.35); animation: orb 14s ease-in-out infinite; }
+        .orb.two { width: 220px; height: 220px; right: 30%; bottom: -120px; background: rgba(245,212,80,.16); animation: orb 18s ease-in-out infinite reverse; }
+        .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 11.5px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: #7DF0E6; margin: 0 0 12px; }
+        .live-dot { position: relative; width: 8px; height: 8px; border-radius: 50%; background: #14C8BE; box-shadow: 0 0 8px #14C8BE; }
+        .live-dot::after { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2px solid #14C8BE; animation: ping 1.8s cubic-bezier(0,0,.2,1) infinite; }
+        .hero h1 { font-size: clamp(28px, 3.2vw, 36px); font-weight: 800; letter-spacing: -.02em; line-height: 1.12; }
+        .text-gradient { background: linear-gradient(90deg, #14C8BE 0%, #7DF0E6 45%, #f5d450 100%); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; animation: text-shine 6s linear infinite; }
+        .lead { margin: 10px 0 0; color: rgba(255,255,255,.72); font-size: 15.5px; line-height: 1.6; max-width: 560px; }
+        .pipeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 24px; }
+        .pipe { padding: 14px 16px; border-radius: 14px; background: rgba(255,255,255,.05); border: 1px solid rgba(20,200,190,.28); }
+        .pipe-label { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.7); display: flex; align-items: center; gap: 6px; }
+        .pipe-label .material-symbols-outlined { font-size: 16px; color: #14C8BE; }
+        .pipe.pending .pipe-label .material-symbols-outlined { color: #f5d450; }
+        .pipe.rejected .pipe-label .material-symbols-outlined { color: #ff9b91; }
+        .pipe-value { font-family: var(--font-display); font-size: 26px; font-weight: 800; margin-top: 6px; line-height: 1; }
+
+        /* Filter tabs */
+        .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 26px 0 16px; flex-wrap: wrap; }
+        .toolbar h2 { font-size: 20px; font-weight: 800; }
+        .tabs { display: flex; gap: 6px; padding: 5px; background: #fff; border: 1px solid var(--outline-variant); border-radius: var(--radius-full); overflow-x: auto; }
+        .tab { border: 0; background: none; padding: 8px 16px; border-radius: var(--radius-full); cursor: pointer; font: 700 13.5px var(--font-body); color: var(--on-surface-variant); white-space: nowrap; transition: color .2s, background .2s; }
+        .tab:hover { color: var(--primary-dark); }
+        .tab.active { background: var(--navy-gradient); color: #fff; box-shadow: 0 4px 14px rgba(7,28,45,.25), inset 0 0 0 1px rgba(20,200,190,.45); }
+        .tab:focus-visible { outline: 2px solid #14C8BE; outline-offset: 2px; }
+
+        /* Application cards */
+        .applications { display: grid; gap: 16px; }
+        .app-card { position: relative; display: grid; grid-template-columns: 200px 1fr; overflow: hidden; background: #fff; border: 1px solid var(--outline-variant); border-radius: 20px; box-shadow: 0 6px 24px rgba(7,28,45,.06); transition: border-color .3s, box-shadow .3s, transform .3s; animation: card-in .5s cubic-bezier(.2,.8,.2,1) backwards; }
+        .app-card:nth-child(2) { animation-delay: .06s; }
+        .app-card:nth-child(3) { animation-delay: .12s; }
+        .app-card:nth-child(4) { animation-delay: .18s; }
+        .app-card:hover { border-color: rgba(20,200,190,.55); box-shadow: 0 18px 40px rgba(7,28,45,.12), 0 0 0 4px rgba(20,200,190,.06); transform: translateY(-2px); }
+        .app-card[hidden] { display: none; }
+        .app-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: #93C0C5; z-index: 2; }
+        .app-card.is-pending::before  { background: linear-gradient(#f5d450, #e3c03a); }
+        .app-card.is-accepted::before { background: linear-gradient(#14C8BE, #007178); box-shadow: 0 0 12px rgba(20,200,190,.6); }
+        .app-card.is-rejected::before { background: var(--alert); }
+        .app-photo { position: relative; display: block; background: #0A3A48; min-height: 100%; overflow: hidden; }
+        .app-photo img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .7s ease; }
+        .app-card:hover .app-photo img { transform: scale(1.07); }
+        .app-body { padding: 20px 24px; min-width: 0; }
+        .app-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+        .app-number { margin: 0 0 4px; font-size: 11.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--outline); }
+        .app-title { font-size: 19px; font-weight: 800; line-height: 1.25; }
+        .app-title a { color: inherit; text-decoration: none; }
+        .app-title a:hover { color: var(--primary-dark); }
+        .app-loc { margin: 4px 0 0; font-size: 13px; color: var(--on-surface-variant); display: flex; align-items: center; gap: 4px; }
+        .app-loc .material-symbols-outlined { font-size: 16px; color: #01A49F; }
+        .status { display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: var(--radius-full); font-size: 12.5px; font-weight: 800; white-space: nowrap; background: var(--surface-tint); color: var(--primary-dark); }
+        .status::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+        .status.pending  { background: #FFF6D6; color: #7A5E00; }
+        .status.accepted { background: #DDF7F3; color: #006A6A; box-shadow: 0 0 0 1px rgba(20,200,190,.4); }
+        .status.rejected { background: #FCE9E7; color: var(--alert); }
+        .details { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0; }
+        .detail { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 10px; background: var(--surface-tint); border: 1px solid rgba(147,192,197,.45); font-size: 13px; }
+        .detail .material-symbols-outlined { font-size: 17px; color: #01A49F; }
+        .detail-label { color: var(--outline); font-weight: 600; }
+        .detail-value { font-weight: 700; color: var(--on-surface); }
+
+        /* Progress steps: Applied -> Under review -> Decision */
+        .steps { display: flex; align-items: center; margin: 4px 0 18px; }
+        .step { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--outline); white-space: nowrap; }
+        .step-dot { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: #fff; border: 2px solid var(--outline-variant); }
+        .step-dot .material-symbols-outlined { font-size: 14px; }
+        .step.done { color: var(--primary-dark); }
+        .step.done .step-dot { background: var(--navy-gradient); border-color: #14C8BE; color: #14C8BE; box-shadow: 0 0 8px rgba(20,200,190,.35); }
+        .step.current { color: #7A5E00; }
+        .step.current .step-dot { border-color: #f5d450; background: #FFF6D6; color: #7A5E00; }
+        .step.bad { color: var(--alert); }
+        .step.bad .step-dot { border-color: var(--alert); background: #FCE9E7; color: var(--alert); }
+        .step-line { flex: 1; height: 2px; min-width: 18px; margin: 0 8px; background: var(--outline-variant); border-radius: 2px; }
+        .step-line.done { background: linear-gradient(90deg, #14C8BE, #007178); }
+
+        /* Actions */
+        .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; padding-top: 16px; border-top: 1px solid var(--outline-variant); }
+        .document-form { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+        .file-input { max-width: 280px; padding: 8px; border: 1.5px dashed var(--accent-border); border-radius: 10px; background: var(--surface-tint); color: var(--on-surface); font: 13px var(--font-body); }
+        .file-input:focus-visible { outline: 2px solid #14C8BE; outline-offset: 2px; }
+        .note { margin: 0; font-size: 13px; color: var(--outline); display: flex; align-items: center; gap: 6px; }
+        .note .material-symbols-outlined { font-size: 17px; color: #93C0C5; }
+        .btn { display: inline-flex; align-items: center; gap: 7px; border-radius: var(--radius-full); padding: 10px 18px; font: 700 13.5px var(--font-body); cursor: pointer; text-decoration: none; transition: transform .15s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease, color .2s; }
+        .btn .material-symbols-outlined { font-size: 17px; }
+        .btn:hover { transform: translateY(-1px); }
+        .btn:focus-visible { outline: 2px solid #14C8BE; outline-offset: 2px; }
+        .btn-yellow { border: 1px solid var(--accent-yellow); background: var(--accent-yellow); color: #221b00; }
+        .btn-yellow:hover { box-shadow: 0 0 22px rgba(245,212,80,.5); }
+        .btn-outline { border: 1px solid var(--outline-variant); background: #fff; color: var(--on-surface-variant); }
+        .btn-outline:hover { border-color: var(--alert); color: var(--alert); background: #FFF7F6; }
+
+        /* Empty states */
+        .empty { text-align: center; padding: 56px 24px; border-radius: 20px; background: #fff; border: 1.5px dashed var(--accent-border); }
+        .empty-icon { width: 64px; height: 64px; margin: 0 auto 16px; border-radius: 18px; display: flex; align-items: center; justify-content: center; background: var(--navy-gradient); color: #14C8BE; box-shadow: 0 10px 26px rgba(7,28,45,.25); }
+        .empty-icon .material-symbols-outlined { font-size: 30px; }
+        .empty h2 { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+        .empty p { margin: 0 auto 20px; max-width: 420px; color: var(--on-surface-variant); line-height: 1.6; }
+        .no-match { display: none; text-align: center; padding: 28px; color: var(--on-surface-variant); background: #fff; border: 1px dashed var(--accent-border); border-radius: 16px; }
+        .no-match.show { display: block; }
+
+        /* Confirmation modals */
+        .modal { position: fixed; inset: 0; z-index: 1000; display: none; align-items: center; justify-content: center; background: rgba(7,28,45,.6); backdrop-filter: blur(4px); padding: 16px; }
+        .modal.open { display: flex; }
+        .modal-card { background: #fff; border-radius: 22px; padding: 30px; max-width: 400px; width: 100%; text-align: center; border: 1px solid rgba(20,200,190,.3); }
+        .modal-card h2 { font-size: 20px; margin: 12px 0 6px; }
+        .modal-card p { color: var(--on-surface-variant); font-size: 14px; margin: 0 0 22px; line-height: 1.55; }
+        .modal-icon { width: 54px; height: 54px; border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center; background: #FCE9E7; color: var(--alert); }
+        .modal-row { display: flex; gap: 10px; }
+        .modal-row button { flex: 1; padding: 11px; border-radius: var(--radius-full); font: 700 14px var(--font-body); cursor: pointer; }
+        .btn-cancel { background: #fff; border: 1px solid var(--outline-variant); color: var(--on-surface); }
+        .btn-danger { background: var(--alert); border: 1px solid var(--alert); color: #fff; }
+
+        @keyframes grid-drift { to { background-position: 44px 44px; } }
+        @keyframes orb { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-30px,24px) scale(1.12); } }
+        @keyframes text-shine { to { background-position: 200% center; } }
+        @keyframes ping { 75%,100% { transform: scale(2.4); opacity: 0; } }
+        @keyframes card-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+        @media (prefers-reduced-motion: reduce) {
+            .hero-grid, .orb, .text-gradient, .live-dot::after, .app-card { animation: none !important; }
+            .app-card:hover, .btn:hover { transform: none; }
         }
-
-        .brand {
-            display: flex;
-            flex-direction: column;
-            line-height: 1;
-            gap: 3px;
-            text-decoration: none;
-            cursor: pointer;
-            transition: opacity 0.2s ease;
+        @media (max-width: 1100px) { .pipeline { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 860px) {
+            .app-shell { grid-template-columns: 1fr; }
+            .sidebar { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; padding: 0 16px 12px; }
+            .logo { padding: 16px 0 8px; width: 100%; }
+            .nav-label, .sidebar-foot { display: none; }
+            .nav-list { flex-direction: row; flex-wrap: wrap; }
+            .nav-item, .nav-item.active { width: auto; margin: 0; padding: 9px 12px; border-radius: var(--radius-sm); }
+            .main { padding: 20px 16px 70px; }
+            .hero { padding: 24px 22px; }
+            .crumbs { display: none; }
+            .app-card { grid-template-columns: 1fr; }
+            .app-photo { height: 170px; }
         }
-
-        .brand:hover {
-            opacity: 0.85;
-        }
-
-        .brand-mark {
-            position: relative;
-            display: inline-block;
-            font-size: 22px;
-            font-weight: 800;
-            letter-spacing: -0.02em;
-            color: var(--ulee-dark-teal);
-        }
-
-        .brand-mark::after {
-            content: '';
-            position: absolute;
-            top: -3px;
-            right: -9px;
-            width: 9px;
-            height: 9px;
-            background: var(--ulee-yellow);
-            border-radius: 50% 50% 50% 0;
-            transform: rotate(-45deg);
-            box-shadow: 0 1px 2px rgba(0,0,0,0.15);
-        }
-
-        .brand-tagline {
-            font-size: 9px;
-            font-weight: 700;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            color: var(--ulee-muted);
-        }
-
-        .back-link {
-            color: var(--ulee-teal);
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 700;
-        }
-
-        .back-link:hover {
-            text-decoration: underline;
-        }
-
-        .page {
-            max-width: 1120px;
-            margin: 0 auto;
-            padding: 52px 28px 90px;
-        }
-
-        .page-header {
-            margin-bottom: 32px;
-        }
-
-        .eyebrow {
-            margin: 0 0 9px;
-            color: var(--ulee-teal);
-            font-size: 12px;
-            font-weight: 800;
-            letter-spacing: 1.4px;
-            text-transform: uppercase;
-        }
-
-        .page-header h1 {
-            margin: 0;
-            color: var(--ulee-dark-teal);
-            font-size: 36px;
-            line-height: 1.15;
-            letter-spacing: -0.8px;
-        }
-
-        .welcome {
-            margin: 10px 0 0;
-            color: var(--ulee-muted);
-            font-size: 16px;
-            line-height: 1.6;
-        }
-
-        .welcome strong {
-            color: var(--ulee-teal);
-        }
-
-        .applications {
-            display: grid;
-            gap: 20px;
-        }
-
-        .application-card {
-            background: var(--ulee-white);
-            border: 1px solid var(--ulee-border);
-            border-radius: 18px;
-            padding: 26px;
-            box-shadow: 0 8px 25px rgba(0, 73, 94, 0.07);
-        }
-
-        .application-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 24px;
-            margin-bottom: 22px;
-        }
-
-        .application-number {
-            margin: 0 0 7px;
-            color: var(--ulee-muted);
-            font-size: 12px;
-            font-weight: 800;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-
-        .property-id {
-            margin: 0;
-            color: var(--ulee-dark-teal);
-            font-size: 22px;
-            font-weight: 750;
-        }
-
-        .status {
-            display: inline-flex;
-            align-items: center;
-            padding: 8px 15px;
-            border-radius: 999px;
-            background: #E8F2F4;
-            color: var(--ulee-teal);
-            font-size: 13px;
-            font-weight: 800;
-            white-space: nowrap;
-        }
-
-        .status.pending {
-            background: #FFF3C7;
-            color: #806300;
-        }
-
-        .status.accepted {
-            background: #E6F4EE;
-            color: #17704D;
-        }
-
-        .status.rejected {
-            background: #FBEAEA;
-            color: #A83232;
-        }
-
-        .details {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 14px;
-            margin-bottom: 24px;
-        }
-
-        .detail {
-            padding: 15px 17px;
-            background: #F7FAFB;
-            border: 1px solid #EDF2F3;
-            border-radius: 12px;
-        }
-
-        .detail-label {
-            display: block;
-            margin-bottom: 6px;
-            color: var(--ulee-muted);
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: .7px;
-            text-transform: uppercase;
-        }
-
-        .detail-value {
-            color: var(--ulee-text);
-            font-size: 15px;
-            font-weight: 650;
-        }
-
-        .actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            align-items: center;
-            padding-top: 21px;
-            border-top: 1px solid #EDF2F3;
-        }
-
-        .document-form {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: center;
-        }
-
-        input[type="file"] {
-            max-width: 280px;
-            padding: 9px;
-            border: 1px solid var(--ulee-border);
-            border-radius: 9px;
-            background: var(--ulee-white);
-            color: var(--ulee-text);
-            font-size: 13px;
-        }
-
-        button {
-            border-radius: 999px;
-            padding: 11px 19px;
-            font-size: 14px;
-            font-weight: 750;
-            cursor: pointer;
-            transition: transform .15s ease, background .15s ease, box-shadow .15s ease;
-        }
-
-        button:hover {
-            transform: translateY(-1px);
-        }
-
-        .primary-button {
-            border: 1px solid var(--ulee-yellow);
-            background: var(--ulee-yellow);
-            color: #172000;
-            box-shadow: 0 4px 12px rgba(255, 220, 104, 0.28);
-        }
-
-        .primary-button:hover {
-            background: var(--ulee-yellow-hover);
-            box-shadow: 0 6px 16px rgba(255, 220, 104, 0.35);
-        }
-
-        .danger-button {
-            border: 1px solid #C9D9DD;
-            background: var(--ulee-white);
-            color: var(--ulee-teal);
-        }
-
-        .danger-button:hover {
-            border-color: var(--ulee-teal);
-            background: #F3F8F9;
-        }
-
-        .empty-state {
-            background: var(--ulee-white);
-            border: 1px solid var(--ulee-border);
-            border-radius: 18px;
-            padding: 65px 28px;
-            text-align: center;
-            box-shadow: 0 8px 25px rgba(0, 73, 94, 0.05);
-        }
-
-        .empty-icon {
-            width: 52px;
-            height: 52px;
-            margin: 0 auto 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            background: var(--ulee-yellow);
-            color: var(--ulee-dark-teal);
-            font-size: 24px;
-            font-weight: 800;
-        }
-
-        .empty-state h2 {
-            margin: 0 0 9px;
-            color: var(--ulee-dark-teal);
-            font-size: 22px;
-        }
-
-        .empty-state p {
-            margin: 0;
-            color: var(--ulee-muted);
-            line-height: 1.6;
-        }
-
-        @media (max-width: 760px) {
-            .topbar {
-                padding: 0 20px;
-            }
-
-            .page {
-                padding: 34px 16px 70px;
-            }
-
-            .page-header h1 {
-                font-size: 30px;
-            }
-
-            .application-top {
-                flex-direction: column;
-            }
-
-            .details {
-                grid-template-columns: 1fr;
-            }
-
-            .actions,
-            .document-form {
-                align-items: stretch;
-                flex-direction: column;
-            }
-
-            input[type="file"],
-            button {
-                width: 100%;
-                max-width: none;
-            }
+        @media (max-width: 560px) {
+            .app-top { flex-direction: column; }
+            .step-label { display: none; }
+            .actions, .document-form { flex-direction: column; align-items: stretch; }
+            .file-input, .btn { width: 100%; max-width: none; justify-content: center; }
         }
     </style>
 </head>
 
 <body>
+<div class="app-shell">
 
-<header class="topbar">
-    <a class="brand" th:href="@{/student-dashboard}">
-        <span class="brand-mark">ULEE</span>
-        <span class="brand-tagline">Student Living</span>
-    </a>
-    <a class="back-link" th:href="@{/student-dashboard}">Browse Properties</a>
-</header>
+    <!-- Dark sidebar — same as my-dashboard.html -->
+    <aside class="sidebar" id="sidebar" aria-label="Student navigation">
+        <a class="logo" th:href="@{/student-dashboard}" aria-label="ULEE home">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2L3 7v11h14V7L10 2zm0 2.6 5 3.5V16H5V8.1l5-3.5zM8 10h4v6H8z"/></svg>
+            <div>
+                <div class="logo-name">ULEE</div>
+                <div class="logo-tag">Student Living. Simplified.</div>
+            </div>
+        </a>
 
-<main class="page">
+        <div class="nav-label">Student portal</div>
+        <nav class="nav-list">
+            <a class="nav-item" th:href="@{/my-dashboard}">
+                <span class="material-symbols-outlined" aria-hidden="true">space_dashboard</span><span>My Dashboard</span>
+            </a>
+            <a class="nav-item active" th:href="@{/my-applications}" aria-current="page">
+                <span class="material-symbols-outlined" aria-hidden="true">description</span><span>My Applications</span>
+                <span class="nav-badge" th:if="${totalApplications > 0}" th:text="${totalApplications}">0</span>
+            </a>
+            <a class="nav-item" th:href="@{/saved-properties}">
+                <span class="material-symbols-outlined" aria-hidden="true">favorite</span><span>Saved Properties</span>
+                <span class="nav-badge" th:if="${savedCount > 0}" th:text="${savedCount}">0</span>
+            </a>
+            <a class="nav-item" th:href="@{/student-dashboard}">
+                <span class="material-symbols-outlined" aria-hidden="true">travel_explore</span><span>Browse Properties</span>
+            </a>
+        </nav>
 
-    <header class="page-header">
-        <p class="eyebrow">Student Portal</p>
-        <h1>My Applications</h1>
-        <p class="welcome">
-            Welcome back, <strong th:text="${currentUserName}">Student</strong>.
-            Track your residence applications and submit any required documents here.
-        </p>
-    </header>
+        <div class="sidebar-foot">
+            <form id="logoutForm" th:action="@{/logout}" method="post">
+                <button type="button" class="nav-item logout" id="openLogout">
+                    <span class="material-symbols-outlined" aria-hidden="true">logout</span><span>Log out</span>
+                </button>
+            </form>
+        </div>
+    </aside>
 
-    <section class="applications" th:if="${not #lists.isEmpty(applications)}">
+    <main class="main">
+        <div class="topbar">
+            <div class="crumbs"><a th:href="@{/my-dashboard}">Student portal</a> / <strong>My Applications</strong></div>
+            <div class="topbar-right">
+                <a class="chip-btn" th:href="@{/student-dashboard}">
+                    <span class="material-symbols-outlined" aria-hidden="true">search</span>Find a room
+                </a>
+                <span class="avatar" th:text="${userInitials != null ? userInitials : 'ST'}" aria-hidden="true">ST</span>
+            </div>
+        </div>
 
-        <article class="application-card" th:each="app : ${applications}">
-
-            <div class="application-top">
-                <div>
-                    <p class="application-number"
-                       th:text="'Application #' + ${app.applicationID}">
-                        Application #1
-                    </p>
-                    <h2 class="property-id"
-                        th:text="${propertyNames[app.propertyID]} ?: ('Property #' + ${app.propertyID})">
-                        The Dunes
-                    </h2>
+        <!-- Header banner + status pipeline -->
+        <section class="hero" aria-labelledby="pageHeading">
+            <div class="hero-grid" aria-hidden="true"></div>
+            <div class="orb one" aria-hidden="true"></div>
+            <div class="orb two" aria-hidden="true"></div>
+            <p class="eyebrow"><span class="live-dot" aria-hidden="true"></span>Application tracker</p>
+            <h1 id="pageHeading">My <span class="text-gradient">Applications</span></h1>
+            <p class="lead">
+                Hi <span th:text="${currentUserName}">Student</span>, track every residence application here
+                and upload your documents once a landlord accepts you.
+            </p>
+            <div class="pipeline" aria-label="Applications by status">
+                <div class="pipe">
+                    <div class="pipe-label"><span class="material-symbols-outlined" aria-hidden="true">send</span>Total</div>
+                    <div class="pipe-value" th:text="${totalApplications}">0</div>
                 </div>
+                <div class="pipe pending">
+                    <div class="pipe-label"><span class="material-symbols-outlined" aria-hidden="true">hourglass_top</span>Pending</div>
+                    <div class="pipe-value" th:text="${pendingCount}">0</div>
+                </div>
+                <div class="pipe">
+                    <div class="pipe-label"><span class="material-symbols-outlined" aria-hidden="true">verified</span>Accepted</div>
+                    <div class="pipe-value" th:text="${acceptedCount}">0</div>
+                </div>
+                <div class="pipe rejected">
+                    <div class="pipe-label"><span class="material-symbols-outlined" aria-hidden="true">block</span>Not successful</div>
+                    <div class="pipe-value" th:text="${rejectedCount}">0</div>
+                </div>
+            </div>
+        </section>
 
-                <span class="status"
-                      th:classappend="${#strings.equalsIgnoreCase(app.status, 'Pending')} ? ' pending' :
-                                     (${#strings.equalsIgnoreCase(app.status, 'Accepted')} ? ' accepted' :
-                                     (${#strings.equalsIgnoreCase(app.status, 'Rejected')} ? ' rejected' : ''))"
-                      th:text="${app.status}">
-                    Pending
-                </span>
+        <th:block th:if="${not #lists.isEmpty(applications)}">
+            <div class="toolbar">
+                <h2>All applications</h2>
+                <div class="tabs" role="group" aria-label="Filter applications by status">
+                    <button type="button" class="tab active" data-filter="all" aria-pressed="true">All</button>
+                    <button type="button" class="tab" data-filter="pending" aria-pressed="false">Pending</button>
+                    <button type="button" class="tab" data-filter="accepted" aria-pressed="false">Accepted</button>
+                    <button type="button" class="tab" data-filter="rejected" aria-pressed="false">Not successful</button>
+                </div>
             </div>
 
-            <div class="details">
-                <div class="detail">
-                    <span class="detail-label">Application Date</span>
-                    <span class="detail-value" th:text="${app.applicationDate}">
-                        2026-08-17
-                    </span>
-                </div>
+            <section class="applications" aria-label="Your applications">
+                <article class="app-card" th:each="app : ${applications}"
+                         th:with="prop=${applicationProperties[app.propertyID]},
+                                  st=${app.status != null ? #strings.toLowerCase(app.status) : 'pending'}"
+                         th:classappend="'is-' + ${st}"
+                         th:attr="data-status=${st}">
 
-                <div class="detail">
-                    <span class="detail-label">Application Status</span>
-                    <span class="detail-value" th:text="${app.status}">
-                        Pending
-                    </span>
-                </div>
-            </div>
+                    <a class="app-photo" th:href="@{/property/{id}(id=${app.propertyID})}" tabindex="-1" aria-hidden="true">
+                        <img alt="" src="/images/property-placeholder.svg" loading="lazy"
+                             th:src="${prop != null and prop.mainImageUrl != null} ? ${prop.mainImageUrl} : '/images/property-placeholder.svg'"/>
+                    </a>
 
-            <div class="actions">
+                    <div class="app-body">
+                        <div class="app-top">
+                            <div style="min-width:0">
+                                <p class="app-number" th:text="'Application #' + ${app.applicationID}">Application #1</p>
+                                <h3 class="app-title">
+                                    <a th:href="@{/property/{id}(id=${app.propertyID})}"
+                                       th:text="${prop != null} ? ${prop.title} : ('Property #' + ${app.propertyID})">The Dunes</a>
+                                </h3>
+                                <p class="app-loc" th:if="${prop != null}">
+                                    <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+                                    <span th:text="${prop.suburb != null ? prop.suburb + ', ' + prop.city : prop.city}">Summerstrand, Gqeberha</span>
+                                </p>
+                            </div>
+                            <span class="status"
+                                  th:classappend="${st == 'pending'} ? ' pending' : (${st == 'accepted'} ? ' accepted' : (${st == 'rejected'} ? ' rejected' : ''))"
+                                  th:text="${app.status}">Pending</span>
+                        </div>
 
-                <form class="document-form"
-                      th:if="${#strings.equalsIgnoreCase(app.status, 'Accepted')}"
-                      th:action="@{/submit-documents/{id}(id=${app.applicationID})}"
-                      method="post"
-                      enctype="multipart/form-data"
-                      data-loading-text="Uploading...">
+                        <div class="details">
+                            <span class="detail">
+                                <span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>
+                                <span class="detail-label">Applied</span>
+                                <span class="detail-value" th:text="${app.applicationDate != null} ? ${#temporals.format(app.applicationDate, 'dd MMM yyyy')} : 'Not recorded'">17 Aug 2026</span>
+                            </span>
+                            <span class="detail" th:if="${prop != null and prop.rent != null}">
+                                <span class="material-symbols-outlined" aria-hidden="true">payments</span>
+                                <span class="detail-label">Rent</span>
+                                <span class="detail-value" th:text="'R' + ${prop.rent} + ' / month'">R4500 / month</span>
+                            </span>
+                            <span class="detail" th:if="${app.fundingStatus != null and !#strings.isEmpty(app.fundingStatus)}">
+                                <span class="material-symbols-outlined" aria-hidden="true">account_balance</span>
+                                <span class="detail-label">Funding</span>
+                                <span class="detail-value" th:text="${app.fundingStatus}">NSFAS</span>
+                            </span>
+                        </div>
 
-                    <input type="file" name="file" required>
+                        <!-- Progress: Applied -> Under review -> Decision -->
+                        <div class="steps" aria-hidden="true">
+                            <span class="step done"><span class="step-dot"><span class="material-symbols-outlined">check</span></span><span class="step-label">Applied</span></span>
+                            <span class="step-line done"></span>
+                            <span class="step" th:classappend="${st == 'pending'} ? ' current' : ' done'">
+                                <span class="step-dot"><span class="material-symbols-outlined" th:text="${st == 'pending'} ? 'more_horiz' : 'check'">check</span></span>
+                                <span class="step-label">Under review</span>
+                            </span>
+                            <span class="step-line" th:classappend="${st != 'pending'} ? ' done' : ''"></span>
+                            <span class="step" th:classappend="${st == 'accepted'} ? ' done' : (${st == 'rejected'} ? ' bad' : '')">
+                                <span class="step-dot"><span class="material-symbols-outlined" th:text="${st == 'accepted'} ? 'check' : (${st == 'rejected'} ? 'close' : 'flag')">flag</span></span>
+                                <span class="step-label" th:text="${st == 'accepted'} ? 'Accepted' : (${st == 'rejected'} ? 'Not successful' : 'Decision')">Decision</span>
+                            </span>
+                        </div>
 
-                    <button type="submit" class="primary-button">
-                        Submit Document
-                    </button>
-                </form>
+                        <div class="actions">
+                            <form class="document-form"
+                                  th:if="${st == 'accepted'}"
+                                  th:action="@{/submit-documents/{id}(id=${app.applicationID})}"
+                                  method="post" enctype="multipart/form-data" data-loading-text="Uploading...">
+                                <label class="sr-only" th:for="'file-' + ${app.applicationID}" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Document to upload</label>
+                                <input class="file-input" type="file" name="file" required th:id="'file-' + ${app.applicationID}">
+                                <button type="submit" class="btn btn-yellow">
+                                    <span class="material-symbols-outlined" aria-hidden="true">upload_file</span>Submit document
+                                </button>
+                            </form>
 
-                <p th:unless="${#strings.equalsIgnoreCase(app.status, 'Accepted')}"
-                   style="font-size: 13px; color: var(--ulee-muted); margin: 0;">
-                    Document upload becomes available once this application is accepted.
-                </p>
+                            <p class="note" th:unless="${st == 'accepted'}">
+                                <span class="material-symbols-outlined" aria-hidden="true">lock</span>
+                                Document upload opens once this application is accepted.
+                            </p>
 
-                <form th:action="@{/cancel-application/{id}(id=${app.applicationID})}"
-                      method="post"
-                      data-loading-text="Cancelling..."
-                      onsubmit="return confirm('Are you sure you want to cancel this application? This action cannot be undone.');">
+                            <form class="cancel-form" th:action="@{/cancel-application/{id}(id=${app.applicationID})}"
+                                  method="post" data-loading-text="Cancelling...">
+                                <button type="button" class="btn btn-outline open-cancel">
+                                    <span class="material-symbols-outlined" aria-hidden="true">close</span>Cancel application
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </article>
+            </section>
 
-                    <button type="submit" class="danger-button">
-                        Cancel Application
-                    </button>
-                </form>
+            <p class="no-match" id="noMatch">No applications with that status.</p>
+        </th:block>
 
-            </div>
+        <section class="empty" th:if="${#lists.isEmpty(applications)}">
+            <div class="empty-icon"><span class="material-symbols-outlined" aria-hidden="true">rocket_launch</span></div>
+            <h2>No applications yet</h2>
+            <p>You haven't applied for a residence yet. Browse rooms near campus and send your first application.</p>
+            <a class="btn btn-yellow" th:href="@{/student-dashboard}">
+                <span class="material-symbols-outlined" aria-hidden="true">travel_explore</span>Browse rooms
+            </a>
+        </section>
+    </main>
+</div>
 
-        </article>
+<!-- Cancel-application confirmation -->
+<div class="modal" id="cancelModal" role="dialog" aria-modal="true" aria-labelledby="cancelTitle">
+    <div class="modal-card">
+        <div class="modal-icon"><span class="material-symbols-outlined" aria-hidden="true">delete</span></div>
+        <h2 id="cancelTitle">Cancel this application?</h2>
+        <p>The landlord will no longer see it. This can't be undone.</p>
+        <div class="modal-row">
+            <button type="button" class="btn-cancel" data-close>Keep it</button>
+            <button type="button" class="btn-danger" id="confirmCancel">Cancel application</button>
+        </div>
+    </div>
+</div>
 
-    </section>
+<!-- Logout confirmation -->
+<div class="modal" id="logoutModal" role="dialog" aria-modal="true" aria-labelledby="logoutTitle">
+    <div class="modal-card">
+        <div class="modal-icon"><span class="material-symbols-outlined" aria-hidden="true">logout</span></div>
+        <h2 id="logoutTitle">Log out of ULEE?</h2>
+        <p>You will need to log in again to see your dashboard, applications and saved rooms.</p>
+        <div class="modal-row">
+            <button type="button" class="btn-cancel" data-close>Cancel</button>
+            <button type="button" class="btn-danger" id="confirmLogout">Log out</button>
+        </div>
+    </div>
+</div>
 
-    <section class="empty-state" th:if="${#lists.isEmpty(applications)}">
-        <div class="empty-icon">✓</div>
-        <h2>No applications yet</h2>
-        <p>
-            You haven't submitted any residence applications yet.
-            Browse available properties to find your next home.
-        </p>
-    </section>
+<div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null, null, null, null)}"></div>
 
-</main>
+<script>
+    (function () {
+        // Status filter tabs (client-side only)
+        var tabs = document.querySelectorAll('.tab');
+        var cards = document.querySelectorAll('.app-card');
+        var noMatch = document.getElementById('noMatch');
+        tabs.forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                var f = tab.dataset.filter, shown = 0;
+                tabs.forEach(function (t) {
+                    var on = t === tab;
+                    t.classList.toggle('active', on);
+                    t.setAttribute('aria-pressed', String(on));
+                });
+                cards.forEach(function (c) {
+                    var show = f === 'all' || c.dataset.status === f;
+                    c.hidden = !show;
+                    if (show) shown++;
+                });
+                if (noMatch) noMatch.classList.toggle('show', shown === 0);
+            });
+        });
 
-<div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null)}"></div>
+        // Modals
+        var lastTrigger = null;
+        function open(modal, trigger) {
+            lastTrigger = trigger;
+            modal.classList.add('open');
+            modal.querySelector('[data-close]').focus();
+        }
+        function close(modal) {
+            modal.classList.remove('open');
+            if (lastTrigger) lastTrigger.focus();
+        }
+        document.querySelectorAll('.modal').forEach(function (m) {
+            m.addEventListener('click', function (e) { if (e.target === m) close(m); });
+            m.querySelector('[data-close]').addEventListener('click', function () { close(m); });
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Escape') return;
+            document.querySelectorAll('.modal.open').forEach(close);
+        });
 
+        // Cancel application: confirm first, then submit that card's form.
+        // requestSubmit() fires the submit event, so ulee-toast's
+        // data-loading-text still shows "Cancelling...".
+        var cancelModal = document.getElementById('cancelModal');
+        var pendingForm = null;
+        document.querySelectorAll('.open-cancel').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                pendingForm = btn.closest('form');
+                open(cancelModal, btn);
+            });
+        });
+        document.getElementById('confirmCancel').addEventListener('click', function () {
+            if (!pendingForm) return;
+            cancelModal.classList.remove('open');
+            if (pendingForm.requestSubmit) pendingForm.requestSubmit(); else pendingForm.submit();
+        });
+
+        // Logout
+        var logoutModal = document.getElementById('logoutModal');
+        var openLogout = document.getElementById('openLogout');
+        openLogout.addEventListener('click', function () { open(logoutModal, openLogout); });
+        document.getElementById('confirmLogout').addEventListener('click', function () {
+            document.getElementById('logoutForm').submit();
+        });
+    })();
+</script>
 </body>
 </html>

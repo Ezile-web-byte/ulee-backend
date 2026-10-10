@@ -11,54 +11,84 @@
             darkMode: "class",
             theme: {
                 extend: {
+                    // Remapped to the ULEE navy/teal design system
+                    // (ULEE-design-system.md). Token NAMES are unchanged so every
+                    // existing class (bg-primary, text-tertiary-fixed, ...) keeps
+                    // working — only the colour values moved.
                     "colors": {
-                        "primary-fixed": "#bbeaff",
-                        "tertiary": "#705d00",
-                        "on-tertiary-container": "#4c3f00",
-                        "on-primary-fixed-variant": "#004d62",
-                        "surface-container-highest": "#e1e3e4",
-                        "primary-container": "#147592",
-                        "inverse-primary": "#82d1f1",
-                        "surface": "#f8f9fa",
-                        "on-secondary": "#ffffff",
-                        "on-error": "#ffffff",
-                        "primary": "#005b74",
-                        "surface-variant": "#e1e3e4",
-                        "surface-container-high": "#e7e8e9",
-                        "on-secondary-fixed-variant": "#572d9a",
-                        "secondary": "#6f47b4",
-                        "tertiary-fixed-dim": "#e5c542",
-                        "on-secondary-fixed": "#260058",
-                        "secondary-container": "#b78eff",
-                        "surface-container-lowest": "#ffffff",
-                        "on-tertiary-fixed-variant": "#544600",
-                        "on-primary-container": "#d9f2ff",
-                        "on-tertiary-fixed": "#221b00",
-                        "surface-bright": "#f8f9fa",
-                        "tertiary-fixed": "#ffe170",
-                        "surface-dim": "#d9dadb",
-                        "secondary-fixed": "#ebdcff",
-                        "inverse-on-surface": "#f0f1f2",
-                        "on-background": "#191c1d",
-                        "primary-fixed-dim": "#82d1f1",
-                        "outline": "#6f787d",
-                        "on-primary-fixed": "#001f29",
+                        // Design-system brand tokens
+                        "navy": "#071C2D",
+                        "navy-mid": "#0A3A48",
+                        "navy-teal": "#0F6C70",
+                        "teal-glow": "#14C8BE",
+                        "teal-active": "#007178",
+                        "teal-badge": "#01A49F",
+                        "teal-mint": "#7DF0E6",
+
+                        "primary": "#006A6A",
+                        "primary-container": "#007178",
                         "on-primary": "#ffffff",
-                        "on-surface": "#191c1d",
-                        "inverse-surface": "#2e3132",
-                        "tertiary-container": "#c8a927",
-                        "outline-variant": "#bec8cd",
-                        "secondary-fixed-dim": "#d4bbff",
-                        "on-surface-variant": "#3f484d",
-                        "background": "#f8f9fa",
-                        "surface-container-low": "#f3f4f5",
-                        "error": "#ba1a1a",
-                        "on-secondary-container": "#491c8c",
+                        "on-primary-container": "#E6FFFB",
+                        "primary-fixed": "#BFF3EE",
+                        "primary-fixed-dim": "#7DF0E6",
+                        "on-primary-fixed": "#002020",
+                        "on-primary-fixed-variant": "#005454",
+                        "inverse-primary": "#14C8BE",
+                        "surface-tint": "#006A6A",
+
+                        "secondary": "#01A49F",
+                        "on-secondary": "#ffffff",
+                        "secondary-container": "#93C0C5",
+                        "on-secondary-container": "#00363A",
+                        "secondary-fixed": "#D2F4F1",
+                        "secondary-fixed-dim": "#93C0C5",
+                        "on-secondary-fixed": "#002022",
+                        "on-secondary-fixed-variant": "#005054",
+
+                        "tertiary": "#705d00",
+                        "tertiary-fixed": "#f5d450",
+                        "tertiary-fixed-dim": "#e3c03a",
+                        "tertiary-container": "#e3c03a",
                         "on-tertiary": "#ffffff",
-                        "on-error-container": "#93000a",
-                        "surface-tint": "#006782",
-                        "surface-container": "#edeeef",
-                        "error-container": "#ffdad6"
+                        "on-tertiary-fixed": "#221b00",
+                        "on-tertiary-fixed-variant": "#544600",
+                        "on-tertiary-container": "#3a3000",
+
+                        "background": "#F4FBFA",
+                        "on-background": "#191c1d",
+                        "surface": "#F4FBFA",
+                        "surface-bright": "#F4FBFA",
+                        "surface-dim": "#d5e0de",
+                        "surface-variant": "#e1e8e6",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#F0F7F6",
+                        "surface-container": "#E8F2F0",
+                        "surface-container-high": "#E1ECEA",
+                        "surface-container-highest": "#D9E6E3",
+                        "on-surface": "#191c1d",
+                        "on-surface-variant": "#3f484d",
+                        "inverse-surface": "#071C2D",
+                        "inverse-on-surface": "#E6F2F1",
+
+                        "outline": "#6f787d",
+                        "outline-variant": "#E6E8E4",
+
+                        "error": "#ba1a1a",
+                        "on-error": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "on-error-container": "#93000a"
+                    },
+                    // The markup already used text-display-lg / text-headline-md /
+                    // etc., but no fontSize scale was ever defined, so those
+                    // classes silently did nothing (headings rendered at body
+                    // size). This gives them real sizes.
+                    "fontSize": {
+                        "display-lg": ["clamp(2.5rem, 5.2vw, 4.25rem)", { "lineHeight": "1.04", "letterSpacing": "-0.025em" }],
+                        "headline-md": ["clamp(1.85rem, 3.2vw, 2.6rem)", { "lineHeight": "1.12", "letterSpacing": "-0.02em" }],
+                        "headline-sm": ["1.3rem", { "lineHeight": "1.3", "letterSpacing": "-0.01em" }],
+                        "body-lg": ["1.125rem", { "lineHeight": "1.65" }],
+                        "label-bold": ["0.9rem", { "lineHeight": "1.4" }],
+                        "label-sm": ["0.78rem", { "lineHeight": "1.3" }]
                     },
                     "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
                     "spacing": {
@@ -75,16 +105,191 @@
         }
     </script>
     <style>
+        /* ── ULEE design-system palette (ULEE-design-system.md §2) ── */
+        :root {
+            --primary-dark: #006A6A;
+            --primary: #096C6C;
+            --sidebar-bg: #071C2D;
+            --sidebar-logo-teal: #14C8BE;
+            --sidebar-active-bg: #007178;
+            --sidebar-badge-bg: #01A49F;
+            --accent-yellow: #f5d450;
+            --font-display: 'Plus Jakarta Sans', sans-serif;
+            --font-body: 'Hanken Grotesk', sans-serif;
+        }
+        body { font-family: var(--font-body); }
+        h1, h2, h3 { font-family: var(--font-display); }
+
         .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-        .u-shadow-card { box-shadow: 0px 4px 20px rgba(20, 117, 146, 0.08); }
+        .u-shadow-card { box-shadow: 0 6px 24px rgba(7, 28, 45, 0.07); }
         .u-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
 
         /* Room-type tab filtering */
         .room-card { display: none; }
-        .room-card.is-visible { display: block; }
+        .room-card.is-visible { display: block; animation: ulee-card-in .5s cubic-bezier(.2,.8,.2,1) backwards; }
         .filter-tab { color: #3f484d; }
-        .filter-tab.active { background: #005b74; color: #ffffff; }
+        .filter-tab:hover { color: #006A6A; }
+        .filter-tab.active {
+            background: linear-gradient(115deg, #071C2D 0%, #0A3A48 55%, #0F6C70 100%);
+            color: #ffffff;
+            box-shadow: 0 4px 14px rgba(7, 28, 45, .25), inset 0 0 0 1px rgba(20, 200, 190, .45);
+        }
+
+        /* ── Glass navigation bar (dark navy) ── */
+        .glass-nav {
+            background: rgba(7, 28, 45, 0.82);
+            backdrop-filter: blur(18px) saturate(140%);
+            -webkit-backdrop-filter: blur(18px) saturate(140%);
+            border-bottom: 1px solid rgba(20, 200, 190, 0.22);
+        }
+        .nav-link { position: relative; color: rgba(255,255,255,.72); transition: color .2s ease; }
+        .nav-link:hover { color: #fff; }
+        .nav-link.is-active { color: #fff; }
+        .nav-link.is-active::after {
+            content: ''; position: absolute; left: 0; right: 0; bottom: -6px; height: 2px; border-radius: 2px;
+            background: linear-gradient(90deg, #14C8BE, #f5d450);
+            box-shadow: 0 0 10px rgba(20, 200, 190, .8);
+        }
+
+        /* Design-system logo (§3) */
+        .logo-icon svg { width: 30px; height: 30px; fill: #14C8BE; filter: drop-shadow(0 0 6px rgba(20,200,190,.55)); }
+        .logo-name { font-family: var(--font-display); font-weight: 800; font-size: 22px; line-height: 1; color: #14C8BE; letter-spacing: .02em; }
+        .logo-tag { font-size: 10.5px; font-weight: 600; color: #14C8BE; opacity: .85; }
+
+        /* ── Hero: tech grid, glowing orbs, gradient headline ── */
+        .hero-grid {
+            background-image:
+                linear-gradient(rgba(20, 200, 190, .14) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(20, 200, 190, .14) 1px, transparent 1px);
+            background-size: 56px 56px;
+            -webkit-mask-image: radial-gradient(ellipse 70% 60% at 30% 55%, #000 20%, transparent 75%);
+                    mask-image: radial-gradient(ellipse 70% 60% at 30% 55%, #000 20%, transparent 75%);
+            animation: ulee-grid-drift 22s linear infinite;
+        }
+        .hero-orb { position: absolute; border-radius: 50%; filter: blur(70px); pointer-events: none; }
+        .hero-orb.one { width: 420px; height: 420px; background: rgba(20, 200, 190, .35); top: -80px; left: -60px; animation: ulee-orb 14s ease-in-out infinite; }
+        .hero-orb.two { width: 340px; height: 340px; background: rgba(245, 212, 80, .18); bottom: -40px; left: 38%; animation: ulee-orb 18s ease-in-out infinite reverse; }
+        .text-gradient {
+            background: linear-gradient(90deg, #14C8BE 0%, #7DF0E6 40%, #f5d450 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text; background-clip: text;
+            -webkit-text-fill-color: transparent; color: transparent;
+            animation: ulee-text-shine 6s linear infinite;
+        }
+        .live-dot { position: relative; width: 8px; height: 8px; border-radius: 50%; background: #14C8BE; box-shadow: 0 0 8px #14C8BE; }
+        .live-dot::after {
+            content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2px solid #14C8BE;
+            animation: ulee-ping 1.8s cubic-bezier(0, 0, .2, 1) infinite;
+        }
+        .search-glass {
+            background: rgba(7, 28, 45, .45);
+            border: 1px solid rgba(20, 200, 190, .35);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, .25), 0 0 0 1px rgba(255,255,255,.04) inset;
+            transition: box-shadow .3s ease, border-color .3s ease;
+        }
+        .search-glass:focus-within { border-color: rgba(20, 200, 190, .8); box-shadow: 0 10px 40px rgba(0,0,0,.25), 0 0 28px rgba(20, 200, 190, .35); }
+
+        /* ── Navy metric card (ULEE-design-system.md §4) ── */
+        .ulee-metric-card {
+            position: relative; overflow: hidden; display: block;
+            padding: 20px 24px 34px;
+            border: 1.5px solid rgba(20, 200, 190, 0.45);
+            border-radius: 16px;
+            background: linear-gradient(115deg, #071C2D 0%, #0A3A48 55%, #0F6C70 100%);
+            box-shadow: 0 6px 18px rgba(7, 28, 45, 0.18);
+            color: #fff; text-decoration: none;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            animation: ulee-metric-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+        }
+        .ulee-metric-card:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(7,28,45,.28); }
+        .ulee-metric-card::before {
+            content: ''; position: absolute; top: 0; left: -60%; width: 40%; height: 100%;
+            background: linear-gradient(100deg, transparent, rgba(255,255,255,.12), transparent);
+            transform: skewX(-20deg); animation: ulee-metric-shine 7s ease-in-out infinite;
+        }
+        .ulee-metric-card::after {
+            content: ''; position: absolute; top: -60px; right: -40px; width: 170px; height: 170px;
+            border-radius: 50%; background: radial-gradient(circle, rgba(20,200,190,.28) 0%, transparent 70%);
+            animation: ulee-metric-pulse 4.5s ease-in-out infinite;
+        }
+        .ulee-metric-card:nth-child(2) { animation-delay: .08s; }
+        .ulee-metric-card:nth-child(3) { animation-delay: .16s; }
+        .ulee-metric-card:nth-child(4) { animation-delay: .24s; }
+        .ulee-metric-label {
+            position: relative; z-index: 2; font-size: 12.5px; font-weight: 700;
+            letter-spacing: .07em; text-transform: uppercase; color: rgba(255,255,255,.78);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .ulee-metric-label .material-symbols-outlined { font-size: 18px; color: #14C8BE; }
+        .ulee-metric-value { position: relative; z-index: 2; font-family: var(--font-display); font-size: 32px; font-weight: 800; margin-top: 8px; line-height: 1.1; }
+        .ulee-metric-sub { position: relative; z-index: 2; font-size: 12px; color: #7DF0E6; margin-top: 2px; }
+        .ulee-metric-stars { position: absolute; top: 0; right: 0; width: 52%; height: 80%; z-index: 1; }
+        .ulee-metric-stars .star { animation: ulee-metric-twinkle 4s ease-in-out infinite; animation-delay: var(--d, 0s); }
+        .ulee-metric-wave { position: absolute; left: 0; bottom: 0; width: 200%; height: 22px; animation: ulee-metric-wave 16s linear infinite; }
+        .ulee-metric-wave .w-back  { fill: rgba(14,116,128,.55); }
+        .ulee-metric-wave .w-front { fill: #071C2D; stroke: #14C8BE; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+
+        /* ── Section eyebrow label with glowing tick ── */
+        .eyebrow { display: inline-flex; align-items: center; gap: 10px; color: #006A6A; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; font-size: .78rem; }
+        .eyebrow::before { content: ''; width: 26px; height: 2px; border-radius: 2px; background: linear-gradient(90deg, #14C8BE, #006A6A); box-shadow: 0 0 8px rgba(20,200,190,.7); }
+        .eyebrow.on-dark { color: #14C8BE; }
+
+        /* ── Room cards: glowing gradient edge on hover ── */
+        .room-card { position: relative; isolation: isolate; }
+        .room-card::before {
+            /* inset 0 + inherit: the card has overflow-hidden, so a ring placed
+               outside its edge (inset:-1px) would be mostly clipped away */
+            content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1.5px; z-index: 3; pointer-events: none;
+            background: linear-gradient(135deg, #14C8BE, transparent 40%, transparent 60%, #f5d450);
+            -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            -webkit-mask-composite: xor; mask-composite: exclude;
+            opacity: 0; transition: opacity .3s ease;
+        }
+        .room-card:hover::before { opacity: .55; }
+        .room-card:hover { box-shadow: 0 18px 40px rgba(7, 28, 45, .14); }
+        .price-tag {
+            background: linear-gradient(90deg, #006A6A, #01A49F);
+            -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent;
+        }
+        .btn-neon { position: relative; overflow: hidden; z-index: 0; }
+        .btn-neon::before {
+            content: ''; position: absolute; inset: 0; z-index: -1;
+            background: linear-gradient(115deg, #071C2D 0%, #0A3A48 55%, #0F6C70 100%);
+            opacity: 0; transition: opacity .3s ease;
+        }
+        .btn-neon:hover { color: #fff; border-color: #14C8BE; box-shadow: 0 0 18px rgba(20, 200, 190, .35); }
+        .btn-neon:hover::before { opacity: 1; }
+
+        /* ── Dark navy section backdrop (bento) ── */
+        .navy-section { background: radial-gradient(1200px 500px at 85% 0%, rgba(20,200,190,.16), transparent 60%), linear-gradient(180deg, #071C2D 0%, #0A2A3A 100%); }
+        .navy-section .hero-grid { -webkit-mask-image: radial-gradient(ellipse 60% 70% at 50% 0%, #000 10%, transparent 70%); mask-image: radial-gradient(ellipse 60% 70% at 50% 0%, #000 10%, transparent 70%); }
+        .bento-tile { box-shadow: 0 0 0 1px rgba(20, 200, 190, .25), 0 20px 40px rgba(0,0,0,.35); transition: box-shadow .3s ease; }
+        .bento-tile:hover { box-shadow: 0 0 0 1.5px rgba(20, 200, 190, .5), 0 20px 40px rgba(0,0,0,.35); }
+
+        /* ── Scroll reveal (only when JS is on, so content never stays hidden) ── */
+        .js .reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s cubic-bezier(.2,.8,.2,1), transform .7s cubic-bezier(.2,.8,.2,1); }
+        .js .reveal.in { opacity: 1; transform: none; }
+
+        @keyframes ulee-card-in        { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+        @keyframes ulee-grid-drift     { to { background-position: 56px 56px; } }
+        @keyframes ulee-orb            { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(40px,30px) scale(1.12); } }
+        @keyframes ulee-text-shine     { to { background-position: 200% center; } }
+        @keyframes ulee-ping           { 75%,100% { transform: scale(2.4); opacity: 0; } }
+        @keyframes ulee-metric-in      { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+        @keyframes ulee-metric-shine   { 0%,55% { left: -60%; } 100% { left: 130%; } }
+        @keyframes ulee-metric-pulse   { 0%,100% { opacity: .6; transform: scale(1); } 50% { opacity: 1; transform: scale(1.12); } }
+        @keyframes ulee-metric-twinkle { 0%,100% { opacity: .25; } 50% { opacity: 1; } }
+        @keyframes ulee-metric-wave    { to { transform: translateX(-50%); } }
+
+        /* Respect accessibility settings — every decorative animation stops */
+        @media (prefers-reduced-motion: reduce) {
+            .ulee-metric-card, .ulee-metric-card::before, .ulee-metric-card::after,
+            .ulee-metric-wave, .ulee-metric-stars .star,
+            .hero-grid, .hero-orb, .text-gradient, .live-dot::after,
+            .room-card.is-visible { animation: none !important; }
+            .js .reveal { opacity: 1; transform: none; transition: none; }
+        }
 
         /* Save heart */
         .save-btn { transition: transform 0.15s ease; }
@@ -149,41 +354,45 @@
 </div>
 
 <!-- Top Navigation Bar -->
-<nav class="bg-surface/90 dark:bg-surface-dim/90 backdrop-blur-md docked full-width top-0 sticky z-50 shadow-[0px_4px_20px_rgba(20,117,146,0.08)]">
-    <div class="flex justify-between items-center w-full px-margin-desktop py-base max-w-7xl mx-auto">
+<nav class="glass-nav top-0 sticky z-50">
+    <div class="flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-sm max-w-7xl mx-auto">
         <div class="flex items-center gap-md">
-            <a href="/student-dashboard" class="ulee-brand-link flex flex-col leading-none">
-                <span class="ulee-brand-mark font-display-lg text-display-lg font-extrabold text-primary tracking-tight">ULEE</span>
-                <span class="text-[9px] font-bold uppercase tracking-[0.12em] text-on-surface-variant mt-0.5">Student Living</span>
+            <!-- Design-system logo (§3): teal house mark straight on navy -->
+            <a href="/student-dashboard" class="ulee-brand-link flex items-center gap-sm" aria-label="ULEE home">
+                <span class="logo-icon"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2L3 7v11h14V7L10 2zm0 2.6 5 3.5V16H5V8.1l5-3.5zM8 10h4v6H8z"/></svg></span>
+                <span class="flex flex-col">
+                    <span class="logo-name">ULEE</span>
+                    <span class="logo-tag">Student Living. Simplified.</span>
+                </span>
             </a>
         </div>
         <div class="hidden md:flex items-center gap-lg">
-            <a class="font-label-bold text-label-bold text-primary border-b-2 border-tertiary-fixed pb-1" href="/student-dashboard">Properties</a>
-            <a class="font-label-bold text-label-bold text-on-surface-variant hover:text-primary transition-colors" href="#life-at-ulee">Life at ULEE</a>
-            <a class="font-label-bold text-label-bold text-on-surface-variant hover:text-primary transition-colors" href="#">About Us</a>
-            <a class="font-label-bold text-label-bold text-on-surface-variant hover:text-primary transition-colors" href="#">Contact</a>
+            <a class="nav-link is-active font-label-bold text-label-bold" href="/student-dashboard">Properties</a>
+            <a class="nav-link font-label-bold text-label-bold" href="#life-at-ulee">Life at ULEE</a>
+            <a class="nav-link font-label-bold text-label-bold" href="#">About Us</a>
+            <a class="nav-link font-label-bold text-label-bold" href="#">Contact</a>
         </div>
         <div class="flex items-center gap-md">
-            <button type="button" id="openLoginBtn" th:unless="${isLoggedIn}" class="hidden md:block text-on-surface-variant font-label-bold hover:text-primary transition-colors">Login</button>
+            <button type="button" id="openLoginBtn" th:unless="${isLoggedIn}" class="hidden md:block nav-link font-label-bold">Login</button>
 
             <div class="relative hidden md:block" th:if="${isLoggedIn}" id="userMenuWrap">
-                <button type="button" id="userMenuBtn" class="flex items-center gap-sm text-on-surface-variant font-label-bold hover:text-primary transition-colors" aria-expanded="false">
-                    <div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-xs uppercase" th:text="${userInitials != null ? userInitials : 'ST'}">ST</div>
+                <button type="button" id="userMenuBtn" class="flex items-center gap-sm text-white/80 font-label-bold hover:text-white transition-colors pl-xs pr-sm py-xs rounded-full border border-teal-glow/30 bg-white/5 hover:bg-white/10" aria-expanded="false" aria-haspopup="true">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-teal-glow to-teal-active text-navy flex items-center justify-center font-extrabold text-xs uppercase ring-2 ring-teal-glow/40" th:text="${userInitials != null ? userInitials : 'ST'}">ST</div>
                     <span th:text="'Hi, ' + ${currentUserFirstName}">Hi, Student</span>
-                    <span class="material-symbols-outlined text-[16px]">expand_more</span>
+                    <span class="material-symbols-outlined text-[16px]" aria-hidden="true">expand_more</span>
                 </button>
-                <div id="userMenuDropdown" class="hidden absolute right-0 mt-xs w-56 bg-white rounded-xl shadow-lg border border-outline-variant/30 py-xs z-50">
-                    <a href="/my-dashboard" class="block px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors">My Dashboard</a>
-                    <a href="/my-applications" class="block px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors">My Applications</a>
-                    <a href="/saved-properties" class="block px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors">Saved Properties</a>
-                    <div class="border-t border-outline-variant/30 my-xs"></div>
+                <div id="userMenuDropdown" class="hidden absolute right-0 mt-sm w-60 bg-navy/95 backdrop-blur-xl rounded-xl shadow-2xl border border-teal-glow/30 py-xs z-50 overflow-hidden">
+                    <a href="/my-dashboard" class="flex items-center gap-sm px-md py-sm text-sm text-white/85 hover:text-white hover:bg-teal-active/60 transition-colors"><span class="material-symbols-outlined text-[18px] text-teal-glow" aria-hidden="true">space_dashboard</span>My Dashboard</a>
+                    <a href="/my-applications" class="flex items-center gap-sm px-md py-sm text-sm text-white/85 hover:text-white hover:bg-teal-active/60 transition-colors"><span class="material-symbols-outlined text-[18px] text-teal-glow" aria-hidden="true">description</span>My Applications</a>
+                    <a href="/saved-properties" class="flex items-center gap-sm px-md py-sm text-sm text-white/85 hover:text-white hover:bg-teal-active/60 transition-colors"><span class="material-symbols-outlined text-[18px] text-teal-glow" aria-hidden="true">favorite</span>Saved Properties</a>
+                    <div class="border-t border-white/10 my-xs"></div>
                     <form id="logoutForm" th:action="@{/logout}" method="post">
-                        <button type="button" onclick="openLogoutConfirm()" class="w-full text-left px-md py-sm text-sm text-error hover:bg-surface-container-low transition-colors">Logout</button>
+                        <button type="button" onclick="openLogoutConfirm()" class="w-full flex items-center gap-sm text-left px-md py-sm text-sm text-[#ff8a80] hover:bg-white/5 transition-colors"><span class="material-symbols-outlined text-[18px]" aria-hidden="true">logout</span>Logout</button>
                     </form>
                 </div>
             </div>
 
-            <a href="#apply" th:unless="${isLoggedIn}" class="bg-tertiary-fixed text-on-tertiary-fixed px-md py-sm rounded-full font-label-bold hover:bg-tertiary-container hover:text-on-tertiary-container active:scale-95 transition-all duration-200">
+            <a href="#apply" th:unless="${isLoggedIn}" class="bg-tertiary-fixed text-on-tertiary-fixed px-md py-sm rounded-full font-label-bold hover:shadow-[0_0_20px_rgba(245,212,80,.55)] active:scale-95 transition-all duration-200">
                 Apply Now
             </a>
         </div>
@@ -191,27 +400,30 @@
 </nav>
 
 <!-- Hero Section -->
-<header class="relative w-full h-[85vh] flex items-center overflow-hidden">
+<header class="relative w-full min-h-[88vh] flex items-center overflow-hidden bg-navy">
     <div class="absolute inset-0 z-0">
+        <!-- Building photo at full strength; only a soft navy fade on the left
+             so the headline stays readable. (Was opacity-60 under a near-solid
+             navy veil + grid + glow orbs, which hid the building.) -->
         <div class="w-full h-full bg-cover bg-center scale-105 hero-ken-burns" style="background-image: url('/uploads/student-background.png')"></div>
-        <div class="absolute inset-0 bg-gradient-to-r from-primary/80 to-transparent"></div>
+        <div class="absolute inset-0 bg-gradient-to-r from-navy/80 via-navy/45 to-transparent"></div>
     </div>
-    <div class="relative z-10 w-full max-w-7xl mx-auto px-margin-desktop">
+    <div class="relative z-10 w-full max-w-7xl mx-auto px-margin-mobile md:px-margin-desktop py-xl">
         <div class="max-w-2xl space-y-md">
-            <h1 class="font-display-lg text-display-lg font-extrabold text-white leading-tight">
+            <h1 class="font-display-lg text-display-lg font-extrabold text-white drop-shadow-[0_2px_12px_rgba(7,28,45,.45)]">
                 The Future of <span class="text-tertiary-fixed">Student Living</span> in Gqeberha
             </h1>
-            <p class="text-body-lg font-body-lg text-white/90 max-w-lg">
+            <p class="text-body-lg font-body-lg text-white/90 max-w-lg drop-shadow-[0_1px_8px_rgba(7,28,45,.5)]">
                 Premium living designed for the ambitious. Search real, available rooms from landlords near your campus.
             </p>
 
             <!-- Hero Search Bar -->
-            <form id="heroSearchForm" class="bg-white/10 backdrop-blur-xl p-base rounded-2xl flex flex-col md:flex-row items-stretch md:items-center gap-xs mt-lg border border-white/20" action="/search" method="get">
+            <form id="heroSearchForm" class="search-glass backdrop-blur-xl p-base rounded-2xl flex flex-col md:flex-row items-stretch md:items-center gap-xs mt-lg" action="/search" method="get">
                 <!-- Location: was a free-text input; now a dropdown of the real, known
                      locations so users pick a value that actually matches a property's
                      suburb instead of typing something that matches nothing. -->
                 <div class="flex-1 px-md py-sm flex items-center gap-sm relative" id="locationFieldWrap">
-                    <span class="material-symbols-outlined text-tertiary-fixed">location_on</span>
+                    <span class="material-symbols-outlined text-teal-glow" aria-hidden="true">location_on</span>
                     <div class="flex flex-col w-full">
                         <span class="text-[10px] uppercase font-bold text-white/60 tracking-wider">Location</span>
                         <button type="button" id="locationDropdownBtn" class="bg-transparent font-label-bold border-none p-0 focus:ring-0 w-full flex items-center justify-between text-left">
@@ -232,7 +444,7 @@
                 </div>
                 <div class="w-px h-8 bg-white/20 hidden md:block"></div>
                 <div class="flex-1 px-md py-sm flex items-center gap-sm">
-                    <span class="material-symbols-outlined text-tertiary-fixed">bed</span>
+                    <span class="material-symbols-outlined text-teal-glow" aria-hidden="true">bed</span>
                     <div class="flex flex-col w-full">
                         <span class="text-[10px] uppercase font-bold text-white/60 tracking-wider">Room Type</span>
                         <!-- FIX: values now match the real DB `type` column values
@@ -247,8 +459,8 @@
                         </select>
                     </div>
                 </div>
-                <button type="submit" class="bg-tertiary-fixed text-on-tertiary-fixed px-xl py-md rounded-xl font-label-bold flex items-center justify-center gap-sm hover:bg-tertiary-container transition-colors">
-                    <span class="material-symbols-outlined">search</span>
+                <button type="submit" class="bg-tertiary-fixed text-on-tertiary-fixed px-xl py-md rounded-xl font-label-bold flex items-center justify-center gap-sm hover:shadow-[0_0_24px_rgba(245,212,80,.55)] transition-shadow">
+                    <span class="material-symbols-outlined" aria-hidden="true">search</span>
                     Search
                 </button>
             </form>
@@ -257,18 +469,18 @@
 </header>
 
 <!-- Our Rooms Section -->
-<section class="py-xl max-w-7xl mx-auto px-margin-desktop" id="properties">
-    <div class="flex flex-col md:flex-row md:items-end justify-between gap-md mb-lg">
-        <div class="space-y-xs">
-            <span class="text-primary font-label-bold tracking-widest uppercase">Explore Spaces</span>
-            <h2 class="font-headline-md text-headline-md text-on-surface">Find Your Perfect Fit</h2>
+<section class="py-xl max-w-7xl mx-auto px-margin-mobile md:px-margin-desktop scroll-mt-24" id="properties">
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-md mb-lg reveal">
+        <div class="space-y-sm">
+            <span class="eyebrow">Explore Spaces</span>
+            <h2 class="font-headline-md text-headline-md font-extrabold text-on-surface">Find Your Perfect Fit</h2>
         </div>
         <!-- Filters/Tabs -->
         <!-- FIX: data-type values now match the real DB `type` column values.
              Previously "Studio Apartment" and "Shared Apartment" matched
              nothing (real values are "Commune" and "Sharing"), so only
              "Single Room" ever worked. -->
-        <div class="flex items-center gap-base bg-surface-container-low p-xs rounded-full overflow-x-auto hide-scrollbar" id="typeTabs">
+        <div class="flex items-center gap-base bg-white p-xs rounded-full overflow-x-auto hide-scrollbar border border-outline-variant shadow-sm" id="typeTabs">
             <button type="button" class="filter-tab active px-md py-sm rounded-full font-label-bold whitespace-nowrap u-transition" data-type="all">All Rooms</button>
             <button type="button" class="filter-tab px-md py-sm rounded-full font-label-bold whitespace-nowrap u-transition" data-type="Single Room">Single Rooms</button>
             <button type="button" class="filter-tab px-md py-sm rounded-full font-label-bold whitespace-nowrap u-transition" data-type="Commune">Commune</button>
@@ -280,60 +492,65 @@
          with a one-click way to clear it. Hidden while "Any location" is selected. -->
     <div id="activeLocationChip" class="hidden items-center gap-xs mb-md">
         <span class="text-sm text-on-surface-variant">Showing:</span>
-        <span class="inline-flex items-center gap-xs bg-primary-fixed/30 text-on-primary-fixed-variant px-md py-xs rounded-full text-sm font-label-bold">
+        <span class="inline-flex items-center gap-xs bg-navy text-teal-mint border border-teal-glow/40 px-md py-xs rounded-full text-sm font-label-bold">
             <span id="activeLocationChipText">Location</span>
-            <button type="button" id="clearLocationChipBtn" class="material-symbols-outlined text-[16px] leading-none">close</button>
+            <button type="button" id="clearLocationChipBtn" class="material-symbols-outlined text-[16px] leading-none hover:text-white" aria-label="Clear location filter">close</button>
         </span>
     </div>
 
     <!-- Room Grid — real properties from the backend -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter" id="roomGrid">
-        <div class="room-card is-visible bg-white rounded-[24px] overflow-hidden border border-outline-variant/30 u-shadow-card u-transition hover:-translate-y-2 group"
+        <div class="room-card is-visible bg-white rounded-[24px] overflow-hidden border border-outline-variant u-shadow-card u-transition hover:-translate-y-2 group"
              th:each="property : ${properties}" th:attr="data-type=${property.type},data-suburb=${property.suburb}"
              th:with="facilityAmenity=${property.amenities != null ? property.amenities.^[category == 'Facilities'] : null}">
             <a th:href="@{/property/{id}(id=${property.propertyID})}" class="block">
-                <div class="relative aspect-[4/3]">
-                    <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="/student-image1.png" th:src="${property.mainImageUrl} ?: '/student-image1.png'" th:alt="${property.title}"/>
+                <div class="relative aspect-[4/3] overflow-hidden bg-navy">
+                    <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="/images/property-placeholder.svg" th:src="${property.mainImageUrl} ?: '/images/property-placeholder.svg'" th:alt="${property.title}" loading="lazy"/>
+                    <!-- navy fade so the badges stay legible on bright photos -->
+                    <div class="absolute inset-0 bg-gradient-to-t from-navy/60 via-transparent to-navy/20 pointer-events-none"></div>
                     <div class="absolute top-4 left-4">
-                        <span class="bg-secondary text-white px-md py-xs rounded-full text-[10px] font-bold uppercase tracking-wider" th:if="${property.isAvailable}">Available</span>
-                        <span class="bg-error text-white px-md py-xs rounded-full text-[10px] font-bold uppercase tracking-wider" th:unless="${property.isAvailable}">Unavailable</span>
+                        <span class="inline-flex items-center gap-xs bg-navy/75 backdrop-blur-md border border-teal-glow/50 text-white px-sm py-xs rounded-full text-[10px] font-bold uppercase tracking-wider" th:if="${property.isAvailable}"><span class="w-1.5 h-1.5 rounded-full bg-teal-glow shadow-[0_0_6px_#14C8BE]" aria-hidden="true"></span>Available</span>
+                        <span class="bg-error/90 backdrop-blur-md text-white px-sm py-xs rounded-full text-[10px] font-bold uppercase tracking-wider" th:unless="${property.isAvailable}">Unavailable</span>
                     </div>
                 </div>
             </a>
             <div class="p-md space-y-md">
-                <div class="flex justify-between items-start">
-                    <a th:href="@{/property/{id}(id=${property.propertyID})}">
-                        <h3 class="font-headline-sm text-headline-sm text-on-surface" th:text="${property.title}">Room Title</h3>
-                        <p class="text-on-surface-variant font-label-bold flex items-center gap-xs">
-                            <span class="material-symbols-outlined text-[16px]">location_on</span> <span th:text="${property.suburb} + ', ' + ${property.city}">Location</span>
+                <div class="flex justify-between items-start gap-sm">
+                    <a th:href="@{/property/{id}(id=${property.propertyID})}" class="min-w-0">
+                        <h3 class="font-headline-sm text-headline-sm font-bold text-on-surface group-hover:text-primary transition-colors" th:text="${property.title}">Room Title</h3>
+                        <p class="text-on-surface-variant text-sm font-semibold flex items-center gap-xs mt-xs">
+                            <span class="material-symbols-outlined text-[16px] text-teal-badge" aria-hidden="true">location_on</span> <span th:text="${property.suburb} + ', ' + ${property.city}">Location</span>
                         </p>
                     </a>
-                    <div class="text-right flex flex-col items-end gap-xs">
-                        <p class="text-primary font-bold text-headline-sm">R<span th:text="${property.rent}">0</span></p>
-                        <p class="text-[10px] text-on-surface-variant uppercase">per month</p>
+                    <div class="text-right flex flex-col items-end shrink-0">
+                        <p class="price-tag font-headline-sm font-extrabold text-headline-sm">R<span th:text="${property.rent}">0</span></p>
+                        <p class="text-[10px] text-on-surface-variant uppercase tracking-wider">per month</p>
                     </div>
                 </div>
                 <!-- REPLACED: bed/bath/furnished/study-friendly badges swapped for
                      commute type, room type, and one ticked Facilities amenity
                      (nothing shown if no Facilities amenity is ticked). -->
                 <div class="flex gap-sm flex-wrap">
-                    <span class="bg-primary-fixed/30 text-on-primary-fixed-variant px-sm py-xs rounded-lg text-label-sm flex items-center gap-xs"
+                    <span class="bg-surface-container-low text-on-primary-fixed-variant border border-secondary-container/60 px-sm py-xs rounded-lg text-label-sm font-semibold flex items-center gap-xs"
                           th:if="${property.commuteType != null and !property.commuteType.isEmpty()}"
                           th:text="${property.commuteType}">Shuttle required</span>
-                    <span class="bg-primary-fixed/30 text-on-primary-fixed-variant px-sm py-xs rounded-lg text-label-sm flex items-center gap-xs"
+                    <span class="bg-surface-container-low text-on-primary-fixed-variant border border-secondary-container/60 px-sm py-xs rounded-lg text-label-sm font-semibold flex items-center gap-xs"
                           th:if="${property.type != null and !property.type.isEmpty()}"
                           th:text="${property.type}">Single Room</span>
-                    <span class="bg-primary-fixed/30 text-on-primary-fixed-variant px-sm py-xs rounded-lg text-label-sm flex items-center gap-xs"
+                    <span class="bg-surface-container-low text-on-primary-fixed-variant border border-secondary-container/60 px-sm py-xs rounded-lg text-label-sm font-semibold flex items-center gap-xs"
                           th:if="${facilityAmenity != null}"
                           th:text="${facilityAmenity.name}">Facility</span>
                 </div>
-                <div class="flex items-center gap-sm">
+                <div class="flex items-center gap-sm pt-xs">
                     <form th:action="@{/favorite/{id}(id=${property.propertyID})}" method="post" class="inline" data-loading-text="...">
-                        <button type="submit" class="save-btn w-10 h-10 rounded-full border-2 border-primary text-primary flex items-center justify-center hover:bg-primary hover:text-white u-transition" title="Save"
+                        <input type="hidden" name="returnTo" value="/student-dashboard" />
+                        <button type="submit" class="save-btn w-11 h-11 rounded-full border-2 border-secondary-container text-primary flex items-center justify-center hover:border-teal-glow hover:shadow-[0_0_14px_rgba(20,200,190,.4)] u-transition"
+                                title="Save" aria-label="Save or unsave this property"
                                 th:text="${savedPropertyIds != null and savedPropertyIds.contains(property.propertyID)} ? '❤️' : '🤍'">🤍</button>
                     </form>
-                    <a th:href="@{/property/{id}(id=${property.propertyID})}" class="flex-1 text-center py-md border-2 border-primary text-primary rounded-xl font-label-bold hover:bg-primary hover:text-white u-transition">
+                    <a th:href="@{/property/{id}(id=${property.propertyID})}" class="btn-neon flex-1 flex items-center justify-center gap-xs py-sm border-2 border-primary text-primary rounded-xl font-label-bold u-transition">
                         View Property
+                        <span class="material-symbols-outlined text-[18px] transition-transform group-hover:translate-x-1" aria-hidden="true">arrow_forward</span>
                     </a>
                 </div>
             </div>
@@ -352,36 +569,36 @@
 </section>
 
 <!-- Explore Residences Section (Bento Style) -->
-<section class="bg-surface-container py-xl">
-    <div class="max-w-7xl mx-auto px-margin-desktop">
-        <div class="text-center space-y-xs mb-xl">
-            <span class="text-primary font-label-bold tracking-widest uppercase">Iconic Buildings</span>
-            <h2 class="font-headline-md text-headline-md text-on-surface">Explore our Accommodations</h2>
+<section class="navy-section relative py-xl overflow-hidden">
+    <div class="relative max-w-7xl mx-auto px-margin-mobile md:px-margin-desktop">
+        <div class="text-center space-y-sm mb-xl reveal">
+            <span class="eyebrow on-dark">Iconic Buildings</span>
+            <h2 class="font-headline-md text-headline-md font-extrabold text-white">Explore our <span class="text-tertiary-fixed">Accommodations</span></h2>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-gutter h-auto md:h-[600px]">
-            <div class="md:col-span-8 group relative rounded-[32px] overflow-hidden cursor-pointer shadow-lg">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-gutter h-auto md:h-[600px] reveal">
+            <div class="bento-tile md:col-span-8 min-h-[280px] group relative rounded-[32px] overflow-hidden cursor-pointer">
                 <div
                         class="w-full h-full bg-cover bg-center u-transition group-hover:scale-105"
                         style="background-image: url('/uploads/campusKey/CampusKey.png')">
                 </div>
-                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/10 to-transparent"></div>
                 <div class="absolute bottom-8 left-8">
                     <h3 class="text-white font-headline-md text-headline-md">Campus Key</h3>
                     <p class="text-white/80 font-body-lg">Luxury living in the heart of Summerstrand</p>
                 </div>
             </div>
             <div class="md:col-span-4 flex flex-col gap-gutter">
-                <div class="flex-1 group relative rounded-[32px] overflow-hidden cursor-pointer shadow-lg">
+                <div class="bento-tile flex-1 min-h-[220px] group relative rounded-[32px] overflow-hidden cursor-pointer">
                     <div class="w-full h-full bg-cover bg-center u-transition group-hover:scale-105" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD36loEQ2YIZohjzgrfcptCU3RpdxrJpZnxB9HeXjX8ri1lnicIcHcm1gUFt0_LFcpyZtFWGdCvk7NTU1zZtN6Wv-1RDZ1vJFkFle1ITd-0cJOMssfC4XAVJh7GR6tAaJ9eTiWO2Br7HprVGbOJ7D9aM3k8oLKPeJ1A71DCJgFvUxvE_SZM1DZ7xcYSynycIIFpgroysvyGMYg2AmI-VOHsNWrebpjaroqU3zp_t41rIL-1QljIDjb0')"></div>
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                    <div class="absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/10 to-transparent"></div>
                     <div class="absolute bottom-6 left-6">
                         <h3 class="text-white font-headline-sm text-headline-sm">Campus Key</h3>
                         <p class="text-white/80 text-sm">Community-first urban living</p>
                     </div>
                 </div>
-                <div class="flex-1 group relative rounded-[32px] overflow-hidden cursor-pointer shadow-lg">
+                <div class="bento-tile flex-1 min-h-[220px] group relative rounded-[32px] overflow-hidden cursor-pointer">
                     <div class="w-full h-full bg-cover bg-center u-transition group-hover:scale-105" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDLzpNChbNkdYV0svVjg9gGO8sRpIKkuXimjJyRO-skF7wSzkYVwB9cLE5hLs2mG2xgTqrA88iiaaNPLxPGOiUDRkbzyHwIVy4a0Xs7WnZP8nOKGODZulTzEefBRqioHIc0gfvOWgonfVNzoC9ldhpnLIgg6qZF3x0_jWzg0BvElZL88qdqq6mZiRy3x5EWIrWOUdlixrAMssNqhDrNdYOF26uqLHM4OLmgRESr0kD8zjc7zerb86Zi')"></div>
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                    <div class="absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/10 to-transparent"></div>
                     <div class="absolute bottom-6 left-6">
                         <h3 class="text-white font-headline-sm text-headline-sm">Campus Key</h3>
                         <p class="text-white/80 text-sm">Balanced study-life focus</p>
