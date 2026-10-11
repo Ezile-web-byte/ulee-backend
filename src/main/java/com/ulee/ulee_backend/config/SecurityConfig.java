@@ -58,9 +58,13 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable()) // TEMP: unblocks login without a CSRF token in the form
                 .authorizeHttpRequests(auth -> auth
-                        // Public: homepage, browsing, registration, ALL static assets
+                        // Public: homepage, browsing, registration, ALL static assets.
+                        // CHANGED: "/property/**" was removed from this list. A property's
+                        // detail page now needs a login, so a logged-out visitor who types
+                        // /property/5 into the address bar is sent to the login prompt
+                        // (see .loginPage(...) below) instead of seeing the page.
                         .requestMatchers(
-                                "/", "/student-dashboard", "/property/**", "/search",
+                                "/", "/student-dashboard", "/search",
                                 "/register", "/login",
                                 // "Speak with AI" widget endpoints (listings for the chips, chat for free text)
                                 "/api/listings", "/api/chat",

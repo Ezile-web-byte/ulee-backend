@@ -11,6 +11,21 @@
     <link rel="stylesheet" href="/applications-style.css">
     <link rel="stylesheet" href="/applications-overview.css">
     <style>
+        /* NEW — "Back" link, same look as "Back to My Properties" on the Edit Property page */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 14px;
+            font-family: var(--font-body);
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary-dark);
+            text-decoration: none;
+        }
+        .back-link:hover { text-decoration: underline; }
+        .back-link svg { width: 14px; height: 14px; }
+
         .topbar-actions {
             display: flex;
             align-items: center;
@@ -138,6 +153,12 @@
         </header>
 
         <div class="page-body">
+
+            <!-- NEW — one step back: from the All Properties list to My Properties -->
+            <a class="back-link" th:href="@{/landlord-index}">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Back to My Properties
+            </a>
 
             <!-- Title + search -->
             <section class="ov-head">

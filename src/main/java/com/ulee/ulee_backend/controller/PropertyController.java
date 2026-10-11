@@ -76,6 +76,8 @@ public class PropertyController {
     // visibility somewhere.
     private static final String LIVE_STATUS = "Active";
 
+    private static final double HIGHLY_RATED_MIN = 4.0;
+
     // The one exact status string that means "deactivated / soft-deleted".
     // Any list of a landlord's properties that's meant to represent what
     // still "exists" (dashboards, switchers, dropdowns) should exclude
@@ -444,20 +446,50 @@ public class PropertyController {
     // Any property whose suburb doesn't match a known category still shows
     // up, just grouped under "Other Areas" at the end, so nothing silently
     // disappears from the dashboard.
+
     @GetMapping("/student-dashboard")
     public String viewStudentDashboard(Model model, Principal principal) {
-        // FIX: was findByStatus(LIVE_STATUS) alone. A deactivated landlord's
-        // properties keep status="Active" (deactivation only flips
-        // isAvailable — see AdminController.deactivateUser()), so those
-        // listings kept showing up here and were still applyable even
-        // though the landlord's own dashboard already marked them
-        // "Inactive". isVisibleToStudents() below is now the single place
-        // that decides "can a student see/apply to this" — use it anywhere
-        // else that needs the same rule instead of re-typing the check.
-        List<Property> allProperties = propertyRepository.findByStatus(LIVE_STATUS).stream()
+        List<Property> visibleProperties = propertyRepository.findByStatus(LIVE_STATUS).stream()
                 .filter(this::isVisibleToStudents)
                 .collect(Collectors.toList());
 
+        // ── NEW: average rating per property, straight from the reviews ──
+        List<Integer> visibleIds = visibleProperties.stream()
+                .map(Property::getPropertyID)
+                .collect(Collectors.toList());
+
+        Map<Integer, Double> averageRatings = new LinkedHashMap<>();
+        if (!visibleIds.isEmpty()) {
+            reviewRepository.findByPropertyIDIn(visibleIds).stream()
+                    .filter(r -> r.getPropertyID() != null && r.getRating() != null)
+                    .collect(Collectors.groupingBy(Review::getPropertyID,
+                            Collectors.averagingInt(Review::getRating)))
+                    .forEach(averageRatings::put);
+        }
+
+        // Properties with an average of 4.0 or above get the "Highly rated" badge.
+        Set<Integer> highlyRatedIds = averageRatings.entrySet().stream()
+                .filter(e -> e.getValue() >= HIGHLY_RATED_MIN)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toSet());
+
+        // ── NEW: display order inside every suburb ──
+        // Highly rated first, then best average rating, then A-Z. The page shows
+        // the first 3 (or every highly rated one, if there are more than 3) and
+        // puts the rest behind "View all", so a highly rated property is always
+        // on show and never ends up in the "View all" part.
+        Comparator<Property> byPreference = Comparator
+                .comparing((Property p) -> highlyRatedIds.contains(p.getPropertyID()) ? 0 : 1)
+                .thenComparing(Comparator.comparingDouble(
+                        (Property p) -> averageRatings.getOrDefault(p.getPropertyID(), 0.0)).reversed())
+                .thenComparing(p -> p.getTitle() == null ? "" : p.getTitle().toLowerCase());
+
+        List<Property> allProperties = visibleProperties.stream()
+                .sorted(byPreference)
+                .collect(Collectors.toList());
+
+        // "On Campus" is its own group, then the suburbs in a fixed order.
+        // Anything with an unknown suburb goes under "Other Areas" at the end.
         List<String> categoryOrder = List.of(
                 "On Campus", "Summerstrand", "Humewood", "Town", "North End", "Central", "Pier 14");
 
@@ -480,11 +512,8 @@ public class PropertyController {
 
         model.addAttribute("categorizedProperties", categorizedProperties);
         model.addAttribute("properties", allProperties);
+        model.addAttribute("highlyRatedIds", highlyRatedIds); // NEW
 
-        // NEW — the navbar's Login button / user-menu switch (and the saved-
-        // heart state on each room card) both depend on these being set.
-        // Previously they never were, so isLoggedIn was always null/falsy
-        // and the Login button showed regardless of session state.
         boolean isLoggedIn = principal != null;
         model.addAttribute("isLoggedIn", isLoggedIn);
 
@@ -492,8 +521,6 @@ public class PropertyController {
             User currentUser = getCurrentUser(principal);
             model.addAttribute("currentUserFirstName", currentUser.getFirstName());
 
-            // Same two-letter pattern used on the landlord dashboard's
-            // avatar-initials badge (toReviewRowView uses the same logic).
             String initials = ("" + currentUser.getFirstName().charAt(0)
                     + (currentUser.getLastName() != null && !currentUser.getLastName().isBlank()
                     ? currentUser.getLastName().charAt(0) : "")).toUpperCase();
@@ -508,6 +535,7 @@ public class PropertyController {
 
         return "student/student-dashboard";
     }
+
 
     // ============================================================
     // C100 support — Landlord Dashboard ("My Properties" inventory page)
@@ -2121,34 +2149,42 @@ public class PropertyController {
         return "redirect:/my-applications";
     }
 
-    // FIX: this always inserted a new row, so clicking the heart repeatedly
-    // (or on an already-saved property) just kept creating duplicates — the
-    // heart never actually "unsaved" anything. Now toggles: if a saved row
-    // already exists for this student+property, every matching row is
-    // removed (self-healing any duplicate rows left over from before this
-    // fix); otherwise exactly one new row is inserted. Also returns to
-    // whichever page the request came from (dashboard or saved-properties)
-    // instead of hardcoding /student-dashboard, so unsaving from the Saved
-    // Properties page doesn't bounce the student away from it.
-    @PostMapping("/favorite/{propertyId}")
-    public String addFavorite(@PathVariable Integer propertyId,
-                               @RequestParam(required = false) String returnTo,
-                               Principal principal) {
-        Integer studentID = getCurrentUser(principal).getUserID();
 
+    private boolean toggleSaved(Integer studentID, Integer propertyId) {
         List<SavedProperty> existing = savedPropertyRepository.findByStudentIDAndPropertyID(studentID, propertyId);
         if (!existing.isEmpty()) {
             savedPropertyRepository.deleteAll(existing);
-        } else {
-            SavedProperty saved = new SavedProperty();
-            saved.setStudentID(studentID);
-            saved.setPropertyID(propertyId);
-            saved.setSavedStatus(true);
-            savedPropertyRepository.save(saved);
+            return false;
         }
+        SavedProperty saved = new SavedProperty();
+        saved.setStudentID(studentID);
+        saved.setPropertyID(propertyId);
+        saved.setSavedStatus(true);
+        savedPropertyRepository.save(saved);
+        return true;
+    }
+
+    // Normal form post (Saved Properties page): toggle, then redirect back.
+    @PostMapping("/favorite/{propertyId}")
+    public String addFavorite(@PathVariable Integer propertyId,
+                              @RequestParam(required = false) String returnTo,
+                              Principal principal) {
+        Integer studentID = getCurrentUser(principal).getUserID();
+        toggleSaved(studentID, propertyId);
 
         boolean safeReturnTo = "/saved-properties".equals(returnTo) || "/student-dashboard".equals(returnTo);
         return "redirect:" + (safeReturnTo ? returnTo : "/student-dashboard");
+    }
+
+    // NEW — fetch() version used by the dashboard heart. Spring picks this one
+    // when the request carries the X-Requested-With: XMLHttpRequest header.
+    // Returns {"saved": true|false} instead of redirecting.
+    @PostMapping(value = "/favorite/{propertyId}", headers = "X-Requested-With=XMLHttpRequest")
+    @org.springframework.web.bind.annotation.ResponseBody
+    public Map<String, Object> toggleFavoriteAjax(@PathVariable Integer propertyId, Principal principal) {
+        Integer studentID = getCurrentUser(principal).getUserID();
+        boolean saved = toggleSaved(studentID, propertyId);
+        return Map.of("saved", saved);
     }
 
     // Saved Properties page — lists every property this student has saved.

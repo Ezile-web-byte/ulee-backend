@@ -7,7 +7,8 @@
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <!-- CHANGED: added Outfit (bold property names + suburb headings) -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=Outfit:wght@600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -91,16 +92,91 @@
         .u-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
 
-        /* Room-type tab filtering */
+        /* Room-type tab filtering.
+           CHANGED: cards are flex columns now so the "View Property" row
+           sits at the bottom of every card and a row of 3 lines up evenly. */
         .room-card { display: none; }
-        .room-card.is-visible { display: block; }
+        .room-card.is-visible { display: flex; }
         .filter-tab { color: #3f484d; }
         .filter-tab.active { background: #006A6A; color: #ffffff; }
+
+        /* NEW — bold property name font (colour stays navy via text-navy) */
+        .property-title {
+            font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+            font-weight: 700;
+            font-size: 21px;
+            line-height: 1.2;
+            letter-spacing: -0.01em;
+        }
+        /* NEW — suburb group heading */
+        .suburb-title {
+            font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+            font-weight: 700;
+            font-size: 26px;
+            line-height: 1.15;
+            letter-spacing: -0.01em;
+            color: #071C2D;
+        }
+        /* NEW — "Highly rated" badge */
+        .rated-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            background: #f5d450; color: #071C2D;
+            padding: 4px 12px; border-radius: 9999px;
+            font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+            box-shadow: 0 2px 8px rgba(7, 28, 45, .25);
+        }
+        .rated-badge .material-symbols-outlined { font-size: 14px; font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 20; }
+
+        /* NEW — View all / Minimise buttons */
+        .section-toggle-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 8px 18px; border-radius: 9999px;
+            border: 2px solid #006A6A; color: #006A6A; background: #fff;
+            font-family: 'Hanken Grotesk', sans-serif; font-weight: 700; font-size: 14px;
+            cursor: pointer; transition: background .2s, color .2s;
+        }
+        .section-toggle-btn:hover { background: #006A6A; color: #fff; }
+        .section-toggle-btn:focus-visible { outline: 3px solid rgba(20, 200, 190, .55); outline-offset: 2px; }
+        .section-toggle-btn.is-hidden { display: none; }
 
         /* Save heart */
         .save-btn { transition: transform 0.15s ease; }
         .save-btn:hover { transform: scale(1.12); }
         .save-btn.saved { filter: none; }
+
+        /* NEW — "Log in" toast (shown when a visitor who isn't logged in
+           tries to open a property, use View all, or save a room) */
+        #loginToast {
+            position: fixed; top: 92px; left: 50%;
+            transform: translate(-50%, -16px);
+            opacity: 0; pointer-events: none;
+            z-index: 1100;
+            width: calc(100% - 32px); max-width: 460px;
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 14px 12px 16px;
+            background: #071C2D; color: #fff;
+            border: 1.5px solid rgba(20, 200, 190, .55);
+            border-radius: 16px;
+            box-shadow: 0 16px 40px rgba(7, 28, 45, .35);
+            transition: opacity .25s ease, transform .25s ease;
+        }
+        #loginToast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+        #loginToast .lt-icon { color: #14C8BE; flex-shrink: 0; }
+        #loginToast .lt-text { flex: 1; font-size: 14px; font-weight: 600; line-height: 1.35; }
+        #loginToast .lt-login {
+            flex-shrink: 0; padding: 8px 18px; border: none; border-radius: 9999px; cursor: pointer;
+            background: #14C8BE; color: #071C2D;
+            font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 13px;
+            transition: background .2s;
+        }
+        #loginToast .lt-login:hover { background: #fff; }
+        #loginToast .lt-close {
+            flex-shrink: 0; width: 28px; height: 28px; border: none; border-radius: 9999px; cursor: pointer;
+            background: rgba(255, 255, 255, .08); color: rgba(255, 255, 255, .8);
+            display: inline-flex; align-items: center; justify-content: center;
+        }
+        #loginToast .lt-close:hover { background: rgba(255, 255, 255, .18); color: #fff; }
+        @media (prefers-reduced-motion: reduce) { #loginToast { transition: none; } }
 
         /* Login modal */
         #loginModalOverlay { display: none; }
@@ -345,7 +421,8 @@
     <link rel="stylesheet" href="/ulee-toast.css">
     <script src="/ulee-toast.js" defer></script>
 </head>
-<body class="bg-background text-on-surface font-body-md overflow-x-hidden">
+<!-- NEW: data-logged-in lets the page script know whether the visitor is logged in -->
+<body class="bg-background text-on-surface font-body-md overflow-x-hidden" th:attr="data-logged-in=${isLoggedIn}">
 
 <!-- Top Navigation Bar (navy, with the ULEE logo) -->
 <nav class="ulee-nav top-0 sticky z-50">
@@ -424,11 +501,14 @@
                     </div>
                     <input type="hidden" name="location" id="locationHiddenInput" value="" />
 
+                    <!-- CHANGED: added "On Campus" and "North End" so every dashboard group can be picked here -->
                     <div id="locationDropdownPanel" class="absolute left-0 top-full mt-xs w-56 bg-white rounded-xl shadow-lg border border-outline-variant/30 py-xs z-50">
                         <button type="button" class="location-option w-full text-left px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors" data-location="">Any location</button>
+                        <button type="button" class="location-option w-full text-left px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors" data-location="On Campus">On Campus</button>
                         <button type="button" class="location-option w-full text-left px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors" data-location="Summerstrand">Summerstrand</button>
                         <button type="button" class="location-option w-full text-left px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors" data-location="Humewood">Humewood</button>
                         <button type="button" class="location-option w-full text-left px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors" data-location="Town">Town</button>
+                        <button type="button" class="location-option w-full text-left px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors" data-location="North End">North End</button>
                         <button type="button" class="location-option w-full text-left px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors" data-location="Central">Central</button>
                         <button type="button" class="location-option w-full text-left px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors" data-location="Pier 14">Pier 14</button>
                     </div>
@@ -489,67 +569,116 @@
         </span>
     </div>
 
-    <!-- Room Grid — real properties from the backend -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter" id="roomGrid">
-        <div class="room-card is-visible bg-white rounded-[24px] overflow-hidden border border-outline-variant/60 u-shadow-card u-transition hover:-translate-y-2 group"
-             th:each="property : ${properties}" th:attr="data-type=${property.type},data-suburb=${property.suburb}"
-             th:with="facilityAmenity=${property.firstFacilityAmenity}">
-            <a th:href="@{/property/{id}(id=${property.propertyID})}" class="block">
-                <div class="relative aspect-[4/3] overflow-hidden bg-navy">
-                    <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="/images/property-placeholder.svg" th:src="${property.mainImageUrl} ?: '/images/property-placeholder.svg'" th:alt="${property.title}" loading="lazy"/>
-                    <div class="absolute top-4 left-4">
-                        <span class="bg-teal-deep text-white px-md py-xs rounded-full text-[10px] font-bold uppercase tracking-wider" th:if="${property.isAvailable}">Available</span>
-                        <span class="bg-error text-white px-md py-xs rounded-full text-[10px] font-bold uppercase tracking-wider" th:unless="${property.isAvailable}">Unavailable</span>
-                    </div>
+    <!-- CHANGED: one block per suburb ("On Campus" first, then the others).
+         Each block shows 3 rooms (highly rated ones first); "View all" reveals the
+         rest of THAT suburb only, and "Minimise" hides them again. -->
+    <div class="space-y-xl" id="roomSections">
+        <div class="suburb-section scroll-mt-28" th:each="entry : ${categorizedProperties}" th:attr="data-suburb=${entry.key}">
+
+            <div class="flex items-center justify-between gap-md mb-md">
+                <div class="flex items-center gap-sm min-w-0">
+                    <span class="material-symbols-outlined text-primary">location_on</span>
+                    <h3 class="suburb-title truncate" th:text="${entry.key}">Summerstrand</h3>
+                    <span class="suburb-count text-sm text-on-surface-variant whitespace-nowrap" th:text="${#lists.size(entry.value)} + (${#lists.size(entry.value)} == 1 ? ' property' : ' properties')">3 properties</span>
                 </div>
-            </a>
-            <div class="p-md space-y-md">
-                <div class="flex justify-between items-start">
-                    <a th:href="@{/property/{id}(id=${property.propertyID})}">
-                        <h3 class="font-headline-sm text-headline-sm text-navy" th:text="${property.title}">Room Title</h3>
-                        <p class="text-on-surface-variant font-label-bold flex items-center gap-xs">
-                            <span class="material-symbols-outlined text-[16px]">location_on</span> <span th:text="${property.suburb} + ', ' + ${property.city}">Location</span>
-                        </p>
+                <div class="flex-shrink-0">
+                    <!-- View all: locked (padlock icon + login toast) until the student logs in -->
+                    <button type="button" class="section-toggle-btn view-all-btn is-hidden" data-action="expand">
+                        <span class="material-symbols-outlined text-[18px]" th:unless="${isLoggedIn}">lock</span>
+                        <span>View all (<span class="view-all-count">0</span> more)</span>
+                    </button>
+                    <button type="button" class="section-toggle-btn minimise-btn is-hidden" data-action="collapse">
+                        <span class="material-symbols-outlined text-[18px]">unfold_less</span>
+                        <span>Minimise</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
+                <div class="room-card flex-col bg-white rounded-[24px] overflow-hidden border border-outline-variant/60 u-shadow-card u-transition hover:-translate-y-2 group"
+                     th:each="property, iterStat : ${entry.value}"
+                     th:with="facilityAmenity=${property.firstFacilityAmenity},
+                              isRated=${highlyRatedIds != null and highlyRatedIds.contains(property.propertyID)},
+                              funding=${property.acceptedFunding != null and !#strings.isEmpty(property.acceptedFunding) ? property.acceptedFunding : 'Any'},
+                              restriction=${property.occupantRestriction != null and !#strings.isEmpty(property.occupantRestriction) ? property.occupantRestriction : 'Mixed'}"
+                     th:attr="data-type=${property.type},data-suburb=${property.suburb},data-rated=${isRated}"
+                     th:classappend="${iterStat.index lt 3 or isRated} ? 'is-visible' : ''">
+                    <a th:href="@{/property/{id}(id=${property.propertyID})}" class="property-link block">
+                        <div class="relative aspect-[4/3] overflow-hidden bg-navy">
+                            <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="/images/property-placeholder.svg" th:src="${property.mainImageUrl} ?: '/images/property-placeholder.svg'" th:alt="${property.title}" loading="lazy"/>
+                            <div class="absolute top-4 left-4">
+                                <span class="bg-teal-deep text-white px-md py-xs rounded-full text-[10px] font-bold uppercase tracking-wider" th:if="${property.isAvailable}">Available</span>
+                                <span class="bg-error text-white px-md py-xs rounded-full text-[10px] font-bold uppercase tracking-wider" th:unless="${property.isAvailable}">Unavailable</span>
+                            </div>
+                            <!-- NEW: Highly rated badge (average rating 4.0 or above) -->
+                            <div class="absolute top-4 right-4" th:if="${isRated}">
+                                <span class="rated-badge"><span class="material-symbols-outlined">star</span>Highly rated</span>
+                            </div>
+                        </div>
                     </a>
-                    <div class="text-right flex flex-col items-end gap-xs">
-                        <p class="text-primary font-bold text-headline-sm">R<span th:text="${property.rent}">0</span></p>
-                        <p class="text-[10px] text-on-surface-variant uppercase">per month</p>
+                    <div class="p-md flex flex-col flex-1 gap-md">
+                        <div class="flex justify-between items-start gap-sm">
+                            <a th:href="@{/property/{id}(id=${property.propertyID})}" class="property-link min-w-0">
+                                <!-- CHANGED: bold Outfit font, colour unchanged (navy) -->
+                                <h3 class="property-title text-navy" th:text="${property.title}">Room Title</h3>
+                                <!-- CHANGED: suburb only, no city -->
+                                <p class="text-on-surface-variant font-label-bold flex items-center gap-xs mt-xs">
+                                    <span class="material-symbols-outlined text-[16px]">location_on</span>
+                                    <span th:text="${property.suburb != null and !#strings.isEmpty(property.suburb) ? property.suburb : 'Gqeberha'}">Suburb</span>
+                                </p>
+                            </a>
+                            <div class="text-right flex flex-col items-end gap-xs flex-shrink-0">
+                                <p class="text-primary font-bold text-headline-sm">R<span th:text="${property.rent}">0</span></p>
+                                <p class="text-[10px] text-on-surface-variant uppercase">per month</p>
+                            </div>
+                        </div>
+                        <!-- Commute type, room type, one Facilities amenity, and (NEW)
+                             accepted funding + occupant restriction.
+                             NULL funding shows as "Any", NULL restriction as "Mixed". -->
+                        <div class="flex gap-sm flex-wrap">
+                            <span class="bg-primary-fixed/50 text-on-primary-fixed-variant px-sm py-xs rounded-lg text-label-sm flex items-center gap-xs"
+                                  th:if="${property.commuteType != null and !property.commuteType.isEmpty()}"
+                                  th:text="${property.commuteType}">Shuttle required</span>
+                            <span class="bg-primary-fixed/50 text-on-primary-fixed-variant px-sm py-xs rounded-lg text-label-sm flex items-center gap-xs"
+                                  th:if="${property.type != null and !property.type.isEmpty()}"
+                                  th:text="${property.type}">Single Room</span>
+                            <span class="bg-primary-fixed/50 text-on-primary-fixed-variant px-sm py-xs rounded-lg text-label-sm flex items-center gap-xs"
+                                  th:if="${facilityAmenity != null}"
+                                  th:text="${facilityAmenity.name}">Facility</span>
+                            <span class="bg-primary-fixed/50 text-on-primary-fixed-variant px-sm py-xs rounded-lg text-label-sm flex items-center gap-xs">
+                                <span class="material-symbols-outlined text-[14px]">payments</span>
+                                <span th:text="'Funding: ' + ${funding}">Funding: Any</span>
+                            </span>
+                            <span class="bg-primary-fixed/50 text-on-primary-fixed-variant px-sm py-xs rounded-lg text-label-sm flex items-center gap-xs">
+                                <span class="material-symbols-outlined text-[14px]">group</span>
+                                <span th:text="'Occupants: ' + ${restriction}">Occupants: Mixed</span>
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-sm mt-auto">
+                            <!-- CHANGED: the heart is now saved with fetch (no page reload), so the
+                                 page never jumps back to the top. The form + action stay as a fallback. -->
+                            <form th:action="@{/favorite/{id}(id=${property.propertyID})}" method="post" class="fav-form inline" th:attr="data-property-id=${property.propertyID}">
+                                <input type="hidden" name="returnTo" value="/student-dashboard" />
+                                <button type="submit" class="save-btn w-10 h-10 rounded-full border-2 border-primary text-primary flex items-center justify-center hover:bg-primary hover:text-white u-transition" title="Save"
+                                        th:text="${savedPropertyIds != null and savedPropertyIds.contains(property.propertyID)} ? '❤️' : '🤍'">🤍</button>
+                            </form>
+                            <a th:href="@{/property/{id}(id=${property.propertyID})}" class="property-link flex-1 text-center py-md border-2 border-primary text-primary rounded-xl font-label-bold hover:bg-primary hover:text-white u-transition">
+                                View Property
+                            </a>
+                        </div>
                     </div>
-                </div>
-                <!-- Commute type, room type, and one ticked Facilities amenity
-                     (nothing shown if no Facilities amenity is ticked). -->
-                <div class="flex gap-sm flex-wrap">
-                    <span class="bg-primary-fixed/50 text-on-primary-fixed-variant px-sm py-xs rounded-lg text-label-sm flex items-center gap-xs"
-                          th:if="${property.commuteType != null and !property.commuteType.isEmpty()}"
-                          th:text="${property.commuteType}">Shuttle required</span>
-                    <span class="bg-primary-fixed/50 text-on-primary-fixed-variant px-sm py-xs rounded-lg text-label-sm flex items-center gap-xs"
-                          th:if="${property.type != null and !property.type.isEmpty()}"
-                          th:text="${property.type}">Single Room</span>
-                    <span class="bg-primary-fixed/50 text-on-primary-fixed-variant px-sm py-xs rounded-lg text-label-sm flex items-center gap-xs"
-                          th:if="${facilityAmenity != null}"
-                          th:text="${facilityAmenity.name}">Facility</span>
-                </div>
-                <div class="flex items-center gap-sm">
-                    <form th:action="@{/favorite/{id}(id=${property.propertyID})}" method="post" class="inline" data-loading-text="...">
-                        <input type="hidden" name="returnTo" value="/student-dashboard" />
-                        <button type="submit" class="save-btn w-10 h-10 rounded-full border-2 border-primary text-primary flex items-center justify-center hover:bg-primary hover:text-white u-transition" title="Save"
-                                th:text="${savedPropertyIds != null and savedPropertyIds.contains(property.propertyID)} ? '❤️' : '🤍'">🤍</button>
-                    </form>
-                    <a th:href="@{/property/{id}(id=${property.propertyID})}" class="flex-1 text-center py-md border-2 border-primary text-primary rounded-xl font-label-bold hover:bg-primary hover:text-white u-transition">
-                        View Property
-                    </a>
                 </div>
             </div>
         </div>
-
-        <!-- Fallback shown only when the backend returns no properties -->
-        <p class="col-span-full text-center text-on-surface-variant py-xl" th:if="${#lists.isEmpty(properties)}">
-            No rooms match right now — check back soon or try a different search.
-        </p>
     </div>
 
+    <!-- Fallback shown only when the backend returns no properties -->
+    <p class="text-center text-on-surface-variant py-xl" th:if="${#maps.isEmpty(categorizedProperties)}">
+        No rooms match right now — check back soon or try a different search.
+    </p>
+
     <!-- Shown by JS when a location/type combination matches zero cards -->
-    <p id="noFilterMatches" class="hidden col-span-full text-center text-on-surface-variant py-xl">
+    <p id="noFilterMatches" class="hidden text-center text-on-surface-variant py-xl">
         No rooms match that location and room type yet — try a different combination.
     </p>
 </section>
@@ -707,6 +836,17 @@
         <p class="text-sidebar-text/70 text-xs">© 2026 ULEE Student Living. Built for the modern Gqeberha student.</p>
     </div>
 </footer>
+
+<!-- NEW — "Log in" toast: shown when a visitor who isn't logged in tries to open a
+     property, use View all, or save a room. The button opens the login modal. -->
+<div id="loginToast" role="status" aria-live="polite">
+    <span class="material-symbols-outlined lt-icon">lock</span>
+    <span class="lt-text" id="loginToastText">Log in to view this property.</span>
+    <button type="button" class="lt-login" id="loginToastBtn">Log in</button>
+    <button type="button" class="lt-close" id="loginToastClose" aria-label="Dismiss">
+        <span class="material-symbols-outlined text-[18px]">close</span>
+    </button>
+</div>
 
 <!-- ── LOGIN MODAL — only ever shown when "Login" is clicked, never a separately-linked page ── -->
 <div id="loginModalOverlay" class="um-overlay fixed inset-0 z-[999] items-center justify-center px-margin-mobile">
@@ -890,8 +1030,8 @@
     });
 
     // ── Auto-prompt login when redirected here because a page required it ──
-    // (The old "Please log in to view that page" top banner is gone; the login
-    // modal opening is the prompt.)
+    // (e.g. a logged-out visitor typed /property/5 straight into the address bar —
+    // Spring Security now sends them here with ?loginRequired=true.)
     if (new URLSearchParams(window.location.search).get('loginRequired') === 'true') {
         loginOverlay.classList.add('open');
     }
@@ -974,9 +1114,38 @@
         });
     }
 
-    // ── Location dropdown + combined location/type filtering ──
-    // Everything here runs entirely client-side: no navigation to /search,
-    // which is also what removes the empty-location 500 for this flow.
+    // ═══════════════════════════════════════════════════════════
+    // NEW — "Log in" toast. Used by every locked action below.
+    // ═══════════════════════════════════════════════════════════
+    const IS_LOGGED_IN = document.body.dataset.loggedIn === 'true';
+    const loginToast = document.getElementById('loginToast');
+    const loginToastText = document.getElementById('loginToastText');
+    let loginToastTimer = null;
+
+    function showLoginToast(message) {
+        loginToastText.textContent = message;
+        loginToast.classList.add('show');
+        clearTimeout(loginToastTimer);
+        loginToastTimer = setTimeout(hideLoginToast, 7000);
+    }
+    function hideLoginToast() {
+        loginToast.classList.remove('show');
+        clearTimeout(loginToastTimer);
+    }
+    document.getElementById('loginToastClose').addEventListener('click', hideLoginToast);
+    document.getElementById('loginToastBtn').addEventListener('click', () => {
+        hideLoginToast();
+        loginOverlay.classList.add('open');
+        document.getElementById('loginUsername')?.focus();
+    });
+
+    // ═══════════════════════════════════════════════════════════
+    // Location dropdown + type tabs + 3-per-suburb / View all / Minimise.
+    // Everything runs client-side (no navigation to /search).
+    // ═══════════════════════════════════════════════════════════
+    const VISIBLE_LIMIT = 3;                 // rooms shown per suburb before "View all"
+    const expandedSuburbs = new Set();       // suburbs the student has expanded
+
     const tabs = document.querySelectorAll('.filter-tab');
     const locationBtn = document.getElementById('locationDropdownBtn');
     const locationPanel = document.getElementById('locationDropdownPanel');
@@ -986,21 +1155,64 @@
     const activeLocationChipText = document.getElementById('activeLocationChipText');
     const noFilterMatches = document.getElementById('noFilterMatches');
 
-    function applyFilters() {
+    function activeType() {
         const activeTab = document.querySelector('.filter-tab.active');
-        const type = activeTab ? activeTab.dataset.type : 'all';
-        const location = locationHidden.value;
-        let visibleCount = 0;
+        return activeTab ? activeTab.dataset.type : 'all';
+    }
 
-        document.querySelectorAll('.room-card').forEach(card => {
-            const typeMatch = type === 'all' || card.dataset.type === type;
-            const locationMatch = !location || card.dataset.suburb === location;
-            const show = typeMatch && locationMatch;
-            card.classList.toggle('is-visible', show);
-            if (show) visibleCount++;
+    function setType(type) {
+        tabs.forEach(t => t.classList.toggle('active', t.dataset.type === type));
+        document.getElementById('heroTypeSelect').value = type === 'all' ? '' : type;
+    }
+
+    function setLocation(val) {
+        locationHidden.value = val;
+        locationLabel.textContent = val || 'Any location';
+        locationLabel.classList.toggle('text-white/50', !val);
+        locationLabel.classList.toggle('text-white', !!val);
+    }
+
+    // For each suburb block:
+    //   matching  = cards that pass the type + location filters (server order:
+    //               highly rated first, then best-rated, then A-Z)
+    //   limit     = 3, or more if the suburb has more than 3 highly rated rooms,
+    //               so a highly rated room is never pushed behind "View all"
+    //   collapsed = first `limit` matching cards
+    //   expanded  = every matching card
+    function applyFilters() {
+        const type = activeType();
+        const location = locationHidden.value;
+        let totalMatching = 0;
+
+        document.querySelectorAll('.suburb-section').forEach(section => {
+            const suburb = section.dataset.suburb;
+            const cards = Array.from(section.querySelectorAll('.room-card'));
+            const matching = cards.filter(card =>
+                (type === 'all' || card.dataset.type === type) &&
+                (!location || card.dataset.suburb === location));
+
+            const ratedCount = matching.filter(c => c.dataset.rated === 'true').length;
+            const limit = Math.max(VISIBLE_LIMIT, ratedCount);
+            const hiddenCount = Math.max(0, matching.length - limit);
+            const isExpanded = expandedSuburbs.has(suburb) && hiddenCount > 0;
+
+            cards.forEach(card => {
+                const idx = matching.indexOf(card);
+                card.classList.toggle('is-visible', idx !== -1 && (isExpanded || idx < limit));
+            });
+
+            section.classList.toggle('hidden', matching.length === 0);
+            section.querySelector('.suburb-count').textContent =
+                matching.length + (matching.length === 1 ? ' property' : ' properties');
+
+            section.querySelector('.view-all-count').textContent = hiddenCount;
+            section.querySelector('.view-all-btn').classList.toggle('is-hidden', isExpanded || hiddenCount === 0);
+            section.querySelector('.minimise-btn').classList.toggle('is-hidden', !isExpanded);
+
+            totalMatching += matching.length;
         });
 
-        noFilterMatches.classList.toggle('hidden', visibleCount !== 0);
+        noFilterMatches.classList.toggle('hidden', totalMatching !== 0 || document.querySelectorAll('.suburb-section').length === 0);
 
         if (location) {
             activeLocationChipText.textContent = location;
@@ -1014,10 +1226,7 @@
 
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
-            tabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            const type = tab.dataset.type;
-            document.getElementById('heroTypeSelect').value = type === 'all' ? '' : type;
+            setType(tab.dataset.type);
             applyFilters();
         });
     });
@@ -1029,11 +1238,7 @@
 
     document.querySelectorAll('.location-option').forEach(opt => {
         opt.addEventListener('click', () => {
-            const val = opt.dataset.location;
-            locationHidden.value = val;
-            locationLabel.textContent = val || 'Any location';
-            locationLabel.classList.toggle('text-white/50', !val);
-            locationLabel.classList.toggle('text-white', !!val);
+            setLocation(opt.dataset.location);
             locationPanel.classList.remove('open');
             applyFilters();
         });
@@ -1046,10 +1251,7 @@
     });
 
     document.getElementById('clearLocationChipBtn')?.addEventListener('click', () => {
-        locationHidden.value = '';
-        locationLabel.textContent = 'Any location';
-        locationLabel.classList.add('text-white/50');
-        locationLabel.classList.remove('text-white');
+        setLocation('');
         applyFilters();
     });
 
@@ -1058,20 +1260,122 @@
     // Whitelabel 500 on an empty location).
     document.getElementById('heroSearchForm')?.addEventListener('submit', (e) => {
         e.preventDefault();
-        const typeVal = document.getElementById('heroTypeSelect').value;
-        tabs.forEach(t => t.classList.toggle('active', t.dataset.type === (typeVal || 'all')));
+        setType(document.getElementById('heroTypeSelect').value || 'all');
         applyFilters();
         document.getElementById('properties')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
-    // ── Save toggle (visual only; the form submit still hits /favorite/{id}) ──
-    document.querySelectorAll('.save-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            btn.textContent = btn.textContent.trim() === '🤍' ? '❤️' : '🤍';
-            btn.closest('form').submit();
+    // ── View all (locked until login) / Minimise ──
+    document.querySelectorAll('.suburb-section').forEach(section => {
+        const suburb = section.dataset.suburb;
+
+        section.querySelector('.view-all-btn').addEventListener('click', () => {
+            if (!IS_LOGGED_IN) {
+                showLoginToast('Log in to see all the properties in ' + suburb + '.');
+                return;
+            }
+            expandedSuburbs.add(suburb);
+            applyFilters();
+        });
+
+        section.querySelector('.minimise-btn').addEventListener('click', () => {
+            expandedSuburbs.delete(suburb);
+            applyFilters();
+            // The page just got shorter — bring this suburb's heading back into view.
+            section.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
     });
+
+    // ═══════════════════════════════════════════════════════════
+    // NEW — property links are locked until login
+    // ═══════════════════════════════════════════════════════════
+    // Remember where the student was (scroll position, expanded suburbs, filters)
+    // right before they open a property, so coming back drops them in the same spot.
+    const STATE_KEY = 'uleeDashboardState';
+
+    function saveDashboardState() {
+        try {
+            sessionStorage.setItem(STATE_KEY, JSON.stringify({
+                y: window.scrollY,
+                expanded: Array.from(expandedSuburbs),
+                type: activeType(),
+                location: locationHidden.value,
+                ts: Date.now()
+            }));
+        } catch (_) { /* storage unavailable — the page just opens at the top */ }
+    }
+
+    document.addEventListener('click', (e) => {
+        const link = e.target.closest('a.property-link');
+        if (!link) return;
+        if (!IS_LOGGED_IN) {
+            e.preventDefault();
+            showLoginToast('Log in to view this property.');
+            return;
+        }
+        saveDashboardState();
+    });
+
+    // Restore the saved position once, when the student returns to the dashboard.
+    function restoreDashboardState() {
+        let saved = null;
+        try {
+            saved = JSON.parse(sessionStorage.getItem(STATE_KEY) || 'null');
+            sessionStorage.removeItem(STATE_KEY); // one-shot
+        } catch (_) { return; }
+        if (!saved || Date.now() - saved.ts > 30 * 60 * 1000) return;
+
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('loginRequired') || params.has('openLogin') || params.has('loginError') || window.location.hash) return;
+
+        (saved.expanded || []).forEach(s => expandedSuburbs.add(s));
+        setType(saved.type || 'all');
+        setLocation(saved.location || '');
+        applyFilters();
+
+        const scrollBack = () => window.scrollTo({ top: saved.y || 0, left: 0, behavior: 'instant' });
+        scrollBack();
+        window.addEventListener('load', scrollBack); // once images have settled
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // CHANGED — Save (heart) uses fetch, so there is no page reload and no jump to the top
+    // ═══════════════════════════════════════════════════════════
+    document.querySelectorAll('.fav-form').forEach(form => {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!IS_LOGGED_IN) {
+                showLoginToast('Log in to save properties.');
+                return;
+            }
+            const btn = form.querySelector('.save-btn');
+            const before = btn.textContent.trim();
+            btn.textContent = before === '🤍' ? '❤️' : '🤍'; // instant feedback
+            btn.disabled = true;
+            try {
+                const res = await fetch(form.action, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+                });
+                const isJson = (res.headers.get('content-type') || '').includes('application/json');
+                if (!res.ok || !isJson) {
+                    // Session expired (the server answered with the login page) or an error
+                    btn.textContent = before;
+                    showLoginToast('Log in to save properties.');
+                } else {
+                    const data = await res.json();
+                    btn.textContent = data.saved ? '❤️' : '🤍';
+                }
+            } catch (err) {
+                btn.textContent = before;
+            }
+            btn.disabled = false;
+        });
+    });
+
+    // Initial render: apply the 3-per-suburb rule, then restore the saved position (if any)
+    applyFilters();
+    restoreDashboardState();
 
     // ── Hide the AI chat widget while any modal is open ──
     // The widget's script may inject its icon straight into <body>, outside our wrapper,
@@ -1085,7 +1389,7 @@
         const found = aiWidgetWrap ? [aiWidgetWrap] : [];
         Array.from(document.body.children).forEach(el => {
             if (KNOWN_TAGS.includes(el.tagName)) return;
-            if (modalOverlays.includes(el) || el === aiWidgetWrap) return;
+            if (modalOverlays.includes(el) || el === aiWidgetWrap || el === loginToast) return;
             found.push(el);
         });
         return found;

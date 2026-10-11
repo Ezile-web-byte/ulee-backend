@@ -29,8 +29,54 @@
   uses this sidebar gets the "Log out?" confirmation without each page
   including it. It is safe if a page also includes fragments/modal itself:
   ulee-modal.js ignores a second load.
+
+  CHANGED: Log out now sits at the BOTTOM of the sidebar (with a divider
+  above it), at the very bottom (the lighthouse drawing was removed), like the student sidebar.
+  The sidebar is a flex column; .sidebar-bottom has margin-top:auto, which
+  pushes it down to the bottom. The small <style> block below is all the
+  CSS this needs. If you prefer, move it into your landlord sidebar
+  stylesheet.
 -->
 <aside class="sidebar" id="sidebar" th:fragment="sidebar(active)">
+
+    <style>
+        /* Sidebar = full-height column: logo, menu, [free space], Log out, drawing */
+        aside.sidebar {
+            display: flex;
+            flex-direction: column;
+        }
+        aside.sidebar .nav-list { flex: 0 0 auto; }
+
+        /* margin-top:auto pushes Log out to the bottom of the sidebar.
+           No border here: your existing stylesheet already draws the one line above Log out. */
+        aside.sidebar .sidebar-bottom {
+            margin-top: auto;
+            padding-bottom: 16px;
+        }
+        aside.sidebar .sidebar-bottom .nav-logout-form { margin: 0; }
+        aside.sidebar .sidebar-bottom .nav-item--logout { width: 100%; }
+
+        /* Log out: red text + icon all the time, and NO red button on hover */
+        aside.sidebar .nav-item--logout,
+        aside.sidebar .nav-item--logout .nav-icon,
+        aside.sidebar .nav-item--logout span {
+            color: #ff8a8a !important;
+        }
+        aside.sidebar .nav-item--logout:hover,
+        aside.sidebar .nav-item--logout:focus-visible {
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+        aside.sidebar .nav-item--logout:hover,
+        aside.sidebar .nav-item--logout:hover .nav-icon,
+        aside.sidebar .nav-item--logout:hover span {
+            color: #ff5c5c !important;   /* slightly brighter red on hover */
+        }
+
+        /* The lighthouse drawing is removed: Log out is the last thing in the sidebar */
+        aside.sidebar .sidebar-footer { display: none; }
+    </style>
+
     <div class="logo">
         <div class="logo-mark">
             <div class="logo-icon">
@@ -63,34 +109,23 @@
         </a>
     </nav>
 
-    <!-- Spring Security expects logout as a POST.
+    <!-- CHANGED: Log out lives in its own bottom block (divider above it).
+         Spring Security expects logout as a POST.
          data-confirm: the shared popup asks "Log out?" before the form is sent. -->
-    <form th:action="@{/logout}" method="post" class="nav-logout-form">
-        <button type="submit" class="nav-item nav-item--logout"
-                data-confirm
-                data-confirm-title="Log out?"
-                data-confirm-message="You'll need to sign in again to manage your properties."
-                data-confirm-ok="Log out"
-                data-confirm-icon="👋">
-            <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 17l5-5-5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <span>Log out</span>
-        </button>
-    </form>
-
-    <!-- Drawing: pinned to the bottom of the rail, hidden when collapsed -->
-    <div class="sidebar-footer">
-        <svg class="sidebar-illustration" viewBox="0 0 220 90" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <path d="M0 70c18-6 36-6 54 0s36 6 54 0 36-6 54 0 36 6 58 0" stroke-width="1.5" fill="none"/>
-            <path d="M0 80c18-5 36-5 54 0s36 5 54 0 36-5 54 0 36 5 58 0" stroke-width="1.5" fill="none"/>
-            <g stroke-width="1.6" stroke-linejoin="round" fill="none">
-                <path d="M32 58h14l-3-32h-8l-3 32Z"/>
-                <path d="M29 58h20"/>
-                <path d="M35 26h8v-6h-8v6Z"/>
-                <path d="M33 32h12M32 40h14M31 48h16"/>
-                <path d="M39 20l-4-6h10l-4 6"/>
-            </g>
-        </svg>
+    <div class="sidebar-bottom">
+        <form th:action="@{/logout}" method="post" class="nav-logout-form">
+            <button type="submit" class="nav-item nav-item--logout"
+                    data-confirm
+                    data-confirm-title="Log out?"
+                    data-confirm-message="You'll need to sign in again to manage your properties."
+                    data-confirm-ok="Log out"
+                    data-confirm-icon="👋">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 17l5-5-5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span>Log out</span>
+            </button>
+        </form>
     </div>
+
 
     <!-- Shared popup assets (css + js), so "Log out?" works on every page with this sidebar -->
     <th:block th:replace="~{fragments/modal :: assets}"></th:block>
