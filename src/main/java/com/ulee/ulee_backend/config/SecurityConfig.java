@@ -15,6 +15,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.context.SecurityContextHolderFilter;
+import org.springframework.security.authentication.AccountStatusException;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
@@ -66,7 +68,14 @@ public class SecurityConfig {
                                 "/*.png", "/*.jpg", "/*.jpeg", "/*.svg", "/*.gif", "/*.webp",
                                 "/login-style.css", "/login-script.js",
                                 "/student-style.css", "/student-script.js",
-                                "/static/**", "/uploads/**"
+                                "/static/**", "/uploads/**",
+                                // The SWAI widget's chat endpoint. The widget mounts on public
+                                // pages (student dashboard, login, property detail) that
+                                // anonymous visitors can already reach, so this must stay
+                                // reachable without authentication too — otherwise the catch-all
+                                // .anyRequest().authenticated() below would 401/403 every chat
+                                // message from a logged-out visitor.
+                                "/api/swai/chat"
                         ).permitAll()
 
                         // Landlord Protected Routes (ADD `/listProperty` HERE)
@@ -111,7 +120,11 @@ public class SecurityConfig {
                         // /student-dashboard as requested.
                         .logoutSuccessUrl("/student-dashboard")
                         .permitAll()
-                );
+                )
+                // Logs out anyone already signed in whose account has since been
+                // deactivated (e.g. when the 10-minute notice runs out).
+                .addFilterAfter(new DeactivatedAccountFilter(userRepository, adminSessionRepository),
+                        SecurityContextHolderFilter.class);
 
         return http.build();
     }
@@ -200,10 +213,16 @@ public class SecurityConfig {
 
             // AJAX login (the modal): answer 401 + JSON so the page can show the
             // error instantly without reloading. Non-AJAX posts still redirect.
+            // A deactivated/locked account is reported as such instead of the
+            // generic "Incorrect username or password." (which would be misleading).
+            boolean accountBlocked = exception instanceof AccountStatusException;
             if (isAjax(request)) {
-                writeJson(response, 401, "{\"error\":\"Incorrect username or password.\"}");
+                String msg = accountBlocked ? DeactivatedAccountFilter.MESSAGE : "Incorrect username or password.";
+                writeJson(response, 401, "{\"error\":\"" + msg + "\"}");
             } else {
-                response.sendRedirect("/student-dashboard?loginError=credentials");
+                response.sendRedirect(accountBlocked
+                        ? DeactivatedAccountFilter.REDIRECT_URL
+                        : "/student-dashboard?loginError=credentials");
             }
         };
     }

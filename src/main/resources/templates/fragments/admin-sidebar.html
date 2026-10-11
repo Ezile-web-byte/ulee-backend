@@ -147,6 +147,10 @@
       NOTE: where the browser lands *after* logout is controlled by
       `.logoutSuccessUrl(...)` in the Spring Security config, not by this
       fragment.
+
+      STYLE: the popup now uses the ULEE design-system look (white card, pale
+      teal icon circle, solid teal confirm button) — identical to the
+      dashboard's avatar "Log out?" popup.
     -->
     <form id="uleeLogoutForm" th:action="@{/logout}" method="post" style="display:none">
         <input th:if="${_csrf}" type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
@@ -155,12 +159,12 @@
     <div class="ulee-logout-overlay" id="uleeLogoutOverlay" aria-hidden="true">
         <div class="ulee-logout-modal" role="alertdialog" aria-modal="true" aria-labelledby="uleeLogoutTitle">
             <div class="ulee-logout-icon">
-                <svg viewBox="0 0 20 20"><path d="M13 3h4v14h-4M9 14l4-4-4-4M13 10H5"/></svg>
+                <svg viewBox="0 0 24 24"><path d="M9 4H5v16h4M16 8l4 4-4 4M20 12H9"/></svg>
             </div>
-            <h3 id="uleeLogoutTitle" class="ulee-logout-title">Log out of ULEE?</h3>
-            <p class="ulee-logout-text">You'll need to sign in again to access the admin dashboard.</p>
+            <h3 id="uleeLogoutTitle" class="ulee-logout-title">Log out?</h3>
+            <p class="ulee-logout-text">Are you sure you want to log out of the ULEE admin dashboard?</p>
             <div class="ulee-logout-actions">
-                <button type="button" class="ulee-logout-btn ulee-logout-cancel" onclick="cancelAdminLogout()">Cancel</button>
+                <button type="button" id="uleeLogoutCancelBtn" class="ulee-logout-btn ulee-logout-cancel" onclick="cancelAdminLogout()">Cancel</button>
                 <button type="button" class="ulee-logout-btn ulee-logout-confirm" onclick="doAdminLogout()">Log out</button>
             </div>
         </div>
@@ -172,14 +176,16 @@
 
         .admin-chip { cursor: pointer; }
 
+        /* ── Logout popup: ULEE design-system colours ── */
         .ulee-logout-overlay {
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(10, 12, 15, 0.55);
-            backdrop-filter: blur(2px);
+            background: rgba(10, 30, 38, 0.45);
+            backdrop-filter: blur(3px);
             align-items: center;
             justify-content: center;
+            padding: 20px;
             z-index: 2000;
             opacity: 0;
             transition: opacity .18s ease;
@@ -191,48 +197,49 @@
         .ulee-logout-modal {
             background: #ffffff;
             border-radius: 18px;
-            padding: 32px 30px 26px;
+            padding: 28px 26px 22px;
             width: 100%;
-            max-width: 340px;
+            max-width: 420px;
             text-align: center;
-            box-shadow: 0 24px 60px rgba(0,0,0,0.28);
+            box-shadow: 0 24px 60px rgba(0,0,0,0.25);
             transform: translateY(14px) scale(.97);
             transition: transform .18s ease;
-            font-family: 'Sora', sans-serif;
+            font-family: 'Hanken Grotesk', sans-serif;
         }
         .ulee-logout-overlay.active .ulee-logout-modal {
             transform: translateY(0) scale(1);
         }
         .ulee-logout-icon {
-            width: 52px;
-            height: 52px;
+            width: 60px;
+            height: 60px;
             margin: 0 auto 16px;
             border-radius: 50%;
-            background: #fdecec;
+            background: #E3F6F3;
             display: flex;
             align-items: center;
             justify-content: center;
         }
         .ulee-logout-icon svg {
-            width: 24px;
-            height: 24px;
+            width: 28px;
+            height: 28px;
             fill: none;
-            stroke: #d93025;
-            stroke-width: 2;
+            stroke: #006A6A;
+            stroke-width: 1.8;
             stroke-linecap: round;
             stroke-linejoin: round;
         }
         .ulee-logout-title {
-            margin: 0 0 8px;
-            font-size: 18px;
+            margin: 0 0 6px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 19px;
             font-weight: 700;
-            color: #17181c;
+            color: #12262d;
         }
         .ulee-logout-text {
-            margin: 0 0 24px;
-            font-size: 14px;
-            line-height: 1.5;
-            color: #6b7280;
+            margin: 0 0 22px;
+            font-size: 13.5px;
+            line-height: 1.6;
+            color: #5b6b71;
         }
         .ulee-logout-actions {
             display: flex;
@@ -240,25 +247,40 @@
         }
         .ulee-logout-btn {
             flex: 1;
-            padding: 11px 0;
+            padding: 12px 0;
             border-radius: 10px;
             font-family: inherit;
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
-            border: 1px solid transparent;
-            transition: opacity .15s ease, background .15s ease;
+            transition: transform .1s ease, filter .15s ease;
         }
+        .ulee-logout-btn:hover { filter: brightness(0.96); }
+        .ulee-logout-btn:active { transform: scale(0.97); }
+        .ulee-logout-btn:focus-visible { outline: 2px solid #14C8BE; outline-offset: 3px; }
         .ulee-logout-cancel {
-            background: #f3f4f6;
-            color: #374151;
+            background: #ffffff;
+            border: 1px solid #d9dfe2;
+            color: #444;
         }
-        .ulee-logout-cancel:hover { background: #e9eaed; }
         .ulee-logout-confirm {
-            background: #d93025;
+            background: #006A6A;
+            border: 1px solid #006A6A;
             color: #fff;
         }
-        .ulee-logout-confirm:hover { opacity: .92; }
+
+        /* ── Collapsed sidebar: keep every page icon whole ──
+           Items that carry a count badge (Review Properties, Listings, Reviews, Reported)
+           were squeezing their icon in the narrow collapsed bar, so it got cut off.
+           1) icons never shrink; 2) when the nav is narrow, the badge and label drop out
+           of the layout so the icon sits centred like the other items. */
+        .sidebar .nav-icon { flex: 0 0 auto; min-width: 20px; overflow: visible; }
+        .sidebar .nav { container-type: inline-size; }
+        @container (max-width: 150px) {
+            .nav-item .nav-badge,
+            .nav-item .nav-item-label { display: none; }
+            .nav-item { justify-content: center; }
+        }
     </style>
 
     <script>
@@ -267,6 +289,8 @@
             if (!overlay) return;
             overlay.setAttribute('aria-hidden', 'false');
             overlay.classList.add('active');
+            var cancel = document.getElementById('uleeLogoutCancelBtn');
+            if (cancel) cancel.focus();
         }
 
         function cancelAdminLogout() {

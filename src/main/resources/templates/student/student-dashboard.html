@@ -495,8 +495,8 @@
              th:each="property : ${properties}" th:attr="data-type=${property.type},data-suburb=${property.suburb}"
              th:with="facilityAmenity=${property.firstFacilityAmenity}">
             <a th:href="@{/property/{id}(id=${property.propertyID})}" class="block">
-                <div class="relative aspect-[4/3]">
-                    <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="/student-image1.png" th:src="${property.mainImageUrl} ?: '/student-image1.png'" th:alt="${property.title}"/>
+                <div class="relative aspect-[4/3] overflow-hidden bg-navy">
+                    <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="/images/property-placeholder.svg" th:src="${property.mainImageUrl} ?: '/images/property-placeholder.svg'" th:alt="${property.title}" loading="lazy"/>
                     <div class="absolute top-4 left-4">
                         <span class="bg-teal-deep text-white px-md py-xs rounded-full text-[10px] font-bold uppercase tracking-wider" th:if="${property.isAvailable}">Available</span>
                         <span class="bg-error text-white px-md py-xs rounded-full text-[10px] font-bold uppercase tracking-wider" th:unless="${property.isAvailable}">Unavailable</span>
@@ -531,6 +531,7 @@
                 </div>
                 <div class="flex items-center gap-sm">
                     <form th:action="@{/favorite/{id}(id=${property.propertyID})}" method="post" class="inline" data-loading-text="...">
+                        <input type="hidden" name="returnTo" value="/student-dashboard" />
                         <button type="submit" class="save-btn w-10 h-10 rounded-full border-2 border-primary text-primary flex items-center justify-center hover:bg-primary hover:text-white u-transition" title="Save"
                                 th:text="${savedPropertyIds != null and savedPropertyIds.contains(property.propertyID)} ? '❤️' : '🤍'">🤍</button>
                     </form>
