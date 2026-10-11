@@ -45,9 +45,14 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable()) // TEMP: unblocks login without a CSRF token in the form
                 .authorizeHttpRequests(auth -> auth
-                        // Public: homepage, browsing, registration, ALL static assets
+                        // Public: homepage, browsing, registration, ALL static assets.
+                        // "/property/**" (property detail + 360° tour) is deliberately NOT
+                        // here any more: guests can browse the cards on /student-dashboard
+                        // and /search, but must log in to open a property. Spring saves the
+                        // requested URL, and roleBasedSuccessHandler() sends the user back
+                        // to it after login (see resolvePostLoginTarget()).
                         .requestMatchers(
-                                "/", "/student-dashboard", "/property/**", "/search",
+                                "/", "/student-dashboard", "/search",
                                 "/register", "/login",
                                 // "Speak with AI" widget endpoints (listings for the chips, chat for free text)
                                 "/api/listings", "/api/chat",
@@ -157,6 +162,14 @@ public class SecurityConfig {
                     })
                     .orElse("/student-dashboard");
 
+            // Students who were bounced to login from a protected page (e.g. a
+            // property they clicked) go straight back to it instead of the
+            // landing page. Landlords/admins keep their own dashboards.
+            if ("/student-dashboard".equals(redirectUrl)) {
+                String target = resolvePostLoginTarget(request, response);
+                if (target != null) redirectUrl = target;
+            }
+
             // The login modal submits via fetch (no page reload) and sends
             // X-Requested-With: XMLHttpRequest. For those requests reply with
             // JSON and let the page do the navigation; normal form posts keep
@@ -202,6 +215,42 @@ public class SecurityConfig {
                 response.sendRedirect("/student-dashboard?loginError=credentials");
             }
         };
+    }
+
+    // Only these student pages may be restored after login. Keeps the redirect
+    // on-site and avoids replaying odd saved requests (a POST to /favorite/7
+    // would come back as a GET and 405; /error or /favicon.ico are noise).
+    private static final java.util.List<String> RESTORABLE_PREFIXES = java.util.List.of(
+            "/property/", "/my-dashboard", "/my-applications", "/saved-properties");
+
+    /**
+     * Where a student should land after logging in, or null for the default.
+     * Two sources, in order:
+     *  1. The page Spring Security saved when it sent them to login (direct
+     *     links, bookmarks, shared URLs).
+     *  2. A "redirect" form field sent by the landing page's login modal when
+     *     a guest clicked a property card there (no server round trip, so
+     *     nothing was saved in step 1).
+     * Either way the value is reduced to a path and checked against
+     * RESTORABLE_PREFIXES, so it can never point off-site.
+     */
+    private String resolvePostLoginTarget(jakarta.servlet.http.HttpServletRequest request,
+                                          jakarta.servlet.http.HttpServletResponse response) {
+        org.springframework.security.web.savedrequest.HttpSessionRequestCache cache =
+                new org.springframework.security.web.savedrequest.HttpSessionRequestCache();
+        org.springframework.security.web.savedrequest.SavedRequest saved = cache.getRequest(request, response);
+        String candidate = null;
+        if (saved instanceof org.springframework.security.web.savedrequest.DefaultSavedRequest d) {
+            candidate = d.getRequestURI() + (d.getQueryString() != null ? "?" + d.getQueryString() : "");
+        }
+        if (saved != null) cache.removeRequest(request, response);
+        if (!isRestorable(candidate)) candidate = request.getParameter("redirect");
+        return isRestorable(candidate) ? candidate : null;
+    }
+
+    private boolean isRestorable(String path) {
+        if (path == null || !path.startsWith("/") || path.startsWith("//") || path.contains("\\")) return false;
+        return RESTORABLE_PREFIXES.stream().anyMatch(path::startsWith);
     }
 
     /** True when the request came from fetch/XHR with X-Requested-With set. */
