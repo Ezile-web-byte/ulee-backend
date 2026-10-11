@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
@@ -35,9 +35,20 @@ public class SecurityConfig {
     @Autowired
     private AdminLoginActivityRepository adminLoginActivityRepository;
 
+    /**
+     * Passwords are stored as PLAIN TEXT. This is a deliberate project
+     * requirement: the lecturers test the project by reading passwords
+     * straight from the database. NoOpPasswordEncoder.encode() returns the
+     * password unchanged and matches() is a plain equals(), so registration,
+     * login and the admin "change password" screen all work on plain text.
+     * (NoOpPasswordEncoder is marked deprecated by Spring because plain-text
+     * storage is unsafe in a real system; that is why the warning is
+     * suppressed here.)
+     */
     @Bean
+    @SuppressWarnings("deprecation")
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        return NoOpPasswordEncoder.getInstance();
     }
 
     @Bean
@@ -64,7 +75,7 @@ public class SecurityConfig {
                                 "/listProperty",  // <-- BOTH MATCHED NOW
                                 "/edit-property/**", "/update-property/**", "/delete-property-image/**",
                                 "/add-property-feature/**", "/delete-property-feature/**", "/submit-property/**",
-                                "/toggle-property-status/**", "/manage-applications", "/my-property-reviews"
+                                "/toggle-property-status/**", "/manage-applications", "/applications-overview", "/my-property-reviews"
                         ).hasRole("LANDLORD")
 
                         .requestMatchers("/admin-dashboard", "/admin-index", "/admin/**").hasRole("ADMIN")

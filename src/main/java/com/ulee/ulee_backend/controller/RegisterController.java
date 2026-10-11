@@ -14,7 +14,6 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.stereotype.Controller;
@@ -27,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 @Controller
 public class RegisterController {
@@ -34,10 +34,21 @@ public class RegisterController {
     private static final String STUDENT_ROLE = "student";
     private static final String LANDLORD_ROLE = "landlord";
 
+    // Registration rules (mirrored in register.html so the browser catches them first;
+    // these are the real checks, because the browser can be bypassed).
+    // Student email: "s" + exactly 9 digits + @mandela.ac.za
+    private static final Pattern STUDENT_EMAIL = Pattern.compile("^s\\d{9}@mandela\\.ac\\.za$");
+    private static final Pattern ANY_EMAIL = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
+    // Phone: exactly 10 digits, numbers only
+    private static final Pattern PHONE = Pattern.compile("^\\d{10}$");
+    // Date of birth: the year must have exactly 4 digits (yyyy-MM-dd)
+    private static final Pattern DOB_FORMAT = Pattern.compile("^\\d{4}-\\d{2}-\\d{2}$");
+    private static final int MIN_YEAR_OF_STUDY = 1;
+    private static final int MAX_YEAR_OF_STUDY = 6;
+    private static final int MIN_BIRTH_YEAR = 1900;
+
     @Autowired
     private UserRepository userRepository;
-    @Autowired
-    private PasswordEncoder passwordEncoder;
     @Autowired
     private StudentRepository studentRepository;
     @Autowired
@@ -50,6 +61,13 @@ public class RegisterController {
 
     @GetMapping("/register")
     public String showRegisterForm() {
+        return "register";
+    }
+
+    // Puts an error on the register page (keeping the chosen role) and returns the view name.
+    private String reject(Model model, String role, String message) {
+        model.addAttribute("error", message);
+        model.addAttribute("role", role);
         return "register";
     }
 
@@ -73,26 +91,50 @@ public class RegisterController {
 
         String normalizedRole = role.trim().toLowerCase(Locale.ROOT);
         if (!STUDENT_ROLE.equals(normalizedRole) && !LANDLORD_ROLE.equals(normalizedRole)) {
-            model.addAttribute("error", "Please choose either Student or Landlord.");
-            model.addAttribute("role", STUDENT_ROLE);
-            return "register";
+            return reject(model, STUDENT_ROLE, "Please choose either Student or Landlord.");
         }
 
+        // ── Email ──
         String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
-        if (userRepository.existsByEmail(normalizedEmail)) {
-            model.addAttribute("error", "That email is already registered. Try logging in instead.");
-            model.addAttribute("role", normalizedRole);
-            return "register";
+        if (STUDENT_ROLE.equals(normalizedRole)) {
+            if (!STUDENT_EMAIL.matcher(normalizedEmail).matches()) {
+                return reject(model, normalizedRole,
+                        "Student emails must be an \"s\" followed by 9 digits and @mandela.ac.za (e.g. s227676637@mandela.ac.za).");
+            }
+        } else if (!ANY_EMAIL.matcher(normalizedEmail).matches()) {
+            return reject(model, normalizedRole, "Please enter a valid email address.");
         }
 
+        if (userRepository.existsByEmail(normalizedEmail)) {
+            return reject(model, normalizedRole, "That email is already registered. Try logging in instead.");
+        }
+
+        // ── Phone (optional, but exactly 10 digits when given) ──
+        String cleanedPhone = (phone == null || phone.isBlank()) ? null : phone.trim();
+        if (cleanedPhone != null && !PHONE.matcher(cleanedPhone).matches()) {
+            return reject(model, normalizedRole, "Phone number must be exactly 10 digits, numbers only.");
+        }
+
+        // ── Year of study (students only): 1 to 6 ──
+        if (STUDENT_ROLE.equals(normalizedRole) && yearOfStudy != null
+                && (yearOfStudy < MIN_YEAR_OF_STUDY || yearOfStudy > MAX_YEAR_OF_STUDY)) {
+            return reject(model, normalizedRole, "Year of study must be between 1 and 6.");
+        }
+
+        // ── Date of birth (optional): 4-digit year, 1900 or later, not in the future ──
         LocalDate parsedDateOfBirth = null;
         if (dateOfBirth != null && !dateOfBirth.isBlank()) {
+            String dob = dateOfBirth.trim();
+            if (!DOB_FORMAT.matcher(dob).matches()) {
+                return reject(model, normalizedRole, "The year in your date of birth must have exactly 4 digits.");
+            }
             try {
-                parsedDateOfBirth = LocalDate.parse(dateOfBirth);
+                parsedDateOfBirth = LocalDate.parse(dob);
             } catch (DateTimeParseException exception) {
-                model.addAttribute("error", "Please enter a valid date of birth.");
-                model.addAttribute("role", normalizedRole);
-                return "register";
+                return reject(model, normalizedRole, "Please enter a valid date of birth.");
+            }
+            if (parsedDateOfBirth.getYear() < MIN_BIRTH_YEAR || parsedDateOfBirth.isAfter(LocalDate.now())) {
+                return reject(model, normalizedRole, "Please enter a valid date of birth.");
             }
         }
 
@@ -101,8 +143,10 @@ public class RegisterController {
         user.setFirstName(firstName.trim());
         user.setLastName(lastName.trim());
         user.setEmail(normalizedEmail);
-        user.setPassword(passwordEncoder.encode(password));
-        user.setPhone(phone == null || phone.isBlank() ? null : phone.trim());
+        // Stored as plain text on purpose (project requirement: the lecturers
+        // read passwords directly from the database). No hashing here.
+        user.setPassword(password);
+        user.setPhone(cleanedPhone);
         user.setRole(normalizedRole.toUpperCase(Locale.ROOT));
         user.setDateOfBirth(parsedDateOfBirth);
         user.setIsActive(true);

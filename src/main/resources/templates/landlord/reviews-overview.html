@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reviews | ULEE</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=Fredoka:wght@500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/landlord-style.css">
+    <link rel="stylesheet" href="/landlord-reviews.css">
+    <link rel="stylesheet" href="/property-list.css">
+</head>
+<body>
+
+<div class="app-shell">
+
+    <!-- ============ SIDEBAR (shared fragment — see fragments/landlord-sidebar.html) ============ -->
+    <div th:replace="~{fragments/landlord-sidebar :: sidebar('reviews')}"></div>
+
+    <!-- ============ MAIN ============ -->
+    <main class="main">
+
+        <header class="topbar">
+            <h1 class="topbar-title">Reviews</h1>
+            <div class="topbar-actions">
+                <div th:replace="~{fragments/landlord-notifications :: bell}"></div>
+                <div class="avatar-initials" th:text="${landlordInitials != null ? landlordInitials : '?'}">?</div>
+            </div>
+        </header>
+
+        <div class="page-body">
+
+            <section class="pl-intro">
+                <h2 class="pl-title">All Properties</h2>
+                <p class="pl-sub">
+                    <span th:text="${totalPropertiesCount}">3</span> live properties ·
+                    <span th:text="${totalReviewsAll}">12</span> reviews
+                </p>
+            </section>
+
+            <!-- One clickable row per property — properties with unopened reviews come first -->
+            <div class="pl-card">
+                <div class="pl-head" aria-hidden="true">
+                    <span>Photo</span>
+                    <span>Property name</span>
+                    <span>Reviews</span>
+                    <span></span>
+                </div>
+
+                <a class="pl-row" th:each="s : ${summaries}"
+                   th:href="@{/property-reviews/{id}(id=${s.propertyID})}">
+
+                    <div class="pl-photo">
+                        <img th:if="${s.coverUrl != null}" th:src="@{${s.coverUrl}}" alt="" loading="lazy">
+                        <svg th:unless="${s.coverUrl != null}" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 21V9l8-6 8 6v12h-5v-7h-6v7H4Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+                    </div>
+
+                    <p class="pl-name" th:text="${s.title}">Property Name</p>
+
+                    <div class="pl-count">
+                        <span><strong th:text="${s.totalCount}">0</strong> <span th:text="${s.totalCount == 1} ? 'review' : 'reviews'">reviews</span></span>
+                        <span class="pl-new" th:if="${s.hasNew}"><span th:text="${s.unviewedCount}">2</span> new</span>
+                    </div>
+
+                    <span class="pl-chevron" aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </span>
+                </a>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<script src="/landlord-sidebar-toggle.js" defer></script>
+
+</body>
+</html>

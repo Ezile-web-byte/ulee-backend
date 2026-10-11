@@ -19,4 +19,9 @@ public interface ReviewRepository extends JpaRepository<Review, Integer> {
 
     // Added on main — kept in case a student-facing "my reviews" view needs it
     List<Review> findByStudentID(Integer studentID);
+
+    // NEW — how many reviews on these properties the landlord has not opened
+    // yet. Matches landlordViewed = false only, so older reviews whose value
+    // is NULL are not counted. Powers the Reviews badge in the sidebar.
+    long countByPropertyIDInAndLandlordViewedFalse(List<Integer> propertyIDs);
 }

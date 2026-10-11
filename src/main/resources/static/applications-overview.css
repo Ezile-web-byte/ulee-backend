@@ -1,0 +1,355 @@
+/* ==========================================================
+   ULEE — Applications "All Properties" overview + search
+   Loaded AFTER landlord-style.css and applications-style.css,
+   so it reuses their :root tokens (colours, radii, fonts).
+   ========================================================== */
+
+/* ---------- Header + search ---------- */
+.ov-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.ov-title {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 24px;
+    color: var(--primary-dark);
+    margin: 0;
+}
+
+.ov-sub {
+    margin: 4px 0 0;
+    font-size: 14px;
+    color: var(--on-surface-variant);
+}
+
+.ov-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 300px;
+    max-width: 100%;
+    padding: 8px 10px 8px 14px;
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-sm);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ov-search:focus-within {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-tint);
+}
+
+.ov-search svg { width: 16px; height: 16px; color: var(--outline); flex-shrink: 0; }
+
+.ov-search input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    font: inherit;
+    font-size: 14px;
+    color: var(--on-surface);
+}
+
+.ov-search button {
+    border: none;
+    background: var(--primary-dark);
+    color: #fff;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 7px 14px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+
+.ov-search button:hover { background: var(--primary); }
+
+.ov-clear {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--primary);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.ov-clear:hover { text-decoration: underline; }
+
+/* compact search used inside the single-property panel header */
+.ov-search--compact { min-width: 220px; padding: 6px 12px; }
+
+/* ---------- Totals row ---------- */
+.ov-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 26px;
+}
+
+.ov-stat {
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-md);
+    padding: 16px 18px;
+    box-shadow: var(--shadow-sm);
+}
+
+.ov-stat--highlight {
+    background: linear-gradient(115deg, #071C2D 0%, #0A3A48 55%, #0F6C70 100%);
+    border-color: rgba(20, 200, 190, 0.45);
+    color: #fff;
+}
+
+.ov-stat-value {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 30px;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+.ov-stat-label {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--outline);
+}
+
+.ov-stat--highlight .ov-stat-label { color: rgba(255, 255, 255, 0.78); }
+
+/* ---------- Section titles ---------- */
+.ov-section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin: 0 0 12px;
+}
+
+.ov-section { margin-bottom: 28px; }
+
+.ov-count-pill {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: var(--radius-full);
+    background: var(--primary-tint);
+    color: var(--primary-dark);
+    border: 1px solid var(--accent-border);
+}
+
+/* ---------- Property cards ---------- */
+.ov-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 18px;
+}
+
+.ov-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.ov-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-surface);
+    border-color: var(--accent-border);
+}
+
+/* Properties with new applications stand out */
+.ov-card--new { border-color: var(--primary); box-shadow: 0 6px 20px rgba(15, 138, 138, 0.18); }
+
+.ov-cover {
+    position: relative;
+    height: 132px;
+    background: var(--primary-tint);
+    overflow: hidden;
+}
+
+.ov-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.ov-cover-empty {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-border);
+}
+
+.ov-cover-empty svg { width: 40px; height: 40px; }
+
+.ov-new-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: var(--radius-full);
+    background: var(--primary-dark);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+}
+
+.ov-new-badge::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #ffe170;
+    animation: ov-pulse 1.8s ease-in-out infinite;
+}
+
+.ov-full-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 5px 12px;
+    border-radius: var(--radius-full);
+    background: #fff;
+    color: var(--on-surface-variant);
+    font-size: 12px;
+    font-weight: 700;
+    border: 1px solid var(--outline-variant);
+}
+
+.ov-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px 18px 18px;
+}
+
+.ov-card-title {
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--on-surface);
+    margin: 0;
+}
+
+.ov-card-sub { margin: -6px 0 0; font-size: 13px; color: var(--outline); }
+
+.ov-counts { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.ov-chip {
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+    background: var(--surface-container-low);
+    color: var(--on-surface-variant);
+}
+
+.ov-chip strong { color: var(--on-surface); }
+.ov-chip--pending { background: #fff4dc; color: #9a6400; }
+.ov-chip--pending strong { color: #9a6400; }
+.ov-chip--accepted { background: var(--primary-tint); color: var(--primary-dark); }
+.ov-chip--accepted strong { color: var(--primary-dark); }
+.ov-chip--rejected { background: #fbe9ea; color: var(--alert); }
+.ov-chip--rejected strong { color: var(--alert); }
+
+.ov-progress {
+    height: 7px;
+    border-radius: var(--radius-full);
+    background: var(--surface-container-low);
+    overflow: hidden;
+}
+
+.ov-progress-fill {
+    display: block;
+    height: 100%;
+    border-radius: var(--radius-full);
+    background: linear-gradient(90deg, var(--primary), #14C8BE);
+}
+
+.ov-places,
+.ov-waiting { margin: 0; font-size: 12.5px; color: var(--on-surface-variant); }
+.ov-waiting { color: #9a6400; font-weight: 600; }
+
+/* ---------- Application search results ---------- */
+.ov-app-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.ov-app-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    color: inherit;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.ov-app-row:hover { box-shadow: var(--shadow-surface); border-color: var(--accent-border); }
+.ov-app-main { flex: 1; min-width: 0; }
+.ov-app-main .student-name { margin: 0 0 2px; }
+.ov-app-meta { margin: 0; font-size: 13px; color: var(--on-surface-variant); }
+
+.ov-empty-inline {
+    margin: 0;
+    padding: 18px;
+    text-align: center;
+    font-size: 14px;
+    color: var(--outline);
+    background: var(--surface-container-lowest);
+    border: 1px dashed var(--accent-border);
+    border-radius: var(--radius-md);
+}
+
+@keyframes ov-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.45; transform: scale(0.8); }
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 900px) {
+    .ov-stats { grid-template-columns: repeat(2, 1fr); }
+    .ov-search { width: 100%; min-width: 0; }
+}
+
+@media (max-width: 520px) {
+    .ov-stats { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ov-new-badge::before { animation: none; }
+    .ov-card, .ov-app-row { transition: none; }
+}

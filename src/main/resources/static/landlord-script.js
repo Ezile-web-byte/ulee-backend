@@ -1,4 +1,3 @@
-
 // ==========================================================
 // ULEE — Landlord Dashboard (My Properties)
 // Handles client-side filtering, sorting, and dynamic metric navigation.
@@ -16,7 +15,7 @@ function applyFilterAndSort() {
   const grid = document.getElementById("propertyGrid");
   const emptyState = document.getElementById("filterEmptyState");
 
-  // Filter logic
+  // Filter logic. data-status is one of: draft, pending, rejected, available, inactive
   let visibleCount = 0;
   cards.forEach(card => {
     const matches = activeFilter === "all" || card.dataset.status === activeFilter;
@@ -25,7 +24,7 @@ function applyFilterAndSort() {
   });
 
   if (emptyState) {
-    emptyState.style.display = visibleCount === 0 ? "block" : "none";
+    emptyState.style.display = visibleCount === 0 && cards.length > 0 ? "block" : "none";
   }
 
   // Sort logic
@@ -42,6 +41,23 @@ function applyFilterAndSort() {
   sorted.forEach(card => grid.appendChild(card));
 }
 
+function selectChip(filter) {
+  const group = document.getElementById("filterGroup");
+  if (!group) return;
+  const chip = group.querySelector('.chip[data-filter="' + filter + '"]');
+  if (!chip) return;
+
+  group.querySelectorAll(".chip").forEach(c => {
+    c.classList.remove("chip--active");
+    c.setAttribute("aria-selected", "false");
+  });
+  chip.classList.add("chip--active");
+  chip.setAttribute("aria-selected", "true");
+
+  activeFilter = filter;
+  applyFilterAndSort();
+}
+
 function initFilters() {
   const group = document.getElementById("filterGroup");
   if (!group) return;
@@ -49,17 +65,12 @@ function initFilters() {
   group.addEventListener("click", (e) => {
     const chip = e.target.closest(".chip");
     if (!chip) return;
-
-    group.querySelectorAll(".chip").forEach(c => {
-      c.classList.remove("chip--active");
-      c.setAttribute("aria-selected", "false");
-    });
-    chip.classList.add("chip--active");
-    chip.setAttribute("aria-selected", "true");
-
-    activeFilter = chip.dataset.filter;
-    applyFilterAndSort();
+    selectChip(chip.dataset.filter);
   });
+
+  // Allows links like /landlord-index?filter=rejected (e.g. from a notification).
+  const wanted = new URLSearchParams(window.location.search).get("filter");
+  if (wanted) selectChip(wanted);
 }
 
 function initSort() {
@@ -73,20 +84,13 @@ function initSort() {
 }
 
 function initMetricLinks() {
-  // "Awaiting Review" now shows PROPERTIES pending admin approval (see
-  // PropertyController.viewLandlordDashboard's awaitingApprovalCount), so
-  // clicking it should filter this same page down to Pending Approval —
-  // not navigate away to Applications, which is a different concept
-  // entirely (student applications waiting on the landlord, not
-  // properties waiting on the admin).
+  // "Awaiting Review" counts PROPERTIES pending admin approval, so clicking
+  // it filters this same page to Pending Approval.
   const pendingCard = document.getElementById("statPendingApplications")?.closest(".stat-card");
   if (pendingCard) {
     pendingCard.style.cursor = "pointer";
     pendingCard.addEventListener("click", () => {
-      const pendingChip = document.querySelector('.chip[data-filter="pending"]');
-      if (pendingChip) {
-        pendingChip.click(); // reuses the exact same logic as clicking the chip by hand
-      }
+      selectChip("pending");
       document.getElementById("propertyGrid")?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   }
@@ -95,9 +99,13 @@ function initMetricLinks() {
   if (totalCard) {
     totalCard.style.cursor = "pointer";
     totalCard.addEventListener("click", () => {
+      selectChip("all");
       document.getElementById("propertyGrid")?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   }
+
+  // The Vacant Rooms card is a real <a href="/vacant-rooms"> in the HTML,
+  // so it needs no JavaScript here.
 }
 
 document.addEventListener("DOMContentLoaded", () => {

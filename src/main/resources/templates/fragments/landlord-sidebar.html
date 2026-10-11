@@ -15,8 +15,13 @@
   broke the trip Applications -> My Properties.
 
   Applications shows a count badge when the model has a
-  `pendingApplicationsCount` attribute > 0 (pages that don't set it show
-  no badge).
+  `pendingApplicationsCount` attribute > 0 (pending applications that need
+  the landlord's decision).
+
+  NEW: Reviews shows a count badge when the model has an
+  `unviewedReviewsCount` attribute > 0 (reviews the landlord has not opened
+  yet). Both numbers are added to every landlord page by
+  PropertyController.addLandlordShellData.
 
   Collapse/expand behaviour lives in landlord-sidebar-toggle.js.
 
@@ -54,6 +59,7 @@
         <a th:href="@{/my-property-reviews}" class="nav-item" th:classappend="${active == 'reviews'} ? ' active'">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M12 3.5 14.4 9l6 .6-4.5 4 1.4 5.9L12 16.6 6.7 19.5l1.4-5.9-4.5-4 6-.6L12 3.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
             <span>Reviews</span>
+            <span class="nav-badge" th:if="${unviewedReviewsCount != null and unviewedReviewsCount > 0}" th:text="${unviewedReviewsCount}">2</span>
         </a>
     </nav>
 

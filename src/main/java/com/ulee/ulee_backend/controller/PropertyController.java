@@ -9,6 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -81,6 +82,17 @@ public class PropertyController {
     // this, the same way LIVE_STATUS marks what's visible to students.
     private static final String DEACTIVATED_STATUS = "Inactive";
 
+    // NEW — the status every freshly submitted application starts with (see
+    // applyToProperty below). "New application" in the UI means exactly this:
+    // an application the landlord has not accepted or rejected yet.
+    private static final String PENDING_STATUS = "Pending";
+
+    // NEW — every property is in the same city (this site is for NMU students
+    // only), so landlords never enter it. It is stored on every property so
+    // the existing city column stays filled in; the landlord only chooses a
+    // SUBURB. Don't show this on cards — cards show the suburb only.
+    private static final String CITY = "Gqeberha";
+
     private boolean isVisibleToStudents(Property property) {
         return LIVE_STATUS.equals(property.getStatus()) && Boolean.TRUE.equals(property.getIsAvailable());
     }
@@ -120,6 +132,22 @@ public class PropertyController {
         return null;
     }
 
+    // A property name must be unique across ALL properties (any landlord,
+    // any status, including deactivated ones). Case and surrounding spaces
+    // are ignored, so "Sunset House" and " sunset house " count as the same
+    // name. A blank title is never "taken" (several empty drafts are fine —
+    // the publish rules already stop a blank title from going live).
+    // excludePropertyId lets a landlord re-save their own listing without
+    // clashing with itself; pass null when creating.
+    private boolean isTitleTaken(String title, Integer excludePropertyId) {
+        if (title == null || title.isBlank()) return false;
+        String clean = title.trim();
+        long matches = (excludePropertyId == null)
+                ? propertyRepository.countTitleMatches(clean)
+                : propertyRepository.countTitleMatchesExcluding(clean, excludePropertyId);
+        return matches > 0;
+    }
+
     // Resolves the logged-in user's account from their email (the Principal
     // Spring Security gives us). Every landlord-only endpoint calls this
     // first to find out WHO is making the request.
@@ -144,9 +172,9 @@ public class PropertyController {
     // Every "still exists" list of a landlord's own properties (My
     // Properties dashboard) should go through this instead of calling
     // findByLandlordID directly — keeps the Inactive-exclusion rule in one
-    // place instead of re-typed in every endpoint. Draft/Pending properties
-    // ARE included here, since the landlord is still actively managing
-    // those from their dashboard.
+    // place instead of re-typed in every endpoint. Draft/Pending/Rejected
+    // properties ARE included here, since the landlord is still actively
+    // managing those from their dashboard.
     private List<Property> findActiveOwnedProperties(Integer landlordID) {
         return propertyRepository.findByLandlordID(landlordID).stream()
                 .filter(p -> !DEACTIVATED_STATUS.equals(p.getStatus()))
@@ -164,6 +192,172 @@ public class PropertyController {
         return propertyRepository.findByLandlordID(landlordID).stream()
                 .filter(p -> LIVE_STATUS.equals(p.getStatus()))
                 .collect(Collectors.toList());
+    }
+
+    // ── NEW: helpers for the re-review rules and the Vacant Rooms page ──
+
+    // BigDecimal equality that ignores scale (1500 == 1500.00) and handles null.
+    private boolean sameMoney(java.math.BigDecimal a, java.math.BigDecimal b) {
+        if (a == null || b == null) return a == b;
+        return a.compareTo(b) == 0;
+    }
+
+    // Text equality that ignores surrounding spaces and treats null as "".
+    private boolean sameText(String a, String b) {
+        return (a == null ? "" : a.trim()).equals(b == null ? "" : b.trim());
+    }
+
+    // Accepted applications per property — the "filled" part of capacity.
+    private Map<Integer, Long> acceptedCountByProperty(List<Integer> propertyIds) {
+        if (propertyIds.isEmpty()) return new LinkedHashMap<>();
+        return applicationRepository.findByPropertyIDIn(propertyIds).stream()
+                .filter(a -> a.getPropertyID() != null && "Accepted".equalsIgnoreCase(a.getStatus()))
+                .collect(Collectors.groupingBy(Application::getPropertyID, Collectors.counting()));
+    }
+
+    // Vacant rooms for one property = capacity minus accepted students (never below 0).
+    private long vacancyOf(Property p, Map<Integer, Long> acceptedByProperty) {
+        int capacity = p.getCapacity() != null ? p.getCapacity() : 0;
+        return Math.max(0, capacity - acceptedByProperty.getOrDefault(p.getPropertyID(), 0L));
+    }
+
+    // One card on the Vacant Rooms page: a live property that still has
+    // space, plus the students waiting on it.
+    public static class VacantPropertyView {
+        private final Integer propertyID;
+        private final String title;
+        private final String suburb;
+        private final String coverUrl;
+        private final int capacity;
+        private final long acceptedCount;
+        private final long vacantCount;
+        private final List<ApplicationRowView> pendingApplications;
+
+        public VacantPropertyView(Integer propertyID, String title, String suburb, String coverUrl, int capacity,
+                                  long acceptedCount, long vacantCount, List<ApplicationRowView> pendingApplications) {
+            this.propertyID = propertyID;
+            this.title = title;
+            this.suburb = suburb;
+            this.coverUrl = coverUrl;
+            this.capacity = capacity;
+            this.acceptedCount = acceptedCount;
+            this.vacantCount = vacantCount;
+            this.pendingApplications = pendingApplications;
+        }
+
+        public Integer getPropertyID() { return propertyID; }
+        public String getTitle() { return title; }
+        public String getSuburb() { return suburb; }
+        public String getCoverUrl() { return coverUrl; }
+        public int getCapacity() { return capacity; }
+        public long getAcceptedCount() { return acceptedCount; }
+        public long getVacantCount() { return vacantCount; }
+        public long getPendingCount() { return pendingApplications.size(); }
+        public List<ApplicationRowView> getPendingApplications() { return pendingApplications; }
+    }
+
+    // ── NEW: helpers for the Applications pages ──
+
+    private boolean isPending(String status) {
+        return PENDING_STATUS.equalsIgnoreCase(status);
+    }
+
+    // NEW — total number of applications still waiting for a decision across
+    // every LIVE property this landlord owns. Powers the badge on the
+    // "Applications" sidebar item (see addLandlordShellData below).
+    private long countPendingApplications(Integer landlordID) {
+        List<Integer> liveIds = findLiveOwnedProperties(landlordID).stream()
+                .map(Property::getPropertyID)
+                .collect(Collectors.toList());
+        if (liveIds.isEmpty()) return 0;
+        return applicationRepository.countByPropertyIDInAndStatus(liveIds, PENDING_STATUS);
+    }
+    // NEW — number of reviews on this landlord's LIVE properties that the
+    // landlord has not opened yet. Powers the badge on the "Reviews" sidebar item.
+    private long countUnviewedReviews(Integer landlordID) {
+        List<Integer> liveIds = findLiveOwnedProperties(landlordID).stream()
+                .map(Property::getPropertyID)
+                .collect(Collectors.toList());
+        if (liveIds.isEmpty()) return 0;
+        return reviewRepository.countByPropertyIDInAndLandlordViewedFalse(liveIds);
+    }
+
+    // NEW — FIRST COME, FIRST SERVED. The student who applied earliest comes
+    // first. Applications with the same timestamp (or no timestamp at all)
+    // fall back to the applicationID, which always grows over time, so the
+    // order is the same every time. Used by "Accept up to capacity" and
+    // "Accept all" so the earliest applicants always get the places.
+    private int compareFirstComeFirstServed(Application a, Application b) {
+        boolean aHasDate = a.getApplicationDate() != null;
+        boolean bHasDate = b.getApplicationDate() != null;
+        if (aHasDate && !bHasDate) return -1;
+        if (!aHasDate && bHasDate) return 1;
+        if (aHasDate) {
+            int byDate = a.getApplicationDate().compareTo(b.getApplicationDate());
+            if (byDate != 0) return byDate;
+        }
+        return Integer.compare(a.getApplicationID(), b.getApplicationID());
+    }
+
+    // NEW — the order applications are LISTED in on the landlord's screen.
+    // Pending ones come first, oldest first, so the list reads top to bottom
+    // exactly like the queue "Accept up to capacity" works through. Decided
+    // ones (Accepted / Rejected) sit below, newest first.
+    private int compareQueueOrder(ApplicationRowView a, ApplicationRowView b) {
+        boolean aPending = isPending(a.getStatus());
+        boolean bPending = isPending(b.getStatus());
+        if (aPending != bPending) return aPending ? -1 : 1;
+
+        boolean aHasDate = a.getApplicationDate() != null;
+        boolean bHasDate = b.getApplicationDate() != null;
+        if (aHasDate && !bHasDate) return -1;
+        if (!aHasDate && bHasDate) return 1;
+
+        int result = 0;
+        if (aHasDate) {
+            result = a.getApplicationDate().compareTo(b.getApplicationDate());
+        }
+        if (result == 0) {
+            result = Integer.compare(a.getApplicationID(), b.getApplicationID());
+        }
+        return aPending ? result : -result;
+    }
+
+    // NEW — two-letter initials for the landlord avatar in the top bar.
+    private String initialsOf(User user) {
+        String first = user.getFirstName() != null && !user.getFirstName().isBlank()
+                ? user.getFirstName().trim().substring(0, 1) : "";
+        String last = user.getLastName() != null && !user.getLastName().isBlank()
+                ? user.getLastName().trim().substring(0, 1) : "";
+        String initials = (first + last).toUpperCase();
+        return initials.isEmpty() ? "?" : initials;
+    }
+
+    // NEW — display name taken from the database account (never typed into a
+    // template). Falls back to the email if both names are blank.
+    private String displayNameOf(User user) {
+        String first = user.getFirstName() != null ? user.getFirstName().trim() : "";
+        String last = user.getLastName() != null ? user.getLastName().trim() : "";
+        String full = (first + " " + last).trim();
+        return full.isEmpty() ? user.getEmail() : full;
+    }
+
+    // NEW — runs before EVERY request handled by this controller and adds the
+    // values the landlord pages' shared shell needs: who is logged in (name +
+    // initials for the top bar avatar) and how many applications are waiting
+    // (the sidebar badge). Doing it here means every landlord page gets the
+    // same correct numbers without each method adding them by hand. For
+    // visitors who are not logged in, or are not landlords, it adds nothing.
+    @ModelAttribute
+    public void addLandlordShellData(Model model, Principal principal) {
+        if (principal == null) return;
+        User user = userRepository.findByEmail(principal.getName()).orElse(null);
+        if (user == null || !"LANDLORD".equalsIgnoreCase(user.getRole())) return;
+
+        model.addAttribute("landlordName", displayNameOf(user));
+        model.addAttribute("landlordInitials", initialsOf(user));
+        model.addAttribute("pendingApplicationsCount", countPendingApplications(user.getUserID()));
+        model.addAttribute("unviewedReviewsCount", countUnviewedReviews(user.getUserID()));
     }
 
     // Generates the semester-start options for the "Available From"
@@ -221,6 +415,22 @@ public class PropertyController {
     @GetMapping("/")
     public String home() {
         return "redirect:/student-dashboard";
+    }
+
+    // NEW — used by the list-property wizard and the edit-property page to
+    // ask "is this name already taken?" BEFORE the landlord saves, so they
+    // get a friendly popup instead of losing what they typed. The same
+    // rule is enforced again on the server in listProperty() and
+    // updateProperty(), so this endpoint is a convenience, not the guard.
+    // excludeId = the property being edited (so it doesn't clash with itself).
+    @GetMapping("/check-property-title")
+    @org.springframework.web.bind.annotation.ResponseBody
+    public Map<String, Boolean> checkPropertyTitle(
+            @RequestParam String title,
+            @RequestParam(required = false) Integer excludeId,
+            Principal principal) {
+        getCurrentUser(principal); // must be logged in
+        return Map.of("taken", isTitleTaken(title, excludeId));
     }
 
     // Public-facing: only properties whose status is exactly LIVE_STATUS
@@ -302,6 +512,13 @@ public class PropertyController {
     // ============================================================
     // C100 support — Landlord Dashboard ("My Properties" inventory page)
     // ============================================================
+    //
+    // CHANGED — three stat cards now: Total Properties, Awaiting Review and
+    // Vacant Rooms. The Avg. Occupancy card is gone.
+    //
+    // Vacant Rooms used to be "total properties minus available properties",
+    // which counts PROPERTIES, not rooms. It is now the real thing: for every
+    // LIVE property, capacity minus accepted students, added up.
     @GetMapping("/landlord-index")
     public String viewLandlordDashboard(Model model, Principal principal) {
         Integer landlordID = getCurrentUser(principal).getUserID();
@@ -316,27 +533,21 @@ public class PropertyController {
                 .collect(Collectors.toList());
 
         long totalProperties = myProperties.size();
-        long activeListings = myProperties.stream().filter(Property::getIsAvailable).count();
-        long vacantRooms = totalProperties - activeListings;
 
-        // ── FIX: "Awaiting Review" card ──────────────────────────────────
-        // This counts PROPERTIES this landlord owns that are sitting in
-        // "Pending" status — i.e. submitted, but not yet approved by an
-        // Admin. This is deliberately separate from pendingApplications
-        // below (which counts STUDENT APPLICATIONS waiting on the
-        // landlord's own Accept/Reject decision — a completely different
-        // thing). The dashboard's "Awaiting Review" label was previously
-        // wired to pendingApplications by mistake, which is why creating a
-        // new Pending property never moved that number.
+        // "Awaiting Review" counts PROPERTIES this landlord owns that are
+        // sitting in "Pending" status — submitted, but not yet approved by an
+        // Admin. Deliberately separate from student applications.
         long awaitingApprovalCount = myProperties.stream()
                 .filter(p -> "Pending".equals(p.getStatus()))
                 .count();
 
-        List<Application> myApplications = applicationRepository.findByPropertyIDIn(propertyIds);
-        long pendingApplications = myApplications.stream().filter(a -> "Pending".equals(a.getStatus())).count();
-        long tenantsPlaced = myApplications.stream().filter(a -> "Accepted".equals(a.getStatus())).count();
-
-        long occupancyRate = totalProperties == 0 ? 0 : Math.round((activeListings * 100.0) / totalProperties);
+        // Vacant rooms = capacity minus accepted students, LIVE properties only.
+        List<Property> liveProperties = myProperties.stream()
+                .filter(p -> LIVE_STATUS.equals(p.getStatus()))
+                .collect(Collectors.toList());
+        Map<Integer, Long> accepted = acceptedCountByProperty(
+                liveProperties.stream().map(Property::getPropertyID).collect(Collectors.toList()));
+        long vacantRooms = liveProperties.stream().mapToLong(p -> vacancyOf(p, accepted)).sum();
 
         // Builds a lookup so the property cards can show a cover image
         // without a separate query per card. If a property has more than
@@ -353,13 +564,86 @@ public class PropertyController {
         model.addAttribute("properties", myProperties);
         model.addAttribute("imageLookup", imageLookup);
         model.addAttribute("totalProperties", totalProperties);
-        model.addAttribute("activeListings", activeListings);
         model.addAttribute("vacantRooms", vacantRooms);
-        model.addAttribute("occupancyRate", occupancyRate);
-        model.addAttribute("pendingApplications", pendingApplications);
-        model.addAttribute("awaitingApprovalCount", awaitingApprovalCount); // NEW — bind this in landlord-index.html
-        model.addAttribute("tenantsPlaced", tenantsPlaced);
+        model.addAttribute("awaitingApprovalCount", awaitingApprovalCount);
         return "landlord/landlord-index";
+    }
+
+    // ============================================================
+    // NEW — Vacant Rooms page (the Vacant Rooms stat card links here)
+    // ============================================================
+    // One card per LIVE property that still has space, with the students whose
+    // applications are still waiting for a decision (earliest first).
+    @GetMapping("/vacant-rooms")
+    public String viewVacantRooms(Model model, Principal principal) {
+        Integer landlordID = getCurrentUser(principal).getUserID();
+        List<Property> live = findLiveOwnedProperties(landlordID);
+        List<Integer> ids = live.stream().map(Property::getPropertyID).collect(Collectors.toList());
+
+        List<Application> allApps = ids.isEmpty() ? new ArrayList<>() : applicationRepository.findByPropertyIDIn(ids);
+        Map<Integer, List<Application>> appsByProperty = allApps.stream()
+                .filter(a -> a.getPropertyID() != null)
+                .collect(Collectors.groupingBy(Application::getPropertyID));
+        Map<Integer, Long> accepted = acceptedCountByProperty(ids);
+
+        // Cover photo per property: the main image if there is one, otherwise the first image.
+        Map<Integer, String> coverLookup = new LinkedHashMap<>();
+        if (!ids.isEmpty()) {
+            for (PropertyImage img : propertyImageRepository.findByPropertyIDIn(ids)) {
+                if (img.getUrl() == null) continue;
+                if (Boolean.TRUE.equals(img.getIsMain()) || !coverLookup.containsKey(img.getPropertyID())) {
+                    coverLookup.put(img.getPropertyID(), img.getUrl());
+                }
+            }
+        }
+
+        List<VacantPropertyView> views = new ArrayList<>();
+        long totalVacant = 0;
+        for (Property p : live) {
+            long vacant = vacancyOf(p, accepted);
+            if (vacant == 0) continue; // full properties are not listed here
+
+            List<ApplicationRowView> rows = new ArrayList<>();
+            for (Application a : appsByProperty.getOrDefault(p.getPropertyID(), new ArrayList<>())) {
+                if (!isPending(a.getStatus())) continue;
+
+                User student = a.getStudentID() == null ? null : userRepository.findById(a.getStudentID()).orElse(null);
+                Student profile = a.getStudentID() == null ? null : studentRepository.findById(a.getStudentID()).orElse(null);
+
+                ApplicationRowView row = new ApplicationRowView();
+                row.setApplicationID(a.getApplicationID());
+                row.setStudentID(a.getStudentID());
+                row.setPropertyID(a.getPropertyID());
+                row.setStatus(a.getStatus());
+                row.setApplicationDate(a.getApplicationDate());
+                row.setFundingStatus(a.getFundingStatus());
+                if (student != null) {
+                    row.setStudentName(displayNameOf(student));
+                    row.setStudentInitials(initialsOf(student));
+                    row.setStudentEmail(student.getEmail());
+                } else {
+                    row.setStudentName("Unknown student");
+                    row.setStudentInitials("?");
+                }
+                if (profile != null) row.setYearOfStudy(profile.getYearOfStudy());
+                rows.add(row);
+            }
+            rows.sort(this::compareQueueOrder);
+
+            int capacity = p.getCapacity() != null ? p.getCapacity() : 0;
+            views.add(new VacantPropertyView(p.getPropertyID(), p.getTitle(), p.getSuburb(),
+                    coverLookup.get(p.getPropertyID()), capacity,
+                    accepted.getOrDefault(p.getPropertyID(), 0L), vacant, rows));
+            totalVacant += vacant;
+        }
+
+        // Most waiting students first, then A-Z.
+        views.sort(Comparator.comparingLong(VacantPropertyView::getPendingCount).reversed()
+                .thenComparing(v -> v.getTitle() == null ? "" : v.getTitle().toLowerCase()));
+
+        model.addAttribute("vacantProperties", views);
+        model.addAttribute("totalVacant", totalVacant);
+        return "landlord/vacant-rooms";
     }
 
     // ============================================================
@@ -408,6 +692,18 @@ public class PropertyController {
     // and bounced back to the edit page with an error flag — it is never
     // silently downgraded to Draft.
     //
+    // A title that another property already uses is rejected for BOTH
+    // Save Changes and Save Draft (?error=duplicate-title).
+    //
+    // NEW — STATUS RULES ON SAVE (always the SAME property row, never a new one):
+    //   Draft    + Save Changes  -> Pending (first submission)
+    //   Rejected + Save Changes  -> Pending (resubmission; admin comment cleared)
+    //   Rejected + Save Draft    -> stays Rejected (the admin's comment stays visible)
+    //   Active   + Save Changes  -> Pending ONLY IF rent, address, capacity or
+    //                               photos changed (hidden from students until the
+    //                               admin approves again); any other edit stays Active
+    //   Pending  + anything      -> stays Pending
+    //
     // CRITICAL ORDERING NOTE: all validation happens BEFORE the Property
     // entity is mutated. With spring.jpa.open-in-view left at its default
     // (true), the entity returned by getOwnedProperty stays managed for the
@@ -421,7 +717,9 @@ public class PropertyController {
             @RequestParam(required = false) String title,
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String address,
-            @RequestParam(required = false) String city,
+            // CHANGED — was "city". The form field is now "suburb" (a dropdown).
+            // City is no longer sent by the forms; it is always set to CITY below.
+            @RequestParam(required = false) String suburb,
             @RequestParam(required = false) String rent,
             @RequestParam(required = false) String deposit,
             @RequestParam(required = false) String availableFrom,
@@ -460,6 +758,13 @@ public class PropertyController {
             effectiveRent = property.getRent();
         }
 
+        // ── NEW: property names must be unique. Applies to Save Draft too,
+        //    otherwise a draft could create the duplicate. Nothing has been
+        //    mutated yet, so returning here leaves the stored property alone. ──
+        if (title != null && isTitleTaken(title, id)) {
+            return "redirect:/edit-property/" + id + "?error=duplicate-title";
+        }
+
         // ── STEP 2: gate the save. Only "Save Changes" is gated — "Save
         //    Draft" still saves whatever's been filled in, exactly as
         //    before, so a landlord is never trapped and never loses work. ──
@@ -475,11 +780,31 @@ public class PropertyController {
             }
         }
 
+        // ── NEW STEP 2b: did the landlord change something the admin must
+        //    look at again? Only rent, address, capacity and photos count.
+        //    Everything else (title, description, amenities, deposit, suburb,
+        //    room type, ...) saves freely. This compares OLD vs NEW values, so
+        //    it must run before STEP 3 changes the entity. ──
+        boolean rentChanged = effectiveRent != null && !sameMoney(effectiveRent, property.getRent());
+        boolean addressChanged = address != null && !sameText(address, property.getAddress());
+        boolean capacityChanged = capacity != null && !capacity.equals(property.getCapacity());
+        boolean newPhotosUploaded = coverImage != null && !coverImage.isEmpty();
+        if (images != null) {
+            for (MultipartFile f : images) {
+                if (f != null && !f.isEmpty()) { newPhotosUploaded = true; break; }
+            }
+        }
+        boolean needsReReview = rentChanged || addressChanged || capacityChanged || newPhotosUploaded;
+        String previousStatus = property.getStatus();
+
         // ── STEP 3: only now is it safe to mutate. ──
-        if (title != null) property.setTitle(title);
+        if (title != null) property.setTitle(title.trim());
         if (type != null) property.setType(type);
         if (address != null) property.setAddress(address);
-        property.setCity(city);
+        // CHANGED — the landlord picks a suburb; the city is always the same.
+        // If the request has no suburb param at all, the stored suburb is left alone.
+        if (suburb != null) property.setSuburb(suburb.isBlank() ? null : suburb.trim());
+        property.setCity(CITY);
         property.setRent(effectiveRent != null ? effectiveRent : property.getRent());
         property.setDeposit((deposit != null && !deposit.isBlank()) ? new java.math.BigDecimal(deposit) : null);
         property.setDescription(description);
@@ -502,17 +827,35 @@ public class PropertyController {
                 ? amenityRepository.findAllById(amenityIds)
                 : new ArrayList<>());
 
-        // True only when a Draft is being finished and sent to the admin, so
-        // the landlord sees "pending approval" instead of a plain "updated".
-        boolean submittedForApproval = false;
+        // Which message the landlord sees after saving.
+        boolean submittedForApproval = false;      // Draft -> Pending
+        boolean resubmittedAfterRejection = false; // Rejected -> Pending
+        boolean sentBackForReview = false;         // Active -> Pending (sensitive edit)
+
         if (isDraft) {
-            property.setStatus("Draft");
-        } else if ("Draft".equals(property.getStatus())) {
+            // A rejected listing stays "Rejected" when only a draft is saved,
+            // so the admin's comment stays visible until the landlord really
+            // resubmits. Anything else becomes a Draft, as before.
+            if (!"Rejected".equals(previousStatus)) {
+                property.setStatus("Draft");
+            }
+        } else if ("Draft".equals(previousStatus)) {
             submittedForApproval = true;
             // Finishing a draft via "Save Changes" submits it for Admin
             // approval — same as a brand-new listing going Pending. By
             // this point requirements are guaranteed met (STEP 2 returned
             // early otherwise), so no re-check is needed here.
+            property.setStatus("Pending");
+        } else if ("Rejected".equals(previousStatus)) {
+            // The "second chance": same row, same property, back to the admin.
+            resubmittedAfterRejection = true;
+            property.setStatus("Pending");
+            property.setRejectionReason(null);
+        } else if (LIVE_STATUS.equals(previousStatus) && needsReReview) {
+            // A live listing with a sensitive change is hidden until the admin
+            // approves it again. Students only ever see status == "Active",
+            // so "Pending" hides it. Approval sets Active + isAvailable again.
+            sentBackForReview = true;
             property.setStatus("Pending");
         }
 
@@ -601,16 +944,23 @@ public class PropertyController {
             }
         }
 
-        // Both branches return to the dashboard (not back to the edit
-        // form), with a query flag so the dashboard's toast knows which
+        // All branches return to the dashboard (not back to the edit
+        // form), with a query flag so the dashboard's popup knows which
         // message to show.
         if (isDraft) return "redirect:/landlord-index?toast=draft-saved";
+        if (resubmittedAfterRejection) return "redirect:/landlord-index?toast=resubmitted";
+        if (sentBackForReview) return "redirect:/landlord-index?toast=review-needed";
         return submittedForApproval
                 ? "redirect:/landlord-index?toast=submitted"
                 : "redirect:/landlord-index?toast=updated";
     }
 
     // Removes a single photo from a property.
+    //
+    // NEW — photos are one of the four things the admin re-checks, so deleting
+    // a photo from a LIVE listing sends it back to Pending (hidden until
+    // re-approved), exactly like uploading one does. Remove this block if you
+    // decide deleting a photo should not need re-approval.
     @PostMapping("/delete-property-image/{imageId}")
     public String deletePropertyImage(@PathVariable Integer imageId, Principal principal) {
         Integer landlordID = getCurrentUser(principal).getUserID();
@@ -620,6 +970,12 @@ public class PropertyController {
         Property property = getOwnedProperty(image.getPropertyID(), landlordID);
 
         propertyImageRepository.deleteById(imageId);
+
+        if (LIVE_STATUS.equals(property.getStatus())) {
+            property.setStatus("Pending");
+            propertyRepository.save(property);
+        }
+
         return "redirect:/edit-property/" + property.getPropertyID();
     }
 
@@ -832,31 +1188,62 @@ public class PropertyController {
     // C102 — View Reviews (landlord side)
     // ============================================================
 
-    // "Reviews" in the sidebar goes straight to the single-property view.
-    // Picks the first Active property (alphabetically); falls back to
-    // any owned property if none are Active yet, and only bounces to
-    // the dashboard if the landlord owns literally zero properties.
+    // "Reviews" in the sidebar opens the All Properties list: one row per live
+    // property with its review count. Properties with reviews the landlord has
+    // not opened yet come first.
     @GetMapping("/my-property-reviews")
-    public String viewPropertyReviews(Principal principal) {
+    public String viewPropertyReviews(Model model, Principal principal) {
         Integer landlordID = getCurrentUser(principal).getUserID();
 
-        List<Property> myProperties = propertyRepository.findByLandlordID(landlordID);
+        List<Property> myProperties = findLiveOwnedProperties(landlordID);
         if (myProperties.isEmpty()) {
             return "redirect:/landlord-index?noReviewsYet=true";
         }
 
-        List<Property> active = myProperties.stream()
-                .filter(p -> LIVE_STATUS.equals(p.getStatus()))
-                .sorted((a, b) -> a.getTitle().compareToIgnoreCase(b.getTitle()))
+        List<Integer> propertyIds = myProperties.stream()
+                .map(Property::getPropertyID)
                 .collect(Collectors.toList());
-        if (!active.isEmpty()) {
-            return "redirect:/property-reviews/" + active.get(0).getPropertyID();
+
+        Map<Integer, List<Review>> reviewsByProperty = reviewRepository.findByPropertyIDIn(propertyIds).stream()
+                .filter(r -> r.getPropertyID() != null)
+                .collect(Collectors.groupingBy(Review::getPropertyID));
+
+        // Cover photo per property: the main image if there is one, otherwise the first image.
+        Map<Integer, String> coverLookup = new LinkedHashMap<>();
+        for (PropertyImage img : propertyImageRepository.findByPropertyIDIn(propertyIds)) {
+            if (img.getUrl() == null) continue;
+            boolean isMain = Boolean.TRUE.equals(img.getIsMain());
+            if (isMain || !coverLookup.containsKey(img.getPropertyID())) {
+                coverLookup.put(img.getPropertyID(), img.getUrl());
+            }
         }
 
-        List<Property> any = myProperties.stream()
-                .sorted((a, b) -> a.getTitle().compareToIgnoreCase(b.getTitle()))
-                .collect(Collectors.toList());
-        return "redirect:/property-reviews/" + any.get(0).getPropertyID();
+        List<ReviewOverviewView> summaries = new ArrayList<>();
+        long totalReviewsAll = 0;
+        for (Property p : myProperties) {
+            List<Review> reviews = reviewsByProperty.getOrDefault(p.getPropertyID(), new ArrayList<>());
+            long unviewed = reviews.stream()
+                    .filter(r -> Boolean.FALSE.equals(r.getLandlordViewed()))
+                    .count();
+
+            ReviewOverviewView view = new ReviewOverviewView();
+            view.setPropertyID(p.getPropertyID());
+            view.setTitle(p.getTitle());
+            view.setCoverUrl(coverLookup.get(p.getPropertyID()));
+            view.setTotalCount(reviews.size());
+            view.setUnviewedCount(unviewed);
+            summaries.add(view);
+            totalReviewsAll += reviews.size();
+        }
+
+        summaries.sort(Comparator
+                .comparingLong(ReviewOverviewView::getUnviewedCount).reversed()
+                .thenComparing(ReviewOverviewView::getTitleSortKey));
+
+        model.addAttribute("summaries", summaries);
+        model.addAttribute("totalPropertiesCount", summaries.size());
+        model.addAttribute("totalReviewsAll", totalReviewsAll);
+        return "landlord/reviews-overview";
     }
 
     // C102 — View Reviews detail (landlord side, one property). Stats
@@ -900,6 +1287,23 @@ public class PropertyController {
         List<ReviewRowView> pageReviews = totalItems == 0
                 ? new ArrayList<>()
                 : allReviews.subList(fromIndex, toIndex);
+
+        // NEW — opening a page of reviews counts as viewing them. Only the
+        // reviews actually shown on this page are marked, then the sidebar
+        // badge is refreshed so it is already correct on this same page.
+        List<Integer> shownIds = pageReviews.stream()
+                .map(ReviewRowView::getReviewID)
+                .collect(Collectors.toList());
+        if (!shownIds.isEmpty()) {
+            List<Review> toMark = reviewRepository.findAllById(shownIds).stream()
+                    .filter(r -> Boolean.FALSE.equals(r.getLandlordViewed()))
+                    .collect(Collectors.toList());
+            if (!toMark.isEmpty()) {
+                toMark.forEach(r -> r.setLandlordViewed(true));
+                reviewRepository.saveAll(toMark);
+            }
+        }
+        model.addAttribute("unviewedReviewsCount", countUnviewedReviews(landlordID));
 
         List<Integer> pageNumbers = new ArrayList<>();
         for (int i = 0; i < totalPages; i++) {
@@ -1001,21 +1405,43 @@ public class PropertyController {
     // C200 — View Applications (landlord side)
     // ============================================================
 
-    // "Applications" in the sidebar goes straight to the single-property
-    // view — same entry-point pattern as Reviews (C102): picks the first
-    // owned property that actually has at least one application
-    // (alphabetically), falls back to any owned property if none have
-    // applications yet, and only bounces to the dashboard if the landlord
-    // owns literally zero (non-deactivated) properties.
+    // CHANGED — "Applications" in the sidebar now lands on the All Properties
+    // overview (see viewApplicationsOverview below) instead of jumping
+    // straight into one property, so the landlord first sees WHERE the new
+    // applications are. This URL is kept (and still landlord-protected) so
+    // every existing link, including the redirects after "Accept all" /
+    // "Reject all", keeps working. A landlord with no live properties is
+    // bounced to the dashboard by the overview itself.
     @GetMapping("/manage-applications")
-    public String manageApplications(Principal principal) {
+    public String manageApplications() {
+        return "redirect:/applications-overview";
+    }
+
+    // NEW — case-insensitive "does this property match what the landlord
+    // typed in the search box": name, street address or suburb.
+    private boolean propertyMatchesSearch(Property p, String needle) {
+        return (p.getTitle() != null && p.getTitle().toLowerCase().contains(needle))
+                || (p.getAddress() != null && p.getAddress().toLowerCase().contains(needle))
+                || (p.getSuburb() != null && p.getSuburb().toLowerCase().contains(needle));
+    }
+
+    // NEW — C200 "All Properties" overview. One card per LIVE property the
+    // landlord owns, showing how many applications are Pending / Accepted /
+    // Rejected, so the landlord can see at a glance where the activity is
+    // without opening every property.
+    //
+    // Order: properties with the most PENDING (new) applications come first;
+    // ties go to the property that received an application most recently,
+    // then alphabetically. Properties with nothing pending sink to the end.
+    //
+    // Search (?q=): matches property name / address / suburb, AND the
+    // applicant's name or email. When a search is active the page gets
+    // two result lists: matching properties and matching applications.
+    @GetMapping("/applications-overview")
+    public String viewApplicationsOverview(@RequestParam(required = false) String q,
+                                           Model model, Principal principal) {
         Integer landlordID = getCurrentUser(principal).getUserID();
 
-        // FIX: was findByLandlordID with no status filter, so deactivated
-        // (Inactive) AND unapproved (Draft/Pending) properties could still
-        // be picked as the landing property here. Applications only make
-        // sense against Active properties, so this now uses the same
-        // "live" rule as the switcher below.
         List<Property> myProperties = findLiveOwnedProperties(landlordID);
         if (myProperties.isEmpty()) {
             return "redirect:/landlord-index?noApplicationsYet=true";
@@ -1024,22 +1450,137 @@ public class PropertyController {
         List<Integer> propertyIds = myProperties.stream()
                 .map(Property::getPropertyID)
                 .collect(Collectors.toList());
-        Set<Integer> propertyIdsWithApplications = applicationRepository.findByPropertyIDIn(propertyIds).stream()
-                .map(Application::getPropertyID)
-                .collect(Collectors.toSet());
-
-        List<Property> withApplications = myProperties.stream()
-                .filter(p -> propertyIdsWithApplications.contains(p.getPropertyID()))
-                .sorted((a, b) -> a.getTitle().compareToIgnoreCase(b.getTitle()))
+        List<Application> allApps = applicationRepository.findByPropertyIDIn(propertyIds).stream()
+                .filter(a -> a.getPropertyID() != null)
                 .collect(Collectors.toList());
-        if (!withApplications.isEmpty()) {
-            return "redirect:/property-applications/" + withApplications.get(0).getPropertyID();
+        Map<Integer, List<Application>> appsByProperty = allApps.stream()
+                .collect(Collectors.groupingBy(Application::getPropertyID));
+
+        // Cover photo per property: the main image if there is one, otherwise
+        // whichever image comes first.
+        Map<Integer, String> coverLookup = new LinkedHashMap<>();
+        for (PropertyImage img : propertyImageRepository.findByPropertyIDIn(propertyIds)) {
+            if (img.getUrl() == null) continue;
+            boolean isMain = Boolean.TRUE.equals(img.getIsMain());
+            if (isMain || !coverLookup.containsKey(img.getPropertyID())) {
+                coverLookup.put(img.getPropertyID(), img.getUrl());
+            }
         }
 
-        List<Property> any = myProperties.stream()
-                .sorted((a, b) -> a.getTitle().compareToIgnoreCase(b.getTitle()))
-                .collect(Collectors.toList());
-        return "redirect:/property-applications/" + any.get(0).getPropertyID();
+        List<ApplicationOverviewView> summaries = new ArrayList<>();
+        for (Property p : myProperties) {
+            List<Application> apps = appsByProperty.getOrDefault(p.getPropertyID(), new ArrayList<>());
+
+            long pending = apps.stream().filter(a -> isPending(a.getStatus())).count();
+            long accepted = apps.stream().filter(a -> "Accepted".equalsIgnoreCase(a.getStatus())).count();
+            long rejected = apps.stream().filter(a -> "Rejected".equalsIgnoreCase(a.getStatus())).count();
+
+            java.time.LocalDateTime latest = apps.stream()
+                    .map(Application::getApplicationDate)
+                    .filter(java.util.Objects::nonNull)
+                    .max((x, y) -> x.compareTo(y))
+                    .orElse(null);
+            java.time.LocalDateTime oldestPending = apps.stream()
+                    .filter(a -> isPending(a.getStatus()))
+                    .map(Application::getApplicationDate)
+                    .filter(java.util.Objects::nonNull)
+                    .min((x, y) -> x.compareTo(y))
+                    .orElse(null);
+
+            int capacity = p.getCapacity() != null ? p.getCapacity() : 0;
+            long acceptedPercent = capacity == 0 ? 0 : Math.min(100, Math.round((accepted * 100.0) / capacity));
+
+            ApplicationOverviewView view = new ApplicationOverviewView();
+            view.setPropertyID(p.getPropertyID());
+            view.setTitle(p.getTitle());
+            view.setSuburb(p.getSuburb());
+            view.setCoverUrl(coverLookup.get(p.getPropertyID()));
+            view.setCapacity(capacity);
+            view.setPendingCount(pending);
+            view.setAcceptedCount(accepted);
+            view.setRejectedCount(rejected);
+            view.setTotalCount(apps.size());
+            view.setAcceptedPercent(acceptedPercent);
+            view.setLatestApplicationDate(latest);
+            view.setOldestPendingDate(oldestPending);
+            summaries.add(view);
+        }
+
+        // Priority order: most pending first, then most recent activity, then A-Z.
+        summaries.sort(Comparator
+                .comparingLong(ApplicationOverviewView::getPendingCount).reversed()
+                .thenComparing(ApplicationOverviewView::getLatestApplicationDate,
+                        Comparator.nullsLast(Comparator.reverseOrder()))
+                .thenComparing(ApplicationOverviewView::getTitleSortKey));
+
+        long totalPendingAll = summaries.stream().mapToLong(ApplicationOverviewView::getPendingCount).sum();
+        long totalAcceptedAll = summaries.stream().mapToLong(ApplicationOverviewView::getAcceptedCount).sum();
+
+        // ── Search ──
+        String query = q == null ? "" : q.trim();
+        boolean searching = !query.isEmpty();
+        List<ApplicationOverviewView> shownSummaries = summaries;
+        List<ApplicationRowView> matchingApplications = new ArrayList<>();
+
+        if (searching) {
+            String needle = query.toLowerCase();
+
+            Map<Integer, Property> propertyById = myProperties.stream()
+                    .collect(Collectors.toMap(Property::getPropertyID, p -> p));
+
+            shownSummaries = summaries.stream()
+                    .filter(v -> {
+                        Property p = propertyById.get(v.getPropertyID());
+                        return p != null && propertyMatchesSearch(p, needle);
+                    })
+                    .collect(Collectors.toList());
+
+            Set<Integer> studentIds = allApps.stream()
+                    .map(Application::getStudentID)
+                    .filter(java.util.Objects::nonNull)
+                    .collect(Collectors.toSet());
+            Map<Integer, User> usersById = userRepository.findAllById(studentIds).stream()
+                    .collect(Collectors.toMap(User::getUserID, u -> u));
+
+            for (Application app : allApps) {
+                User student = usersById.get(app.getStudentID());
+                if (student == null) continue;
+
+                String first = student.getFirstName() != null ? student.getFirstName() : "";
+                String last = student.getLastName() != null ? student.getLastName() : "";
+                String fullName = (first + " " + last).trim();
+                String email = student.getEmail() != null ? student.getEmail() : "";
+
+                if (!fullName.toLowerCase().contains(needle) && !email.toLowerCase().contains(needle)) {
+                    continue;
+                }
+
+                Property p = propertyById.get(app.getPropertyID());
+
+                ApplicationRowView row = new ApplicationRowView();
+                row.setApplicationID(app.getApplicationID());
+                row.setStudentID(app.getStudentID());
+                row.setPropertyID(app.getPropertyID());
+                row.setStudentName(fullName.isEmpty() ? "Unknown student" : fullName);
+                row.setStudentInitials(initialsOf(student));
+                row.setStudentEmail(email);
+                row.setStatus(app.getStatus());
+                row.setApplicationDate(app.getApplicationDate());
+                row.setPropertyName(p != null ? p.getTitle() : "");
+                matchingApplications.add(row);
+            }
+            matchingApplications.sort(this::compareQueueOrder);
+        }
+
+        model.addAttribute("summaries", shownSummaries);
+        model.addAttribute("matchingApplications", matchingApplications);
+        model.addAttribute("searchQuery", query);
+        model.addAttribute("searching", searching);
+        model.addAttribute("totalPropertiesCount", summaries.size());
+        model.addAttribute("totalPendingAll", totalPendingAll);
+        model.addAttribute("totalAcceptedAll", totalAcceptedAll);
+        model.addAttribute("totalApplicationsAll", allApps.size());
+        return "landlord/applications-overview";
     }
 
     // C200 — View Applications detail (landlord side, one property). Mirrors
@@ -1048,8 +1589,15 @@ public class PropertyController {
     // stat cards (Pending % / Accepted %) computed over THIS property's
     // applications only, and the same capacity-based Accept gating as
     // before.
+    //
+    // NEW — optional ?q= filters the list to students whose name or email
+    // contains the text (used by the overview's application search). The
+    // stat cards and counts always reflect ALL of the property's
+    // applications, never just the filtered ones.
     @GetMapping("/property-applications/{id}")
-    public String viewPropertyApplicationsDetail(@PathVariable Integer id, Model model, Principal principal) {
+    public String viewPropertyApplicationsDetail(@PathVariable Integer id,
+                                                 @RequestParam(required = false) String q,
+                                                 Model model, Principal principal) {
         Integer landlordID = getCurrentUser(principal).getUserID();
         Property property = getOwnedProperty(id, landlordID);
 
@@ -1099,13 +1647,11 @@ public class PropertyController {
             rows.add(row);
         }
 
-        // Most recent first
-        // Pending applications first; anything already decided (Accepted or
-// Rejected) drops to the end of the list. Within each group, newest first.
-        rows.sort(Comparator
-                .comparing((ApplicationRowView r) -> "Pending".equalsIgnoreCase(r.getStatus()) ? 0 : 1)
-                .thenComparing(ApplicationRowView::getApplicationDate,
-                        Comparator.nullsLast(Comparator.reverseOrder())));
+        // CHANGED — first come, first served. Pending applications are listed
+        // OLDEST FIRST, so the list reads top to bottom in the same order
+        // "Accept up to capacity" works through it. Anything already decided
+        // (Accepted or Rejected) drops to the end, newest first.
+        rows.sort(this::compareQueueOrder);
 
         long totalCount = rows.size();
         long pendingCount = rows.stream().filter(r -> "Pending".equalsIgnoreCase(r.getStatus())).count();
@@ -1124,6 +1670,18 @@ public class PropertyController {
         // Accepted is 4% and Pending (remaining room) is 96%.
         long acceptedPercent = capacity == 0 ? 0 : Math.min(100, Math.round((acceptedCount * 100.0) / capacity));
         long pendingPercent = capacity == 0 ? 0 : 100 - acceptedPercent;
+
+        // NEW — search box on this page: keep only students whose name or
+        // email contains the text. Counts above were taken BEFORE this.
+        String query = q == null ? "" : q.trim();
+        List<ApplicationRowView> displayRows = rows;
+        if (!query.isEmpty()) {
+            String needle = query.toLowerCase();
+            displayRows = rows.stream()
+                    .filter(r -> (r.getStudentName() != null && r.getStudentName().toLowerCase().contains(needle))
+                            || (r.getStudentEmail() != null && r.getStudentEmail().toLowerCase().contains(needle)))
+                    .collect(Collectors.toList());
+        }
 
         // Property switcher: every LIVE (Active) property this landlord
         // owns — deactivated (Inactive) AND not-yet-approved (Draft/
@@ -1158,14 +1716,37 @@ public class PropertyController {
                     : eligibleProperties.get((currentIndex - 1 + size) % size).getPropertyID();
         }
 
+        // NEW — pending (new) applications per property, so the dropdown can
+        // show "Albert Luthuli (3 new)", plus the same properties in
+        // priority order (most pending first) for the dropdown to list.
+        // The next/back arrows keep using the stable A-Z list above, so a
+        // property doesn't jump position right after you accept someone.
+        Map<Integer, Long> pendingCountByProperty = new LinkedHashMap<>();
+        if (!eligibleProperties.isEmpty()) {
+            List<Integer> eligibleIds = eligibleProperties.stream()
+                    .map(Property::getPropertyID)
+                    .collect(Collectors.toList());
+            applicationRepository.findByPropertyIDIn(eligibleIds).stream()
+                    .filter(a -> a.getPropertyID() != null && isPending(a.getStatus()))
+                    .forEach(a -> pendingCountByProperty.merge(a.getPropertyID(), 1L, Long::sum));
+        }
+        List<Property> switcherProperties = eligibleProperties.stream()
+                .sorted(Comparator
+                        .comparingLong((Property p) -> -pendingCountByProperty.getOrDefault(p.getPropertyID(), 0L))
+                        .thenComparing(p -> p.getTitle() == null ? "" : p.getTitle().toLowerCase()))
+                .collect(Collectors.toList());
+
         model.addAttribute("property", property);
-        model.addAttribute("applications", rows);
+        model.addAttribute("applications", displayRows);
         model.addAttribute("applicationCount", totalCount);
         model.addAttribute("pendingPercent", pendingPercent);
         model.addAttribute("acceptedPercent", acceptedPercent);
         model.addAttribute("acceptedCount", acceptedCount);
         model.addAttribute("capacity", capacity);
         model.addAttribute("eligibleProperties", eligibleProperties);
+        model.addAttribute("switcherProperties", switcherProperties);
+        model.addAttribute("pendingCountByProperty", pendingCountByProperty);
+        model.addAttribute("searchQuery", query);
         model.addAttribute("nextPropertyId", nextPropertyId);
         model.addAttribute("previousPropertyId", previousPropertyId); // NEW
         return "landlord/property-applications-detail";
@@ -1249,10 +1830,11 @@ public class PropertyController {
         return "redirect:/property-applications/" + property.getPropertyID();
     }
 
-    // "Accept up to capacity" for ONE property: accepts the oldest Pending
-    // applications first (first come, first served) until capacity is
-    // reached, then rejects everyone else who applied to that same
-    // property. One-click way to fill a listing.
+    // "Accept up to capacity" for ONE property: FIRST COME, FIRST SERVED —
+    // accepts the students who applied earliest (see
+    // compareFirstComeFirstServed) until capacity is reached, then rejects
+    // everyone else who is still pending for that same property. One-click
+    // way to fill a listing.
     @PostMapping("/accept-up-to-capacity/{propertyId}")
     public String acceptUpToCapacity(@PathVariable Integer propertyId, Principal principal) {
         Integer landlordID = getCurrentUser(principal).getUserID();
@@ -1268,11 +1850,7 @@ public class PropertyController {
 
         List<Application> pending = propApps.stream()
                 .filter(a -> "Pending".equalsIgnoreCase(a.getStatus()))
-                .sorted((a, b) -> {
-                    if (a.getApplicationDate() == null) return 1;
-                    if (b.getApplicationDate() == null) return -1;
-                    return a.getApplicationDate().compareTo(b.getApplicationDate()); // oldest first
-                })
+                .sorted(this::compareFirstComeFirstServed) // earliest applicant first
                 .collect(Collectors.toList());
 
         for (int i = 0; i < pending.size(); i++) {
@@ -1292,28 +1870,21 @@ public class PropertyController {
         return sb.toString();
     }
 
-    // Builds "Suburb, City" (falling back to the raw address if neither is
-    // set) for the applications table's Property & Room column.
+    // CHANGED — shows the suburb only (city is always Gqeberha, so it adds
+    // nothing). Falls back to the raw address if no suburb is set.
     private String buildApplicationAddress(Property property) {
-        StringBuilder sb = new StringBuilder();
         if (property.getSuburb() != null && !property.getSuburb().isBlank()) {
-            sb.append(property.getSuburb());
+            return property.getSuburb();
         }
-        if (property.getCity() != null && !property.getCity().isBlank()) {
-            if (sb.length() > 0) sb.append(", ");
-            sb.append(property.getCity());
-        }
-        if (sb.length() == 0 && property.getAddress() != null) {
-            sb.append(property.getAddress());
-        }
-        return sb.toString();
+        return property.getAddress() != null ? property.getAddress() : "";
     }
 
     // Accept All — across EVERY property this landlord owns, accepts the
-    // oldest Pending applications first, up to each property's own
-    // remaining capacity. Properties already full, or with no capacity set
-    // at all, are skipped entirely. This is the whole-portfolio version of
-    // acceptUpToCapacity above (which only does one property at a time).
+    // earliest applicants first (first come, first served), up to each
+    // property's own remaining capacity. Properties already full, or with no
+    // capacity set at all, are skipped entirely. This is the whole-portfolio
+    // version of acceptUpToCapacity above (which only does one property at a
+    // time).
     @PostMapping("/accept-all-applications")
     public String acceptAllApplications(Principal principal) {
         Integer landlordID = getCurrentUser(principal).getUserID();
@@ -1341,11 +1912,7 @@ public class PropertyController {
 
             List<Application> pending = propApps.stream()
                     .filter(a -> "Pending".equalsIgnoreCase(a.getStatus()))
-                    .sorted((a, b) -> {
-                        if (a.getApplicationDate() == null) return 1;
-                        if (b.getApplicationDate() == null) return -1;
-                        return a.getApplicationDate().compareTo(b.getApplicationDate());
-                    })
+                    .sorted(this::compareFirstComeFirstServed) // earliest applicant first
                     .collect(Collectors.toList());
 
             for (int i = 0; i < pending.size() && i < remaining; i++) {
@@ -1469,7 +2036,7 @@ public class PropertyController {
         Application application = new Application();
         application.setStudentID(studentID);
         application.setPropertyID(propertyId);
-        application.setStatus("Pending");
+        application.setStatus(PENDING_STATUS);
         application.setApplicationDate(java.time.LocalDateTime.now());
         application.setFundingStatus(fundingStatus);
         application.setMessageToLandlord(messageToLandlord);
@@ -1715,7 +2282,8 @@ public class PropertyController {
             @RequestParam String title,
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String address,
-            @RequestParam(required = false) String city,
+            // CHANGED — was "city". The wizard now sends "suburb" (a dropdown).
+            @RequestParam(required = false) String suburb,
             @RequestParam(required = false) java.math.BigDecimal rent,
             @RequestParam(required = false) java.math.BigDecimal deposit,
             @RequestParam(required = false) String availableFrom,
@@ -1739,16 +2307,26 @@ public class PropertyController {
         Integer landlordID = currentUser.getUserID();
         boolean isDraft = "draft".equals(action);
 
+        // NEW — property names must be unique across all properties. The
+        // wizard asks /check-property-title first, so a landlord normally
+        // never gets here with a taken name; this is the backstop for a
+        // bypassed or racing request. Nothing has been saved yet.
+        if (isTitleTaken(title, null)) {
+            return "redirect:/list-property?error=duplicate-title";
+        }
+
         // Set when a "submit" had to be saved as a draft because a required
         // field was missing or the rent was too low — the landlord is told why.
         boolean downgradedToDraft = false;
 
         Property property = new Property();
         property.setLandlordID(landlordID);
-        property.setTitle(title);
+        property.setTitle(title != null ? title.trim() : null);
         property.setType(type);
         property.setAddress(address);
-        property.setCity(city);
+        // CHANGED — the landlord picks a suburb; the city is always the same.
+        property.setSuburb(suburb != null && !suburb.isBlank() ? suburb.trim() : null);
+        property.setCity(CITY);
         property.setRent(rent);
         property.setDeposit(deposit);
         property.setDescription(description);
@@ -1759,10 +2337,11 @@ public class PropertyController {
                 (occupantRestriction != null && !occupantRestriction.isBlank()) ? occupantRestriction : "Mixed");
         property.setAcceptedFunding(
                 (acceptedFunding != null && !acceptedFunding.isBlank()) ? acceptedFunding : "Any");
-        // Defaults to 1 if the wizard didn't send a capacity (shouldn't
-        // happen anymore now that Step 0 always includes the field, but
-        // this keeps old/partial submissions from crashing).
-        property.setCapacity(capacity != null ? capacity : 1);
+        // CHANGED — no more silent default of 1. A landlord has to enter the
+        // capacity themselves. If it's missing, the listing can only be saved
+        // as a Draft (meetsPublishRequirements below enforces that), and the
+        // edit page flags the empty field until they fill it in.
+        property.setCapacity(capacity);
         property.setIsAvailable(false);
 
         // ── Server-side enforcement (mirrors the wizard's client-side JS,

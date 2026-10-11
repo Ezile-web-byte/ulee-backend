@@ -7,10 +7,35 @@
     <link rel="stylesheet" href="/admin-style.css">
     <script src="/admin-script.js" defer></script>
     <style>
-        /* Status badges: Suspended = amber like the Suspend/Unsuspend buttons,
-           Rejected = red exactly like the Reject button */
         .badge-suspended { background: #fff8e1; color: #8a5a00; border: 1px solid #e5a300; }
         .badge-rejected  { background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border); }
+
+        /* Reject dialog (self-contained, this page has no shared confirm dialog) */
+        .rj-backdrop {
+            position: fixed; inset: 0; z-index: 9999; display: none;
+            align-items: center; justify-content: center;
+            background: rgba(10, 25, 30, .55); padding: 20px;
+        }
+        .rj-backdrop.open { display: flex; }
+        .rj-card {
+            width: 100%; max-width: 440px; background: #fff; border-radius: 16px;
+            padding: 26px 26px 22px; box-shadow: 0 20px 50px rgba(0,0,0,.25);
+        }
+        .rj-card h3 { margin: 0 0 4px; font-size: 18px; }
+        .rj-card .rj-prop { font-size: 13px; color: #5b6b70; margin-bottom: 10px; }
+        .rj-card p { margin: 0 0 12px; font-size: 14px; color: #3c4a4f; }
+        .rj-card textarea {
+            width: 100%; min-height: 110px; resize: vertical; box-sizing: border-box;
+            padding: 10px 12px; font-family: inherit; font-size: 14px;
+            border: 1.5px solid #d6dede; border-radius: 8px; outline: none;
+        }
+        .rj-card textarea:focus { border-color: #0f8a8a; box-shadow: 0 0 0 3px #dcf1ef; }
+        .rj-card textarea.invalid { border-color: #dc2626; background: #fef2f2; }
+        .rj-error { display: none; margin-top: 6px; font-size: 12.5px; color: #dc2626; }
+        .rj-error.show { display: block; }
+        .rj-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+        .rj-actions button { padding: 9px 20px; border-radius: 8px; font-size: 13.5px; font-weight: 600; cursor: pointer; border: 1.5px solid #d6dede; background: #fff; }
+        .rj-actions .rj-ok { background: #dc2626; border-color: #dc2626; color: #fff; }
     </style>
 </head>
 <body>
@@ -39,7 +64,13 @@
 
                     <div style="padding:22px;display:flex;flex-direction:column;gap:18px">
 
-                        <!-- Auto-validation result (Basic Flow step 2) -->
+                        <!-- NEW — shows the comment the landlord was given, if this listing is currently rejected -->
+                        <div th:if="${property.status == 'Rejected' and !#strings.isEmpty(property.rejectionReason)}"
+                             style="background:#fdecea;border:1px solid #f3b7b0;border-radius:8px;padding:12px 18px;color:#7a1f16">
+                            <strong>Rejected. Comment sent to the landlord:</strong>
+                            <p style="margin:6px 0 0;white-space:pre-line" th:text="${property.rejectionReason}">Reason</p>
+                        </div>
+
                         <div th:unless="${isValid}" style="background:#fff3e0;border:1px solid #ffb74d;border-radius:8px;padding:14px 18px">
                             <strong style="color:#e65100">⚠ This listing has missing information:</strong>
                             <ul style="margin:8px 0 0 20px;color:#e65100">
@@ -50,7 +81,6 @@
                             <strong style="color:#2e7d32">✓ All required information present</strong>
                         </div>
 
-                        <!-- Photo gallery, same as the images the landlord uploaded when listing -->
                         <div th:if="${not #lists.isEmpty(images)}">
                             <img id="mainListingImg" th:src="@{${images[0].url}}" alt="Property photo"
                                  style="width:100%;max-height:360px;object-fit:cover;border-radius:10px;display:block" />
@@ -101,6 +131,11 @@
                         </div>
 
                         <div class="field-group">
+                            <label class="field-label">Capacity</label>
+                            <p th:text="${property.capacity != null} ? ${property.capacity} + ' students' : 'Not specified'">Capacity</p>
+                        </div>
+
+                        <div class="field-group">
                             <label class="field-label">Deposit</label>
                             <p th:text="'R' + (${property.deposit} ?: 'N/A') + ' deposit'">Deposit</p>
                         </div>
@@ -130,17 +165,15 @@
                             </p>
                         </div>
 
-                        <!-- B100 — Approve/Reject only offered while the listing is still Pending.
-                             "Approved" and "Active" both count as already-moderated, same as everywhere
-                             else in the admin controller, so neither shows these buttons. -->
+                        <!-- Approve/Reject only while the listing is Pending -->
                         <div style="display:flex;gap:10px">
                             <div th:if="${property.status == 'Pending' or property.status == null}" style="display:flex;gap:10px">
                                 <form th:action="@{/admin/approve-listing/{id}(id=${property.propertyID})}" method="post">
                                     <button type="submit" class="btn btn-primary" style="padding:9px 22px;font-size:13px;border-radius:8px">Approve</button>
                                 </form>
-                                <form th:action="@{/admin/reject-listing/{id}(id=${property.propertyID})}" method="post"
-                                      onsubmit="return confirm('Reject this listing?');">
-                                    <button type="submit" class="btn btn-danger" style="padding:9px 22px;font-size:13px;border-radius:8px">Reject</button>
+                                <form id="rejectForm" th:action="@{/admin/reject-listing/{id}(id=${property.propertyID})}" method="post">
+                                    <input type="hidden" name="reason" id="rejectReasonField" />
+                                    <button type="button" id="openRejectBtn" class="btn btn-danger" style="padding:9px 22px;font-size:13px;border-radius:8px">Reject</button>
                                 </form>
                             </div>
                             <a th:href="${backUrl}"
@@ -182,5 +215,64 @@
         </div>
     </div>
 </div>
+
+<!-- Reject dialog -->
+<div class="rj-backdrop" id="rejectBackdrop" aria-hidden="true">
+    <div class="rj-card" role="dialog" aria-modal="true" aria-labelledby="rjTitle">
+        <h3 id="rjTitle">Reject this listing?</h3>
+        <div class="rj-prop" th:text="${property.title}">Property</div>
+        <p>The landlord will see your comment and can fix and resubmit the same listing.</p>
+        <textarea id="rejectReasonBox" maxlength="1000"
+                  placeholder="What should the landlord fix? (e.g. photos are blurry, address is incomplete)"></textarea>
+        <div class="rj-error" id="rejectReasonError">Please write a comment so the landlord knows what to fix.</div>
+        <div class="rj-actions">
+            <button type="button" id="rejectCancel">Cancel</button>
+            <button type="button" class="rj-ok" id="rejectOk">Yes, reject</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        var openBtn = document.getElementById('openRejectBtn');
+        if (!openBtn) return;
+        var backdrop = document.getElementById('rejectBackdrop');
+        var box = document.getElementById('rejectReasonBox');
+        var err = document.getElementById('rejectReasonError');
+        var field = document.getElementById('rejectReasonField');
+        var form = document.getElementById('rejectForm');
+
+        function open() {
+            box.value = '';
+            box.classList.remove('invalid');
+            err.classList.remove('show');
+            backdrop.classList.add('open');
+            backdrop.setAttribute('aria-hidden', 'false');
+            box.focus();
+        }
+        function close() {
+            backdrop.classList.remove('open');
+            backdrop.setAttribute('aria-hidden', 'true');
+        }
+
+        openBtn.addEventListener('click', open);
+        document.getElementById('rejectCancel').addEventListener('click', close);
+        backdrop.addEventListener('click', function (e) { if (e.target === backdrop) close(); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+        box.addEventListener('input', function () { box.classList.remove('invalid'); err.classList.remove('show'); });
+
+        document.getElementById('rejectOk').addEventListener('click', function () {
+            var text = box.value.trim();
+            if (!text) {
+                box.classList.add('invalid');
+                err.classList.add('show');
+                box.focus();
+                return;
+            }
+            field.value = text;
+            form.submit();
+        });
+    })();
+</script>
 </body>
 </html>

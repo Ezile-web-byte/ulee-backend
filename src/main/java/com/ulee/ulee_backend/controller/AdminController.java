@@ -68,9 +68,6 @@ public class AdminController {
     private com.ulee.ulee_backend.repository.AdminNotificationReadRepository adminNotificationReadRepository;
 
     @Autowired
-    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
-
-    @Autowired
     private com.ulee.ulee_backend.repository.AdminActivityLogRepository adminActivityLogRepository;
 
     /**
@@ -551,6 +548,8 @@ public class AdminController {
         // the listing live, so it now sets both together, same as
         // unsuspendListing() already does for the same reason.
         property.setIsAvailable(true);
+        // NEW — a previous rejection comment no longer applies once approved.
+        property.setRejectionReason(null);
         propertyRepository.save(property);
 
         // Landlords get a notification when a listing is approved. The DB
@@ -577,28 +576,47 @@ public class AdminController {
         return "redirect:/admin/pending-listings";
     }
 
+    // CHANGED — rejecting now REQUIRES a comment ("reason"). The landlord sees
+    // it on My Properties and on the edit page, and can fix the same listing
+    // and resubmit it (see PropertyController.updateProperty). Without a
+    // reason nothing is changed and the admin is told to write one.
     @PostMapping("/admin/reject-listing/{id}")
-    public String rejectListing(@PathVariable Integer id, RedirectAttributes redirectAttributes) {
+    public String rejectListing(@PathVariable Integer id,
+                                @RequestParam(required = false) String reason,
+                                RedirectAttributes redirectAttributes) {
         Optional<Property> propertyOpt = propertyRepository.findById(id);
         if (propertyOpt.isEmpty()) {
             redirectAttributes.addFlashAttribute("actionError", "Listing #" + id + " could not be found.");
             return "redirect:/admin/pending-listings";
         }
         Property property = propertyOpt.get();
+
+        // The landlord must always be told what to fix.
+        if (reason == null || reason.isBlank()) {
+            redirectAttributes.addFlashAttribute("actionError",
+                    "Please tell the landlord why \"" + property.getTitle() + "\" is being rejected.");
+            return "redirect:/admin/pending-listings";
+        }
+        String cleanReason = reason.trim();
+
         property.setStatus("Rejected");
+        property.setIsAvailable(false);
+        property.setRejectionReason(cleanReason);
         propertyRepository.save(property);
 
         // Same reasoning as approveListing() above: notify the landlord so a
         // rejection isn't only visible by the listing silently disappearing
-        // from "Pending" on their own dashboard.
+        // from "Pending" on their own dashboard. The message now includes
+        // the admin's feedback.
         Optional<User> rejectedLandlordOpt = userRepository.findById(property.getLandlordID());
         rejectedLandlordOpt.ifPresent(landlordUser -> {
             com.ulee.ulee_backend.model.Notification notification = new com.ulee.ulee_backend.model.Notification();
             notification.setLandlordID(landlordUser.getUserID());
             notification.setPropertyID(property.getPropertyID());
-            notification.setTitle("Listing Rejected: " + property.getTitle());
+            notification.setTitle("Listing Needs Changes: " + property.getTitle());
             notification.setMessage("Dear " + safeName(landlordUser) + ",\n\n\"" + property.getTitle()
-                    + "\" was not approved. Please review your listing details and resubmit, or contact support if you have questions.");
+                    + "\" was not approved.\n\nAdmin feedback: " + cleanReason
+                    + "\n\nOpen the listing from My Properties, fix these points and resubmit it.");
             notification.setCreatedAt(LocalDateTime.now());
             notification.setIsRead(false);
             notificationRepository.save(notification);
@@ -1863,8 +1881,8 @@ public class AdminController {
     /**
      * Updates the logged-in admin's own password (Settings > Security >
      * Password > "Update password"). The current password MUST match what's
-     * stored in the database (checked via PasswordEncoder, never a plain
-     * string compare) before the new one is saved.
+     * stored in the database (plain-text comparison; passwords are not hashed in
+     * this project) before the new one is saved.
      */
     @PostMapping("/admin/settings/password")
     @org.springframework.web.bind.annotation.ResponseBody
@@ -1881,12 +1899,10 @@ public class AdminController {
         }
         User user = userOpt.get();
 
-        // The current password must match what's in the database.
-        // passwordEncoder.matches() hashes the submitted value the same way
-        // it was hashed at signup/last change and compares hashes — never
-        // compare raw strings against user.getPassword() directly, since
-        // that column is a hash, not plaintext.
-        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+        // Passwords are stored as plain text (project requirement: the lecturers
+        // read them from the database), so the current password is compared
+        // directly with the stored value.
+        if (user.getPassword() == null || !user.getPassword().equals(currentPassword)) {
             return Map.of("success", false, "message", "Current password is incorrect.");
         }
         if (newPassword == null || newPassword.length() < 8) {
@@ -1896,7 +1912,7 @@ public class AdminController {
             return Map.of("success", false, "message", "New passwords do not match.");
         }
 
-        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setPassword(newPassword);
         userRepository.save(user);
 
         logActivity("Changed password", "Changed their own password");
