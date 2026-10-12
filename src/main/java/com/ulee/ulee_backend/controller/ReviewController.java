@@ -13,6 +13,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Student review flow (A500). Saves into the `reviews` table.
+ * Same checks as before (accepted + not already reviewed), now also saving the
+ * four sub-ratings, residency status and year of study from the new form.
+ */
 @Controller
 public class ReviewController {
 
@@ -28,9 +33,21 @@ public class ReviewController {
     @Autowired
     private UserRepository userRepository;
 
-    // A500 — show the review form for a specific property
-    // Alternative flow: student not accepted for this property
-    // Alternative flow: student already reviewed this property
+    @Autowired
+    private PropertyImageRepository propertyImageRepository;
+
+    // key, label, icon, hint: drives the four optional sub-rating rows on the form
+    private static final List<String[]> SUB_RATINGS = List.of(
+            new String[]{"cleanlinessRating", "Cleanliness", "cleaning_services", "Rooms and shared areas"},
+            new String[]{"safetyRating", "Safety & security", "shield", "Locks, lighting, neighbourhood"},
+            new String[]{"wifiRating", "Wi-Fi", "wifi", "Speed and reliability"},
+            new String[]{"studyAreaRating", "Study space", "menu_book", "Quiet places to study"});
+
+    private boolean validOptional(Integer r) {
+        return r == null || (r >= 1 && r <= 5);
+    }
+
+    // A500: show the review form for a specific property
     @GetMapping("/write-review/{propertyId}")
     public String showReviewForm(@PathVariable Integer propertyId, Model model,
                                  Authentication authentication, RedirectAttributes redirectAttributes) {
@@ -40,7 +57,8 @@ public class ReviewController {
             redirectAttributes.addFlashAttribute("actionError", "Could not identify your account. Please log in again.");
             return "redirect:/student-dashboard";
         }
-        Integer studentId = userOpt.get().getUserID();
+        User user = userOpt.get();
+        Integer studentId = user.getUserID();
 
         Optional<Property> propertyOpt = propertyRepository.findById(propertyId);
         if (propertyOpt.isEmpty()) {
@@ -59,26 +77,36 @@ public class ReviewController {
             return "redirect:/property/" + propertyId;
         }
 
-        boolean alreadyReviewed = reviewRepository
-                .findByStudentIDAndPropertyID(studentId, propertyId)
-                .isPresent();
-
-        if (alreadyReviewed) {
+        if (reviewRepository.findByStudentIDAndPropertyID(studentId, propertyId).isPresent()) {
             redirectAttributes.addFlashAttribute("actionError", "You've already submitted a review for this property.");
             return "redirect:/property/" + propertyId;
         }
 
+        String imageUrl = propertyImageRepository.findByPropertyID(propertyId).stream()
+                .findFirst().map(PropertyImage::getUrl).orElse(null);
+
+        String lastName = user.getLastName();
+        String initials = ("" + user.getFirstName().charAt(0)
+                + (lastName != null && !lastName.isBlank() ? lastName.charAt(0) : "")).toUpperCase();
+
         model.addAttribute("property", propertyOpt.get());
+        model.addAttribute("imageUrl", imageUrl);
+        model.addAttribute("subRatings", SUB_RATINGS);
+        model.addAttribute("userInitials", initials);
         return "student/write-review";
     }
 
-    // A500 — submit the review
-    // Alternative flow: rating out of range
-    // Alternative flow: not accepted / duplicate (re-checked server-side, not just trusted from the form)
+    // A500: submit the review (saved into `reviews`)
     @PostMapping("/submit-review")
     public String submitReview(@RequestParam Integer propertyId,
                                @RequestParam Integer rating,
                                @RequestParam String comment,
+                               @RequestParam(required = false) Integer cleanlinessRating,
+                               @RequestParam(required = false) Integer safetyRating,
+                               @RequestParam(required = false) Integer wifiRating,
+                               @RequestParam(required = false) Integer studyAreaRating,
+                               @RequestParam(required = false) String residencyStatus,
+                               @RequestParam(required = false) Integer yearOfStudy,
                                Authentication authentication,
                                RedirectAttributes redirectAttributes) {
 
@@ -89,8 +117,16 @@ public class ReviewController {
         }
         Integer studentId = userOpt.get().getUserID();
 
-        if (rating < 1 || rating > 5) {
-            redirectAttributes.addFlashAttribute("actionError", "Rating must be between 1 and 5.");
+        if (rating < 1 || rating > 5
+                || !validOptional(cleanlinessRating) || !validOptional(safetyRating)
+                || !validOptional(wifiRating) || !validOptional(studyAreaRating)) {
+            redirectAttributes.addFlashAttribute("actionError", "Ratings must be between 1 and 5.");
+            return "redirect:/write-review/" + propertyId;
+        }
+
+        String cleanComment = comment == null ? "" : comment.trim();
+        if (cleanComment.length() < 10) {
+            redirectAttributes.addFlashAttribute("actionError", "Please write at least a short sentence about your stay.");
             return "redirect:/write-review/" + propertyId;
         }
 
@@ -114,11 +150,19 @@ public class ReviewController {
         review.setStudentID(studentId);
         review.setPropertyID(propertyId);
         review.setRating(rating);
-        review.setComment(comment);
+        review.setComment(cleanComment);
         review.setReviewDate(LocalDateTime.now());
+        review.setCleanlinessRating(cleanlinessRating);
+        review.setSafetyRating(safetyRating);
+        review.setWifiRating(wifiRating);
+        review.setStudyAreaRating(studyAreaRating);
+        review.setResidencyStatus(
+                "Current".equals(residencyStatus) || "Past".equals(residencyStatus) ? residencyStatus : null);
+        review.setYearOfStudy(yearOfStudy != null && yearOfStudy >= 1 && yearOfStudy <= 6 ? yearOfStudy : null);
+        review.setIsReported(false);
         reviewRepository.save(review);
 
         redirectAttributes.addFlashAttribute("actionMessage", "Your review has been submitted. Thank you!");
-        return "redirect:/property/" + propertyId;
+        return "redirect:/my-stay";
     }
 }

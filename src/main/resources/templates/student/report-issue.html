@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report an Issue – ULEE</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" th:href="@{/student-portal.css}">
+    <script th:src="@{/student-portal.js}" defer></script>
+</head>
+<body>
+<div class="app-shell">
+
+    <div th:replace="~{fragments/student-sidebar :: sidebar('my-stay')}"></div>
+
+    <main class="main">
+        <div class="topbar">
+            <div class="crumbs"><a th:href="@{/my-dashboard}">Student portal</a> / <a th:href="@{/my-stay}">My Stay</a> / <strong>Report an issue</strong></div>
+            <div class="topbar-right">
+                <span class="avatar" th:text="${userInitials != null ? userInitials : 'ST'}" aria-hidden="true">ST</span>
+            </div>
+        </div>
+
+        <header class="page-head">
+            <a class="back-link" th:href="@{/my-stay}"><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>Back to My Stay</a>
+            <p class="eyebrow"><span class="live-dot" aria-hidden="true"></span>Report</p>
+            <h1>Report an issue</h1>
+            <p class="lead">Something wrong at <strong th:text="${property.title}">this property</strong>? Tell us what it is and the ULEE team will look into it.</p>
+        </header>
+
+        <div class="notice warn">
+            <span class="material-symbols-outlined" aria-hidden="true">emergency</span>
+            <span>If anyone is in danger, contact emergency services first. This form is not monitored around the clock.</span>
+        </div>
+        <div class="notice error" th:if="${actionError != null}" role="alert">
+            <span class="material-symbols-outlined" aria-hidden="true">error</span><span th:text="${actionError}">Something went wrong.</span>
+        </div>
+
+        <form th:action="@{/submit-report}" method="post">
+            <input type="hidden" name="propertyId" th:value="${property.propertyID}">
+            <div class="form-layout">
+                <div class="form-col">
+
+                    <section class="form-card">
+                        <div class="step-head"><span class="step-badge">1</span><h2>What kind of issue is it?</h2></div>
+                        <fieldset class="field">
+                            <legend class="sr-only">Issue type</legend>
+                            <div class="cat-grid">
+                                <div class="cat" th:each="c : ${categories}">
+                                    <input type="radio" name="category" th:id="'cat-' + ${c[0]}" th:value="${c[0]}" required>
+                                    <label th:for="'cat-' + ${c[0]}">
+                                        <span class="cat-icon"><span class="material-symbols-outlined" aria-hidden="true" th:text="${c[2]}">build</span></span>
+                                        <span class="cat-text"><strong th:text="${c[1]}">Category</strong><small th:text="${c[3]}">Description</small></span>
+                                        <span class="material-symbols-outlined cat-check" aria-hidden="true">check_circle</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </section>
+
+                    <section class="form-card">
+                        <div class="step-head"><span class="step-badge">2</span><h2>Describe what happened</h2></div>
+                        <div class="field">
+                            <label class="field-label" for="details">Details</label>
+                            <textarea id="details" name="details" maxlength="1000" required minlength="10"
+                                      data-counter="#desc-count"
+                                      placeholder="What is wrong, where is it, and when did it start?"></textarea>
+                            <span class="counter" id="desc-count" aria-live="polite">0 / 1000</span>
+                        </div>
+                        <div class="form-actions">
+                            <div class="note"><span class="material-symbols-outlined" aria-hidden="true">lock</span>Your name is never shared with the landlord.</div>
+                            <div class="buttons">
+                                <a class="btn btn-ghost" th:href="@{/my-stay}">Cancel</a>
+                                <button type="submit" class="btn btn-primary">
+                                    <span class="material-symbols-outlined" aria-hidden="true">send</span>Send report
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <aside class="aside-col">
+                    <div class="prop-card">
+                        <img th:if="${imageUrl != null}" th:src="${imageUrl}" alt="">
+                        <div class="shade"></div>
+                        <div class="info">
+                            <div class="eyebrow-sm">Reporting on</div>
+                            <h3 th:text="${property.title}">Property name</h3>
+                            <div class="city" th:text="${property.suburb != null ? property.suburb : property.city}">City</div>
+                        </div>
+                    </div>
+                    <section class="panel">
+                        <h2 class="aside-title">What happens next</h2>
+                        <ol class="steps">
+                            <li><span class="step-num">1</span><span><strong>You send the report.</strong> It is saved against this property.</span></li>
+                            <li><span class="step-num">2</span><span><strong>The ULEE team reviews it.</strong> Reports go to the admin team, not to the landlord.</span></li>
+                            <li><span class="step-num">3</span><span><strong>You can find it again</strong> under My reports on My Stay.</span></li>
+                        </ol>
+                    </section>
+                </aside>
+            </div>
+        </form>
+    </main>
+</div>
+</body>
+</html>
