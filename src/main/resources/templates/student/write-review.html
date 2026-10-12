@@ -1,361 +1,151 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title th:text="'Write a Review – ' + ${property.title}">Write a Review</title>
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
-    <style>
-        :root {
-            --primary:        hsl(180, 67%, 47%);
-            --primary-dark:   hsl(180, 67%, 36%);
-            --primary-deeper: hsl(180, 67%, 28%);
-            --primary-pale:   hsl(180, 67%, 96%);
-            --bg:             hsl(0, 0%, 99%);
-            --text:           #1a1a1a;
-            --muted:          #777;
-            --white:          #ffffff;
-            --border:         hsl(180, 20%, 88%);
-            --shadow-sm:      0 2px 12px rgba(0,0,0,0.08);
-            --shadow-md:      0 6px 28px rgba(0,0,0,0.13);
-            --radius:         12px;
-            --transition:     0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-        body {
-            font-family: 'Sora', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-        }
-
-        .topbar {
-            display: flex;
-            align-items: center;
-            padding: 1.4rem 2.5rem;
-        }
-
-        .back-btn {
-            display: flex;
-            align-items: center;
-            gap: 0.45rem;
-            height: 42px;
-            padding: 0 16px 0 12px;
-            border: 1px solid var(--border);
-            border-radius: 999px;
-            background: var(--white);
-            color: var(--text);
-            cursor: pointer;
-            text-decoration: none;
-            transition: background var(--transition), transform 0.15s ease;
-            font-size: 13px;
-            font-weight: 600;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .back-btn:hover { background: var(--primary-pale); transform: translateX(-2px); }
-        .back-btn svg { width: 16px; height: 16px; }
-
-        .wrap {
-            max-width: 640px;
-            margin: 0 auto;
-            padding: 0 1.5rem 4rem;
-        }
-
-        .wrap h1 {
-            font-family: 'Playfair Display', serif;
-            font-size: 24px;
-            margin-bottom: 4px;
-        }
-
-        .wrap .subtitle {
-            font-size: 14px;
-            color: var(--muted);
-            margin-bottom: 24px;
-        }
-
-        .card {
-            background: var(--white);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-md);
-            padding: 28px;
-            display: flex;
-            flex-direction: column;
-            gap: 22px;
-        }
-
-        .field-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 18px;
-        }
-
-        .field label {
-            display: block;
-            font-size: 11px;
-            font-weight: 700;
-            color: var(--primary-deeper);
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            margin-bottom: 8px;
-        }
-
-        .field select {
-            width: 100%;
-            font-family: 'Sora', sans-serif;
-            font-size: 14px;
-            padding: 10px 14px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text);
-            background: var(--white);
-        }
-
-        /* ── RESIDENCY TOGGLE ── */
-        .residency-toggle {
-            display: flex;
-            background: var(--primary-pale);
-            border-radius: 999px;
-            padding: 4px;
-            gap: 4px;
-        }
-
-        .residency-toggle input { display: none; }
-
-        .residency-toggle label {
-            flex: 1;
-            text-align: center;
-            font-size: 13px;
-            font-weight: 600;
-            padding: 8px 0;
-            border-radius: 999px;
-            cursor: pointer;
-            color: var(--primary-deeper);
-            text-transform: none;
-            letter-spacing: normal;
-            margin: 0;
-            transition: background var(--transition), color var(--transition);
-        }
-
-        .residency-toggle input:checked + label {
-            background: var(--primary-dark);
-            color: var(--white);
-        }
-
-        /* ── CATEGORY STAR RATINGS ── */
-        .category-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
-        }
-
-        .category-box {
-            background: var(--primary-pale);
-            border-radius: 10px;
-            padding: 14px 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .category-box .cat-label {
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--primary-deeper);
-        }
-
-        .star-picker {
-            display: flex;
-            gap: 4px;
-        }
-
-        .star-picker input { display: none; }
-
-        .star-picker label {
-            font-size: 22px;
-            line-height: 1;
-            cursor: pointer;
-            color: var(--border);
-            margin: 0;
-            text-transform: none;
-            letter-spacing: normal;
-        }
-
-        .star-picker label.filled { color: var(--primary-dark); }
-
-        .field textarea {
-            width: 100%;
-            font-family: 'Sora', sans-serif;
-            font-size: 14px;
-            padding: 12px 14px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text);
-            resize: vertical;
-            min-height: 110px;
-        }
-
-        .field textarea:focus,
-        .field select:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        .field-tip {
-            font-size: 12px;
-            color: var(--muted);
-            font-style: italic;
-            margin-top: 6px;
-        }
-
-        .submit-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            width: 100%;
-            background: var(--primary-dark);
-            color: var(--white);
-            border: none;
-            border-radius: 999px;
-            padding: 14px;
-            font-family: 'Sora', sans-serif;
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: background var(--transition), transform 0.15s;
-        }
-
-        .submit-btn:hover { background: var(--primary-deeper); transform: scale(1.01); }
-
-        @media (max-width: 560px) {
-            .field-row, .category-grid { grid-template-columns: 1fr; }
-        }
-    </style>
-    <link rel="stylesheet" href="/speak-with-ai.css">
-    <script src="/speak-with-ai-logic.js" defer></script>
-    <script src="/speak-with-ai.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Write a Review – ULEE</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" th:href="@{/student-portal.css}">
+    <script th:src="@{/student-portal.js}" defer></script>
 </head>
 <body>
+<div class="app-shell">
 
-<div class="topbar">
-    <a class="back-btn" th:href="@{/property/{id}(id=${property.propertyID})}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M15 18l-6-6 6-6"/>
-        </svg>
-        <span>Back to Property</span>
-    </a>
+    <div th:replace="~{fragments/student-sidebar :: sidebar('my-stay')}"></div>
+
+    <main class="main">
+        <div class="topbar">
+            <div class="crumbs"><a th:href="@{/my-dashboard}">Student portal</a> / <a th:href="@{/my-stay}">My Stay</a> / <strong>Write a review</strong></div>
+            <div class="topbar-right">
+                <span class="avatar" th:text="${userInitials != null ? userInitials : 'ST'}" aria-hidden="true">ST</span>
+            </div>
+        </div>
+
+        <header class="page-head">
+            <a class="back-link" th:href="@{/my-stay}"><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>Back to My Stay</a>
+            <p class="eyebrow"><span class="live-dot" aria-hidden="true"></span>Review</p>
+            <h1 >Write a review</h1>
+            <p class="lead">Tell future students what it is really like to live at <strong th:text="${property.title}">this property</strong>.</p>
+        </header>
+
+        <div class="notice error" th:if="${actionError != null}" role="alert">
+            <span class="material-symbols-outlined" aria-hidden="true">error</span><span th:text="${actionError}">Something went wrong.</span>
+        </div>
+
+        <form th:action="@{/submit-review}" method="post">
+            <input type="hidden" name="propertyId" th:value="${property.propertyID}">
+            <div class="form-layout">
+                <div class="form-col">
+
+                    <section class="form-card">
+                        <div class="step-head"><span class="step-badge">1</span><h2>Overall rating</h2></div>
+                        <fieldset class="field">
+                            <legend class="field-label">How would you rate your stay?</legend>
+                            <div class="stars">
+                                <th:block th:each="n : ${#numbers.sequence(5,1,-1)}">
+                                    <input type="radio" name="rating" th:id="'star' + ${n}" th:value="${n}" required>
+                                    <label th:for="'star' + ${n}" th:title="${n} + ' star' + (${n} > 1 ? 's' : '')">
+                                        <span class="material-symbols-outlined" aria-hidden="true">star</span>
+                                        <span class="sr-only" th:text="${n} + (${n} == 1 ? ' star' : ' stars')">5 stars</span>
+                                    </label>
+                                </th:block>
+                            </div>
+                            <span class="hint">1 = poor, 5 = excellent</span>
+                        </fieldset>
+                    </section>
+
+                    <section class="form-card">
+                        <div class="step-head"><span class="step-badge">2</span><h2>Rate the details</h2><span class="optional">optional</span></div>
+                        <div>
+                            <div class="rating-row" th:each="r : ${subRatings}">
+                                <span class="rating-icon"><span class="material-symbols-outlined" aria-hidden="true" th:text="${r[2]}">star</span></span>
+                                <span class="rating-text"><strong th:text="${r[1]}">Label</strong><small th:text="${r[3]}">Hint</small></span>
+                                <fieldset class="stars sm">
+                                    <legend class="sr-only" th:text="${r[1]} + ' rating'">Rating</legend>
+                                    <th:block th:each="n : ${#numbers.sequence(5,1,-1)}">
+                                        <input type="radio" th:name="${r[0]}" th:id="'sr-' + ${r[0]} + '-' + ${n}" th:value="${n}">
+                                        <label th:for="'sr-' + ${r[0]} + '-' + ${n}"><span class="material-symbols-outlined" aria-hidden="true">star</span><span class="sr-only" th:text="${n} + ' stars'">5 stars</span></label>
+                                    </th:block>
+                                </fieldset>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="form-card">
+                        <div class="step-head"><span class="step-badge">3</span><h2>About you</h2><span class="optional">optional</span></div>
+                        <fieldset class="field">
+                            <legend class="field-label">Are you living there now?</legend>
+                            <div class="chip-group">
+                                <div class="chip">
+                                    <input type="radio" name="residencyStatus" id="res-current" value="Current"
+                                    >
+                                    <label for="res-current">Current resident</label>
+                                </div>
+                                <div class="chip">
+                                    <input type="radio" name="residencyStatus" id="res-past" value="Past"
+                                    >
+                                    <label for="res-past">Past resident</label>
+                                </div>
+                            </div>
+                        </fieldset>
+                        <div class="field">
+                            <label class="field-label" for="yearOfStudy">Year of study</label>
+                            <select id="yearOfStudy" name="yearOfStudy">
+                                <option value="">Prefer not to say</option>
+                                <option value="1">1st year</option>
+                                <option value="2">2nd year</option>
+                                <option value="3">3rd year</option>
+                                <option value="4">4th year</option>
+                                <option value="5">Postgraduate</option>
+                            </select>
+                        </div>
+                    </section>
+
+                    <section class="form-card">
+                        <div class="step-head"><span class="step-badge">4</span><h2>Your review</h2></div>
+                        <div class="field">
+                            <label class="field-label" for="comment">What was it like?</label>
+                            <textarea id="comment" name="comment" maxlength="600" required minlength="10"
+                                      data-counter="#comment-count"
+                                      placeholder="Cleanliness, the landlord, noise, safety, value for money..."></textarea>
+                            <span class="counter" id="comment-count" aria-live="polite">0 / 600</span>
+                        </div>
+                        <div class="form-actions">
+                            <div class="note"><span class="material-symbols-outlined" aria-hidden="true">visibility</span>Your review is visible to the landlord and other students.</div>
+                            <div class="buttons">
+                                <a class="btn btn-ghost" th:href="@{/my-stay}">Cancel</a>
+                                <button type="submit" class="btn btn-primary">
+                                    <span class="material-symbols-outlined" aria-hidden="true">send</span>Submit review
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <aside class="aside-col">
+                    <div class="prop-card">
+                        <img th:if="${imageUrl != null}" th:src="${imageUrl}" alt="">
+                        <div class="shade"></div>
+                        <div class="info">
+                            <div class="eyebrow-sm">Reviewing</div>
+                            <h3 th:text="${property.title}">Property name</h3>
+                            <div class="city" th:text="${property.suburb != null ? property.suburb : property.city}">City</div>
+                        </div>
+                    </div>
+                    <section class="panel">
+                        <h2 class="aside-title">Writing a helpful review</h2>
+                        <ol class="steps">
+                            <li><span class="step-num">1</span><span><strong>Be specific.</strong> Mention rooms, facilities and the landlord's response.</span></li>
+                            <li><span class="step-num">2</span><span><strong>Be fair.</strong> Include what worked as well as what did not.</span></li>
+                            <li><span class="step-num">3</span><span><strong>Stay on topic.</strong> Keep it about the accommodation.</span></li>
+                        </ol>
+                    </section>
+                </aside>
+            </div>
+        </form>
+    </main>
 </div>
-
-<div class="wrap">
-    <h1 th:text="${property.title}">Property Title</h1>
-    <p class="subtitle">Share your experience to help future students</p>
-
-    <form class="card" th:action="@{/review/{id}(id=${property.propertyID})}" method="post">
-
-        <div class="field-row">
-            <div class="field">
-                <label for="yearOfStudy">Year of Study</label>
-                <select name="yearOfStudy" id="yearOfStudy" required>
-                    <option value="1">1st Year</option>
-                    <option value="2">2nd Year</option>
-                    <option value="3">3rd Year</option>
-                    <option value="4">4th Year</option>
-                    <option value="5">Postgraduate</option>
-                </select>
-            </div>
-
-            <div class="field">
-                <label>Residency Status</label>
-                <div class="residency-toggle">
-                    <input type="radio" name="residencyStatus" id="resCurrent" value="Current" checked />
-                    <label for="resCurrent">Current Resident</label>
-                    <input type="radio" name="residencyStatus" id="resPast" value="Past" />
-                    <label for="resPast">Past Resident</label>
-                </div>
-            </div>
-        </div>
-
-        <div class="category-grid">
-            <div class="category-box">
-                <span class="cat-label">Cleanliness</span>
-                <div class="star-picker" data-field="cleanlinessRating">
-                    <input type="radio" name="cleanlinessRating" id="clean5" value="5" /><label for="clean5">★</label>
-                    <input type="radio" name="cleanlinessRating" id="clean4" value="4" /><label for="clean4">★</label>
-                    <input type="radio" name="cleanlinessRating" id="clean3" value="3" /><label for="clean3">★</label>
-                    <input type="radio" name="cleanlinessRating" id="clean2" value="2" /><label for="clean2">★</label>
-                    <input type="radio" name="cleanlinessRating" id="clean1" value="1" /><label for="clean1">★</label>
-                </div>
-            </div>
-
-            <div class="category-box">
-                <span class="cat-label">Safety</span>
-                <div class="star-picker" data-field="safetyRating">
-                    <input type="radio" name="safetyRating" id="safe5" value="5" /><label for="safe5">★</label>
-                    <input type="radio" name="safetyRating" id="safe4" value="4" /><label for="safe4">★</label>
-                    <input type="radio" name="safetyRating" id="safe3" value="3" /><label for="safe3">★</label>
-                    <input type="radio" name="safetyRating" id="safe2" value="2" /><label for="safe2">★</label>
-                    <input type="radio" name="safetyRating" id="safe1" value="1" /><label for="safe1">★</label>
-                </div>
-            </div>
-
-            <div class="category-box">
-                <span class="cat-label">WiFi Quality</span>
-                <div class="star-picker" data-field="wifiRating">
-                    <input type="radio" name="wifiRating" id="wifi5" value="5" /><label for="wifi5">★</label>
-                    <input type="radio" name="wifiRating" id="wifi4" value="4" /><label for="wifi4">★</label>
-                    <input type="radio" name="wifiRating" id="wifi3" value="3" /><label for="wifi3">★</label>
-                    <input type="radio" name="wifiRating" id="wifi2" value="2" /><label for="wifi2">★</label>
-                    <input type="radio" name="wifiRating" id="wifi1" value="1" /><label for="wifi1">★</label>
-                </div>
-            </div>
-
-            <div class="category-box">
-                <span class="cat-label">Study Area</span>
-                <div class="star-picker" data-field="studyAreaRating">
-                    <input type="radio" name="studyAreaRating" id="study5" value="5" /><label for="study5">★</label>
-                    <input type="radio" name="studyAreaRating" id="study4" value="4" /><label for="study4">★</label>
-                    <input type="radio" name="studyAreaRating" id="study3" value="3" /><label for="study3">★</label>
-                    <input type="radio" name="studyAreaRating" id="study2" value="2" /><label for="study2">★</label>
-                    <input type="radio" name="studyAreaRating" id="study1" value="1" /><label for="study1">★</label>
-                </div>
-            </div>
-        </div>
-
-        <div class="field">
-            <label for="comment">Detailed Review</label>
-            <textarea name="comment" id="comment" required placeholder="Share your thoughts on the management, room quality, and common facilities..."></textarea>
-            <p class="field-tip">Tip: Be specific about things like noise levels and maintenance response times.</p>
-        </div>
-
-        <button type="submit" class="submit-btn">▷ Submit Review</button>
-    </form>
-</div>
-
-<script>
-    // Visually fill stars up to the selected one
-    document.querySelectorAll('.star-picker').forEach(function (picker) {
-        const inputs = Array.from(picker.querySelectorAll('input'));
-        function refresh() {
-            const checked = inputs.find(i => i.checked);
-            const checkedValue = checked ? parseInt(checked.value, 10) : 0;
-            inputs.forEach(function (input) {
-                const label = picker.querySelector('label[for="' + input.id + '"]');
-                if (parseInt(input.value, 10) <= checkedValue) {
-                    label.classList.add('filled');
-                } else {
-                    label.classList.remove('filled');
-                }
-            });
-        }
-        inputs.forEach(i => i.addEventListener('change', refresh));
-        refresh();
-    });
-</script>
-
-<div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null, null, null, null)}"></div>
-
 </body>
 </html>

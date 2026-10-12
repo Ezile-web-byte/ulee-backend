@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  Student notification bell. Save as templates/fragments/student-notifications.html
+
+  Usage (inside .topbar-right, between "Find a room" and the avatar):
+    <div th:replace="~{fragments/student-notifications :: bell}"></div>
+
+  Style and script are nested INSIDE the fragment root on purpose: th:replace
+  only pulls in that one element and its children.
+-->
+<div th:fragment="bell" class="notif-wrap" id="studentNotifWrap">
+  <style>
+    .notif-wrap { position: relative; }
+    .bell-btn {
+      position: relative; width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+      background: #fff; border: 1px solid var(--outline-variant, #E6E8E4); color: var(--primary-dark, #006A6A); cursor: pointer;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .bell-btn:hover { border-color: var(--accent-border, #93C0C5); box-shadow: 0 4px 14px rgba(7,28,45,.08); }
+    .bell-btn:focus-visible { outline: 2px solid #14C8BE; outline-offset: 2px; }
+    .bell-btn .material-symbols-outlined { font-size: 21px; }
+    .notif-dot { position: absolute; top: 8px; right: 9px; width: 9px; height: 9px; border-radius: 50%; background: var(--alert, #ba1a1a); border: 2px solid #fff; }
+    .notif-dropdown {
+      position: absolute; top: calc(100% + 10px); right: 0; width: 360px; max-height: 420px; overflow-y: auto; z-index: 60;
+      background: #fff; border: 1px solid var(--outline-variant, #E6E8E4); border-radius: 16px; box-shadow: 0 12px 32px rgba(7,28,45,.16);
+    }
+    .notif-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--outline-variant, #E6E8E4); font-size: 14px; }
+    .notif-head button { background: none; border: 0; padding: 0; cursor: pointer; font: 700 12px var(--font-body, sans-serif); color: var(--primary-dark, #006A6A); }
+    .notif-row { display: flex; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--outline-variant, #E6E8E4); text-decoration: none; color: inherit; }
+    .notif-row:hover { background: var(--surface-tint, #F0F7F6); }
+    .notif-row.unread { background: var(--surface-tint, #F0F7F6); }
+    .notif-ico { flex-shrink: 0; width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+    .notif-ico .material-symbols-outlined { font-size: 18px; }
+    .notif-body { min-width: 0; flex: 1; }
+    .notif-msg { display: block; font-size: 13px; line-height: 1.35; color: var(--on-surface, #191c1d); }
+    .notif-time { display: block; font-size: 11.5px; color: var(--outline, #6f787d); margin-top: 3px; }
+    .notif-unread-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary-dark, #006A6A); flex-shrink: 0; margin-top: 5px; }
+    .notif-empty { padding: 28px 16px; text-align: center; color: var(--outline, #6f787d); font-size: 13px; }
+    @media (max-width: 520px) { .notif-dropdown { position: fixed; top: 70px; left: 12px; right: 12px; width: auto; } }
+  </style>
+
+  <button class="bell-btn" id="studentNotifBtn" type="button" aria-label="Notifications" aria-haspopup="true" aria-expanded="false">
+    <span class="material-symbols-outlined" aria-hidden="true">notifications</span>
+    <span class="notif-dot" id="studentNotifDot" style="display:none"></span>
+  </button>
+
+  <div class="notif-dropdown" id="studentNotifDropdown" style="display:none">
+    <div class="notif-head">
+      <strong>Notifications</strong>
+      <button type="button" id="studentNotifMarkAll">Mark all as read</button>
+    </div>
+    <div id="studentNotifList"></div>
+    <div class="notif-empty" id="studentNotifEmpty" style="display:none">No notifications yet</div>
+  </div>
+
+  <script th:inline="none">
+    (function () {
+      var btn = document.getElementById('studentNotifBtn');
+      if (!btn || btn.dataset.wired === '1') return;
+      btn.dataset.wired = '1';
+
+      var dot = document.getElementById('studentNotifDot');
+      var dropdown = document.getElementById('studentNotifDropdown');
+      var list = document.getElementById('studentNotifList');
+      var empty = document.getElementById('studentNotifEmpty');
+      var markAll = document.getElementById('studentNotifMarkAll');
+
+      var TYPES = {
+        accepted: { icon: 'check_circle',  bg: '#DDF7F3', color: '#006A6A' },
+        rejected: { icon: 'cancel',        bg: '#FCE9E7', color: '#ba1a1a' },
+        review:   { icon: 'rate_review',   bg: '#FFF6D6', color: '#7A5E00' },
+        report:   { icon: 'flag',          bg: '#EEF4FF', color: '#3b6fd4' },
+        handled:  { icon: 'task_alt',      bg: '#DDF7F3', color: '#006A6A' }
+      };
+
+      function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+      function post(url) { return fetch(url, { method: 'POST' }); }
+
+      function render(data) {
+        var items = data.notifications || [];
+        dot.style.display = data.unreadCount > 0 ? 'block' : 'none';
+        empty.style.display = items.length ? 'none' : 'block';
+        list.innerHTML = items.map(function (n) {
+          var t = TYPES[n.type] || { icon: 'notifications', bg: '#F0F7F6', color: '#006A6A' };
+          return '<a class="notif-row' + (n.isRead ? '' : ' unread') + '" data-id="' + esc(n.id) + '" href="' + esc(n.link || '#') + '">' +
+                  '<span class="notif-ico" style="background:' + t.bg + ';color:' + t.color + '"><span class="material-symbols-outlined" aria-hidden="true">' + t.icon + '</span></span>' +
+                  '<span class="notif-body"><span class="notif-msg">' + esc(n.message) + '</span><span class="notif-time">' + esc(n.timeDisplay) + '</span></span>' +
+                  (n.isRead ? '' : '<span class="notif-unread-dot"></span>') + '</a>';
+        }).join('');
+        Array.prototype.forEach.call(list.querySelectorAll('.notif-row'), function (row) {
+          row.addEventListener('click', function () {
+            post('/student/notifications/' + row.getAttribute('data-id') + '/read').then(load);
+          });
+        });
+      }
+
+      function load() {
+        fetch('/student/notifications')
+                .then(function (r) { return r.ok ? r.json() : { notifications: [], unreadCount: 0 }; })
+                .then(render)
+                .catch(function () {});
+      }
+
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var open = dropdown.style.display === 'block';
+        dropdown.style.display = open ? 'none' : 'block';
+        btn.setAttribute('aria-expanded', String(!open));
+        if (!open) load();
+      });
+      markAll.addEventListener('click', function (e) { e.stopPropagation(); post('/student/notifications/read-all').then(load); });
+      document.addEventListener('click', function (e) {
+        if (dropdown.style.display === 'block' && !dropdown.contains(e.target) && !btn.contains(e.target)) {
+          dropdown.style.display = 'none';
+          btn.setAttribute('aria-expanded', 'false');
+        }
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && dropdown.style.display === 'block') { dropdown.style.display = 'none'; btn.focus(); }
+      });
+
+      load();
+      setInterval(load, 60000);
+    })();
+  </script>
+</div>
+</body>
+</html>

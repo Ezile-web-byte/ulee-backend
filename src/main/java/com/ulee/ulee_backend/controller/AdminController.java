@@ -643,8 +643,12 @@ public class AdminController {
         List<ReviewCardView> reviewCards = new ArrayList<>();
         for (Review review : pageReviews) {
             int overallIndex = sortedReviews.indexOf(review) + 1;
-            String anonName = "anonymous" + overallIndex;
-            String initials = pseudoInitials(review.getStudentID());
+            // The admin sees the student's real name (so they can act on a
+            // review); initials come from that name too.
+            User reviewer = review.getStudentID() != null
+                    ? userRepository.findById(review.getStudentID()).orElse(null) : null;
+            String anonName = reviewer != null ? safeName(reviewer) : "Former student";
+            String initials = reviewer != null ? initialsFor(reviewer) : "?";
             Property property = review.getPropertyID() != null ? propertyLookup.get(review.getPropertyID()) : null;
             String propertyTitle = property != null ? property.getTitle() : "Unknown property";
             reviewCards.add(new ReviewCardView(
@@ -759,6 +763,18 @@ public class AdminController {
         public String getDescription()       { return description; }
         public LocalDateTime getReportedAt() { return reportedAt; }
         public String getReporterName()      { return reporterName; }
+
+        // Simple values for the template's data-* attributes. Kept in Java because
+        // Thymeleaf cannot parse the long inline expression that used to be in th:attr.
+        public String getSearchText() {
+            String t = property != null && property.getTitle() != null ? property.getTitle() : "";
+            String sub = property != null && property.getSuburb() != null ? property.getSuburb() : "";
+            return (t + " " + sub + " " + nz(reason) + " " + nz(reporterName) + " "
+                    + nz(description) + " " + nz(handledStatus)).toLowerCase();
+        }
+        public String getReasonKey()         { return reason != null && !reason.isBlank() ? reason : "Other"; }
+        public String getHandledKey()        { return handledStatus != null && !handledStatus.isBlank() ? handledStatus : "Warned"; }
+        private static String nz(String v)   { return v == null ? "" : v; }
         public String getHandledStatus()     { return handledStatus; }
     }
 

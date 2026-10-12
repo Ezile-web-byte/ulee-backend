@@ -173,6 +173,18 @@
     <style>
         #sidebar { z-index: 1500; }   /* lifts the sidebar (and the logout popup inside it) above the page content */
 
+        /* ── Hide the sidebar scrollbar (scrolling still works with wheel / touch) ──
+           Both #sidebar and .sidebar .nav are covered because either one may be
+           the element that carries overflow-y: auto in the main stylesheet. */
+        #sidebar,
+        .sidebar .nav {
+            scrollbar-width: none;        /* Firefox */
+            -ms-overflow-style: none;     /* old Edge / IE */
+        }
+        #sidebar::-webkit-scrollbar,
+        .sidebar .nav::-webkit-scrollbar {
+            display: none;                /* Chrome, Safari, new Edge */
+        }
 
         .admin-chip { cursor: pointer; }
 

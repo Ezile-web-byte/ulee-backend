@@ -1,0 +1,179 @@
+package com.ulee.ulee_backend.controller;
+
+import com.ulee.ulee_backend.model.*;
+import com.ulee.ulee_backend.repository.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.security.Principal;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
+
+/**
+ * "My Stay" for students: the hub page, plus reporting an issue.
+ * Reports are saved with your existing Report entity, so the admin's
+ * "Handle Reported Property" page sees them. (Reviews are in ReviewController.)
+ */
+@Controller
+public class StayController {
+
+    // key, label (saved into Report.reason), icon, hint
+    private static final List<String[]> REPORT_CATEGORIES = List.of(
+            new String[]{"maintenance", "Maintenance", "build", "Broken fixtures, leaks, damp, appliances"},
+            new String[]{"safety", "Safety", "shield", "Locks, lighting, fire safety, break-ins"},
+            new String[]{"cleanliness", "Cleanliness & pests", "cleaning_services", "Dirty shared areas, pests, rubbish"},
+            new String[]{"utilities", "Wi-Fi & utilities", "wifi", "Internet, water or electricity problems"},
+            new String[]{"landlord", "Landlord conduct", "gavel", "Unfair charges, no response, privacy"},
+            new String[]{"other", "Something else", "help", "Anything not listed here"});
+
+    @Autowired private ApplicationRepository applicationRepository;
+    @Autowired private PropertyRepository propertyRepository;
+    @Autowired private PropertyImageRepository propertyImageRepository;
+    @Autowired private ReviewRepository reviewRepository;
+    @Autowired private ReportRepository reportRepository;
+    @Autowired private SavedPropertyRepository savedPropertyRepository;
+    @Autowired private UserRepository userRepository;
+
+    private User getCurrentUser(Principal principal) {
+        return userRepository.findByEmail(principal.getName())
+                .orElseThrow(() -> new RuntimeException("Logged-in user not found"));
+    }
+
+    private String initialsOf(User u) {
+        String last = u.getLastName();
+        return ("" + u.getFirstName().charAt(0)
+                + (last != null && !last.isBlank() ? last.charAt(0) : "")).toUpperCase();
+    }
+
+    private boolean isAccepted(Integer studentId, Integer propertyId) {
+        return applicationRepository.findByStudentIDAndPropertyID(studentId, propertyId).stream()
+                .anyMatch(a -> "Accepted".equalsIgnoreCase(a.getStatus()));
+    }
+
+    // ---------- My Stay hub ----------
+    @GetMapping("/my-stay")
+    public String viewMyStay(Model model, Principal principal) {
+        User user = getCurrentUser(principal);
+        Integer studentId = user.getUserID();
+
+        List<Application> applications = applicationRepository.findByStudentID(studentId);
+        Set<Integer> acceptedIds = applications.stream()
+                .filter(a -> "Accepted".equalsIgnoreCase(a.getStatus()))
+                .map(Application::getPropertyID)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        List<Review> myReviews = reviewRepository.findByStudentID(studentId).stream()
+                .sorted(Comparator.comparing(Review::getReviewDate, Comparator.nullsLast(Comparator.reverseOrder())))
+                .collect(Collectors.toList());
+        List<Report> myReports = reportRepository.findByStudentID(studentId).stream()
+                .sorted(Comparator.comparing(Report::getReportedAt, Comparator.nullsLast(Comparator.reverseOrder())))
+                .collect(Collectors.toList());
+
+        // One lookup of every property mentioned on the page
+        Set<Integer> allIds = new LinkedHashSet<>(acceptedIds);
+        myReviews.forEach(r -> allIds.add(r.getPropertyID()));
+        myReports.forEach(r -> allIds.add(r.getPropertyID()));
+
+        Map<Integer, Property> propertyLookup = propertyRepository.findAllById(allIds).stream()
+                .collect(Collectors.toMap(Property::getPropertyID, p -> p, (a, b) -> a));
+        Map<Integer, String> imageLookup = propertyImageRepository.findByPropertyIDIn(new ArrayList<>(allIds)).stream()
+                .collect(Collectors.toMap(PropertyImage::getPropertyID, PropertyImage::getUrl, (a, b) -> a));
+
+        List<Property> stays = acceptedIds.stream()
+                .map(propertyLookup::get).filter(Objects::nonNull).collect(Collectors.toList());
+        Set<Integer> reviewedIds = myReviews.stream().map(Review::getPropertyID).collect(Collectors.toSet());
+
+        model.addAttribute("stays", stays);
+        model.addAttribute("myReviews", myReviews);
+        model.addAttribute("myReports", myReports);
+        model.addAttribute("propertyLookup", propertyLookup);
+        model.addAttribute("imageLookup", imageLookup);
+        model.addAttribute("reviewedIds", reviewedIds);
+
+        // Sidebar / top bar
+        model.addAttribute("userInitials", initialsOf(user));
+        model.addAttribute("totalApplications", applications.size());
+        model.addAttribute("acceptedCount", acceptedIds.size());
+        model.addAttribute("savedCount", savedPropertyRepository.findByStudentID(studentId).size());
+        return "student/my-stay";
+    }
+
+    // ---------- Report an issue: form ----------
+    @GetMapping("/report-issue/{propertyId}")
+    public String showReportForm(@PathVariable Integer propertyId, Model model,
+                                 Principal principal, RedirectAttributes redirectAttributes) {
+        User user = getCurrentUser(principal);
+
+        Optional<Property> propertyOpt = propertyRepository.findById(propertyId);
+        if (propertyOpt.isEmpty()) {
+            redirectAttributes.addFlashAttribute("actionError", "That property could not be found.");
+            return "redirect:/my-stay";
+        }
+        if (!isAccepted(user.getUserID(), propertyId)) {
+            redirectAttributes.addFlashAttribute("actionError",
+                    "You can only report issues at a property you've been accepted to.");
+            return "redirect:/my-stay";
+        }
+
+        model.addAttribute("property", propertyOpt.get());
+        model.addAttribute("imageUrl", propertyImageRepository.findByPropertyID(propertyId).stream()
+                .findFirst().map(PropertyImage::getUrl).orElse(null));
+        model.addAttribute("categories", REPORT_CATEGORIES);
+        model.addAttribute("userInitials", initialsOf(user));
+        return "student/report-issue";
+    }
+
+    // ---------- Report an issue: save into the reports table ----------
+    @PostMapping("/submit-report")
+    public String submitReport(@RequestParam Integer propertyId,
+                               @RequestParam String category,
+                               @RequestParam String details,
+                               Principal principal,
+                               RedirectAttributes redirectAttributes) {
+        Integer studentId = getCurrentUser(principal).getUserID();
+
+        String label = REPORT_CATEGORIES.stream()
+                .filter(c -> c[0].equals(category)).map(c -> c[1]).findFirst().orElse(null);
+        if (label == null) {
+            redirectAttributes.addFlashAttribute("actionError", "Please choose what kind of issue it is.");
+            return "redirect:/report-issue/" + propertyId;
+        }
+
+        String cleanDetails = details == null ? "" : details.trim();
+        if (cleanDetails.length() < 10) {
+            redirectAttributes.addFlashAttribute("actionError", "Please describe the problem in a bit more detail.");
+            return "redirect:/report-issue/" + propertyId;
+        }
+
+        if (!isAccepted(studentId, propertyId)) {
+            redirectAttributes.addFlashAttribute("actionError",
+                    "You can only report issues at a property you've been accepted to.");
+            return "redirect:/my-stay";
+        }
+
+        Report report = new Report();
+        report.setPropertyID(propertyId);
+        report.setStudentID(studentId);
+        report.setReason(label);
+        report.setDescription(cleanDetails);
+        report.setReportedAt(LocalDateTime.now());
+        reportRepository.save(report);
+
+        // The admin's Reported Listings page treats "Unhandled" as
+        // property.isReported == true, so flag the property too. (Warn or
+        // Suspend by an admin clears the flag again.)
+        propertyRepository.findById(propertyId).ifPresent(p -> {
+            String summary = label + ": " + cleanDetails;
+            p.setIsReported(true);
+            p.setReportReason(summary.length() > 240 ? summary.substring(0, 240) : summary);
+            propertyRepository.save(p);
+        });
+
+        redirectAttributes.addFlashAttribute("actionMessage", "Your report has been sent. Thank you for letting us know.");
+        return "redirect:/my-stay";
+    }
+}

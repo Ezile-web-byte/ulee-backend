@@ -223,8 +223,8 @@
                 <div class="rl-pane active" id="pane-unhandled" role="tabpanel" aria-labelledby="tab-unhandled">
                     <div class="rl-grid" th:unless="${#lists.isEmpty(unhandledReports)}">
                         <article class="rl-card" th:each="item : ${unhandledReports}"
-                                 th:attr="data-search=${#strings.toLowerCase((item.property.title ?: '') + ' ' + (item.property.suburb ?: '') + ' ' + (item.reason ?: '') + ' ' + (item.reporterName ?: '') + ' ' + (item.description ?: '')),data-reason=${item.reason ?: 'Other'}">
-                            <a class="rl-photo" th:href="@{/admin/reported-listing/{id}(id=${item.property.propertyID}, from='reported')}" th:attr="aria-label='Open report for ' + ${item.property.title}">
+                                 th:attr="data-search=${item.searchText},data-reason=${item.reasonKey}">
+                            <a class="rl-photo" th:href="@{/admin/reported-listing/{id}(id=${item.property.propertyID}, from='reported')}" th:attr="aria-label=${'Open report for ' + item.property.title}">
                                 <img th:if="${item.property.mainImageUrl != null}" th:src="${item.property.mainImageUrl}" alt="" />
                                 <div class="rl-noimg" th:if="${item.property.mainImageUrl == null}">
                                     <svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9H4z"/><path d="M10 20v-5h4v5"/></svg>
@@ -265,8 +265,8 @@
                 <div class="rl-pane" id="pane-handled" role="tabpanel" aria-labelledby="tab-handled">
                     <div class="rl-grid" th:unless="${#lists.isEmpty(handledReports)}">
                         <article class="rl-card" th:each="item : ${handledReports}"
-                                 th:attr="data-search=${#strings.toLowerCase((item.property.title ?: '') + ' ' + (item.property.suburb ?: '') + ' ' + (item.reason ?: '') + ' ' + (item.reporterName ?: '') + ' ' + (item.description ?: '') + ' ' + (item.handledStatus ?: '')),data-reason=${item.handledStatus ?: 'Warned'}">
-                            <a class="rl-photo" th:href="@{/admin/reported-listing/{id}(id=${item.property.propertyID}, from='reported')}" th:attr="aria-label='Open report for ' + ${item.property.title}">
+                                 th:attr="data-search=${item.searchText},data-reason=${item.handledKey}">
+                            <a class="rl-photo" th:href="@{/admin/reported-listing/{id}(id=${item.property.propertyID}, from='reported')}" th:attr="aria-label=${'Open report for ' + item.property.title}">
                                 <img th:if="${item.property.mainImageUrl != null}" th:src="${item.property.mainImageUrl}" alt="" />
                                 <div class="rl-noimg" th:if="${item.property.mainImageUrl == null}">
                                     <svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9H4z"/><path d="M10 20v-5h4v5"/></svg>
