@@ -112,6 +112,16 @@ public class Property {
                 .orElse(null);
     }
 
+    @Transient
+    public List<Amenity> getFeaturedAmenities() {
+        if (amenities == null) return List.of();
+        java.util.Set<String> seenCategories = new java.util.HashSet<>();
+        return amenities.stream()
+                .filter(a -> seenCategories.add(a.getCategory()))
+                .limit(3)
+                .toList();
+    }
+
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
