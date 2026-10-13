@@ -14,8 +14,11 @@ public interface PropertyRepository extends JpaRepository<Property, Integer> {
     List<Property> findByIsReportedTrue();
     List<Property> findByIsAvailableTrue();
 
-    List<Property> findByIsAvailableTrueAndTitleContainingIgnoreCaseOrIsAvailableTrueAndCityContainingIgnoreCase(
-            String titleKeyword, String cityKeyword);
+    // CHANGED: searches suburb instead of city (city is always Gqeberha now).
+    // If anything still calls the old ...AndCityContainingIgnoreCase name,
+    // update that call to this name.
+    List<Property> findByIsAvailableTrueAndTitleContainingIgnoreCaseOrIsAvailableTrueAndSuburbContainingIgnoreCase(
+            String titleKeyword, String suburbKeyword);
 
     List<Property> findByIsAvailableTrueAndRentLessThanEqual(java.math.BigDecimal rent);
 
@@ -26,13 +29,25 @@ public interface PropertyRepository extends JpaRepository<Property, Integer> {
     //    a property go live for students. ──
     List<Property> findByStatusAndRentLessThanEqual(String status, BigDecimal rent);
 
+    // CHANGED: keyword search now matches title OR suburb (was city).
     @Query("SELECT p FROM Property p WHERE p.status = :status AND " +
-            "(LOWER(p.title) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(p.city) LIKE LOWER(CONCAT('%', :query, '%')))")
+            "(LOWER(p.title) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(p.suburb) LIKE LOWER(CONCAT('%', :query, '%')))")
     List<Property> searchByStatusAndKeyword(@Param("status") String status, @Param("query") String query);
 
     // Convenience overload matching the controller's current call shape
-    // (always searches "Approved" properties).
+    // (always searches "Active" properties).
     default List<Property> searchActive(String query) {
         return searchByStatusAndKeyword("Active", query);
     }
+
+    // ── Unique property names ──
+    // How many properties already use this title (case and surrounding
+    // spaces ignored). Used when CREATING a property.
+    @Query("SELECT COUNT(p) FROM Property p WHERE LOWER(TRIM(p.title)) = LOWER(:title)")
+    long countTitleMatches(@Param("title") String title);
+
+    // Same, but skips one property, so a landlord can re-save their own
+    // listing without clashing with itself. Used when EDITING.
+    @Query("SELECT COUNT(p) FROM Property p WHERE LOWER(TRIM(p.title)) = LOWER(:title) AND p.propertyID <> :excludeId")
+    long countTitleMatchesExcluding(@Param("title") String title, @Param("excludeId") Integer excludeId);
 }

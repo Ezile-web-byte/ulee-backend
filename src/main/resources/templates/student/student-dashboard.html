@@ -5,90 +5,72 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>ULEE | The Future of Student Living in Gqeberha</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- CHANGED: added Outfit (bold property names + suburb headings) -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=Outfit:wght@600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
             theme: {
                 extend: {
-                    // Remapped to the ULEE navy/teal design system
-                    // (ULEE-design-system.md). Token NAMES are unchanged so every
-                    // existing class (bg-primary, text-tertiary-fixed, ...) keeps
-                    // working — only the colour values moved.
                     "colors": {
-                        // Design-system brand tokens
+                        /* ── ULEE navy/teal design system ── */
                         "navy": "#071C2D",
                         "navy-mid": "#0A3A48",
-                        "navy-teal": "#0F6C70",
-                        "teal-glow": "#14C8BE",
-                        "teal-active": "#007178",
+                        "teal-bright": "#14C8BE",
+                        "teal-deep": "#007178",
                         "teal-badge": "#01A49F",
-                        "teal-mint": "#7DF0E6",
+                        "sidebar-text": "#B7C3CB",
+                        "accent-yellow": "#f5d450",
 
-                        "primary": "#006A6A",
-                        "primary-container": "#007178",
-                        "on-primary": "#ffffff",
-                        "on-primary-container": "#E6FFFB",
-                        "primary-fixed": "#BFF3EE",
-                        "primary-fixed-dim": "#7DF0E6",
-                        "on-primary-fixed": "#002020",
-                        "on-primary-fixed-variant": "#005454",
-                        "inverse-primary": "#14C8BE",
-                        "surface-tint": "#006A6A",
-
-                        "secondary": "#01A49F",
-                        "on-secondary": "#ffffff",
-                        "secondary-container": "#93C0C5",
-                        "on-secondary-container": "#00363A",
-                        "secondary-fixed": "#D2F4F1",
-                        "secondary-fixed-dim": "#93C0C5",
-                        "on-secondary-fixed": "#002022",
-                        "on-secondary-fixed-variant": "#005054",
-
+                        "primary-fixed": "#bfe8e6",
                         "tertiary": "#705d00",
-                        "tertiary-fixed": "#f5d450",
-                        "tertiary-fixed-dim": "#e3c03a",
-                        "tertiary-container": "#e3c03a",
-                        "on-tertiary": "#ffffff",
-                        "on-tertiary-fixed": "#221b00",
-                        "on-tertiary-fixed-variant": "#544600",
-                        "on-tertiary-container": "#3a3000",
-
-                        "background": "#F4FBFA",
-                        "on-background": "#191c1d",
+                        "on-tertiary-container": "#4c3f00",
+                        "on-primary-fixed-variant": "#004d4d",
+                        "surface-container-highest": "#e1e3e4",
+                        "primary-container": "#096C6C",
+                        "inverse-primary": "#82d1d1",
                         "surface": "#F4FBFA",
-                        "surface-bright": "#F4FBFA",
-                        "surface-dim": "#d5e0de",
-                        "surface-variant": "#e1e8e6",
-                        "surface-container-lowest": "#ffffff",
-                        "surface-container-low": "#F0F7F6",
-                        "surface-container": "#E8F2F0",
-                        "surface-container-high": "#E1ECEA",
-                        "surface-container-highest": "#D9E6E3",
-                        "on-surface": "#191c1d",
-                        "on-surface-variant": "#3f484d",
-                        "inverse-surface": "#071C2D",
-                        "inverse-on-surface": "#E6F2F1",
-
-                        "outline": "#6f787d",
-                        "outline-variant": "#E6E8E4",
-
-                        "error": "#ba1a1a",
+                        "on-secondary": "#ffffff",
                         "on-error": "#ffffff",
-                        "error-container": "#ffdad6",
-                        "on-error-container": "#93000a"
-                    },
-                    // The markup already used text-display-lg / text-headline-md /
-                    // etc., but no fontSize scale was ever defined, so those
-                    // classes silently did nothing (headings rendered at body
-                    // size). This gives them real sizes.
-                    "fontSize": {
-                        "display-lg": ["clamp(2.5rem, 5.2vw, 4.25rem)", { "lineHeight": "1.04", "letterSpacing": "-0.025em" }],
-                        "headline-md": ["clamp(1.85rem, 3.2vw, 2.6rem)", { "lineHeight": "1.12", "letterSpacing": "-0.02em" }],
-                        "headline-sm": ["1.3rem", { "lineHeight": "1.3", "letterSpacing": "-0.01em" }],
-                        "body-lg": ["1.125rem", { "lineHeight": "1.65" }],
-                        "label-bold": ["0.9rem", { "lineHeight": "1.4" }],
-                        "label-sm": ["0.78rem", { "lineHeight": "1.3" }]
+                        "primary": "#006A6A",
+                        "surface-variant": "#e1e3e4",
+                        "surface-container-high": "#e7e8e9",
+                        "on-secondary-fixed-variant": "#572d9a",
+                        "secondary": "#007178",
+                        "tertiary-fixed-dim": "#e5c542",
+                        "on-secondary-fixed": "#260058",
+                        "secondary-container": "#b78eff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#544600",
+                        "on-primary-container": "#d9f2ff",
+                        "on-tertiary-fixed": "#221b00",
+                        "surface-bright": "#F4FBFA",
+                        "tertiary-fixed": "#ffe170",
+                        "surface-dim": "#d9dadb",
+                        "secondary-fixed": "#ebdcff",
+                        "inverse-on-surface": "#f0f1f2",
+                        "on-background": "#191c1d",
+                        "primary-fixed-dim": "#82d1d1",
+                        "outline": "#6f787d",
+                        "on-primary-fixed": "#001f29",
+                        "on-primary": "#ffffff",
+                        "on-surface": "#191c1d",
+                        "inverse-surface": "#071C2D",
+                        "tertiary-container": "#c8a927",
+                        "outline-variant": "#cfdcdb",
+                        "secondary-fixed-dim": "#d4bbff",
+                        "on-surface-variant": "#3f484d",
+                        "background": "#F4FBFA",
+                        "surface-container-low": "#EAF3F2",
+                        "error": "#ba1a1a",
+                        "on-secondary-container": "#491c8c",
+                        "on-tertiary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "surface-tint": "#006A6A",
+                        "surface-container": "#F0F7F6",
+                        "error-container": "#ffdad6"
                     },
                     "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
                     "spacing": {
@@ -105,196 +87,96 @@
         }
     </script>
     <style>
-        /* ── ULEE design-system palette (ULEE-design-system.md §2) ── */
-        :root {
-            --primary-dark: #006A6A;
-            --primary: #096C6C;
-            --sidebar-bg: #071C2D;
-            --sidebar-logo-teal: #14C8BE;
-            --sidebar-active-bg: #007178;
-            --sidebar-badge-bg: #01A49F;
-            --accent-yellow: #f5d450;
-            --font-display: 'Plus Jakarta Sans', sans-serif;
-            --font-body: 'Hanken Grotesk', sans-serif;
-        }
-        body { font-family: var(--font-body); }
-        h1, h2, h3 { font-family: var(--font-display); }
-
         .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-        .u-shadow-card { box-shadow: 0 6px 24px rgba(7, 28, 45, 0.07); }
+        .u-shadow-card { box-shadow: 0px 6px 18px rgba(7, 28, 45, 0.08); }
         .u-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
 
-        /* Room-type tab filtering */
+        /* Room-type tab filtering.
+           CHANGED: cards are flex columns now so the "View Property" row
+           sits at the bottom of every card and a row of 3 lines up evenly. */
         .room-card { display: none; }
-        .room-card.is-visible { display: block; animation: ulee-card-in .5s cubic-bezier(.2,.8,.2,1) backwards; }
+        .room-card.is-visible { display: flex; }
         .filter-tab { color: #3f484d; }
-        .filter-tab:hover { color: #006A6A; }
-        .filter-tab.active {
-            background: linear-gradient(115deg, #071C2D 0%, #0A3A48 55%, #0F6C70 100%);
-            color: #ffffff;
-            box-shadow: 0 4px 14px rgba(7, 28, 45, .25), inset 0 0 0 1px rgba(20, 200, 190, .45);
-        }
+        .filter-tab.active { background: #006A6A; color: #ffffff; }
 
-        /* ── Glass navigation bar (dark navy) ── */
-        .glass-nav {
-            background: rgba(7, 28, 45, 0.82);
-            backdrop-filter: blur(18px) saturate(140%);
-            -webkit-backdrop-filter: blur(18px) saturate(140%);
-            border-bottom: 1px solid rgba(20, 200, 190, 0.22);
+        /* NEW — bold property name font (colour stays navy via text-navy) */
+        .property-title {
+            font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+            font-weight: 700;
+            font-size: 21px;
+            line-height: 1.2;
+            letter-spacing: -0.01em;
         }
-        .nav-link { position: relative; color: rgba(255,255,255,.72); transition: color .2s ease; }
-        .nav-link:hover { color: #fff; }
-        .nav-link.is-active { color: #fff; }
-        .nav-link.is-active::after {
-            content: ''; position: absolute; left: 0; right: 0; bottom: -6px; height: 2px; border-radius: 2px;
-            background: linear-gradient(90deg, #14C8BE, #f5d450);
-            box-shadow: 0 0 10px rgba(20, 200, 190, .8);
+        /* NEW — suburb group heading */
+        .suburb-title {
+            font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+            font-weight: 700;
+            font-size: 26px;
+            line-height: 1.15;
+            letter-spacing: -0.01em;
+            color: #071C2D;
         }
+        /* NEW — "Highly rated" badge */
+        .rated-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            background: #f5d450; color: #071C2D;
+            padding: 4px 12px; border-radius: 9999px;
+            font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+            box-shadow: 0 2px 8px rgba(7, 28, 45, .25);
+        }
+        .rated-badge .material-symbols-outlined { font-size: 14px; font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 20; }
 
-        /* Design-system logo (§3) */
-        .logo-icon svg { width: 30px; height: 30px; fill: #14C8BE; filter: drop-shadow(0 0 6px rgba(20,200,190,.55)); }
-        .logo-name { font-family: var(--font-display); font-weight: 800; font-size: 22px; line-height: 1; color: #14C8BE; letter-spacing: .02em; }
-        .logo-tag { font-size: 10.5px; font-weight: 600; color: #14C8BE; opacity: .85; }
-
-        /* ── Hero: tech grid, glowing orbs, gradient headline ── */
-        .hero-grid {
-            background-image:
-                linear-gradient(rgba(20, 200, 190, .14) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(20, 200, 190, .14) 1px, transparent 1px);
-            background-size: 56px 56px;
-            -webkit-mask-image: radial-gradient(ellipse 70% 60% at 30% 55%, #000 20%, transparent 75%);
-                    mask-image: radial-gradient(ellipse 70% 60% at 30% 55%, #000 20%, transparent 75%);
-            animation: ulee-grid-drift 22s linear infinite;
+        /* NEW — View all / Minimise buttons */
+        .section-toggle-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 8px 18px; border-radius: 9999px;
+            border: 2px solid #006A6A; color: #006A6A; background: #fff;
+            font-family: 'Hanken Grotesk', sans-serif; font-weight: 700; font-size: 14px;
+            cursor: pointer; transition: background .2s, color .2s;
         }
-        .hero-orb { position: absolute; border-radius: 50%; filter: blur(70px); pointer-events: none; }
-        .hero-orb.one { width: 420px; height: 420px; background: rgba(20, 200, 190, .35); top: -80px; left: -60px; animation: ulee-orb 14s ease-in-out infinite; }
-        .hero-orb.two { width: 340px; height: 340px; background: rgba(245, 212, 80, .18); bottom: -40px; left: 38%; animation: ulee-orb 18s ease-in-out infinite reverse; }
-        .text-gradient {
-            background: linear-gradient(90deg, #14C8BE 0%, #7DF0E6 40%, #f5d450 100%);
-            background-size: 200% auto;
-            -webkit-background-clip: text; background-clip: text;
-            -webkit-text-fill-color: transparent; color: transparent;
-            animation: ulee-text-shine 6s linear infinite;
-        }
-        .live-dot { position: relative; width: 8px; height: 8px; border-radius: 50%; background: #14C8BE; box-shadow: 0 0 8px #14C8BE; }
-        .live-dot::after {
-            content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2px solid #14C8BE;
-            animation: ulee-ping 1.8s cubic-bezier(0, 0, .2, 1) infinite;
-        }
-        .search-glass {
-            background: rgba(7, 28, 45, .45);
-            border: 1px solid rgba(20, 200, 190, .35);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, .25), 0 0 0 1px rgba(255,255,255,.04) inset;
-            transition: box-shadow .3s ease, border-color .3s ease;
-        }
-        .search-glass:focus-within { border-color: rgba(20, 200, 190, .8); box-shadow: 0 10px 40px rgba(0,0,0,.25), 0 0 28px rgba(20, 200, 190, .35); }
-
-        /* ── Navy metric card (ULEE-design-system.md §4) ── */
-        .ulee-metric-card {
-            position: relative; overflow: hidden; display: block;
-            padding: 20px 24px 34px;
-            border: 1.5px solid rgba(20, 200, 190, 0.45);
-            border-radius: 16px;
-            background: linear-gradient(115deg, #071C2D 0%, #0A3A48 55%, #0F6C70 100%);
-            box-shadow: 0 6px 18px rgba(7, 28, 45, 0.18);
-            color: #fff; text-decoration: none;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            animation: ulee-metric-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
-        }
-        .ulee-metric-card:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(7,28,45,.28); }
-        .ulee-metric-card::before {
-            content: ''; position: absolute; top: 0; left: -60%; width: 40%; height: 100%;
-            background: linear-gradient(100deg, transparent, rgba(255,255,255,.12), transparent);
-            transform: skewX(-20deg); animation: ulee-metric-shine 7s ease-in-out infinite;
-        }
-        .ulee-metric-card::after {
-            content: ''; position: absolute; top: -60px; right: -40px; width: 170px; height: 170px;
-            border-radius: 50%; background: radial-gradient(circle, rgba(20,200,190,.28) 0%, transparent 70%);
-            animation: ulee-metric-pulse 4.5s ease-in-out infinite;
-        }
-        .ulee-metric-card:nth-child(2) { animation-delay: .08s; }
-        .ulee-metric-card:nth-child(3) { animation-delay: .16s; }
-        .ulee-metric-card:nth-child(4) { animation-delay: .24s; }
-        .ulee-metric-label {
-            position: relative; z-index: 2; font-size: 12.5px; font-weight: 700;
-            letter-spacing: .07em; text-transform: uppercase; color: rgba(255,255,255,.78);
-            display: flex; align-items: center; gap: 8px;
-        }
-        .ulee-metric-label .material-symbols-outlined { font-size: 18px; color: #14C8BE; }
-        .ulee-metric-value { position: relative; z-index: 2; font-family: var(--font-display); font-size: 32px; font-weight: 800; margin-top: 8px; line-height: 1.1; }
-        .ulee-metric-sub { position: relative; z-index: 2; font-size: 12px; color: #7DF0E6; margin-top: 2px; }
-        .ulee-metric-stars { position: absolute; top: 0; right: 0; width: 52%; height: 80%; z-index: 1; }
-        .ulee-metric-stars .star { animation: ulee-metric-twinkle 4s ease-in-out infinite; animation-delay: var(--d, 0s); }
-        .ulee-metric-wave { position: absolute; left: 0; bottom: 0; width: 200%; height: 22px; animation: ulee-metric-wave 16s linear infinite; }
-        .ulee-metric-wave .w-back  { fill: rgba(14,116,128,.55); }
-        .ulee-metric-wave .w-front { fill: #071C2D; stroke: #14C8BE; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
-
-        /* ── Section eyebrow label with glowing tick ── */
-        .eyebrow { display: inline-flex; align-items: center; gap: 10px; color: #006A6A; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; font-size: .78rem; }
-        .eyebrow::before { content: ''; width: 26px; height: 2px; border-radius: 2px; background: linear-gradient(90deg, #14C8BE, #006A6A); box-shadow: 0 0 8px rgba(20,200,190,.7); }
-        .eyebrow.on-dark { color: #14C8BE; }
-
-        /* ── Room cards: glowing gradient edge on hover ── */
-        .room-card { position: relative; isolation: isolate; }
-        .room-card::before {
-            /* inset 0 + inherit: the card has overflow-hidden, so a ring placed
-               outside its edge (inset:-1px) would be mostly clipped away */
-            content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1.5px; z-index: 3; pointer-events: none;
-            background: linear-gradient(135deg, #14C8BE, transparent 40%, transparent 60%, #f5d450);
-            -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-            -webkit-mask-composite: xor; mask-composite: exclude;
-            opacity: 0; transition: opacity .3s ease;
-        }
-        .room-card:hover::before { opacity: .55; }
-        .room-card:hover { box-shadow: 0 18px 40px rgba(7, 28, 45, .14); }
-        .price-tag {
-            background: linear-gradient(90deg, #006A6A, #01A49F);
-            -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent;
-        }
-        .btn-neon { position: relative; overflow: hidden; z-index: 0; }
-        .btn-neon::before {
-            content: ''; position: absolute; inset: 0; z-index: -1;
-            background: linear-gradient(115deg, #071C2D 0%, #0A3A48 55%, #0F6C70 100%);
-            opacity: 0; transition: opacity .3s ease;
-        }
-        .btn-neon:hover { color: #fff; border-color: #14C8BE; box-shadow: 0 0 18px rgba(20, 200, 190, .35); }
-        .btn-neon:hover::before { opacity: 1; }
-
-        /* ── Dark navy section backdrop (bento) ── */
-        .navy-section { background: radial-gradient(1200px 500px at 85% 0%, rgba(20,200,190,.16), transparent 60%), linear-gradient(180deg, #071C2D 0%, #0A2A3A 100%); }
-        .navy-section .hero-grid { -webkit-mask-image: radial-gradient(ellipse 60% 70% at 50% 0%, #000 10%, transparent 70%); mask-image: radial-gradient(ellipse 60% 70% at 50% 0%, #000 10%, transparent 70%); }
-        .bento-tile { box-shadow: 0 0 0 1px rgba(20, 200, 190, .25), 0 20px 40px rgba(0,0,0,.35); transition: box-shadow .3s ease; }
-        .bento-tile:hover { box-shadow: 0 0 0 1.5px rgba(20, 200, 190, .5), 0 20px 40px rgba(0,0,0,.35); }
-
-        /* ── Scroll reveal (only when JS is on, so content never stays hidden) ── */
-        .js .reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s cubic-bezier(.2,.8,.2,1), transform .7s cubic-bezier(.2,.8,.2,1); }
-        .js .reveal.in { opacity: 1; transform: none; }
-
-        @keyframes ulee-card-in        { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-        @keyframes ulee-grid-drift     { to { background-position: 56px 56px; } }
-        @keyframes ulee-orb            { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(40px,30px) scale(1.12); } }
-        @keyframes ulee-text-shine     { to { background-position: 200% center; } }
-        @keyframes ulee-ping           { 75%,100% { transform: scale(2.4); opacity: 0; } }
-        @keyframes ulee-metric-in      { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
-        @keyframes ulee-metric-shine   { 0%,55% { left: -60%; } 100% { left: 130%; } }
-        @keyframes ulee-metric-pulse   { 0%,100% { opacity: .6; transform: scale(1); } 50% { opacity: 1; transform: scale(1.12); } }
-        @keyframes ulee-metric-twinkle { 0%,100% { opacity: .25; } 50% { opacity: 1; } }
-        @keyframes ulee-metric-wave    { to { transform: translateX(-50%); } }
-
-        /* Respect accessibility settings — every decorative animation stops */
-        @media (prefers-reduced-motion: reduce) {
-            .ulee-metric-card, .ulee-metric-card::before, .ulee-metric-card::after,
-            .ulee-metric-wave, .ulee-metric-stars .star,
-            .hero-grid, .hero-orb, .text-gradient, .live-dot::after,
-            .room-card.is-visible { animation: none !important; }
-            .js .reveal { opacity: 1; transform: none; transition: none; }
-        }
+        .section-toggle-btn:hover { background: #006A6A; color: #fff; }
+        .section-toggle-btn:focus-visible { outline: 3px solid rgba(20, 200, 190, .55); outline-offset: 2px; }
+        .section-toggle-btn.is-hidden { display: none; }
 
         /* Save heart */
         .save-btn { transition: transform 0.15s ease; }
         .save-btn:hover { transform: scale(1.12); }
         .save-btn.saved { filter: none; }
+
+        /* NEW — "Log in" toast (shown when a visitor who isn't logged in
+           tries to open a property, use View all, or save a room) */
+        #loginToast {
+            position: fixed; top: 92px; left: 50%;
+            transform: translate(-50%, -16px);
+            opacity: 0; pointer-events: none;
+            z-index: 1100;
+            width: calc(100% - 32px); max-width: 460px;
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 14px 12px 16px;
+            background: #071C2D; color: #fff;
+            border: 1.5px solid rgba(20, 200, 190, .55);
+            border-radius: 16px;
+            box-shadow: 0 16px 40px rgba(7, 28, 45, .35);
+            transition: opacity .25s ease, transform .25s ease;
+        }
+        #loginToast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+        #loginToast .lt-icon { color: #14C8BE; flex-shrink: 0; }
+        #loginToast .lt-text { flex: 1; font-size: 14px; font-weight: 600; line-height: 1.35; }
+        #loginToast .lt-login {
+            flex-shrink: 0; padding: 8px 18px; border: none; border-radius: 9999px; cursor: pointer;
+            background: #14C8BE; color: #071C2D;
+            font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 13px;
+            transition: background .2s;
+        }
+        #loginToast .lt-login:hover { background: #fff; }
+        #loginToast .lt-close {
+            flex-shrink: 0; width: 28px; height: 28px; border: none; border-radius: 9999px; cursor: pointer;
+            background: rgba(255, 255, 255, .08); color: rgba(255, 255, 255, .8);
+            display: inline-flex; align-items: center; justify-content: center;
+        }
+        #loginToast .lt-close:hover { background: rgba(255, 255, 255, .18); color: #fff; }
+        @media (prefers-reduced-motion: reduce) { #loginToast { transition: none; } }
 
         /* Login modal */
         #loginModalOverlay { display: none; }
@@ -317,28 +199,221 @@
             animation: heroKenBurns 28s ease-in-out infinite alternate;
             will-change: transform;
         }
-        @media (prefers-reduced-motion: reduce) {
-            .hero-ken-burns { animation: none; }
-        }
-
-        /* ULEE brand mark — clickable logo with integrated pin accent */
-        .ulee-brand-link { text-decoration: none; cursor: pointer; transition: opacity 0.2s ease; }
-        .ulee-brand-link:hover { opacity: 0.85; }
-        .ulee-brand-mark { position: relative; display: inline-block; }
-        .ulee-brand-mark::after {
-            content: '';
-            position: absolute;
-            top: -3px; right: -9px;
-            width: 9px; height: 9px;
-            background: #ffe170;
-            border-radius: 50% 50% 50% 0;
-            transform: rotate(-45deg);
-            box-shadow: 0 1px 2px rgba(0,0,0,0.15);
-        }
 
         /* Location dropdown (hero search) */
         #locationDropdownPanel { display: none; }
         #locationDropdownPanel.open { display: block; }
+
+        /* ═══════════════ ULEE logo (design system, section 3) ═══════════════ */
+        .logo-link { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; transition: opacity .2s; }
+        .logo-link:hover { opacity: .88; }
+        .logo-icon svg { width: 30px; height: 30px; fill: #14C8BE; display: block; }
+        .logo-name { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 22px; line-height: 1; color: #14C8BE; }
+        .logo-tag { font-size: 10.5px; font-weight: 600; margin-top: 3px; color: #14C8BE; }
+
+        /* ═══════════════ Navy top bar ═══════════════ */
+        .ulee-nav {
+            background: #071C2D;
+            border-bottom: 1px solid #007178;
+            box-shadow: 0 4px 20px rgba(7, 28, 45, 0.25);
+        }
+        .nav-link { position: relative; padding-bottom: 4px; color: #B7C3CB; font-weight: 600; transition: color .2s; }
+        .nav-link:hover { color: #fff; }
+        .nav-link.active { color: #fff; border-bottom: 2px solid #14C8BE; }
+
+        /* ═══════════════ Hero: navy wash + wave edge ═══════════════ */
+        .hero-wash { background: linear-gradient(105deg, rgba(7,28,45,.92) 0%, rgba(10,58,72,.72) 45%, rgba(15,108,112,.18) 100%); }
+        .hero-wave { position: absolute; left: 0; bottom: -1px; width: 200%; height: 44px; z-index: 5; animation: ulee-wave 18s linear infinite; pointer-events: none; }
+        .hero-wave .w-back  { fill: rgba(20, 200, 190, .30); }
+        .hero-wave .w-front { fill: #F4FBFA; stroke: #14C8BE; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+        @keyframes ulee-wave { to { transform: translateX(-50%); } }
+
+        /* ═══════════════ Footer logo on navy ═══════════════ */
+        .footer-top { border-top: 1px solid #007178; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .hero-ken-burns, .hero-wave { animation: none; }
+        }
+
+        /* ═══════════════════════════════════════════════════════════
+           ULEE navy/teal modals (login, forgot password, logout)
+           Scoped with the um- prefix so nothing else on the page changes.
+           ═══════════════════════════════════════════════════════════ */
+        .um-overlay {
+            background: rgba(7, 28, 45, 0.62);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            overflow-y: auto;
+            padding-top: 24px;
+            padding-bottom: 24px;
+        }
+        .um-modal {
+            position: relative;
+            width: 100%;
+            max-width: 420px;
+            margin: auto;
+            background: #fff;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 24px 60px rgba(7, 28, 45, 0.35);
+        }
+        .um-modal.um-sm { max-width: 380px; }
+
+        .um-head {
+            position: relative;
+            overflow: hidden;
+            padding: 22px 28px 26px;
+            background: linear-gradient(115deg, #071C2D 0%, #0A3A48 55%, #0F6C70 100%);
+            border-bottom: 1.5px solid rgba(20, 200, 190, 0.45);
+        }
+        .um-head::after {
+            content: '';
+            position: absolute; top: -70px; right: -50px; width: 220px; height: 220px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(20, 200, 190, .28) 0%, transparent 70%);
+            animation: um-pulse 4.5s ease-in-out infinite;
+            pointer-events: none;
+        }
+        .um-brand { position: relative; z-index: 2; display: inline-flex; align-items: center; gap: 10px; }
+        .um-brand svg { width: 28px; height: 28px; fill: #14C8BE; }
+        .um-brand-name { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 22px; line-height: 1; color: #14C8BE; }
+        .um-brand-tag { font-size: 10.5px; font-weight: 600; margin-top: 2px; color: #14C8BE; }
+        .um-stars { position: absolute; top: 0; right: 0; width: 50%; height: 80%; z-index: 1; }
+        .um-stars .star { animation: um-twinkle 4s ease-in-out infinite; animation-delay: var(--d, 0s); }
+        .um-wave { position: absolute; left: 0; bottom: 0; width: 200%; height: 22px; z-index: 1; animation: um-wave 16s linear infinite; }
+        .um-wave .w-back  { fill: rgba(14, 116, 128, .55); }
+        .um-wave .w-front { fill: #fff; stroke: #14C8BE; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+
+        .um-close {
+            position: absolute; top: 14px; right: 14px; z-index: 3;
+            width: 34px; height: 34px;
+            display: inline-flex; align-items: center; justify-content: center;
+            border: none; border-radius: 9999px; cursor: pointer;
+            color: rgba(255, 255, 255, .85);
+            background: rgba(255, 255, 255, .08);
+            transition: background .2s;
+        }
+        .um-close:hover { background: rgba(255, 255, 255, .18); color: #fff; }
+        .um-close:focus-visible { outline: 2px solid #14C8BE; outline-offset: 2px; }
+
+        .um-body { padding: 22px 28px 28px; }
+        .um-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 22px; line-height: 1.25; color: #071C2D; }
+        .um-sub { margin-top: 6px; font-size: 14px; line-height: 1.5; color: #3f484d; }
+
+        .um-field { margin-top: 16px; }
+        .um-label { display: block; font-size: 13px; font-weight: 600; color: #3f484d; margin-bottom: 6px; }
+        .um-input {
+            width: 100%;
+            padding: 11px 14px;
+            font-size: 15px; font-family: 'Hanken Grotesk', sans-serif;
+            color: #191c1d; background: #fff;
+            border: 1.5px solid #E6E8E4; border-radius: 10px;
+            outline: none;
+            transition: border-color .2s, box-shadow .2s;
+        }
+        .um-input::placeholder { color: #98a2a7; }
+        .um-input:hover { border-color: #93C0C5; }
+        .um-input:focus { border-color: #006A6A; box-shadow: 0 0 0 3px rgba(0, 106, 106, .15); }
+        .um-pw { position: relative; }
+        .um-pw .um-input { padding-right: 46px; }
+        .um-pw-toggle {
+            position: absolute; top: 50%; right: 7px; transform: translateY(-50%);
+            width: 34px; height: 34px;
+            display: inline-flex; align-items: center; justify-content: center;
+            border: none; background: transparent; border-radius: 8px; cursor: pointer;
+            color: #6f787d;
+        }
+        .um-pw-toggle:hover { background: #F0F7F6; }
+        .um-pw-toggle:focus-visible { outline: 2px solid #006A6A; outline-offset: 1px; }
+
+        .um-link { font-size: 13px; font-weight: 600; color: #006A6A; background: none; border: none; cursor: pointer; padding: 0; }
+        .um-link:hover { text-decoration: underline; text-underline-offset: 2px; }
+
+        .um-btn {
+            width: 100%; padding: 13px;
+            font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 700;
+            color: #fff; background: #006A6A;
+            border: none; border-radius: 9999px; cursor: pointer;
+            transition: background .2s, box-shadow .2s, transform .1s;
+        }
+        .um-btn:hover { background: #005555; box-shadow: 0 6px 16px rgba(0, 106, 106, .25); }
+        .um-btn:active { transform: scale(.98); }
+        .um-btn:disabled { opacity: .6; cursor: not-allowed; box-shadow: none; }
+        .um-btn:focus-visible, .um-btn-ghost:focus-visible, .um-btn-danger:focus-visible { outline: 3px solid rgba(20, 200, 190, .55); outline-offset: 2px; }
+
+        .um-btn-ghost {
+            flex: 1; padding: 12px;
+            font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 700;
+            color: #006A6A; background: #fff;
+            border: 1.5px solid #93C0C5; border-radius: 9999px; cursor: pointer;
+            transition: background .2s, border-color .2s;
+        }
+        .um-btn-ghost:hover { background: #F0F7F6; border-color: #006A6A; }
+        .um-btn-danger {
+            flex: 1; padding: 12px;
+            font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 700;
+            color: #fff; background: #ba1a1a;
+            border: none; border-radius: 9999px; cursor: pointer;
+            transition: background .2s;
+        }
+        .um-btn-danger:hover { background: #93000a; }
+
+        .um-note { margin-top: 18px; text-align: center; font-size: 13.5px; color: #3f484d; }
+        .um-note a { color: #006A6A; font-weight: 700; text-decoration: none; }
+        .um-note a:hover { text-decoration: underline; text-underline-offset: 2px; }
+
+        .um-success {
+            margin-top: 18px; padding: 11px 14px;
+            font-size: 13.5px; font-weight: 500; text-align: center;
+            color: #0b5a45; background: #e6f6f1; border: 1px solid #b4e3d3; border-radius: 10px;
+        }
+
+        .um-icon-badge {
+            width: 56px; height: 56px; margin: 0 auto 16px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 9999px;
+            background: linear-gradient(115deg, #071C2D 0%, #0F6C70 100%);
+            border: 1.5px solid rgba(20, 200, 190, .45);
+            color: #14C8BE;
+        }
+
+        /* Rounder, smoother text fields.
+           The Tailwind "forms" plugin styles input[type=text|password|email] and was
+           overriding .um-input (square corners, grey border), so these rules are
+           scoped one level deeper to win. */
+        .um-modal input.um-input {
+            border: 1.5px solid #E6E8E4;
+            border-radius: 14px;
+            padding: 12px 16px;
+            background-color: #fff;
+            box-shadow: none;
+            outline: none;
+        }
+        .um-modal .um-pw input.um-input { padding-right: 48px; }
+        .um-modal input.um-input:hover { border-color: #93C0C5; }
+        .um-modal input.um-input:focus {
+            border-color: #006A6A;
+            box-shadow: 0 0 0 3px rgba(0, 106, 106, .15);
+        }
+        /* Browser autofill paints a blue box with square corners; keep it white and rounded */
+        .um-modal input.um-input:-webkit-autofill,
+        .um-modal input.um-input:-webkit-autofill:hover {
+            -webkit-box-shadow: 0 0 0 1000px #fff inset;
+            -webkit-text-fill-color: #191c1d;
+            border-radius: 14px;
+        }
+        .um-modal input.um-input:-webkit-autofill:focus {
+            -webkit-box-shadow: 0 0 0 1000px #fff inset, 0 0 0 3px rgba(0, 106, 106, .15);
+            -webkit-text-fill-color: #191c1d;
+        }
+
+        @keyframes um-pulse   { 0%,100% { opacity: .6; transform: scale(1); } 50% { opacity: 1; transform: scale(1.12); } }
+        @keyframes um-twinkle { 0%,100% { opacity: .25; } 50% { opacity: 1; } }
+        @keyframes um-wave    { to { transform: translateX(-50%); } }
+        @media (prefers-reduced-motion: reduce) {
+            .um-head::after, .um-wave, .um-stars .star { animation: none !important; }
+            .um-btn, .um-input { transition: none; }
+        }
     </style>
     <link rel="stylesheet" href="/speak-with-ai.css">
     <script src="/speak-with-ai-logic.js" defer></script>
@@ -346,53 +421,50 @@
     <link rel="stylesheet" href="/ulee-toast.css">
     <script src="/ulee-toast.js" defer></script>
 </head>
-<body class="bg-background text-on-surface font-body-md overflow-x-hidden">
+<!-- NEW: data-logged-in lets the page script know whether the visitor is logged in -->
+<body class="bg-background text-on-surface font-body-md overflow-x-hidden" th:attr="data-logged-in=${isLoggedIn}">
 
-<div th:if="${param.loginRequired != null}" class="bg-tertiary-fixed text-on-tertiary-fixed text-center py-sm px-md font-label-bold text-sm">
-    Please log in to view that page.
-    <button type="button" id="dismissLoginBanner" class="ml-md underline">Dismiss</button>
-</div>
-
-<!-- Top Navigation Bar -->
-<nav class="glass-nav top-0 sticky z-50">
-    <div class="flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-sm max-w-7xl mx-auto">
+<!-- Top Navigation Bar (navy, with the ULEE logo) -->
+<nav class="ulee-nav top-0 sticky z-50">
+    <div class="flex justify-between items-center w-full px-margin-desktop py-sm max-w-7xl mx-auto">
         <div class="flex items-center gap-md">
-            <!-- Design-system logo (§3): teal house mark straight on navy -->
-            <a href="/student-dashboard" class="ulee-brand-link flex items-center gap-sm" aria-label="ULEE home">
-                <span class="logo-icon"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2L3 7v11h14V7L10 2zm0 2.6 5 3.5V16H5V8.1l5-3.5zM8 10h4v6H8z"/></svg></span>
-                <span class="flex flex-col">
-                    <span class="logo-name">ULEE</span>
-                    <span class="logo-tag">Student Living. Simplified.</span>
+            <a href="/student-dashboard" class="logo-link" aria-label="ULEE home">
+                <span class="logo-icon">
+                    <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2L3 7v11h14V7L10 2zm0 2.6 5 3.5V16H5V8.1l5-3.5zM8 10h4v6H8z"/></svg>
+                </span>
+                <span>
+                    <div class="logo-name">ULEE</div>
+                    <div class="logo-tag">Student Living. Simplified.</div>
                 </span>
             </a>
         </div>
         <div class="hidden md:flex items-center gap-lg">
-            <a class="nav-link is-active font-label-bold text-label-bold" href="/student-dashboard">Properties</a>
+            <a class="nav-link active font-label-bold text-label-bold" href="/student-dashboard">Properties</a>
             <a class="nav-link font-label-bold text-label-bold" href="#life-at-ulee">Life at ULEE</a>
             <a class="nav-link font-label-bold text-label-bold" href="#">About Us</a>
             <a class="nav-link font-label-bold text-label-bold" href="#">Contact</a>
         </div>
         <div class="flex items-center gap-md">
-            <button type="button" id="openLoginBtn" th:unless="${isLoggedIn}" class="hidden md:block nav-link font-label-bold">Login</button>
+            <button type="button" id="openLoginBtn" th:unless="${isLoggedIn}" class="hidden md:block text-sidebar-text font-label-bold hover:text-white transition-colors">Login</button>
 
             <div class="relative hidden md:block" th:if="${isLoggedIn}" id="userMenuWrap">
-                <button type="button" id="userMenuBtn" class="flex items-center gap-sm text-white/80 font-label-bold hover:text-white transition-colors pl-xs pr-sm py-xs rounded-full border border-teal-glow/30 bg-white/5 hover:bg-white/10" aria-expanded="false" aria-haspopup="true">
-                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-teal-glow to-teal-active text-navy flex items-center justify-center font-extrabold text-xs uppercase ring-2 ring-teal-glow/40" th:text="${userInitials != null ? userInitials : 'ST'}">ST</div>
+                <button type="button" id="userMenuBtn" class="flex items-center gap-sm text-sidebar-text font-label-bold hover:text-white transition-colors" aria-expanded="false">
+                    <div class="w-8 h-8 rounded-full bg-teal-deep text-white flex items-center justify-center font-bold text-xs uppercase" th:text="${userInitials != null ? userInitials : 'ST'}">ST</div>
                     <span th:text="'Hi, ' + ${currentUserFirstName}">Hi, Student</span>
-                    <span class="material-symbols-outlined text-[16px]" aria-hidden="true">expand_more</span>
+                    <span class="material-symbols-outlined text-[16px]">expand_more</span>
                 </button>
-                <div id="userMenuDropdown" class="hidden absolute right-0 mt-sm w-60 bg-navy/95 backdrop-blur-xl rounded-xl shadow-2xl border border-teal-glow/30 py-xs z-50 overflow-hidden">
-                    <a href="/my-dashboard" class="flex items-center gap-sm px-md py-sm text-sm text-white/85 hover:text-white hover:bg-teal-active/60 transition-colors"><span class="material-symbols-outlined text-[18px] text-teal-glow" aria-hidden="true">space_dashboard</span>My Dashboard</a>
-                    <a href="/my-applications" class="flex items-center gap-sm px-md py-sm text-sm text-white/85 hover:text-white hover:bg-teal-active/60 transition-colors"><span class="material-symbols-outlined text-[18px] text-teal-glow" aria-hidden="true">description</span>My Applications</a>
-                    <a href="/saved-properties" class="flex items-center gap-sm px-md py-sm text-sm text-white/85 hover:text-white hover:bg-teal-active/60 transition-colors"><span class="material-symbols-outlined text-[18px] text-teal-glow" aria-hidden="true">favorite</span>Saved Properties</a>
-                    <div class="border-t border-white/10 my-xs"></div>
+                <div id="userMenuDropdown" class="hidden absolute right-0 mt-xs w-56 bg-white rounded-xl shadow-lg border border-outline-variant/30 py-xs z-50">
+                    <a href="/my-dashboard" class="block px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors">My Dashboard</a>
+                    <a href="/my-applications" class="block px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors">My Applications</a>
+                    <a href="/saved-properties" class="block px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors">Saved Properties</a>
+                    <div class="border-t border-outline-variant/30 my-xs"></div>
                     <form id="logoutForm" th:action="@{/logout}" method="post">
-                        <button type="button" onclick="openLogoutConfirm()" class="w-full flex items-center gap-sm text-left px-md py-sm text-sm text-[#ff8a80] hover:bg-white/5 transition-colors"><span class="material-symbols-outlined text-[18px]" aria-hidden="true">logout</span>Logout</button>
+                        <button type="button" onclick="openLogoutConfirm()" class="w-full text-left px-md py-sm text-sm text-error hover:bg-surface-container-low transition-colors">Logout</button>
                     </form>
                 </div>
             </div>
 
-            <a href="#apply" th:unless="${isLoggedIn}" class="bg-tertiary-fixed text-on-tertiary-fixed px-md py-sm rounded-full font-label-bold hover:shadow-[0_0_20px_rgba(245,212,80,.55)] active:scale-95 transition-all duration-200">
+            <a href="#apply" th:unless="${isLoggedIn}" class="bg-teal-bright text-navy px-md py-sm rounded-full font-label-bold hover:bg-white active:scale-95 transition-all duration-200">
                 Apply Now
             </a>
         </div>
@@ -400,30 +472,26 @@
 </nav>
 
 <!-- Hero Section -->
-<header class="relative w-full min-h-[88vh] flex items-center overflow-hidden bg-navy">
+<header class="relative w-full h-[85vh] flex items-center overflow-hidden">
     <div class="absolute inset-0 z-0">
-        <!-- Building photo at full strength; only a soft navy fade on the left
-             so the headline stays readable. (Was opacity-60 under a near-solid
-             navy veil + grid + glow orbs, which hid the building.) -->
         <div class="w-full h-full bg-cover bg-center scale-105 hero-ken-burns" style="background-image: url('/uploads/student-background.png')"></div>
-        <div class="absolute inset-0 bg-gradient-to-r from-navy/80 via-navy/45 to-transparent"></div>
+        <div class="absolute inset-0 hero-wash"></div>
     </div>
-    <div class="relative z-10 w-full max-w-7xl mx-auto px-margin-mobile md:px-margin-desktop py-xl">
+    <div class="relative z-10 w-full max-w-7xl mx-auto px-margin-desktop">
         <div class="max-w-2xl space-y-md">
-            <h1 class="font-display-lg text-display-lg font-extrabold text-white drop-shadow-[0_2px_12px_rgba(7,28,45,.45)]">
-                The Future of <span class="text-tertiary-fixed">Student Living</span> in Gqeberha
+            <h1 class="font-display-lg text-display-lg font-extrabold text-white leading-tight">
+                The Future of <span class="text-teal-bright">Student Living</span> in Gqeberha
             </h1>
-            <p class="text-body-lg font-body-lg text-white/90 max-w-lg drop-shadow-[0_1px_8px_rgba(7,28,45,.5)]">
+            <p class="text-body-lg font-body-lg text-white/90 max-w-lg">
                 Premium living designed for the ambitious. Search real, available rooms from landlords near your campus.
             </p>
 
             <!-- Hero Search Bar -->
-            <form id="heroSearchForm" class="search-glass backdrop-blur-xl p-base rounded-2xl flex flex-col md:flex-row items-stretch md:items-center gap-xs mt-lg" action="/search" method="get">
-                <!-- Location: was a free-text input; now a dropdown of the real, known
-                     locations so users pick a value that actually matches a property's
-                     suburb instead of typing something that matches nothing. -->
+            <form id="heroSearchForm" class="bg-navy/55 backdrop-blur-xl p-base rounded-2xl flex flex-col md:flex-row items-stretch md:items-center gap-xs mt-lg border border-teal-bright/30" action="/search" method="get">
+                <!-- Location: dropdown of the real, known locations so users pick a value
+                     that actually matches a property's suburb. -->
                 <div class="flex-1 px-md py-sm flex items-center gap-sm relative" id="locationFieldWrap">
-                    <span class="material-symbols-outlined text-teal-glow" aria-hidden="true">location_on</span>
+                    <span class="material-symbols-outlined text-teal-bright">location_on</span>
                     <div class="flex flex-col w-full">
                         <span class="text-[10px] uppercase font-bold text-white/60 tracking-wider">Location</span>
                         <button type="button" id="locationDropdownBtn" class="bg-transparent font-label-bold border-none p-0 focus:ring-0 w-full flex items-center justify-between text-left">
@@ -433,24 +501,24 @@
                     </div>
                     <input type="hidden" name="location" id="locationHiddenInput" value="" />
 
+                    <!-- CHANGED: added "On Campus" and "North End" so every dashboard group can be picked here -->
                     <div id="locationDropdownPanel" class="absolute left-0 top-full mt-xs w-56 bg-white rounded-xl shadow-lg border border-outline-variant/30 py-xs z-50">
                         <button type="button" class="location-option w-full text-left px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors" data-location="">Any location</button>
+                        <button type="button" class="location-option w-full text-left px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors" data-location="On Campus">On Campus</button>
                         <button type="button" class="location-option w-full text-left px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors" data-location="Summerstrand">Summerstrand</button>
                         <button type="button" class="location-option w-full text-left px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors" data-location="Humewood">Humewood</button>
                         <button type="button" class="location-option w-full text-left px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors" data-location="Town">Town</button>
+                        <button type="button" class="location-option w-full text-left px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors" data-location="North End">North End</button>
                         <button type="button" class="location-option w-full text-left px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors" data-location="Central">Central</button>
                         <button type="button" class="location-option w-full text-left px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors" data-location="Pier 14">Pier 14</button>
                     </div>
                 </div>
                 <div class="w-px h-8 bg-white/20 hidden md:block"></div>
                 <div class="flex-1 px-md py-sm flex items-center gap-sm">
-                    <span class="material-symbols-outlined text-teal-glow" aria-hidden="true">bed</span>
+                    <span class="material-symbols-outlined text-teal-bright">bed</span>
                     <div class="flex flex-col w-full">
                         <span class="text-[10px] uppercase font-bold text-white/60 tracking-wider">Room Type</span>
-                        <!-- FIX: values now match the real DB `type` column values
-                             (Single Room / Commune / Sharing) instead of the old
-                             Studio/Shared Apartment placeholders that never matched
-                             anything in the database. -->
+                        <!-- Values match the real DB `type` column values (Single Room / Commune / Sharing). -->
                         <select name="type" id="heroTypeSelect" class="bg-transparent text-white font-label-bold border-none p-0 focus:ring-0 w-full">
                             <option class="text-on-surface" value="">Any type</option>
                             <option class="text-on-surface" value="Single Room">Single Room</option>
@@ -459,28 +527,31 @@
                         </select>
                     </div>
                 </div>
-                <button type="submit" class="bg-tertiary-fixed text-on-tertiary-fixed px-xl py-md rounded-xl font-label-bold flex items-center justify-center gap-sm hover:shadow-[0_0_24px_rgba(245,212,80,.55)] transition-shadow">
-                    <span class="material-symbols-outlined" aria-hidden="true">search</span>
+                <!-- One of the only two yellow CTAs left: buttons on photo banners (design system) -->
+                <button type="submit" class="bg-accent-yellow text-navy px-xl py-md rounded-xl font-label-bold flex items-center justify-center gap-sm hover:brightness-95 transition">
+                    <span class="material-symbols-outlined">search</span>
                     Search
                 </button>
             </form>
         </div>
     </div>
+
+    <!-- Wave edge into the page -->
+    <svg class="hero-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true">
+        <path class="w-back"  d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+        <path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+    </svg>
 </header>
 
 <!-- Our Rooms Section -->
-<section class="py-xl max-w-7xl mx-auto px-margin-mobile md:px-margin-desktop scroll-mt-24" id="properties">
-    <div class="flex flex-col md:flex-row md:items-end justify-between gap-md mb-lg reveal">
-        <div class="space-y-sm">
-            <span class="eyebrow">Explore Spaces</span>
-            <h2 class="font-headline-md text-headline-md font-extrabold text-on-surface">Find Your Perfect Fit</h2>
+<section class="py-xl max-w-7xl mx-auto px-margin-desktop" id="properties">
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-md mb-lg">
+        <div class="space-y-xs">
+            <span class="text-primary font-label-bold tracking-widest uppercase">Explore Spaces</span>
+            <h2 class="font-headline-md text-headline-md text-navy">Find Your Perfect Fit</h2>
         </div>
-        <!-- Filters/Tabs -->
-        <!-- FIX: data-type values now match the real DB `type` column values.
-             Previously "Studio Apartment" and "Shared Apartment" matched
-             nothing (real values are "Commune" and "Sharing"), so only
-             "Single Room" ever worked. -->
-        <div class="flex items-center gap-base bg-white p-xs rounded-full overflow-x-auto hide-scrollbar border border-outline-variant shadow-sm" id="typeTabs">
+        <!-- Filters/Tabs (data-type values match the real DB `type` values) -->
+        <div class="flex items-center gap-base bg-white border border-outline-variant p-xs rounded-full overflow-x-auto hide-scrollbar" id="typeTabs">
             <button type="button" class="filter-tab active px-md py-sm rounded-full font-label-bold whitespace-nowrap u-transition" data-type="all">All Rooms</button>
             <button type="button" class="filter-tab px-md py-sm rounded-full font-label-bold whitespace-nowrap u-transition" data-type="Single Room">Single Rooms</button>
             <button type="button" class="filter-tab px-md py-sm rounded-full font-label-bold whitespace-nowrap u-transition" data-type="Commune">Commune</button>
@@ -492,113 +563,157 @@
          with a one-click way to clear it. Hidden while "Any location" is selected. -->
     <div id="activeLocationChip" class="hidden items-center gap-xs mb-md">
         <span class="text-sm text-on-surface-variant">Showing:</span>
-        <span class="inline-flex items-center gap-xs bg-navy text-teal-mint border border-teal-glow/40 px-md py-xs rounded-full text-sm font-label-bold">
+        <span class="inline-flex items-center gap-xs bg-primary-fixed/50 text-on-primary-fixed-variant px-md py-xs rounded-full text-sm font-label-bold">
             <span id="activeLocationChipText">Location</span>
-            <button type="button" id="clearLocationChipBtn" class="material-symbols-outlined text-[16px] leading-none hover:text-white" aria-label="Clear location filter">close</button>
+            <button type="button" id="clearLocationChipBtn" class="material-symbols-outlined text-[16px] leading-none">close</button>
         </span>
     </div>
 
-    <!-- Room Grid — real properties from the backend -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter" id="roomGrid">
-        <div class="room-card is-visible bg-white rounded-[24px] overflow-hidden border border-outline-variant u-shadow-card u-transition hover:-translate-y-2 group"
-             th:each="property : ${properties}" th:attr="data-type=${property.type},data-suburb=${property.suburb}"
-             th:with="facilityAmenity=${property.amenities != null ? property.amenities.^[category == 'Facilities'] : null}">
-            <a th:href="@{/property/{id}(id=${property.propertyID})}" class="block">
-                <div class="relative aspect-[4/3] overflow-hidden bg-navy">
-                    <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="/images/property-placeholder.svg" th:src="${property.mainImageUrl} ?: '/images/property-placeholder.svg'" th:alt="${property.title}" loading="lazy"/>
-                    <!-- navy fade so the badges stay legible on bright photos -->
-                    <div class="absolute inset-0 bg-gradient-to-t from-navy/60 via-transparent to-navy/20 pointer-events-none"></div>
-                    <div class="absolute top-4 left-4">
-                        <span class="inline-flex items-center gap-xs bg-navy/75 backdrop-blur-md border border-teal-glow/50 text-white px-sm py-xs rounded-full text-[10px] font-bold uppercase tracking-wider" th:if="${property.isAvailable}"><span class="w-1.5 h-1.5 rounded-full bg-teal-glow shadow-[0_0_6px_#14C8BE]" aria-hidden="true"></span>Available</span>
-                        <span class="bg-error/90 backdrop-blur-md text-white px-sm py-xs rounded-full text-[10px] font-bold uppercase tracking-wider" th:unless="${property.isAvailable}">Unavailable</span>
-                    </div>
+    <!-- CHANGED: one block per suburb ("On Campus" first, then the others).
+         Each block shows 3 rooms (highly rated ones first); "View all" reveals the
+         rest of THAT suburb only, and "Minimise" hides them again. -->
+    <div class="space-y-xl" id="roomSections">
+        <div class="suburb-section scroll-mt-28" th:each="entry : ${categorizedProperties}" th:attr="data-suburb=${entry.key}">
+
+            <div class="flex items-center justify-between gap-md mb-md">
+                <div class="flex items-center gap-sm min-w-0">
+                    <span class="material-symbols-outlined text-primary">location_on</span>
+                    <h3 class="suburb-title truncate" th:text="${entry.key}">Summerstrand</h3>
+                    <span class="suburb-count text-sm text-on-surface-variant whitespace-nowrap" th:text="${#lists.size(entry.value)} + (${#lists.size(entry.value)} == 1 ? ' property' : ' properties')">3 properties</span>
                 </div>
-            </a>
-            <div class="p-md space-y-md">
-                <div class="flex justify-between items-start gap-sm">
-                    <a th:href="@{/property/{id}(id=${property.propertyID})}" class="min-w-0">
-                        <h3 class="font-headline-sm text-headline-sm font-bold text-on-surface group-hover:text-primary transition-colors" th:text="${property.title}">Room Title</h3>
-                        <p class="text-on-surface-variant text-sm font-semibold flex items-center gap-xs mt-xs">
-                            <span class="material-symbols-outlined text-[16px] text-teal-badge" aria-hidden="true">location_on</span> <span th:text="${property.suburb} + ', ' + ${property.city}">Location</span>
-                        </p>
+                <div class="flex-shrink-0">
+                    <!-- View all: locked (padlock icon + login toast) until the student logs in -->
+                    <button type="button" class="section-toggle-btn view-all-btn is-hidden" data-action="expand">
+                        <span class="material-symbols-outlined text-[18px]" th:unless="${isLoggedIn}">lock</span>
+                        <span>View all (<span class="view-all-count">0</span> more)</span>
+                    </button>
+                    <button type="button" class="section-toggle-btn minimise-btn is-hidden" data-action="collapse">
+                        <span class="material-symbols-outlined text-[18px]">unfold_less</span>
+                        <span>Minimise</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
+                <div class="room-card flex-col bg-white rounded-[24px] overflow-hidden border border-outline-variant/60 u-shadow-card u-transition hover:-translate-y-2 group"
+                     th:each="property, iterStat : ${entry.value}"
+                     th:with="facilityAmenity=${property.firstFacilityAmenity},
+                              isRated=${highlyRatedIds != null and highlyRatedIds.contains(property.propertyID)},
+                              funding=${property.acceptedFunding != null and !#strings.isEmpty(property.acceptedFunding) ? property.acceptedFunding : 'Any'},
+                              restriction=${property.occupantRestriction != null and !#strings.isEmpty(property.occupantRestriction) ? property.occupantRestriction : 'Mixed'}"
+                     th:attr="data-type=${property.type},data-suburb=${property.suburb},data-rated=${isRated}"
+                     th:classappend="${iterStat.index lt 3 or isRated} ? 'is-visible' : ''">
+                    <a th:href="@{/property/{id}(id=${property.propertyID})}" class="property-link block">
+                        <div class="relative aspect-[4/3] overflow-hidden bg-navy">
+                            <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="/images/property-placeholder.svg" th:src="${property.mainImageUrl} ?: '/images/property-placeholder.svg'" th:alt="${property.title}" loading="lazy"/>
+                            <div class="absolute top-4 left-4">
+                                <span class="bg-teal-deep text-white px-md py-xs rounded-full text-[10px] font-bold uppercase tracking-wider" th:if="${property.isAvailable}">Available</span>
+                                <span class="bg-error text-white px-md py-xs rounded-full text-[10px] font-bold uppercase tracking-wider" th:unless="${property.isAvailable}">Unavailable</span>
+                            </div>
+                            <!-- NEW: Highly rated badge (average rating 4.0 or above) -->
+                            <div class="absolute top-4 right-4" th:if="${isRated}">
+                                <span class="rated-badge"><span class="material-symbols-outlined">star</span>Highly rated</span>
+                            </div>
+                        </div>
                     </a>
-                    <div class="text-right flex flex-col items-end shrink-0">
-                        <p class="price-tag font-headline-sm font-extrabold text-headline-sm">R<span th:text="${property.rent}">0</span></p>
-                        <p class="text-[10px] text-on-surface-variant uppercase tracking-wider">per month</p>
+                    <div class="p-md flex flex-col flex-1 gap-md">
+                        <div class="flex justify-between items-start gap-sm">
+                            <a th:href="@{/property/{id}(id=${property.propertyID})}" class="property-link min-w-0">
+                                <!-- CHANGED: bold Outfit font, colour unchanged (navy) -->
+                                <h3 class="property-title text-navy" th:text="${property.title}">Room Title</h3>
+                                <!-- CHANGED: suburb only, no city -->
+                                <p class="text-on-surface-variant font-label-bold flex items-center gap-xs mt-xs">
+                                    <span class="material-symbols-outlined text-[16px]">location_on</span>
+                                    <span th:text="${property.suburb != null and !#strings.isEmpty(property.suburb) ? property.suburb : 'Gqeberha'}">Suburb</span>
+                                </p>
+                            </a>
+                            <div class="text-right flex flex-col items-end gap-xs flex-shrink-0">
+                                <p class="text-primary font-bold text-headline-sm">R<span th:text="${property.rent}">0</span></p>
+                                <p class="text-[10px] text-on-surface-variant uppercase">per month</p>
+                            </div>
+                        </div>
+                        <!-- Commute type, room type, one Facilities amenity, and (NEW)
+                             accepted funding + occupant restriction.
+                             NULL funding shows as "Any", NULL restriction as "Mixed". -->
+                        <div class="flex gap-sm flex-wrap">
+                            <span class="bg-primary-fixed/50 text-on-primary-fixed-variant px-sm py-xs rounded-lg text-label-sm flex items-center gap-xs"
+                                  th:if="${property.commuteType != null and !property.commuteType.isEmpty()}"
+                                  th:text="${property.commuteType}">Shuttle required</span>
+                            <span class="bg-primary-fixed/50 text-on-primary-fixed-variant px-sm py-xs rounded-lg text-label-sm flex items-center gap-xs"
+                                  th:if="${property.type != null and !property.type.isEmpty()}"
+                                  th:text="${property.type}">Single Room</span>
+                            <span class="bg-primary-fixed/50 text-on-primary-fixed-variant px-sm py-xs rounded-lg text-label-sm flex items-center gap-xs"
+                                  th:if="${facilityAmenity != null}"
+                                  th:text="${facilityAmenity.name}">Facility</span>
+                            <span class="bg-primary-fixed/50 text-on-primary-fixed-variant px-sm py-xs rounded-lg text-label-sm flex items-center gap-xs">
+                                <span class="material-symbols-outlined text-[14px]">payments</span>
+                                <span th:text="'Funding: ' + ${funding}">Funding: Any</span>
+                            </span>
+                            <span class="bg-primary-fixed/50 text-on-primary-fixed-variant px-sm py-xs rounded-lg text-label-sm flex items-center gap-xs">
+                                <span class="material-symbols-outlined text-[14px]">group</span>
+                                <span th:text="'Occupants: ' + ${restriction}">Occupants: Mixed</span>
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-sm mt-auto">
+                            <!-- CHANGED: the heart is now saved with fetch (no page reload), so the
+                                 page never jumps back to the top. The form + action stay as a fallback. -->
+                            <form th:action="@{/favorite/{id}(id=${property.propertyID})}" method="post" class="fav-form inline" th:attr="data-property-id=${property.propertyID}">
+                                <input type="hidden" name="returnTo" value="/student-dashboard" />
+                                <button type="submit" class="save-btn w-10 h-10 rounded-full border-2 border-primary text-primary flex items-center justify-center hover:bg-primary hover:text-white u-transition" title="Save"
+                                        th:text="${savedPropertyIds != null and savedPropertyIds.contains(property.propertyID)} ? '❤️' : '🤍'">🤍</button>
+                            </form>
+                            <a th:href="@{/property/{id}(id=${property.propertyID})}" class="property-link flex-1 text-center py-md border-2 border-primary text-primary rounded-xl font-label-bold hover:bg-primary hover:text-white u-transition">
+                                View Property
+                            </a>
+                        </div>
                     </div>
-                </div>
-                <!-- REPLACED: bed/bath/furnished/study-friendly badges swapped for
-                     commute type, room type, and one ticked Facilities amenity
-                     (nothing shown if no Facilities amenity is ticked). -->
-                <div class="flex gap-sm flex-wrap">
-                    <span class="bg-surface-container-low text-on-primary-fixed-variant border border-secondary-container/60 px-sm py-xs rounded-lg text-label-sm font-semibold flex items-center gap-xs"
-                          th:if="${property.commuteType != null and !property.commuteType.isEmpty()}"
-                          th:text="${property.commuteType}">Shuttle required</span>
-                    <span class="bg-surface-container-low text-on-primary-fixed-variant border border-secondary-container/60 px-sm py-xs rounded-lg text-label-sm font-semibold flex items-center gap-xs"
-                          th:if="${property.type != null and !property.type.isEmpty()}"
-                          th:text="${property.type}">Single Room</span>
-                    <span class="bg-surface-container-low text-on-primary-fixed-variant border border-secondary-container/60 px-sm py-xs rounded-lg text-label-sm font-semibold flex items-center gap-xs"
-                          th:if="${facilityAmenity != null}"
-                          th:text="${facilityAmenity.name}">Facility</span>
-                </div>
-                <div class="flex items-center gap-sm pt-xs">
-                    <form th:action="@{/favorite/{id}(id=${property.propertyID})}" method="post" class="inline" data-loading-text="...">
-                        <input type="hidden" name="returnTo" value="/student-dashboard" />
-                        <button type="submit" class="save-btn w-11 h-11 rounded-full border-2 border-secondary-container text-primary flex items-center justify-center hover:border-teal-glow hover:shadow-[0_0_14px_rgba(20,200,190,.4)] u-transition"
-                                title="Save" aria-label="Save or unsave this property"
-                                th:text="${savedPropertyIds != null and savedPropertyIds.contains(property.propertyID)} ? '❤️' : '🤍'">🤍</button>
-                    </form>
-                    <a th:href="@{/property/{id}(id=${property.propertyID})}" class="btn-neon flex-1 flex items-center justify-center gap-xs py-sm border-2 border-primary text-primary rounded-xl font-label-bold u-transition">
-                        View Property
-                        <span class="material-symbols-outlined text-[18px] transition-transform group-hover:translate-x-1" aria-hidden="true">arrow_forward</span>
-                    </a>
                 </div>
             </div>
         </div>
-
-        <!-- Fallback shown only when the backend returns no properties -->
-        <p class="col-span-full text-center text-on-surface-variant py-xl" th:if="${#lists.isEmpty(properties)}">
-            No rooms match right now — check back soon or try a different search.
-        </p>
     </div>
 
+    <!-- Fallback shown only when the backend returns no properties -->
+    <p class="text-center text-on-surface-variant py-xl" th:if="${#maps.isEmpty(categorizedProperties)}">
+        No rooms match right now — check back soon or try a different search.
+    </p>
+
     <!-- Shown by JS when a location/type combination matches zero cards -->
-    <p id="noFilterMatches" class="hidden col-span-full text-center text-on-surface-variant py-xl">
+    <p id="noFilterMatches" class="hidden text-center text-on-surface-variant py-xl">
         No rooms match that location and room type yet — try a different combination.
     </p>
 </section>
 
 <!-- Explore Residences Section (Bento Style) -->
-<section class="navy-section relative py-xl overflow-hidden">
-    <div class="relative max-w-7xl mx-auto px-margin-mobile md:px-margin-desktop">
-        <div class="text-center space-y-sm mb-xl reveal">
-            <span class="eyebrow on-dark">Iconic Buildings</span>
-            <h2 class="font-headline-md text-headline-md font-extrabold text-white">Explore our <span class="text-tertiary-fixed">Accommodations</span></h2>
+<section class="bg-surface-container py-xl">
+    <div class="max-w-7xl mx-auto px-margin-desktop">
+        <div class="text-center space-y-xs mb-xl">
+            <span class="text-primary font-label-bold tracking-widest uppercase">Iconic Buildings</span>
+            <h2 class="font-headline-md text-headline-md text-navy">Explore our Accommodations</h2>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-gutter h-auto md:h-[600px] reveal">
-            <div class="bento-tile md:col-span-8 min-h-[280px] group relative rounded-[32px] overflow-hidden cursor-pointer">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-gutter h-auto md:h-[600px]">
+            <div class="md:col-span-8 group relative rounded-[32px] overflow-hidden cursor-pointer shadow-lg">
                 <div
                         class="w-full h-full bg-cover bg-center u-transition group-hover:scale-105"
                         style="background-image: url('/uploads/campusKey/CampusKey.png')">
                 </div>
-                <div class="absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/10 to-transparent"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-navy/90 via-transparent to-transparent"></div>
                 <div class="absolute bottom-8 left-8">
                     <h3 class="text-white font-headline-md text-headline-md">Campus Key</h3>
                     <p class="text-white/80 font-body-lg">Luxury living in the heart of Summerstrand</p>
                 </div>
             </div>
             <div class="md:col-span-4 flex flex-col gap-gutter">
-                <div class="bento-tile flex-1 min-h-[220px] group relative rounded-[32px] overflow-hidden cursor-pointer">
+                <div class="flex-1 group relative rounded-[32px] overflow-hidden cursor-pointer shadow-lg">
                     <div class="w-full h-full bg-cover bg-center u-transition group-hover:scale-105" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD36loEQ2YIZohjzgrfcptCU3RpdxrJpZnxB9HeXjX8ri1lnicIcHcm1gUFt0_LFcpyZtFWGdCvk7NTU1zZtN6Wv-1RDZ1vJFkFle1ITd-0cJOMssfC4XAVJh7GR6tAaJ9eTiWO2Br7HprVGbOJ7D9aM3k8oLKPeJ1A71DCJgFvUxvE_SZM1DZ7xcYSynycIIFpgroysvyGMYg2AmI-VOHsNWrebpjaroqU3zp_t41rIL-1QljIDjb0')"></div>
-                    <div class="absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/10 to-transparent"></div>
+                    <div class="absolute inset-0 bg-gradient-to-t from-navy/90 via-transparent to-transparent"></div>
                     <div class="absolute bottom-6 left-6">
                         <h3 class="text-white font-headline-sm text-headline-sm">Campus Key</h3>
                         <p class="text-white/80 text-sm">Community-first urban living</p>
                     </div>
                 </div>
-                <div class="bento-tile flex-1 min-h-[220px] group relative rounded-[32px] overflow-hidden cursor-pointer">
+                <div class="flex-1 group relative rounded-[32px] overflow-hidden cursor-pointer shadow-lg">
                     <div class="w-full h-full bg-cover bg-center u-transition group-hover:scale-105" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDLzpNChbNkdYV0svVjg9gGO8sRpIKkuXimjJyRO-skF7wSzkYVwB9cLE5hLs2mG2xgTqrA88iiaaNPLxPGOiUDRkbzyHwIVy4a0Xs7WnZP8nOKGODZulTzEefBRqioHIc0gfvOWgonfVNzoC9ldhpnLIgg6qZF3x0_jWzg0BvElZL88qdqq6mZiRy3x5EWIrWOUdlixrAMssNqhDrNdYOF26uqLHM4OLmgRESr0kD8zjc7zerb86Zi')"></div>
-                    <div class="absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/10 to-transparent"></div>
+                    <div class="absolute inset-0 bg-gradient-to-t from-navy/90 via-transparent to-transparent"></div>
                     <div class="absolute bottom-6 left-6">
                         <h3 class="text-white font-headline-sm text-headline-sm">Campus Key</h3>
                         <p class="text-white/80 text-sm">Balanced study-life focus</p>
@@ -614,7 +729,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-xl items-center">
         <div class="space-y-md">
             <span class="text-primary font-label-bold tracking-widest uppercase">Voices of ULEE</span>
-            <h2 class="font-headline-md text-headline-md text-on-surface leading-tight">What residents say</h2>
+            <h2 class="font-headline-md text-headline-md text-navy leading-tight">What residents say</h2>
             <p class="text-on-surface-variant font-body-lg">An unforgettable experience for students.</p>
         </div>
         <div class="lg:col-span-2 flex gap-gutter overflow-x-auto hide-scrollbar pb-lg snap-x">
@@ -626,8 +741,8 @@
                     <div><p class="font-bold text-on-surface">Lou Viljoen</p><p class="text-sm text-on-surface-variant">Student</p></div>
                 </div>
             </div>
-            <div class="min-w-[320px] md:min-w-[400px] bg-white p-lg rounded-[32px] snap-center u-shadow-card border-l-8 border-secondary">
-                <span class="material-symbols-outlined text-secondary text-display-lg opacity-20">format_quote</span>
+            <div class="min-w-[320px] md:min-w-[400px] bg-white p-lg rounded-[32px] snap-center u-shadow-card border-l-8 border-teal-bright">
+                <span class="material-symbols-outlined text-teal-deep text-display-lg opacity-20">format_quote</span>
                 <p class="font-body-lg text-on-surface mb-lg">"Living at Campus Key has been a game-changer for my studies. The backup power means I never miss a deadline during load shedding."</p>
                 <div class="flex items-center gap-md border-t border-outline-variant pt-md">
                     <div class="w-12 h-12 rounded-full bg-surface-variant"></div>
@@ -642,22 +757,22 @@
 <section class="py-xl bg-white overflow-hidden" id="life-at-ulee">
     <div class="max-w-7xl mx-auto px-margin-desktop">
         <div class="text-center mb-xl">
-            <h2 class="font-headline-md text-headline-md text-on-surface">Life at ULEE</h2>
+            <h2 class="font-headline-md text-headline-md text-navy">Life at ULEE</h2>
             <p class="text-on-surface-variant">More than just a room. A community where you thrive.</p>
         </div>
         <div class="relative h-[400px] md:h-[600px] flex items-center justify-center">
-            <div class="absolute w-[300px] h-[300px] md:w-[600px] md:h-[600px] bg-primary-fixed/20 rounded-full blur-[100px]"></div>
+            <div class="absolute w-[300px] h-[300px] md:w-[600px] md:h-[600px] bg-teal-bright/15 rounded-full blur-[100px]"></div>
             <div class="absolute transform -rotate-6 translate-x-[-120px] translate-y-[-40px] md:translate-x-[-250px] w-48 md:w-80 h-64 md:h-96 rounded-2xl overflow-hidden shadow-xl border-4 border-white z-10 group hover:z-40 transition-all duration-300">
                 <div class="w-full h-full bg-cover bg-center" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAA2nnRcXYDJ123tgUT2Gd3PDUgeWXZ32brLnI2y6TvnXNGwEuv8FUV4-dk8C_qyoXp_FFPTZVM8ACGmP4h-jYJ07vF28kH6-ffrNoAY04guqPUToqDMOkAaE-crjseZAk6kX8AP-FAV-pp2swh7Z7blVZV4lnlOwVm2p-473suzHmq25_iPIH-2PcRHOJnPMMbMaVkUvUdY6A50Ui0AD8K0FQRMI1xsAN3kXCZezHuO6Bgo8pAj105')"></div>
-                <div class="absolute bottom-0 inset-x-0 bg-black/60 p-sm backdrop-blur-sm"><p class="text-white text-xs font-bold uppercase tracking-widest">Weekend Vibes</p></div>
+                <div class="absolute bottom-0 inset-x-0 bg-navy/70 p-sm backdrop-blur-sm"><p class="text-white text-xs font-bold uppercase tracking-widest">Weekend Vibes</p></div>
             </div>
             <div class="absolute transform rotate-3 translate-x-[40px] translate-y-[-80px] md:translate-x-[100px] w-48 md:w-80 h-64 md:h-96 rounded-2xl overflow-hidden shadow-xl border-4 border-white z-20 group hover:z-40 transition-all duration-300">
                 <div class="w-full h-full bg-cover bg-center" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCXaz3uimQmsAMquboMW_37AzJcLgZxdxOmmP28Sp5BgrKL89GLfntGeMnQa_1n2SJFV1SOSOocWVWMmnKNi8wJU5uZadUM_JuFTGB2EQiOM6GL9UVoNADE3dqcYpxqyPlig2HU8s-1Tyg14R66RNyxR-Yv1F8lxTOE8ejtvfomLZmOlCbWphDJeHQdKhAWd6TjfLsZk5okAhKBrF6vglhJNADNIktlbWq7fC_TDtojKA7OjjigM8e6')"></div>
-                <div class="absolute bottom-0 inset-x-0 bg-black/60 p-sm backdrop-blur-sm"><p class="text-white text-xs font-bold uppercase tracking-widest">Late-night Study</p></div>
+                <div class="absolute bottom-0 inset-x-0 bg-navy/70 p-sm backdrop-blur-sm"><p class="text-white text-xs font-bold uppercase tracking-widest">Late-night Study</p></div>
             </div>
             <div class="absolute transform -rotate-2 translate-x-[150px] translate-y-[60px] md:translate-x-[350px] w-40 md:w-64 h-56 md:h-80 rounded-2xl overflow-hidden shadow-xl border-4 border-white z-30 group hover:z-40 transition-all duration-300">
                 <div class="w-full h-full bg-cover bg-center" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBHWwXhH-xGuYn_6tDQLSDEM_CNKC2riuNKlSEogLXakaNb9cmghRSbZECIHw32Zke31l9wugtTVy6GALlnUZVBkCSHvoYgg0UeGR7tr4SkWNxv3KDF8GTLe6LnTnJMO5doxwEcsNNPR5UPPiVwQ4MMybKx7oeCbh_b8LWEScmasRshNKHDwa7Th5s0fpmKyisJahmuFyrIQGHCJLuqbwDsDfvvJfXa0JC4w-TtWzWUB9GwXPep_dJH')"></div>
-                <div class="absolute bottom-0 inset-x-0 bg-black/60 p-sm backdrop-blur-sm"><p class="text-white text-xs font-bold uppercase tracking-widest">Social Events</p></div>
+                <div class="absolute bottom-0 inset-x-0 bg-navy/70 p-sm backdrop-blur-sm"><p class="text-white text-xs font-bold uppercase tracking-widest">Social Events</p></div>
             </div>
         </div>
     </div>
@@ -667,120 +782,184 @@
 <section class="relative py-xl overflow-hidden" id="apply" th:unless="${isLoggedIn}">
     <div class="absolute inset-0 z-0">
         <div class="w-full h-full bg-cover bg-center" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAleO-PUvb3OxTSPbRp2NEDIVd6ln3jHd_uVkTpAd4cBzi0SpFfh14VDbF3WLkiWb3w9isODifqI-YLuq_1hTkjjF-sB_5GDGmdz8z_iLqYL-m3pZh6zPJ9Jm0db5DssosozIZoulizYCfIHj0nwMIh7G9OWGmkDgm7TpCIg6LEbx4TOhTRFu2q1MGkk_GOkvtyZV6JgVAphhMZWOgrgecwPbpWcHLs4aYSlw6OCZL-xIda8qsShnpi')"></div>
-        <div class="absolute inset-0 bg-primary/60 backdrop-blur-[2px]"></div>
+        <div class="absolute inset-0 bg-gradient-to-br from-navy/90 via-navy-mid/80 to-teal-deep/60"></div>
     </div>
     <div class="relative z-10 max-w-4xl mx-auto text-center px-margin-mobile space-y-lg py-lg">
         <h2 class="font-display-lg text-display-lg font-extrabold text-white">Find your place at ULEE</h2>
         <p class="text-body-lg text-white/90">Join hundreds of students who call ULEE home. Applications for the next semester are now open.</p>
         <div class="flex flex-col md:flex-row items-center justify-center gap-md">
-            <a href="/student-dashboard#properties" class="w-full md:w-auto bg-tertiary-fixed text-on-tertiary-fixed px-xl py-lg rounded-2xl font-label-bold text-lg hover:bg-tertiary-container u-transition shadow-xl">Browse rooms</a>
+            <!-- The second (and last) yellow CTA: button on a photo banner -->
+            <a href="/student-dashboard#properties" class="w-full md:w-auto bg-accent-yellow text-navy px-xl py-lg rounded-2xl font-label-bold text-lg hover:brightness-95 u-transition shadow-xl">Browse rooms</a>
             <button type="button" id="openLoginBtnCta" class="w-full md:w-auto bg-white/10 backdrop-blur-md text-white border-2 border-white/40 px-xl py-lg rounded-2xl font-label-bold text-lg hover:bg-white/20 u-transition">Log in to apply</button>
         </div>
     </div>
 </section>
 
 <!-- Footer -->
-<footer class="bg-inverse-surface w-full pt-xl pb-lg border-t border-outline-variant">
+<footer class="bg-navy footer-top w-full pt-xl pb-lg">
     <div class="grid grid-cols-1 md:grid-cols-4 gap-gutter px-margin-desktop max-w-7xl mx-auto">
         <div class="space-y-md">
-            <span class="font-headline-sm text-headline-sm font-bold text-surface-bright">ULEE</span>
-            <p class="text-surface-variant/80 font-body-md">Premium student living solutions in Gqeberha. Safety, community, and academic success.</p>
+            <a href="/student-dashboard" class="logo-link" aria-label="ULEE home">
+                <span class="logo-icon">
+                    <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2L3 7v11h14V7L10 2zm0 2.6 5 3.5V16H5V8.1l5-3.5zM8 10h4v6H8z"/></svg>
+                </span>
+                <span>
+                    <div class="logo-name">ULEE</div>
+                    <div class="logo-tag">Student Living. Simplified.</div>
+                </span>
+            </a>
+            <p class="text-sidebar-text font-body-md">Premium student living solutions in Gqeberha. Safety, community, and academic success.</p>
         </div>
         <div class="space-y-sm">
-            <p class="font-label-bold text-surface-bright uppercase tracking-widest text-xs">Resources</p>
+            <p class="font-label-bold text-white uppercase tracking-widest text-xs">Resources</p>
             <ul class="space-y-xs">
-                <li><a class="text-surface-variant/80 hover:text-surface-bright u-transition" href="#">Privacy Policy</a></li>
-                <li><a class="text-surface-variant/80 hover:text-surface-bright u-transition" href="#">Terms of Service</a></li>
-                <li><a class="text-surface-variant/80 hover:text-surface-bright u-transition" href="#">FAQs</a></li>
+                <li><a class="text-sidebar-text hover:text-white u-transition" href="#">Privacy Policy</a></li>
+                <li><a class="text-sidebar-text hover:text-white u-transition" href="#">Terms of Service</a></li>
+                <li><a class="text-sidebar-text hover:text-white u-transition" href="#">FAQs</a></li>
             </ul>
         </div>
         <div class="space-y-sm">
-            <p class="font-label-bold text-surface-bright uppercase tracking-widest text-xs">Quick Links</p>
+            <p class="font-label-bold text-white uppercase tracking-widest text-xs">Quick Links</p>
             <ul class="space-y-xs">
-                <li><a class="text-surface-variant/80 hover:text-surface-bright u-transition" href="/student-dashboard">All Residences</a></li>
-                <li><a class="text-surface-variant/80 hover:text-surface-bright u-transition" href="/my-applications">My Applications</a></li>
-                <li><a class="text-surface-variant/80 hover:text-surface-bright u-transition" href="/saved-properties">Saved Properties</a></li>
+                <li><a class="text-sidebar-text hover:text-white u-transition" href="/student-dashboard">All Residences</a></li>
+                <li><a class="text-sidebar-text hover:text-white u-transition" href="/my-applications">My Applications</a></li>
+                <li><a class="text-sidebar-text hover:text-white u-transition" href="/saved-properties">Saved Properties</a></li>
             </ul>
         </div>
         <div class="space-y-md">
-            <p class="font-label-bold text-surface-bright uppercase tracking-widest text-xs">Contact Support</p>
-            <a class="text-tertiary-fixed font-bold block hover:underline" href="mailto:hello@ulee.co.za">hello@ulee.co.za</a>
-            <p class="text-surface-variant/80 text-sm">041 500 1234</p>
+            <p class="font-label-bold text-white uppercase tracking-widest text-xs">Contact Support</p>
+            <a class="text-teal-bright font-bold block hover:underline" href="mailto:hello@ulee.co.za">hello@ulee.co.za</a>
+            <p class="text-sidebar-text text-sm">041 500 1234</p>
         </div>
     </div>
-    <div class="mt-xl border-t border-outline-variant/30 pt-lg max-w-7xl mx-auto px-margin-desktop text-center">
-        <p class="text-surface-variant/60 text-xs">© 2026 ULEE Student Living. Built for the modern Gqeberha student.</p>
+    <div class="mt-xl border-t border-teal-deep/50 pt-lg max-w-7xl mx-auto px-margin-desktop text-center">
+        <p class="text-sidebar-text/70 text-xs">© 2026 ULEE Student Living. Built for the modern Gqeberha student.</p>
     </div>
 </footer>
 
-<!-- ── LOGIN MODAL — only ever shown when "Login" is clicked, never a separately-linked page ── -->
-<div id="loginModalOverlay" class="fixed inset-0 z-[999] items-center justify-center bg-black/50 backdrop-blur-sm px-margin-mobile">
-    <div class="bg-white w-full max-w-md rounded-[24px] p-xl relative">
-        <button type="button" id="closeLoginBtn" aria-label="Close" class="absolute top-md right-md text-on-surface-variant hover:text-primary">
-            <span class="material-symbols-outlined">close</span>
-        </button>
-        <h2 class="font-headline-sm text-headline-sm text-on-surface mb-md">Log in to ULEE</h2>
+<!-- NEW — "Log in" toast: shown when a visitor who isn't logged in tries to open a
+     property, use View all, or save a room. The button opens the login modal. -->
+<div id="loginToast" role="status" aria-live="polite">
+    <span class="material-symbols-outlined lt-icon">lock</span>
+    <span class="lt-text" id="loginToastText">Log in to view this property.</span>
+    <button type="button" class="lt-login" id="loginToastBtn">Log in</button>
+    <button type="button" class="lt-close" id="loginToastClose" aria-label="Dismiss">
+        <span class="material-symbols-outlined text-[18px]">close</span>
+    </button>
+</div>
 
-        <!-- Hidden until a login attempt fails; shown by JS with no page reload -->
-        <div id="loginErrorBox"
-             class="hidden mb-md items-center gap-sm bg-error-container text-on-error-container text-sm font-label-bold px-md py-sm rounded-lg"
-             role="alert">
-            <span class="material-symbols-outlined text-[18px]">error</span>
-            <span id="loginErrorText">Incorrect username or password.</span>
+<!-- ── LOGIN MODAL — only ever shown when "Login" is clicked, never a separately-linked page ── -->
+<div id="loginModalOverlay" class="um-overlay fixed inset-0 z-[999] items-center justify-center px-margin-mobile">
+    <div class="um-modal" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+        <div class="um-head">
+            <div class="um-brand">
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2L3 7v11h14V7L10 2zm0 2.6 5 3.5V16H5V8.1l5-3.5zM8 10h4v6H8z"/></svg>
+                <div>
+                    <div class="um-brand-name">ULEE</div>
+                    <div class="um-brand-tag">Student Living. Simplified.</div>
+                </div>
+            </div>
+            <button type="button" id="closeLoginBtn" aria-label="Close" class="um-close">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+            <svg class="um-stars" viewBox="0 0 200 90" aria-hidden="true">
+                <g fill="#9FF0E8">
+                    <circle class="star" cx="150" cy="20" r="1.6" style="--d:0s"/>
+                    <circle class="star" cx="180" cy="44" r="1.3" style="--d:1.2s"/>
+                    <circle class="star" cx="120" cy="52" r="1.2" style="--d:.5s"/>
+                </g>
+            </svg>
         </div>
 
-        <form id="loginForm" th:action="@{/login}" method="post" class="space-y-md">
-            <div>
-                <label class="text-[11px] uppercase font-bold text-on-surface-variant tracking-wider">Username</label>
-                <input type="text" name="username" class="w-full mt-xs border border-outline-variant rounded-lg px-md py-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="e.g. s227676637" required/>
+        <div class="um-body">
+            <h2 class="um-title" id="loginTitle">Log in to ULEE</h2>
+            <p class="um-sub">Use your student number or email.</p>
+
+            <!-- Hidden until a login attempt fails; shown by JS with no page reload -->
+            <div id="loginErrorBox"
+                 class="hidden mt-4 items-center gap-2 bg-error-container text-on-error-container text-sm font-label-bold px-4 py-3 rounded-lg"
+                 role="alert">
+                <span class="material-symbols-outlined text-[18px]">error</span>
+                <span id="loginErrorText">Incorrect username or password.</span>
             </div>
-            <div>
-                <label class="text-[11px] uppercase font-bold text-on-surface-variant tracking-wider">Password</label>
-                <input type="password" name="password" class="w-full mt-xs border border-outline-variant rounded-lg px-md py-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="Enter your password" required/>
-            </div>
-            <p class="text-right -mt-sm">
-                <button type="button" id="openForgotPasswordBtn" class="text-xs text-primary font-bold hover:underline">Forgot password?</button>
+
+            <form id="loginForm" th:action="@{/login}" method="post">
+                <div class="um-field">
+                    <label class="um-label" for="loginUsername">Username</label>
+                    <input type="text" id="loginUsername" name="username" class="um-input" placeholder="e.g. s227676637" required/>
+                </div>
+                <div class="um-field">
+                    <label class="um-label" for="loginPassword">Password</label>
+                    <div class="um-pw">
+                        <input type="password" id="loginPassword" name="password" class="um-input" placeholder="Enter your password" required/>
+                        <button type="button" class="um-pw-toggle" aria-label="Show password" aria-pressed="false" onclick="toggleModalPassword('loginPassword', this)">
+                            <span class="material-symbols-outlined text-[20px]">visibility</span>
+                        </button>
+                    </div>
+                </div>
+                <p class="text-right" style="margin: 12px 0 18px;">
+                    <button type="button" id="openForgotPasswordBtn" class="um-link">Forgot password?</button>
+                </p>
+                <button type="submit" id="loginSubmitBtn" class="um-btn">Log in</button>
+            </form>
+            <p class="um-note">
+                No account? <a href="/register">Register</a>
             </p>
-            <button type="submit" id="loginSubmitBtn" class="w-full bg-primary text-white py-sm rounded-full font-label-bold hover:bg-primary-container transition-colors disabled:opacity-60">Log in</button>
-        </form>
-        <p class="text-center text-sm text-on-surface-variant mt-md">
-            No account? <a href="/register" class="text-primary font-bold hover:underline">Register</a>
-        </p>
+        </div>
     </div>
 </div>
 
 <!-- ── FORGOT PASSWORD MODAL — collects email, backend emails a reset LINK (never the raw password) ── -->
-<div id="forgotPasswordOverlay" class="fixed inset-0 z-[1000] items-center justify-center bg-black/50 backdrop-blur-sm px-margin-mobile">
-    <div class="bg-white w-full max-w-md rounded-[24px] p-xl relative">
-        <button type="button" id="closeForgotPasswordBtn" aria-label="Close" class="absolute top-md right-md text-on-surface-variant hover:text-primary">
-            <span class="material-symbols-outlined">close</span>
-        </button>
-        <h2 class="font-headline-sm text-headline-sm text-on-surface mb-xs">Reset your password</h2>
-        <p class="text-sm text-on-surface-variant mb-md">Enter your email and we'll send you a link to set a new password.</p>
-        <form th:action="@{/forgot-password}" method="post" class="space-y-md" id="forgotPasswordForm">
-            <div>
-                <label class="text-[11px] uppercase font-bold text-on-surface-variant tracking-wider">Email</label>
-                <input type="email" name="email" class="w-full mt-xs border border-outline-variant rounded-lg px-md py-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="e.g. s227676637@mandela.ac.za" required/>
+<div id="forgotPasswordOverlay" class="um-overlay fixed inset-0 z-[1000] items-center justify-center px-margin-mobile">
+    <div class="um-modal" role="dialog" aria-modal="true" aria-labelledby="forgotTitle">
+        <div class="um-head">
+            <div class="um-brand">
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2L3 7v11h14V7L10 2zm0 2.6 5 3.5V16H5V8.1l5-3.5zM8 10h4v6H8z"/></svg>
+                <div>
+                    <div class="um-brand-name">ULEE</div>
+                    <div class="um-brand-tag">Student Living. Simplified.</div>
+                </div>
             </div>
-            <button type="submit" class="w-full bg-primary text-white py-sm rounded-full font-label-bold hover:bg-primary-container transition-colors">Send reset link</button>
-        </form>
-        <p id="forgotPasswordConfirmation" class="hidden text-sm text-on-surface-variant mt-md text-center">
-            If that email is registered, a reset link is on its way. Check your inbox.
-        </p>
+            <button type="button" id="closeForgotPasswordBtn" aria-label="Close" class="um-close">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+            <svg class="um-stars" viewBox="0 0 200 90" aria-hidden="true">
+                <g fill="#9FF0E8">
+                    <circle class="star" cx="150" cy="20" r="1.6" style="--d:0s"/>
+                    <circle class="star" cx="180" cy="44" r="1.3" style="--d:1.2s"/>
+                    <circle class="star" cx="120" cy="52" r="1.2" style="--d:.5s"/>
+                </g>
+            </svg>
+        </div>
+
+        <div class="um-body">
+            <h2 class="um-title" id="forgotTitle">Reset your password</h2>
+            <p class="um-sub">Enter your email and we'll send you a link to set a new password.</p>
+            <form th:action="@{/forgot-password}" method="post" id="forgotPasswordForm">
+                <div class="um-field">
+                    <label class="um-label" for="forgotEmail">Email</label>
+                    <input type="email" id="forgotEmail" name="email" class="um-input" placeholder="e.g. s227676637@mandela.ac.za" required/>
+                </div>
+                <button type="submit" class="um-btn" style="margin-top: 20px;">Send reset link</button>
+            </form>
+            <p id="forgotPasswordConfirmation" class="hidden um-success">
+                If that email is registered, a reset link is on its way. Check your inbox.
+            </p>
+        </div>
     </div>
 </div>
 
 <!-- ── LOGOUT CONFIRMATION MODAL — opened from the "Logout" item in the user menu; only submits /logout if the student confirms ── -->
-<div id="logoutConfirmOverlay" class="fixed inset-0 z-[1001] items-center justify-center bg-black/50 backdrop-blur-sm px-margin-mobile">
-    <div class="bg-white w-full max-w-sm rounded-[24px] p-xl relative text-center">
-        <div class="w-14 h-14 mx-auto mb-md rounded-full bg-error-container flex items-center justify-center">
-            <span class="material-symbols-outlined text-error text-[26px]">logout</span>
+<div id="logoutConfirmOverlay" class="um-overlay fixed inset-0 z-[1001] items-center justify-center px-margin-mobile">
+    <div class="um-modal um-sm" role="dialog" aria-modal="true" aria-labelledby="logoutTitle" style="padding: 32px 28px 28px; text-align: center;">
+        <div class="um-icon-badge">
+            <span class="material-symbols-outlined text-[26px]">logout</span>
         </div>
-        <h2 class="font-headline-sm text-headline-sm text-on-surface mb-xs">Log out of ULEE?</h2>
-        <p class="text-sm text-on-surface-variant mb-lg">You'll need to log in again to view your dashboard, applications and saved rooms.</p>
-        <div class="flex items-center gap-sm">
-            <button type="button" id="closeLogoutConfirmBtn" class="flex-1 py-sm rounded-full font-label-bold border border-outline-variant text-on-surface hover:bg-surface-container-low transition-colors">Cancel</button>
-            <button type="button" id="confirmLogoutBtn" class="flex-1 py-sm rounded-full font-label-bold bg-error text-on-error hover:opacity-90 transition-opacity">Log out</button>
+        <h2 class="um-title" id="logoutTitle">Log out of ULEE?</h2>
+        <p class="um-sub" style="margin-bottom: 24px;">You'll need to log in again to view your dashboard, applications and saved rooms.</p>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <button type="button" id="closeLogoutConfirmBtn" class="um-btn-ghost">Cancel</button>
+            <button type="button" id="confirmLogoutBtn" class="um-btn-danger">Log out</button>
         </div>
     </div>
 </div>
@@ -790,6 +969,18 @@
     <div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null, null, null, null)}"></div>
 </div>
 <script>
+    // ── Show / hide password inside the modals ──
+    function toggleModalPassword(inputId, btn) {
+        const input = document.getElementById(inputId);
+        if (!input) return;
+        const show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        btn.setAttribute('aria-pressed', String(show));
+        btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+        const icon = btn.querySelector('.material-symbols-outlined');
+        if (icon) icon.textContent = show ? 'visibility_off' : 'visibility';
+    }
+
     // ── Login modal ──
     const loginOverlay = document.getElementById('loginModalOverlay');
     document.getElementById('openLoginBtn')?.addEventListener('click', () => loginOverlay.classList.add('open'));
@@ -830,12 +1021,17 @@
     document.getElementById('closeLogoutConfirmBtn')?.addEventListener('click', () => logoutConfirmOverlay.classList.remove('open'));
     document.getElementById('confirmLogoutBtn')?.addEventListener('click', () => document.getElementById('logoutForm').submit());
     logoutConfirmOverlay.addEventListener('click', (e) => { if (e.target === logoutConfirmOverlay) logoutConfirmOverlay.classList.remove('open'); });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') logoutConfirmOverlay.classList.remove('open'); });
+    // Escape closes whichever modal is open
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        logoutConfirmOverlay.classList.remove('open');
+        loginOverlay.classList.remove('open');
+        forgotOverlay.classList.remove('open');
+    });
 
     // ── Auto-prompt login when redirected here because a page required it ──
-    document.getElementById('dismissLoginBanner')?.addEventListener('click', (e) => {
-        e.target.closest('div').remove();
-    });
+    // (e.g. a logged-out visitor typed /property/5 straight into the address bar —
+    // Spring Security now sends them here with ?loginRequired=true.)
     if (new URLSearchParams(window.location.search).get('loginRequired') === 'true') {
         loginOverlay.classList.add('open');
     }
@@ -918,9 +1114,38 @@
         });
     }
 
-    // ── Location dropdown + combined location/type filtering ──
-    // Everything here runs entirely client-side: no navigation to /search,
-    // which is also what removes the empty-location 500 for this flow.
+    // ═══════════════════════════════════════════════════════════
+    // NEW — "Log in" toast. Used by every locked action below.
+    // ═══════════════════════════════════════════════════════════
+    const IS_LOGGED_IN = document.body.dataset.loggedIn === 'true';
+    const loginToast = document.getElementById('loginToast');
+    const loginToastText = document.getElementById('loginToastText');
+    let loginToastTimer = null;
+
+    function showLoginToast(message) {
+        loginToastText.textContent = message;
+        loginToast.classList.add('show');
+        clearTimeout(loginToastTimer);
+        loginToastTimer = setTimeout(hideLoginToast, 7000);
+    }
+    function hideLoginToast() {
+        loginToast.classList.remove('show');
+        clearTimeout(loginToastTimer);
+    }
+    document.getElementById('loginToastClose').addEventListener('click', hideLoginToast);
+    document.getElementById('loginToastBtn').addEventListener('click', () => {
+        hideLoginToast();
+        loginOverlay.classList.add('open');
+        document.getElementById('loginUsername')?.focus();
+    });
+
+    // ═══════════════════════════════════════════════════════════
+    // Location dropdown + type tabs + 3-per-suburb / View all / Minimise.
+    // Everything runs client-side (no navigation to /search).
+    // ═══════════════════════════════════════════════════════════
+    const VISIBLE_LIMIT = 3;                 // rooms shown per suburb before "View all"
+    const expandedSuburbs = new Set();       // suburbs the student has expanded
+
     const tabs = document.querySelectorAll('.filter-tab');
     const locationBtn = document.getElementById('locationDropdownBtn');
     const locationPanel = document.getElementById('locationDropdownPanel');
@@ -930,21 +1155,64 @@
     const activeLocationChipText = document.getElementById('activeLocationChipText');
     const noFilterMatches = document.getElementById('noFilterMatches');
 
-    function applyFilters() {
+    function activeType() {
         const activeTab = document.querySelector('.filter-tab.active');
-        const type = activeTab ? activeTab.dataset.type : 'all';
-        const location = locationHidden.value;
-        let visibleCount = 0;
+        return activeTab ? activeTab.dataset.type : 'all';
+    }
 
-        document.querySelectorAll('.room-card').forEach(card => {
-            const typeMatch = type === 'all' || card.dataset.type === type;
-            const locationMatch = !location || card.dataset.suburb === location;
-            const show = typeMatch && locationMatch;
-            card.classList.toggle('is-visible', show);
-            if (show) visibleCount++;
+    function setType(type) {
+        tabs.forEach(t => t.classList.toggle('active', t.dataset.type === type));
+        document.getElementById('heroTypeSelect').value = type === 'all' ? '' : type;
+    }
+
+    function setLocation(val) {
+        locationHidden.value = val;
+        locationLabel.textContent = val || 'Any location';
+        locationLabel.classList.toggle('text-white/50', !val);
+        locationLabel.classList.toggle('text-white', !!val);
+    }
+
+    // For each suburb block:
+    //   matching  = cards that pass the type + location filters (server order:
+    //               highly rated first, then best-rated, then A-Z)
+    //   limit     = 3, or more if the suburb has more than 3 highly rated rooms,
+    //               so a highly rated room is never pushed behind "View all"
+    //   collapsed = first `limit` matching cards
+    //   expanded  = every matching card
+    function applyFilters() {
+        const type = activeType();
+        const location = locationHidden.value;
+        let totalMatching = 0;
+
+        document.querySelectorAll('.suburb-section').forEach(section => {
+            const suburb = section.dataset.suburb;
+            const cards = Array.from(section.querySelectorAll('.room-card'));
+            const matching = cards.filter(card =>
+                (type === 'all' || card.dataset.type === type) &&
+                (!location || card.dataset.suburb === location));
+
+            const ratedCount = matching.filter(c => c.dataset.rated === 'true').length;
+            const limit = Math.max(VISIBLE_LIMIT, ratedCount);
+            const hiddenCount = Math.max(0, matching.length - limit);
+            const isExpanded = expandedSuburbs.has(suburb) && hiddenCount > 0;
+
+            cards.forEach(card => {
+                const idx = matching.indexOf(card);
+                card.classList.toggle('is-visible', idx !== -1 && (isExpanded || idx < limit));
+            });
+
+            section.classList.toggle('hidden', matching.length === 0);
+            section.querySelector('.suburb-count').textContent =
+                matching.length + (matching.length === 1 ? ' property' : ' properties');
+
+            section.querySelector('.view-all-count').textContent = hiddenCount;
+            section.querySelector('.view-all-btn').classList.toggle('is-hidden', isExpanded || hiddenCount === 0);
+            section.querySelector('.minimise-btn').classList.toggle('is-hidden', !isExpanded);
+
+            totalMatching += matching.length;
         });
 
-        noFilterMatches.classList.toggle('hidden', visibleCount !== 0);
+        noFilterMatches.classList.toggle('hidden', totalMatching !== 0 || document.querySelectorAll('.suburb-section').length === 0);
 
         if (location) {
             activeLocationChipText.textContent = location;
@@ -958,10 +1226,7 @@
 
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
-            tabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            const type = tab.dataset.type;
-            document.getElementById('heroTypeSelect').value = type === 'all' ? '' : type;
+            setType(tab.dataset.type);
             applyFilters();
         });
     });
@@ -973,11 +1238,7 @@
 
     document.querySelectorAll('.location-option').forEach(opt => {
         opt.addEventListener('click', () => {
-            const val = opt.dataset.location;
-            locationHidden.value = val;
-            locationLabel.textContent = val || 'Any location';
-            locationLabel.classList.toggle('text-white/50', !val);
-            locationLabel.classList.toggle('text-white', !!val);
+            setLocation(opt.dataset.location);
             locationPanel.classList.remove('open');
             applyFilters();
         });
@@ -990,10 +1251,7 @@
     });
 
     document.getElementById('clearLocationChipBtn')?.addEventListener('click', () => {
-        locationHidden.value = '';
-        locationLabel.textContent = 'Any location';
-        locationLabel.classList.add('text-white/50');
-        locationLabel.classList.remove('text-white');
+        setLocation('');
         applyFilters();
     });
 
@@ -1002,25 +1260,127 @@
     // Whitelabel 500 on an empty location).
     document.getElementById('heroSearchForm')?.addEventListener('submit', (e) => {
         e.preventDefault();
-        const typeVal = document.getElementById('heroTypeSelect').value;
-        tabs.forEach(t => t.classList.toggle('active', t.dataset.type === (typeVal || 'all')));
+        setType(document.getElementById('heroTypeSelect').value || 'all');
         applyFilters();
         document.getElementById('properties')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
-    // ── Save toggle (visual only; the form submit still hits /favorite/{id}) ──
-    document.querySelectorAll('.save-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            btn.textContent = btn.textContent.trim() === '🤍' ? '❤️' : '🤍';
-            btn.closest('form').submit();
+    // ── View all (locked until login) / Minimise ──
+    document.querySelectorAll('.suburb-section').forEach(section => {
+        const suburb = section.dataset.suburb;
+
+        section.querySelector('.view-all-btn').addEventListener('click', () => {
+            if (!IS_LOGGED_IN) {
+                showLoginToast('Log in to see all the properties in ' + suburb + '.');
+                return;
+            }
+            expandedSuburbs.add(suburb);
+            applyFilters();
+        });
+
+        section.querySelector('.minimise-btn').addEventListener('click', () => {
+            expandedSuburbs.delete(suburb);
+            applyFilters();
+            // The page just got shorter — bring this suburb's heading back into view.
+            section.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
     });
+
+    // ═══════════════════════════════════════════════════════════
+    // NEW — property links are locked until login
+    // ═══════════════════════════════════════════════════════════
+    // Remember where the student was (scroll position, expanded suburbs, filters)
+    // right before they open a property, so coming back drops them in the same spot.
+    const STATE_KEY = 'uleeDashboardState';
+
+    function saveDashboardState() {
+        try {
+            sessionStorage.setItem(STATE_KEY, JSON.stringify({
+                y: window.scrollY,
+                expanded: Array.from(expandedSuburbs),
+                type: activeType(),
+                location: locationHidden.value,
+                ts: Date.now()
+            }));
+        } catch (_) { /* storage unavailable — the page just opens at the top */ }
+    }
+
+    document.addEventListener('click', (e) => {
+        const link = e.target.closest('a.property-link');
+        if (!link) return;
+        if (!IS_LOGGED_IN) {
+            e.preventDefault();
+            showLoginToast('Log in to view this property.');
+            return;
+        }
+        saveDashboardState();
+    });
+
+    // Restore the saved position once, when the student returns to the dashboard.
+    function restoreDashboardState() {
+        let saved = null;
+        try {
+            saved = JSON.parse(sessionStorage.getItem(STATE_KEY) || 'null');
+            sessionStorage.removeItem(STATE_KEY); // one-shot
+        } catch (_) { return; }
+        if (!saved || Date.now() - saved.ts > 30 * 60 * 1000) return;
+
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('loginRequired') || params.has('openLogin') || params.has('loginError') || window.location.hash) return;
+
+        (saved.expanded || []).forEach(s => expandedSuburbs.add(s));
+        setType(saved.type || 'all');
+        setLocation(saved.location || '');
+        applyFilters();
+
+        const scrollBack = () => window.scrollTo({ top: saved.y || 0, left: 0, behavior: 'instant' });
+        scrollBack();
+        window.addEventListener('load', scrollBack); // once images have settled
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // CHANGED — Save (heart) uses fetch, so there is no page reload and no jump to the top
+    // ═══════════════════════════════════════════════════════════
+    document.querySelectorAll('.fav-form').forEach(form => {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!IS_LOGGED_IN) {
+                showLoginToast('Log in to save properties.');
+                return;
+            }
+            const btn = form.querySelector('.save-btn');
+            const before = btn.textContent.trim();
+            btn.textContent = before === '🤍' ? '❤️' : '🤍'; // instant feedback
+            btn.disabled = true;
+            try {
+                const res = await fetch(form.action, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+                });
+                const isJson = (res.headers.get('content-type') || '').includes('application/json');
+                if (!res.ok || !isJson) {
+                    // Session expired (the server answered with the login page) or an error
+                    btn.textContent = before;
+                    showLoginToast('Log in to save properties.');
+                } else {
+                    const data = await res.json();
+                    btn.textContent = data.saved ? '❤️' : '🤍';
+                }
+            } catch (err) {
+                btn.textContent = before;
+            }
+            btn.disabled = false;
+        });
+    });
+
+    // Initial render: apply the 3-per-suburb rule, then restore the saved position (if any)
+    applyFilters();
+    restoreDashboardState();
 
     // ── Hide the AI chat widget while any modal is open ──
     // The widget's script may inject its icon straight into <body>, outside our wrapper,
     // so besides the wrapper we also hide any extra top-level element on the page that
-    // isn't part of this template (nav, hero, sections, footer, modals, banner).
+    // isn't part of this template (nav, hero, sections, footer, modals).
     const aiWidgetWrap = document.getElementById('aiWidgetWrap');
     const modalOverlays = [loginOverlay, forgotOverlay, logoutConfirmOverlay];
     const KNOWN_TAGS = ['NAV', 'HEADER', 'SECTION', 'FOOTER', 'SCRIPT', 'STYLE', 'LINK', 'NOSCRIPT'];
@@ -1029,8 +1389,7 @@
         const found = aiWidgetWrap ? [aiWidgetWrap] : [];
         Array.from(document.body.children).forEach(el => {
             if (KNOWN_TAGS.includes(el.tagName)) return;
-            if (modalOverlays.includes(el) || el === aiWidgetWrap) return;
-            if (el.querySelector('#dismissLoginBanner')) return; // "please log in" banner
+            if (modalOverlays.includes(el) || el === aiWidgetWrap || el === loginToast) return;
             found.push(el);
         });
         return found;

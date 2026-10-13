@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Applications | ULEE</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=Fredoka:wght@500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/landlord-style.css">
+    <link rel="stylesheet" href="/applications-style.css">
+    <link rel="stylesheet" href="/applications-overview.css">
+    <style>
+        /* NEW — "Back" link, same look as "Back to My Properties" on the Edit Property page */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 14px;
+            font-family: var(--font-body);
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary-dark);
+            text-decoration: none;
+        }
+        .back-link:hover { text-decoration: underline; }
+        .back-link svg { width: 14px; height: 14px; }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        /* ── Property list: one clickable row per property ── */
+        .pl-card {
+            background: var(--surface-container-lowest, #fff);
+            border: 1px solid var(--outline-variant, #dfe7e7);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        .pl-head,
+        .pl-row {
+            display: grid;
+            grid-template-columns: 72px minmax(0, 1fr) 220px 24px;
+            align-items: center;
+            gap: 16px;
+            padding: 0 24px;
+        }
+        .pl-head {
+            padding-top: 12px;
+            padding-bottom: 12px;
+            background: var(--surface-tint, #f3f9f8);
+            font-family: var(--font-display, inherit);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--on-surface-variant, #5b6b6b);
+        }
+        .pl-row {
+            padding-top: 14px;
+            padding-bottom: 14px;
+            border-top: 1px solid var(--outline-variant, #dfe7e7);
+            color: inherit;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .pl-row:hover { background: var(--surface-tint, #f3f9f8); }
+        .pl-row:focus-visible {
+            outline: 2px solid var(--primary-dark, #0b5f5f);
+            outline-offset: -2px;
+        }
+
+        .pl-photo {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #eef1f1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #9db3b3;
+        }
+        .pl-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .pl-photo svg { width: 22px; height: 22px; }
+
+        .pl-name {
+            font-family: var(--font-display, inherit);
+            font-weight: 700;
+            font-size: 15px;
+            color: var(--on-surface, #14222a);
+            margin: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .pl-count {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: var(--on-surface-variant, #5b6b6b);
+        }
+        .pl-count strong { color: var(--on-surface, #14222a); font-weight: 700; }
+        .pl-new {
+            background: #e3f6f4;
+            color: var(--primary-dark, #0b5f5f);
+            font-size: 12px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 999px;
+            white-space: nowrap;
+        }
+
+        .pl-chevron { color: var(--on-surface-variant, #5b6b6b); display: flex; }
+        .pl-row:hover .pl-chevron { color: var(--primary-dark, #0b5f5f); }
+
+        @media (max-width: 640px) {
+            .pl-head { display: none; }
+            .pl-row {
+                grid-template-columns: 48px minmax(0, 1fr) 20px;
+                row-gap: 4px;
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+            .pl-photo { grid-row: 1 / span 2; }
+            .pl-count { grid-column: 2; }
+            .pl-chevron { grid-column: 3; grid-row: 1 / span 2; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-shell">
+
+    <!-- ============ SIDEBAR (shared fragment — see fragments/landlord-sidebar.html) ============ -->
+    <div th:replace="~{fragments/landlord-sidebar :: sidebar('applications')}"></div>
+
+    <!-- ============ MAIN ============ -->
+    <main class="main">
+
+        <header class="topbar">
+            <h1 class="topbar-title">Applications Management</h1>
+            <div class="topbar-actions">
+                <div th:replace="~{fragments/landlord-notifications :: bell}"></div>
+                <!-- Initials come from the logged-in landlord's database account (PropertyController.addLandlordShellData) -->
+                <div class="avatar-initials" th:text="${landlordInitials != null ? landlordInitials : '?'}">?</div>
+            </div>
+        </header>
+
+        <div class="page-body">
+
+            <!-- NEW — one step back: from the All Properties list to My Properties -->
+            <a class="back-link" th:href="@{/landlord-index}">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Back to My Properties
+            </a>
+
+            <!-- Title + search -->
+            <section class="ov-head">
+                <div>
+                    <h2 class="ov-title">All Properties</h2>
+                    <p class="ov-sub" th:unless="${searching}">
+                        <span th:text="${totalPropertiesCount}">3</span> live properties ·
+                        <span th:text="${totalApplicationsAll}">12</span> applications
+                    </p>
+                    <p class="ov-sub" th:if="${searching}">
+                        Results for “<strong th:text="${searchQuery}">search</strong>”
+                    </p>
+                </div>
+
+                <form class="ov-search" method="get" th:action="@{/applications-overview}" role="search">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                    <input type="search" name="q" th:value="${searchQuery}"
+                           placeholder="Search a property or an applicant…"
+                           aria-label="Search a property or an applicant" autocomplete="off">
+                    <a class="ov-clear" th:if="${searching}" th:href="@{/applications-overview}">Clear</a>
+                    <button type="submit">Search</button>
+                </form>
+            </section>
+
+            <!-- Property rows — properties with new applications come first. Click a row to open its applications. -->
+            <section class="ov-section" th:if="${!#lists.isEmpty(summaries)}">
+                <h3 class="ov-section-title" th:if="${searching}">
+                    Properties
+                    <span class="ov-count-pill" th:text="${#lists.size(summaries)}">1</span>
+                </h3>
+
+                <div class="pl-card">
+                    <div class="pl-head" aria-hidden="true">
+                        <span>Photo</span>
+                        <span>Property name</span>
+                        <span>Applications</span>
+                        <span></span>
+                    </div>
+
+                    <a class="pl-row" th:each="s : ${summaries}"
+                       th:href="@{/property-applications/{id}(id=${s.propertyID})}">
+
+                        <div class="pl-photo">
+                            <img th:if="${s.coverUrl != null}" th:src="@{${s.coverUrl}}" alt="" loading="lazy">
+                            <svg th:unless="${s.coverUrl != null}" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 21V9l8-6 8 6v12h-5v-7h-6v7H4Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+                        </div>
+
+                        <p class="pl-name" th:text="${s.title}">Property Name</p>
+
+                        <div class="pl-count">
+                            <span><strong th:text="${s.totalCount}">0</strong> applied</span>
+                            <span class="pl-new" th:if="${s.hasNew}"><span th:text="${s.pendingCount}">3</span> new</span>
+                        </div>
+
+                        <span class="pl-chevron" aria-hidden="true">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </span>
+                    </a>
+                </div>
+            </section>
+
+            <p class="ov-empty-inline" th:if="${searching and #lists.isEmpty(summaries)}" style="margin-bottom: 28px;">
+                No property matches “<span th:text="${searchQuery}">search</span>”.
+            </p>
+
+            <!-- Application search results (only while searching) -->
+            <section class="ov-section" th:if="${searching}">
+                <h3 class="ov-section-title">
+                    Applications
+                    <span class="ov-count-pill" th:text="${#lists.size(matchingApplications)}">1</span>
+                </h3>
+
+                <div class="ov-app-list" th:if="${!#lists.isEmpty(matchingApplications)}">
+                    <!-- Opens that property's applications, filtered to this student -->
+                    <a class="ov-app-row" th:each="row : ${matchingApplications}"
+                       th:href="@{/property-applications/{id}(id=${row.propertyID}, q=${row.studentEmail})}">
+                        <div class="student-avatar" th:text="${row.studentInitials}">SM</div>
+                        <div class="ov-app-main">
+                            <p class="student-name" th:text="${row.studentName}">Sipho Mabuza</p>
+                            <p class="ov-app-meta">
+                                <span th:text="${row.propertyName}">Property</span>
+                                <span th:if="${row.applicationDate != null}"> · applied
+                                    <span th:text="${#temporals.format(row.applicationDate, 'MMM d, yyyy')}">Oct 24, 2026</span></span>
+                            </p>
+                        </div>
+                        <span class="status-pill"
+                              th:classappend="${row.status == 'Pending'} ? 'status-pill--pending' : (${row.status == 'Rejected'} ? 'status-pill--rejected' : (${row.status == 'Accepted'} ? 'status-pill--accepted' : 'status-pill--verifying'))"
+                              th:text="${row.status}">Pending</span>
+                    </a>
+                </div>
+
+                <p class="ov-empty-inline" th:if="${#lists.isEmpty(matchingApplications)}">
+                    No applicant name or email matches “<span th:text="${searchQuery}">search</span>”.
+                </p>
+            </section>
+
+        </div>
+    </main>
+</div>
+
+<script src="/landlord-sidebar-toggle.js" defer></script>
+
+</body>
+</html>

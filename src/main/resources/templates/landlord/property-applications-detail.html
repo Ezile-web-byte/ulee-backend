@@ -9,7 +9,23 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=Fredoka:wght@500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/landlord-style.css">
     <link rel="stylesheet" href="/applications-style.css">
+    <link rel="stylesheet" href="/applications-overview.css">
     <style>
+        /* NEW — "Back" link, same look as "Back to My Properties" on the Edit Property page */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 14px;
+            font-family: var(--font-body);
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary-dark);
+            text-decoration: none;
+        }
+        .back-link:hover { text-decoration: underline; }
+        .back-link svg { width: 14px; height: 14px; }
+
         #appToast {
             position: fixed;
             top: 50%;
@@ -116,11 +132,20 @@
             <!-- CHANGED — wrapped the bell + avatar in one flex row instead of just the bare avatar -->
             <div class="topbar-actions">
                 <div th:replace="~{fragments/landlord-notifications :: bell}"></div>
-                <div class="avatar-initials" th:text="${userInitials != null ? userInitials : 'EH'}">EH</div>
+                <!-- FIXED — was ${userInitials != null ? userInitials : 'EH'}. userInitials is only set on the
+                     student pages, so every landlord always saw the typed-in "EH". The initials now come from the
+                     logged-in landlord's database account (PropertyController.addLandlordShellData). -->
+                <div class="avatar-initials" th:text="${landlordInitials != null ? landlordInitials : '?'}">?</div>
             </div>
         </header>
 
         <div class="page-body">
+
+            <!-- NEW — one step back: from one property's applications to the All Properties list -->
+            <a class="back-link" th:href="@{/applications-overview}">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Back to All Properties
+            </a>
 
             <section class="app-switcher-row" aria-label="Switch property">
                 <h2 class="property-name-heading">
@@ -134,11 +159,16 @@
                     </a>
                     <label class="app-property-select">
                         <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M4 21V9l8-6 8 6v12h-5v-7h-6v7H4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+                        <!-- CHANGED — "All Properties" now opens the overview page; the property being
+                             viewed is the selected option; properties with new applications are listed
+                             first and show how many are new, e.g. "Albert Luthuli (3 new)". -->
                         <select id="propertySwitcher" aria-label="Jump to another property's applications">
-                            <option value="" selected>All Properties</option>
-                            <option th:each="p : ${eligibleProperties}"
+                            <option value="all">All Properties</option>
+                            <option th:each="p : ${switcherProperties}"
+                                    th:with="n=${pendingCountByProperty.get(p.propertyID)}"
                                     th:value="${p.propertyID}"
-                                    th:text="${p.title}">Property Name</option>
+                                    th:selected="${p.propertyID == property.propertyID}"
+                                    th:text="${n != null and n > 0} ? ${p.title + ' (' + n + ' new)'} : ${p.title}">Property Name</option>
                         </select>
                     </label>
                     <a class="app-next-btn" th:href="@{/property-applications/{id}(id=${nextPropertyId})}" aria-label="Next property">
@@ -193,9 +223,20 @@
             <section class="panel" aria-label="Applications for this property" th:if="${applicationCount > 0}">
                 <div class="panel-head">
                     <h2 class="panel-title" th:text="${property.title}">Property Name</h2>
+
+                    <!-- NEW — search this property's applicants by name or email -->
+                    <form class="ov-search ov-search--compact" method="get"
+                          th:action="@{/property-applications/{id}(id=${property.propertyID})}" role="search">
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                        <input type="search" name="q" th:value="${searchQuery}"
+                               placeholder="Search applicants…" aria-label="Search applicants" autocomplete="off">
+                        <a class="ov-clear" th:if="${searchQuery != null and !searchQuery.isEmpty()}"
+                           th:href="@{/property-applications/{id}(id=${property.propertyID})}">Clear</a>
+                    </form>
+
                     <div class="panel-actions">
                         <form th:action="@{/accept-up-to-capacity/{propertyId}(propertyId=${property.propertyID})}" method="post" class="inline-form"
-                              onsubmit="return confirm('Accept applications up to capacity (oldest first) and reject everyone else who applied to this property?');">
+                              onsubmit="return confirm('Accept applications up to capacity (earliest applicants first) and reject everyone else who is still pending for this property?');">
                             <button class="btn-ghost" type="submit">
                                 <svg viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="1.8"/></svg>
                                 Accept up to capacity
@@ -204,9 +245,13 @@
                     </div>
                 </div>
 
-                <!-- One full-width card per application. The controller sorts Pending
-                     first, so once a decision is made the card drops to the end. -->
+                <!-- One full-width card per application. The controller lists Pending first,
+                     OLDEST FIRST (first come, first served), then decided ones. -->
                 <div class="applications-card-list">
+                    <p class="ov-empty-inline" th:if="${#lists.isEmpty(applications)}">
+                        No applicant name or email matches “<span th:text="${searchQuery}">search</span>”.
+                    </p>
+
                     <div class="application-card" th:each="row : ${applications}"
                          th:classappend="${row.status == 'Accepted'} ? 'application-card--accepted' : (${row.status == 'Rejected'} ? 'application-card--rejected' : '')">
                         <div class="application-card-header">
@@ -339,15 +384,20 @@
             toast.textContent = "That property is already at full capacity — reject or re-examine an existing application first.";
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 4000);
-            const cleanUrl = window.location.pathname;
-            window.history.replaceState({}, document.title, cleanUrl);
+            // Only the toast flag is removed from the address bar; a search (?q=) is kept.
+            params.delete('capacityFull');
+            const rest = params.toString();
+            window.history.replaceState({}, document.title, window.location.pathname + (rest ? '?' + rest : ''));
         }
     })();
 </script>
 
 <script>
+    // "All Properties" opens the overview; any other choice opens that property.
     document.getElementById('propertySwitcher').addEventListener('change', function () {
-        if (this.value) {
+        if (this.value === 'all') {
+            window.location.href = '/applications-overview';
+        } else if (this.value) {
             window.location.href = '/property-applications/' + this.value;
         }
     });

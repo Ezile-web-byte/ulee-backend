@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ULEE — User Management</title>
     <!-- Fonts now come from admin-style.css (@import), so no font <link> is needed here -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/admin-style.css">
     <script src="/admin-script.js" defer></script>
 
@@ -88,10 +89,81 @@
         .detail-empty { font-size: 14px; color: var(--muted); }
 
         .users-empty { padding: 22px 0; color: var(--muted); }
+        #tabStudents .ap-empty, #tabLandlords .ap-empty { margin: 8px 0 16px; }
+
+        /* ── Top bar: bell + avatar (avatar is display-only, same as Approved Properties) ── */
+        .topbar-right { display: flex; align-items: center; gap: 14px; margin-left: auto; }
+        .ap-avatar { pointer-events: none; cursor: default; user-select: none; }
+
+        /* ── Popups: same look as the Log out popup (teal) ── */
+        #uleeConfirmCard.tone-brand { text-align: center; }
+        #uleeConfirmCard.tone-brand .ulee-confirm-icon {
+            width: 72px; height: 72px; margin: 0 auto 18px; border-radius: 50%;
+            background: #E0F4F2; color: #006A6A; display: flex; align-items: center; justify-content: center;
+        }
+        #uleeConfirmCard.tone-brand .ulee-confirm-icon svg {
+            width: 30px; height: 30px; fill: none; stroke: currentColor; stroke-width: 2;
+            stroke-linecap: round; stroke-linejoin: round;
+        }
+        #uleeConfirmCard.tone-brand .ulee-confirm-prop {
+            background: #E0F4F2; color: #006A6A; border-radius: 9999px; padding: 4px 12px;
+            font-size: 13px; font-weight: 700;
+        }
+        #uleeConfirmCard.tone-brand .ulee-confirm-actions { display: flex; gap: 12px; }
+        #uleeConfirmCard.tone-brand .ulee-confirm-actions button {
+            flex: 1; padding: 14px 16px; border-radius: 12px; font-family: var(--font-display);
+            font-size: 15px; font-weight: 700; cursor: pointer;
+        }
+        #uleeConfirmCard.tone-brand #uleeConfirmCancel { background: #fff; color: #3f484d; border: 1px solid #D9DEDC; }
+        #uleeConfirmCard.tone-brand #uleeConfirmOk { background: #006A6A; color: #fff; border: 1px solid #006A6A; }
+        #uleeConfirmCard.tone-brand #uleeConfirmOk:hover { background: #005555; }
+
+        .warn-count { font-weight: 700; }
+
+        /* ── Search + filter bar ── */
+        .um-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 4px 0 16px; }
+        .um-search { flex: 1 1 260px; max-width: 380px; padding: 11px 14px 11px 40px; border: 1px solid var(--border);
+            border-radius: var(--radius-md); font-family: var(--font-body); font-size: 14px; color: var(--text); background: var(--white)
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236f787d' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E")
+        no-repeat 13px center / 18px; }
+        .um-search:focus { outline: none; border-color: #006A6A; box-shadow: 0 0 0 3px rgba(0,106,106,.12); }
+        .um-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+        .um-chip { border: 1px solid var(--border); background: var(--white); color: var(--on-surface-variant, #3f484d);
+            border-radius: 9999px; padding: 7px 14px; font-family: var(--font-body); font-size: 13px; font-weight: 600; cursor: pointer; }
+        .um-chip:hover { border-color: #93C0C5; }
+        .um-chip.active { background: #006A6A; border-color: #006A6A; color: #fff; }
+        .um-chip .n { opacity: .75; margin-left: 4px; font-weight: 500; }
 
         @media (max-width: 720px) {
             .detail-grid { grid-template-columns: 1fr; }
         }
+
+        /* ── Empty state (same look as Review Properties) ── */
+        .ap-empty {
+            display: flex; flex-direction: column; align-items: center; text-align: center;
+            padding: 40px 20px 44px;
+            background: linear-gradient(180deg, #ffffff 0%, #F4FBFA 100%);
+            border: 2px dashed #93C0C5; border-radius: 20px;
+        }
+        .ap-empty-art { width: 220px; max-width: 70%; height: auto; overflow: visible; }
+        .ap-empty-title, .ap-empty-sub { font-family: 'Fredoka', 'Plus Jakarta Sans', sans-serif; }
+        .ap-empty-title { font-size: 27px; font-weight: 600; color: #006A6A; margin: 14px 0 4px; }
+        .ap-empty-sub { font-size: 17px; font-weight: 500; color: #6f787d; margin: 0; }
+        .ap-empty-clear {
+            margin-top: 18px; height: 42px; padding: 0 22px; display: inline-flex; align-items: center; cursor: pointer;
+            background: #071C2D; color: #fff; border: 1.5px solid #007178; border-radius: 12px;
+            font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 700; text-decoration: none;
+            transition: background .2s ease, border-color .2s ease;
+        }
+        .ap-empty-clear:hover { background: #0A3A48; border-color: #14C8BE; }
+        .ap-empty-clear:focus-visible { outline: 2px solid #14C8BE; outline-offset: 3px; }
+        .ap-float { transform-box: fill-box; transform-origin: 50% 100%; animation: ap-float 3.6s ease-in-out infinite; }
+        .ap-shadow { transform-box: fill-box; transform-origin: center; animation: ap-shadow 3.6s ease-in-out infinite; }
+        .ap-spark { transform-box: fill-box; transform-origin: center; animation: ap-spark 2.6s ease-in-out infinite; animation-delay: var(--d, 0s); }
+        @keyframes ap-float  { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+        @keyframes ap-shadow { 0%,100% { transform: scaleX(1); opacity: .12; } 50% { transform: scaleX(.9); opacity: .08; } }
+        @keyframes ap-spark  { 0%,100% { opacity: .2; transform: scale(.6) rotate(0deg); } 50% { opacity: 1; transform: scale(1) rotate(20deg); } }
+        @media (prefers-reduced-motion: reduce) { .ap-float, .ap-shadow, .ap-spark { animation: none !important; } }
     </style>
 </head>
 <body>
@@ -104,11 +176,10 @@
     <div class="main">
         <header class="topbar">
             <div class="topbar-title">User Management</div>
-            <div th:replace="~{fragments/notification-bell :: bell}"></div>
-            <button class="logout-btn" onclick="ulee_triggerLogout()">
-                <svg viewBox="0 0 20 20"><path d="M13 3h4v14h-4M9 14l4-4-4-4M13 10H5"/></svg>
-                <span>Log out</span>
-            </button>
+            <div class="topbar-right">
+                <div th:replace="~{fragments/notification-bell :: bell}"></div>
+                <span class="avatar ap-avatar" th:text="${adminInitials} ?: 'AD'">UG</span>
+            </div>
         </header>
 
         <div class="content">
@@ -183,7 +254,11 @@
 
             <!-- ============ STUDENTS ============ -->
             <div id="tabStudents">
-                <div class="user-row" th:each="user : ${studentUsers}">
+                <div class="um-toolbar">
+                    <input type="search" class="um-search" id="studentSearch" placeholder="Search students by name or email" autocomplete="off">
+                </div>
+                <div class="user-row" th:each="user : ${studentUsers}"
+                     th:attr="data-search=${#strings.toLowerCase((user.firstName ?: '') + ' ' + (user.lastName ?: '') + ' ' + (user.email ?: ''))}">
 
                     <div class="user-head" th:onclick="'toggleUserDetail(' + ${user.userID} + ')'">
                         <div class="user-id">
@@ -196,18 +271,14 @@
                                     <span class="badge badge-blue">Student</span>
                                     <span th:if="${user.isActive} == null or ${user.isActive}" class="badge badge-green">Active</span>
                                     <span th:if="${user.isActive} != null and !${user.isActive}" class="badge badge-amber">Inactive</span>
-                                    <span th:if="${user.warningCount != null and user.warningCount > 0}" class="badge badge-red" th:text="${user.warningCount} + ' warning(s)'">0 warnings</span>
                                 </div>
                             </div>
                         </div>
                         <svg class="user-chevron" th:id="'chev-' + ${user.userID}" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5"/></svg>
                     </div>
 
-                    <!-- Expanded panel: contact info (the data we actually have
-                         for a student) + the same action buttons landlords get,
-                         since /admin/warn-user, edit-user, deactivate-user and
-                         delete-user all operate on any User ID, not just
-                         landlords — students previously had no actions at all. -->
+                    <!-- Read-only panel: students are managed by their landlord and the
+                         university, so there are no admin action buttons here. -->
                     <div class="user-detail" th:id="'detail-' + ${user.userID}">
                         <div class="user-contact">
                             <div><strong>Email:</strong> <span th:text="${user.email} ?: 'Not on file'">email</span></div>
@@ -218,7 +289,7 @@
                              Application -> Property -> Property.landlordID -> User,
                              so this is their real current residence, not a guess. -->
                         <div class="user-section">
-                            <label class="field-label">Accommodation</label>
+                            <label class="field-label">Accepted accommodation</label>
                             <div class="mini-card" th:each="app : ${approvedApplicationsByStudent.get(user.userID)}">
                                 <div class="mini-card-title"
                                      th:text="${propertyLookup.get(app.propertyID) != null ? propertyLookup.get(app.propertyID).title : 'Property #' + app.propertyID}">Property title</div>
@@ -229,38 +300,89 @@
                                      th:text="'Landlord: ' + ${landlordUserLookup.get(propertyLookup.get(app.propertyID).landlordID).firstName} + ' ' + ${landlordUserLookup.get(propertyLookup.get(app.propertyID).landlordID).lastName}">Landlord</div>
                             </div>
                             <p class="detail-empty"
-                               th:if="${approvedApplicationsByStudent.get(user.userID) == null or #lists.isEmpty(approvedApplicationsByStudent.get(user.userID))}">No confirmed accommodation on record.</p>
-                        </div>
-
-                        <div class="btn-group">
-                            <form th:action="@{/admin/warn-user/{id}(id=${user.userID})}" method="post" style="display:inline">
-                                <button type="submit" class="btn btn-warn">Warn</button>
-                            </form>
-                            <form th:if="${user.isActive} == null or ${user.isActive}" th:action="@{/admin/deactivate-user/{id}(id=${user.userID})}" method="post" style="display:inline">
-                                <button type="submit" class="btn btn-warn">Deactivate</button>
-                            </form>
-                            <form th:if="${user.isActive} != null and !${user.isActive}" th:action="@{/admin/reactivate-user/{id}(id=${user.userID})}" method="post" style="display:inline">
-                                <button type="submit" class="btn btn-primary">Reactivate</button>
-                            </form>
-                            <!-- Delete uses the same shared confirm dialog as the other admin
-                                 pages (class="confirm-form"); data-property carries the name. -->
-                            <form th:action="@{/admin/delete-user/{id}(id=${user.userID})}" method="post" style="display:inline"
-                                  class="confirm-form"
-                                  th:attr="data-property=(${user.firstName} != null ? ${user.firstName} : 'User') + ' ' + (${user.lastName} != null ? ${user.lastName} : '#' + ${user.userID})"
-                                  data-tone="danger" data-title="Delete this account?"
-                                  data-text="This permanently removes the account and everything tied to it. This action cannot be undone."
-                                  data-button="Delete account">
-                                <button type="submit" class="btn btn-danger">Delete</button>
-                            </form>
+                               th:if="${approvedApplicationsByStudent.get(user.userID) == null or #lists.isEmpty(approvedApplicationsByStudent.get(user.userID))}">Not accepted by any accommodation yet.</p>
                         </div>
                     </div>
                 </div>
-                <p class="users-empty" th:if="${#lists.isEmpty(studentUsers)}">No students found.</p>
+                <div class="ap-empty" id="studentNoMatch" style="display:none">
+                    <svg class="ap-empty-art" viewBox="0 0 240 170" fill="none" aria-hidden="true">
+                        <ellipse class="ap-shadow" cx="120" cy="156" rx="64" ry="7" fill="#0b3b4a" opacity=".12"/>
+                        <g class="ap-float">
+                            <path d="M52 92L108 48l56 44v50a8 8 0 0 1-8 8H60a8 8 0 0 1-8-8V92Z" fill="#dcf1ef" stroke="#93C0C5" stroke-width="2.5" stroke-linejoin="round"/>
+                            <path d="M44 96l64-52 64 52" stroke="#0f8a8a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                            <rect x="96" y="108" width="24" height="42" rx="4" fill="#fff" stroke="#93C0C5" stroke-width="2"/>
+                            <circle cx="162" cy="88" r="26" fill="#ffffff" stroke="#0f8a8a" stroke-width="4"/>
+                            <path d="M181 107l22 22" stroke="#071C2D" stroke-width="7" stroke-linecap="round"/>
+                            <circle cx="153" cy="85" r="2.6" fill="#0f8a8a"/>
+                            <circle cx="171" cy="85" r="2.6" fill="#0f8a8a"/>
+                            <path d="M154 97q8-7 16 0" stroke="#0f8a8a" stroke-width="2.6" stroke-linecap="round"/>
+                        </g>
+                        <path class="ap-spark" style="--d:0s" d="M206 30l3 8 8 3-8 3-3 8-3-8-8-3 8-3z" fill="#14C8BE"/>
+                        <path class="ap-spark" style="--d:1s" d="M32 70l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#F5D450"/>
+                        <path class="ap-spark" style="--d:1.8s" d="M214 130l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#9FF0E8"/>
+                    </svg>
+                    <p class="ap-empty-title">No students match your search</p>
+                    <p class="ap-empty-sub">Try a different name or email address.</p>
+                    <button type="button" class="ap-empty-clear" data-clear="students">Clear search</button>
+                </div>
+                <div class="ap-empty" th:if="${#lists.isEmpty(studentUsers)}">
+                    <svg class="ap-empty-art" viewBox="0 0 240 170" fill="none" aria-hidden="true">
+                        <ellipse class="ap-shadow" cx="120" cy="156" rx="64" ry="7" fill="#0b3b4a" opacity=".12"/>
+                        <g class="ap-float">
+                            <path d="M52 92L108 48l56 44v50a8 8 0 0 1-8 8H60a8 8 0 0 1-8-8V92Z" fill="#dcf1ef" stroke="#93C0C5" stroke-width="2.5" stroke-linejoin="round"/>
+                            <path d="M44 96l64-52 64 52" stroke="#0f8a8a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                            <rect x="96" y="108" width="24" height="42" rx="4" fill="#fff" stroke="#93C0C5" stroke-width="2"/>
+                            <circle cx="162" cy="88" r="26" fill="#ffffff" stroke="#0f8a8a" stroke-width="4"/>
+                            <path d="M181 107l22 22" stroke="#071C2D" stroke-width="7" stroke-linecap="round"/>
+                            <circle cx="153" cy="85" r="2.6" fill="#0f8a8a"/>
+                            <circle cx="171" cy="85" r="2.6" fill="#0f8a8a"/>
+                            <path d="M154 97q8-7 16 0" stroke="#0f8a8a" stroke-width="2.6" stroke-linecap="round"/>
+                        </g>
+                        <path class="ap-spark" style="--d:0s" d="M206 30l3 8 8 3-8 3-3 8-3-8-8-3 8-3z" fill="#14C8BE"/>
+                        <path class="ap-spark" style="--d:1s" d="M32 70l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#F5D450"/>
+                        <path class="ap-spark" style="--d:1.8s" d="M214 130l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#9FF0E8"/>
+                    </svg>
+                    <p class="ap-empty-title">No students yet</p>
+                    <p class="ap-empty-sub">Students will show up here once they sign up.</p>
+                </div>
             </div>
 
             <!-- ============ LANDLORDS ============ -->
             <div id="tabLandlords" style="display:none">
-                <div class="user-row" th:each="user : ${landlordUsers}">
+                <div class="um-toolbar">
+                    <input type="search" class="um-search" id="landlordSearch" placeholder="Search landlords by name or email" autocomplete="off">
+                    <div class="um-chips" id="landlordChips">
+                        <button type="button" class="um-chip active" data-filter="all">All<span class="n"></span></button>
+                        <button type="button" class="um-chip" data-filter="active">Active<span class="n"></span></button>
+                        <button type="button" class="um-chip" data-filter="pending">Pending deactivation<span class="n"></span></button>
+                        <button type="button" class="um-chip" data-filter="deactivated">Deactivated<span class="n"></span></button>
+                        <button type="button" class="um-chip" data-filter="warned">Has warnings<span class="n"></span></button>
+                    </div>
+                </div>
+                <div class="ap-empty" id="landlordNoMatch" style="display:none">
+                    <svg class="ap-empty-art" viewBox="0 0 240 170" fill="none" aria-hidden="true">
+                        <ellipse class="ap-shadow" cx="120" cy="156" rx="64" ry="7" fill="#0b3b4a" opacity=".12"/>
+                        <g class="ap-float">
+                            <path d="M52 92L108 48l56 44v50a8 8 0 0 1-8 8H60a8 8 0 0 1-8-8V92Z" fill="#dcf1ef" stroke="#93C0C5" stroke-width="2.5" stroke-linejoin="round"/>
+                            <path d="M44 96l64-52 64 52" stroke="#0f8a8a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                            <rect x="96" y="108" width="24" height="42" rx="4" fill="#fff" stroke="#93C0C5" stroke-width="2"/>
+                            <circle cx="162" cy="88" r="26" fill="#ffffff" stroke="#0f8a8a" stroke-width="4"/>
+                            <path d="M181 107l22 22" stroke="#071C2D" stroke-width="7" stroke-linecap="round"/>
+                            <circle cx="153" cy="85" r="2.6" fill="#0f8a8a"/>
+                            <circle cx="171" cy="85" r="2.6" fill="#0f8a8a"/>
+                            <path d="M154 97q8-7 16 0" stroke="#0f8a8a" stroke-width="2.6" stroke-linecap="round"/>
+                        </g>
+                        <path class="ap-spark" style="--d:0s" d="M206 30l3 8 8 3-8 3-3 8-3-8-8-3 8-3z" fill="#14C8BE"/>
+                        <path class="ap-spark" style="--d:1s" d="M32 70l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#F5D450"/>
+                        <path class="ap-spark" style="--d:1.8s" d="M214 130l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#9FF0E8"/>
+                    </svg>
+                    <p class="ap-empty-title">No landlords match this filter</p>
+                    <p class="ap-empty-sub">Try a different search or another status.</p>
+                    <button type="button" class="ap-empty-clear" data-clear="landlords">Clear filters</button>
+                </div>
+                <div class="user-row" th:each="user : ${landlordUsers}" th:with="susp=${suspensions.get(user.userID)}"
+                     th:attr="data-search=${#strings.toLowerCase((user.firstName ?: '') + ' ' + (user.lastName ?: '') + ' ' + (user.email ?: ''))},
+                              data-flags=${((user.isActive == null or user.isActive) ? 'active ' : 'deactivated ') + ((susp != null and susp.state == 'PENDING') ? 'pending ' : '') + ((user.warningCount != null and user.warningCount > 0) ? 'warned' : '')}">
 
                     <div class="user-head" th:onclick="'toggleUserDetail(' + ${user.userID} + ')'">
                         <div class="user-id">
@@ -272,8 +394,13 @@
                                 <div class="user-badges">
                                     <span class="badge badge-purple">Landlord</span>
                                     <span th:if="${user.isActive} == null or ${user.isActive}" class="badge badge-green">Active</span>
-                                    <span th:if="${user.isActive} != null and !${user.isActive}" class="badge badge-amber">Inactive</span>
-                                    <span th:if="${user.warningCount != null and user.warningCount > 0}" class="badge badge-red" th:text="${user.warningCount} + ' warning(s)'">0 warnings</span>
+                                    <span th:if="${user.isActive} != null and !${user.isActive}" class="badge badge-amber">Deactivated</span>
+                                    <span th:if="${susp != null and susp.state == 'PENDING'}" class="badge badge-amber"
+                                          th:text="'Deactivating at ' + ${#temporals.format(susp.scheduledFor, 'HH:mm')}">Deactivating at 12:00</span>
+                                    <span th:if="${susp != null and susp.state == 'ACTIVE' and susp.reason == 'WARNING_LIMIT'}" class="badge badge-red">Auto-suspended</span>
+                                    <span th:if="${user.warningCount != null and user.warningCount > 0}" class="badge warn-count"
+                                          th:classappend="${user.warningCount >= 5} ? 'badge-red' : 'badge-amber'"
+                                          th:text="${user.warningCount} + ' of 5 warnings'">1 of 5 warnings</span>
                                     <span th:if="${reportsByLandlord.get(user.userID) != null and !#lists.isEmpty(reportsByLandlord.get(user.userID))}"
                                           class="badge badge-amber"
                                           th:text="${#lists.size(reportsByLandlord.get(user.userID))} + ' report(s)'">0 reports</span>
@@ -287,6 +414,17 @@
                     </div>
 
                     <div class="user-detail" th:id="'detail-' + ${user.userID}">
+
+                        <div class="lk-flash lk-flash--error"
+                             th:if="${susp != null and susp.state == 'ACTIVE' and susp.reason == 'WARNING_LIMIT'}">
+                            Warning limit exceeded. This account was suspended automatically and its properties are hidden.
+                            Review it, then delete the landlord or reactivate them.
+                        </div>
+                        <div class="lk-flash"
+                             th:if="${susp != null and susp.state == 'PENDING'}"
+                             th:text="'Deactivation is scheduled for ' + ${#temporals.format(susp.scheduledFor, 'HH:mm')} + '. You can still cancel it.'">
+                            Deactivation is scheduled.
+                        </div>
 
                         <div class="detail-grid">
                             <div>
@@ -317,27 +455,69 @@
                         </div>
 
                         <div class="btn-group">
-                            <form th:action="@{/admin/warn-user/{id}(id=${user.userID})}" method="post" style="display:inline">
+                            <!-- Warn -->
+                            <form th:if="${user.isActive} == null or ${user.isActive}" th:action="@{/admin/warn-user/{id}(id=${user.userID})}" method="post" style="display:inline"
+                                  class="confirm-form" th:attr="data-property=(${user.firstName} != null ? ${user.firstName} : 'User') + ' ' + (${user.lastName} != null ? ${user.lastName} : '#' + ${user.userID})"
+                                  data-tone="brand" data-icon="warning" data-title="Warn this landlord?"
+                                  data-text="The landlord will receive an official warning. Going over 5 warnings suspends the account automatically."
+                                  data-button="Send warning">
                                 <button type="submit" class="btn btn-warn">Warn</button>
                             </form>
-                            <form th:if="${user.isActive} == null or ${user.isActive}" th:action="@{/admin/deactivate-user/{id}(id=${user.userID})}" method="post" style="display:inline">
+                            <!-- Deactivate -->
+                            <form th:if="(${user.isActive} == null or ${user.isActive}) and ${susp == null}" th:action="@{/admin/deactivate-user/{id}(id=${user.userID})}" method="post" style="display:inline"
+                                  class="confirm-form" th:attr="data-property=(${user.firstName} != null ? ${user.firstName} : 'User') + ' ' + (${user.lastName} != null ? ${user.lastName} : '#' + ${user.userID})"
+                                  data-tone="brand" data-icon="deactivate" data-title="Deactivate this landlord?"
+                                  data-text="The landlord will be notified, and their account will be deactivated in 10 minutes. Their properties are then hidden from students until you reactivate. You can cancel during the 10 minutes."
+                                  data-button="Deactivate">
                                 <button type="submit" class="btn btn-warn">Deactivate</button>
                             </form>
-                            <form th:if="${user.isActive} != null and !${user.isActive}" th:action="@{/admin/reactivate-user/{id}(id=${user.userID})}" method="post" style="display:inline">
+                            <!-- Cancel a deactivation that has not happened yet -->
+                            <form th:if="${susp != null and susp.state == 'PENDING'}" th:action="@{/admin/cancel-deactivation/{id}(id=${user.userID})}" method="post" style="display:inline"
+                                  class="confirm-form" th:attr="data-property=(${user.firstName} != null ? ${user.firstName} : 'User') + ' ' + (${user.lastName} != null ? ${user.lastName} : '#' + ${user.userID})"
+                                  data-tone="brand" data-icon="reactivate" data-title="Stop this deactivation?"
+                                  data-text="The landlord will be told the deactivation is cancelled and their account stays active."
+                                  data-button="Stop deactivation">
+                                <button type="submit" class="btn btn-primary">Cancel deactivation</button>
+                            </form>
+                            <!-- Reactivate -->
+                            <form th:if="${user.isActive} != null and !${user.isActive}" th:action="@{/admin/reactivate-user/{id}(id=${user.userID})}" method="post" style="display:inline"
+                                  class="confirm-form" th:attr="data-property=(${user.firstName} != null ? ${user.firstName} : 'User') + ' ' + (${user.lastName} != null ? ${user.lastName} : '#' + ${user.userID})"
+                                  data-tone="brand" data-icon="reactivate" data-title="Reactivate this landlord?"
+                                  data-text="The landlord will be able to log in again, and the properties hidden by the deactivation will be visible to students again."
+                                  data-button="Reactivate">
                                 <button type="submit" class="btn btn-primary">Reactivate</button>
                             </form>
+                            <!-- Delete -->
                             <form th:action="@{/admin/delete-user/{id}(id=${user.userID})}" method="post" style="display:inline"
-                                  class="confirm-form"
-                                  th:attr="data-property=(${user.firstName} != null ? ${user.firstName} : 'User') + ' ' + (${user.lastName} != null ? ${user.lastName} : '#' + ${user.userID})"
-                                  data-tone="danger" data-title="Delete this account?"
-                                  data-text="This permanently removes the account and everything tied to it. This action cannot be undone."
-                                  data-button="Delete account">
+                                  class="confirm-form" th:attr="data-property=(${user.firstName} != null ? ${user.firstName} : 'User') + ' ' + (${user.lastName} != null ? ${user.lastName} : '#' + ${user.userID})"
+                                  data-tone="danger" data-title="Delete this landlord?"
+                                  data-text="This removes the landlord and all of their properties from the platform. This action cannot be undone."
+                                  data-button="Delete landlord">
                                 <button type="submit" class="btn btn-danger">Delete</button>
                             </form>
                         </div>
                     </div>
                 </div>
-                <p class="users-empty" th:if="${#lists.isEmpty(landlordUsers)}">No landlords found.</p>
+                <div class="ap-empty" th:if="${#lists.isEmpty(landlordUsers)}">
+                    <svg class="ap-empty-art" viewBox="0 0 240 170" fill="none" aria-hidden="true">
+                        <ellipse class="ap-shadow" cx="120" cy="156" rx="64" ry="7" fill="#0b3b4a" opacity=".12"/>
+                        <g class="ap-float">
+                            <path d="M52 92L108 48l56 44v50a8 8 0 0 1-8 8H60a8 8 0 0 1-8-8V92Z" fill="#dcf1ef" stroke="#93C0C5" stroke-width="2.5" stroke-linejoin="round"/>
+                            <path d="M44 96l64-52 64 52" stroke="#0f8a8a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                            <rect x="96" y="108" width="24" height="42" rx="4" fill="#fff" stroke="#93C0C5" stroke-width="2"/>
+                            <circle cx="162" cy="88" r="26" fill="#ffffff" stroke="#0f8a8a" stroke-width="4"/>
+                            <path d="M181 107l22 22" stroke="#071C2D" stroke-width="7" stroke-linecap="round"/>
+                            <circle cx="153" cy="85" r="2.6" fill="#0f8a8a"/>
+                            <circle cx="171" cy="85" r="2.6" fill="#0f8a8a"/>
+                            <path d="M154 97q8-7 16 0" stroke="#0f8a8a" stroke-width="2.6" stroke-linecap="round"/>
+                        </g>
+                        <path class="ap-spark" style="--d:0s" d="M206 30l3 8 8 3-8 3-3 8-3-8-8-3 8-3z" fill="#14C8BE"/>
+                        <path class="ap-spark" style="--d:1s" d="M32 70l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#F5D450"/>
+                        <path class="ap-spark" style="--d:1.8s" d="M214 130l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#9FF0E8"/>
+                    </svg>
+                    <p class="ap-empty-title">No landlords yet</p>
+                    <p class="ap-empty-sub">Landlords will show up here once they sign up.</p>
+                </div>
             </div>
 
         </div>
@@ -387,20 +567,6 @@
         if (chevron) chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
     }
 
-    function ulee_triggerLogout() {
-        if (typeof confirmAdminLogout === 'function') {
-            confirmAdminLogout();
-            return;
-        }
-        if (confirm('Log out of ULEE?')) {
-            var form = document.getElementById('uleeLogoutForm');
-            if (form) {
-                form.submit();
-            } else {
-                window.location.href = '/logout';
-            }
-        }
-    }
 </script>
 
 <script>
@@ -436,14 +602,16 @@
 
         var ICONS = {
             warning: '<svg viewBox="0 0 24 24"><path d="M12 3l9.5 16.5h-19L12 3z"/><path d="M12 10v4.5M12 17.5v.01"/></svg>',
-            danger: '<svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/></svg>'
+            danger: '<svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/></svg>',
+            deactivate: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10 9v6M14 9v6"/></svg>',
+            reactivate: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/></svg>'
         };
 
         function openConfirm(form) {
             var tone = form.getAttribute('data-tone') || 'danger';
             pendingForm = form;
             card.className = 'ulee-confirm-card tone-' + tone;
-            document.getElementById('uleeConfirmIcon').innerHTML = ICONS[tone] || ICONS.warning;
+            document.getElementById('uleeConfirmIcon').innerHTML = ICONS[form.getAttribute('data-icon') || tone] || ICONS.warning;
             document.getElementById('uleeConfirmTitle').textContent = form.getAttribute('data-title') || 'Are you sure?';
             document.getElementById('uleeConfirmText').textContent = form.getAttribute('data-text') || '';
             document.getElementById('uleeConfirmOk').textContent = form.getAttribute('data-button') || 'Confirm';
@@ -477,6 +645,71 @@
         });
         backdrop.addEventListener('click', function (e) { if (e.target === backdrop) closeConfirm(); });
         document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeConfirm(); });
+    })();
+</script>
+
+<script>
+    // Search + status filter + remembers your place after an action reloads the page.
+    (function () {
+        var KEY = 'uleeManageUsers';
+        var state = { tab: 'students', filter: 'all', lq: '', sq: '' };
+        try { state = Object.assign(state, JSON.parse(sessionStorage.getItem(KEY) || '{}')); } catch (e) {}
+        function save() { try { sessionStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+        var lRows = Array.prototype.slice.call(document.querySelectorAll('#tabLandlords .user-row'));
+        var sRows = Array.prototype.slice.call(document.querySelectorAll('#tabStudents .user-row'));
+        var lSearch = document.getElementById('landlordSearch');
+        var sSearch = document.getElementById('studentSearch');
+        var chips = Array.prototype.slice.call(document.querySelectorAll('#landlordChips .um-chip'));
+
+        function has(row, flag) { return (' ' + (row.getAttribute('data-flags') || '') + ' ').indexOf(' ' + flag + ' ') > -1; }
+        function matchesText(row, q) { return !q || (row.getAttribute('data-search') || '').indexOf(q) > -1; }
+        function matchesFilter(row, f) { return f === 'all' || has(row, f); }
+
+        function apply() {
+            var lq = state.lq.trim().toLowerCase(), sq = state.sq.trim().toLowerCase(), shownL = 0, shownS = 0;
+            lRows.forEach(function (r) {
+                var ok = matchesText(r, lq) && matchesFilter(r, state.filter);
+                r.style.display = ok ? '' : 'none'; if (ok) shownL++;
+            });
+            sRows.forEach(function (r) {
+                var ok = matchesText(r, sq);
+                r.style.display = ok ? '' : 'none'; if (ok) shownS++;
+            });
+            // chip counts follow the search text, so you can see how many landlords are in each group
+            chips.forEach(function (chip) {
+                var f = chip.getAttribute('data-filter');
+                var n = lRows.filter(function (r) { return matchesText(r, lq) && matchesFilter(r, f); }).length;
+                chip.querySelector('.n').textContent = '(' + n + ')';
+                chip.classList.toggle('active', f === state.filter);
+            });
+            document.getElementById('landlordNoMatch').style.display = (lRows.length && !shownL) ? '' : 'none';
+            document.getElementById('studentNoMatch').style.display = (sRows.length && !shownS) ? '' : 'none';
+            save();
+        }
+
+        lSearch.value = state.lq; sSearch.value = state.sq;
+        lSearch.addEventListener('input', function () { state.lq = lSearch.value; apply(); });
+        sSearch.addEventListener('input', function () { state.sq = sSearch.value; apply(); });
+        chips.forEach(function (chip) {
+            chip.addEventListener('click', function () { state.filter = chip.getAttribute('data-filter'); apply(); });
+        });
+
+        // keep the tab you were on (the page used to jump back to Students after every action)
+        var origShowTab = window.showUserTab;
+        window.showUserTab = function (which) { origShowTab(which); state.tab = which; save(); };
+        if (state.tab === 'landlords') origShowTab('landlords');
+
+        // "Clear" buttons in the no-match empty states
+        Array.prototype.slice.call(document.querySelectorAll('[data-clear]')).forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                if (btn.getAttribute('data-clear') === 'students') { state.sq = ''; sSearch.value = ''; }
+                else { state.lq = ''; lSearch.value = ''; state.filter = 'all'; }
+                apply();
+            });
+        });
+
+        apply();
     })();
 </script>
 

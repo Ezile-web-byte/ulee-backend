@@ -39,6 +39,12 @@ public class Property {
     private String reportReason;
     private String commuteType;
 
+    // NEW — the admin's comment when a listing is rejected. Shown to the
+    // landlord on My Properties and on the edit page. Cleared when the
+    // listing is approved or resubmitted.
+    @Column(columnDefinition = "TEXT")
+    private String rejectionReason;
+
     // Who the landlord will accept as occupants: "Mixed", "Female Only",
     // "Male Only", "Seniors Only" or "First Years Only". Set by the landlord
     // on the list-property wizard and the edit-property page. Existing rows
@@ -94,8 +100,23 @@ public class Property {
                 .orElse(images.get(0).getUrl());
     }
 
+    // First ticked amenity in the "Facilities" category, or null if none.
+    // Used by the student dashboard cards so the template stays simple
+    // (replaces the amenities.^[category == 'Facilities'] selection expression).
+    @Transient
+    public Amenity getFirstFacilityAmenity() {
+        if (amenities == null) return null;
+        return amenities.stream()
+                .filter(a -> "Facilities".equals(a.getCategory()))
+                .findFirst()
+                .orElse(null);
+    }
+
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getRejectionReason() { return rejectionReason; }
+    public void setRejectionReason(String rejectionReason) { this.rejectionReason = rejectionReason; }
 
     public Boolean getIsReported() { return isReported; }
     public void setIsReported(Boolean isReported) { this.isReported = isReported; }

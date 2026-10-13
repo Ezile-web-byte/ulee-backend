@@ -15,4 +15,7 @@ public interface ReportRepository extends JpaRepository<Report, Integer> {
     long countByPropertyID(Integer propertyID);
 
     long countByPropertyIDAndReportedAtAfter(Integer propertyID, LocalDateTime after);
+
+    // Used by StayController: the issue reports a student has sent (My Stay page)
+    List<Report> findByStudentID(Integer studentID);
 }

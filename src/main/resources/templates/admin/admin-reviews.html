@@ -4,12 +4,180 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ULEE — Reviews</title>
-  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/admin-style.css">
   <script src="/admin-script.js" defer></script>
-  <link rel="stylesheet" href="/speak-with-ai.css">
-  <script src="/speak-with-ai-logic.js" defer></script>
-  <script src="/speak-with-ai.js" defer></script>
+  <style>
+    /* ULEE design system tokens (self-contained) */
+    .rv {
+      --primary-dark: #006A6A; --primary: #096C6C; --primary-tint: #F4FBFA; --surface-tint: #F0F7F6;
+      --outline-variant: #E6E8E4; --accent-border: #93C0C5; --on-surface: #191c1d;
+      --on-surface-variant: #3f484d; --outline: #6f787d; --accent-yellow: #f5d450; --alert: #ba1a1a;
+      --navy: #071C2D; --font-display: 'Plus Jakarta Sans', sans-serif;
+      font-family: 'Hanken Grotesk', sans-serif; color: var(--on-surface);
+    }
+    header.topbar .topbar-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; letter-spacing: -0.01em; color: #191c1d; }
+
+    /* Top bar: bell + display-only UG avatar (same as Manage Users) */
+    .topbar-right { display: flex; align-items: center; gap: 14px; margin-left: auto; }
+    .ap-avatar { pointer-events: none; cursor: default; user-select: none; font-family: 'Plus Jakarta Sans', sans-serif; }
+
+    .rv-sub { margin: 0 0 18px; font-size: 14.5px; color: var(--on-surface-variant); }
+
+    /* Summary row */
+    .rv-top { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(320px, 1.6fr); gap: 14px; margin-bottom: 18px; }
+
+    /* ULEE navy wave card (design system section 4) */
+    .ulee-metric-card {
+      position: relative; overflow: hidden; padding: 20px 24px 38px;
+      border: 1.5px solid rgba(20, 200, 190, 0.45); border-radius: 16px;
+      background: linear-gradient(115deg, #071C2D 0%, #0A3A48 55%, #0F6C70 100%);
+      box-shadow: 0 6px 18px rgba(7, 28, 45, 0.18); color: #fff;
+      transition: transform .2s ease, box-shadow .2s ease;
+      animation: ulee-metric-in .6s cubic-bezier(.2, .8, .2, 1) backwards;
+    }
+    .ulee-metric-card:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(7, 28, 45, .28); }
+    .ulee-metric-card::before {
+      content: ''; position: absolute; top: 0; left: -60%; width: 40%; height: 100%;
+      background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .12), transparent);
+      transform: skewX(-20deg); animation: ulee-metric-shine 7s ease-in-out infinite;
+    }
+    .ulee-metric-card::after {
+      content: ''; position: absolute; top: -60px; right: -40px; width: 170px; height: 170px;
+      border-radius: 50%; background: radial-gradient(circle, rgba(20, 200, 190, .28) 0%, transparent 70%);
+      animation: ulee-metric-pulse 4.5s ease-in-out infinite;
+    }
+    .ulee-metric-label { position: relative; z-index: 2; font-size: 12.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: rgba(255, 255, 255, .78); }
+    .ulee-metric-value { position: relative; z-index: 2; font-family: var(--font-display); font-size: 44px; font-weight: 800; margin-top: 6px; display: flex; align-items: center; gap: 12px; }
+    .ulee-metric-sub { position: relative; z-index: 2; font-size: 12.5px; color: #7DF0E6; margin-top: 2px; }
+    .ulee-metric-stars { position: absolute; top: 0; right: 0; width: 52%; height: 80%; z-index: 1; }
+    .ulee-metric-stars .star { animation: ulee-metric-twinkle 4s ease-in-out infinite; animation-delay: var(--d, 0s); }
+    .ulee-metric-wave { position: absolute; left: 0; bottom: 0; width: 200%; height: 22px; animation: ulee-metric-wave 16s linear infinite; }
+    .ulee-metric-wave .w-back  { fill: rgba(14, 116, 128, .55); }
+    .ulee-metric-wave .w-front { fill: #071C2D; stroke: #14C8BE; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+    @keyframes ulee-metric-in      { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+    @keyframes ulee-metric-shine   { 0%, 55% { left: -60%; } 100% { left: 130%; } }
+    @keyframes ulee-metric-pulse   { 0%, 100% { opacity: .6; transform: scale(1); } 50% { opacity: 1; transform: scale(1.12); } }
+    @keyframes ulee-metric-twinkle { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
+    @keyframes ulee-metric-wave    { to { transform: translateX(-50%); } }
+    @media (prefers-reduced-motion: reduce) {
+      .ulee-metric-card, .ulee-metric-card::before, .ulee-metric-card::after,
+      .ulee-metric-wave, .ulee-metric-stars .star { animation: none !important; }
+    }
+
+    /* Stars */
+    .stars { display: inline-flex; gap: 2px; vertical-align: middle; }
+    .stars svg { width: 16px; height: 16px; fill: none; stroke: #c9ccc6; stroke-width: 1.6; stroke-linejoin: round; }
+    .stars svg.on { fill: var(--accent-yellow); stroke: var(--accent-yellow); }
+    .ulee-metric-value .stars svg { width: 18px; height: 18px; stroke: rgba(255, 255, 255, .35); }
+    .ulee-metric-value .stars svg.on { fill: var(--accent-yellow); stroke: var(--accent-yellow); }
+
+    /* Breakdown card */
+    .rv-card { background: #fff; border: 1px solid var(--outline-variant); border-radius: 16px; padding: 18px 22px; box-shadow: 0 1px 2px rgba(7, 28, 45, .04); }
+    .rv-card-title { font-family: var(--font-display); font-weight: 700; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--outline); margin-bottom: 10px; }
+    .rv-card-title small { text-transform: none; letter-spacing: 0; font-weight: 500; }
+    .rb-row {
+      display: grid; grid-template-columns: 38px 1fr 34px; align-items: center; gap: 12px; width: 100%;
+      padding: 6px 8px; margin: 0 -8px; border: none; background: transparent; border-radius: 10px;
+      font-family: inherit; font-size: 14px; color: var(--on-surface-variant); cursor: pointer; text-align: left;
+      transition: background .15s ease;
+    }
+    .rb-row:hover { background: var(--primary-tint); }
+    .rb-row.active { background: #E3F6F3; }
+    .rb-label { font-family: var(--font-display); font-weight: 700; color: var(--navy); white-space: nowrap; }
+    .rb-label span { color: #e0b400; }
+    .rb-track { height: 8px; border-radius: 9999px; background: var(--surface-tint); overflow: hidden; }
+    .rb-fill { display: block; height: 100%; border-radius: 9999px; background: linear-gradient(90deg, #006A6A, #14C8BE); transition: width .5s ease; }
+    .rb-count { text-align: right; font-weight: 700; color: var(--primary-dark); }
+    .rb-row:disabled { cursor: default; opacity: .6; }
+
+    /* Toolbar */
+    .rv-toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+    .rv-search { position: relative; flex: 1; min-width: 240px; }
+    .rv-search svg { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; stroke: var(--outline); fill: none; stroke-width: 1.7; }
+    .rv-search input {
+      width: 100%; box-sizing: border-box; padding: 13px 18px 13px 42px; border-radius: 9999px;
+      border: 1px solid var(--outline-variant); background: #fff; font-family: inherit; font-size: 14px;
+      color: var(--on-surface); outline: none; transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    .rv-search input:focus { border-color: var(--primary-dark); box-shadow: 0 0 0 3px rgba(0, 106, 106, .12); }
+    .rv-chips { display: inline-flex; gap: 4px; padding: 5px; border-radius: 9999px; background: var(--surface-tint); border: 1px solid var(--outline-variant); }
+    .rv-chip {
+      border: none; background: transparent; cursor: pointer; padding: 8px 16px; border-radius: 9999px;
+      font-family: var(--font-display); font-size: 13.5px; font-weight: 600; color: var(--on-surface-variant);
+      transition: background .15s ease, color .15s ease;
+    }
+    .rv-chip .n { font-weight: 500; opacity: .75; margin-left: 4px; }
+    .rv-chip:hover { background: rgba(0, 106, 106, .08); color: var(--primary-dark); }
+    .rv-chip.active { background: var(--primary-dark); color: #fff; box-shadow: 0 2px 6px rgba(0, 106, 106, .28); }
+    .rv-chip:focus-visible, .rb-row:focus-visible { outline: 2px solid var(--primary-dark); outline-offset: 2px; }
+    .rv-count { font-size: 13px; color: var(--outline); margin: 0 0 12px 4px; }
+
+    /* Review cards */
+    .rv-item {
+      background: #fff; border: 1px solid var(--outline-variant); border-radius: 20px; padding: 20px 24px;
+      margin-bottom: 14px; box-shadow: 0 1px 2px rgba(7, 28, 45, .04);
+      transition: box-shadow .2s ease, border-color .2s ease;
+    }
+    .rv-item:hover { border-color: var(--accent-border); box-shadow: 0 6px 18px rgba(7, 28, 45, .08); }
+    .rv-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; }
+    .rv-who { display: flex; align-items: center; gap: 14px; min-width: 0; }
+    .rv-av {
+      width: 44px; height: 44px; border-radius: 50%; flex: none; display: flex; align-items: center; justify-content: center;
+      background: #E3F6F3; color: #006A6A; font-family: var(--font-display); font-weight: 800; font-size: 14px;
+    }
+    .rv-name { font-family: var(--font-display); font-weight: 700; font-size: 15.5px; color: var(--navy); }
+    .rv-role { font-size: 12.5px; color: var(--outline); }
+    .rv-meta { text-align: right; flex: none; }
+    .rv-date { font-size: 12.5px; color: var(--outline); margin-top: 2px; }
+    .rv-tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 10px; }
+    .rv-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 9999px; font-size: 12.5px; font-weight: 600; background: var(--surface-tint); color: var(--on-surface-variant); }
+    .rv-pill svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .rv-pill.low { background: #FBE4E2; color: var(--alert); }
+    .rv-text { margin: 0; font-size: 15.5px; line-height: 1.55; color: var(--on-surface); }
+    .rv-text.none { color: var(--outline); font-style: italic; }
+
+    .rv-empty { padding: 38px 20px; text-align: center; border: 2px dashed var(--accent-border); border-radius: 18px; background: var(--primary-tint); }
+    .rv-empty h3 { margin: 0 0 4px; font-family: var(--font-display); font-size: 17px; color: var(--primary-dark); }
+    .rv-empty p { margin: 0; font-size: 13.5px; color: var(--outline); }
+
+    .rv-flash { border-radius: 12px; padding: 12px 18px; margin-bottom: 16px; font-weight: 600; font-size: 14px; }
+    .rv-flash.ok  { background: #E3F6F3; border: 1px solid #93C0C5; color: #006A6A; }
+    .rv-flash.err { background: #FBE4E2; border: 1px solid #f0b7b2; color: #ba1a1a; }
+
+    @media (max-width: 820px) { .rv-top { grid-template-columns: 1fr; } }
+    @media (max-width: 560px) { .rv-head { flex-direction: column; } .rv-meta { text-align: left; } }
+
+    /* ── Empty state (same look as Review Properties) ── */
+    .ap-empty {
+      display: flex; flex-direction: column; align-items: center; text-align: center;
+      padding: 40px 20px 44px;
+      background: linear-gradient(180deg, #ffffff 0%, #F4FBFA 100%);
+      border: 2px dashed #93C0C5; border-radius: 20px;
+    }
+    .ap-empty-art { width: 220px; max-width: 70%; height: auto; overflow: visible; }
+    .ap-empty-title, .ap-empty-sub { font-family: 'Fredoka', 'Plus Jakarta Sans', sans-serif; }
+    .ap-empty-title { font-size: 27px; font-weight: 600; color: #006A6A; margin: 14px 0 4px; }
+    .ap-empty-sub { font-size: 17px; font-weight: 500; color: #6f787d; margin: 0; }
+    .ap-empty-clear {
+      margin-top: 18px; height: 42px; padding: 0 22px; display: inline-flex; align-items: center; cursor: pointer;
+      background: #071C2D; color: #fff; border: 1.5px solid #007178; border-radius: 12px;
+      font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 700; text-decoration: none;
+      transition: background .2s ease, border-color .2s ease;
+    }
+    .ap-empty-clear:hover { background: #0A3A48; border-color: #14C8BE; }
+    .ap-empty-clear:focus-visible { outline: 2px solid #14C8BE; outline-offset: 3px; }
+    .ap-float { transform-box: fill-box; transform-origin: 50% 100%; animation: ap-float 3.6s ease-in-out infinite; }
+    .ap-shadow { transform-box: fill-box; transform-origin: center; animation: ap-shadow 3.6s ease-in-out infinite; }
+    .ap-spark { transform-box: fill-box; transform-origin: center; animation: ap-spark 2.6s ease-in-out infinite; animation-delay: var(--d, 0s); }
+    @keyframes ap-float  { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+    @keyframes ap-shadow { 0%,100% { transform: scaleX(1); opacity: .12; } 50% { transform: scaleX(.9); opacity: .08; } }
+    @keyframes ap-spark  { 0%,100% { opacity: .2; transform: scale(.6) rotate(0deg); } 50% { opacity: 1; transform: scale(1) rotate(20deg); } }
+    @media (prefers-reduced-motion: reduce) { .ap-float, .ap-shadow, .ap-spark { animation: none !important; } }
+  </style>
 </head>
 <body>
 
@@ -20,58 +188,195 @@
   <div class="main">
 
     <header class="topbar">
-      <div class="topbar-title" id="topbar-title">Reviews <span>— Moderation</span></div>
-      <div th:replace="~{fragments/notification-bell :: bell}"></div>
-      <!--
-        FIX: was onclick="alert('Logging out…')" — a placeholder that never
-        actually logged anyone out. The admin-sidebar fragment above already
-        defines confirmAdminLogout() (it opens the same styled "Log out of
-        ULEE?" confirmation used by the sidebar's admin chip, and submits the
-        real /logout form on confirm), so this button now calls that instead
-        of showing a fake alert.
-      -->
-      <button class="logout-btn" onclick="confirmAdminLogout()">
-        <svg viewBox="0 0 20 20"><path d="M13 3h4v14h-4M9 14l4-4-4-4M13 10H5"/></svg>
-        <span>Log out</span>
-      </button>
+      <div class="topbar-title" id="topbar-title">Reviews</div>
+      <div class="topbar-right">
+        <div th:replace="~{fragments/notification-bell :: bell}"></div>
+        <!-- Display-only avatar (a span, pointer-events off), same as Manage Users -->
+        <span class="avatar ap-avatar" aria-hidden="true" th:text="${adminInitials} ?: 'UG'">UG</span>
+      </div>
     </header>
 
     <div class="content">
+      <div class="rv">
 
-      <div class="panel">
-        <div class="panel-header">
-          <div>
-            <span class="panel-title">All Reviews</span>
-            <span class="panel-sub" th:text="${totalReviews} + ' reviews'">0 reviews</span>
+        <div th:if="${actionMessage}" class="rv-flash ok" th:text="${actionMessage}">Success</div>
+        <div th:if="${actionError}" class="rv-flash err" th:text="${actionError}">Error</div>
+
+        <p class="rv-sub">What students are saying about listed properties.</p>
+
+        <!-- Summary: average rating (navy wave card) + clickable rating breakdown -->
+        <div class="rv-top">
+          <div class="ulee-metric-card" th:with="avg=${avgRating != null ? avgRating : 0}">
+            <div class="ulee-metric-label">Average rating</div>
+            <div class="ulee-metric-value">
+              <span th:text="${#numbers.formatDecimal(avg, 1, 1)}">0.0</span>
+              <span class="stars" aria-hidden="true">
+                <svg th:each="i : ${#numbers.sequence(1,5)}" th:classappend="${i <= avg + 0.5} ? 'on'" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.8 6.8 19.6l1-5.8L3.5 9.7l5.9-.8L12 3.5z"/></svg>
+              </span>
+            </div>
+            <div class="ulee-metric-sub" th:text="'from ' + ${totalReviews} + (${totalReviews == 1} ? ' review' : ' reviews')">from 0 reviews</div>
+            <svg class="ulee-metric-stars" viewBox="0 0 200 90" aria-hidden="true"><g fill="#9FF0E8"><circle class="star" cx="150" cy="20" r="1.6" style="--d:0s"/><circle class="star" cx="180" cy="44" r="1.3" style="--d:1.2s"/><circle class="star" cx="120" cy="52" r="1.2" style="--d:.5s"/></g></svg>
+            <svg class="ulee-metric-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true"><path class="w-back" d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/><path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/></svg>
+          </div>
+
+          <div class="rv-card">
+            <div class="rv-card-title">Rating breakdown <small>· tap to filter</small></div>
+            <button type="button" class="rb-row" th:each="star : ${#numbers.sequence(5,1,-1)}"
+                    th:attr="data-rating=${star}"
+                    th:with="n=${ratingCounts != null and ratingCounts.get(star) != null ? ratingCounts.get(star) : 0}">
+              <span class="rb-label"><span th:text="${star}">5</span><span>★</span></span>
+              <span class="rb-track"><span class="rb-fill" th:style="'width:' + (${totalReviews} > 0 ? ${n} * 100.0 / ${totalReviews} : 0) + '%'"></span></span>
+              <span class="rb-count" th:text="${n}">0</span>
+            </button>
           </div>
         </div>
-        <table>
-          <thead>
-          <tr>
-            <th>PROPERTY</th>
-            <th>RATING</th>
-            <th>COMMENT</th>
-            <th>DATE</th>
-          </tr>
-          </thead>
-          <tbody>
-          <tr th:each="card : ${reviewCards}">
-            <td th:text="${card.propertyTitle}">Property Name</td>
-            <td th:text="${card.rating}">5</td>
-            <td th:text="${card.comment}">Comment text</td>
-            <td th:text="${card.dateDisplay}">Date</td>
-          </tr>
-          </tbody>
-        </table>
-        <p th:if="${#lists.isEmpty(reviewCards)}" style="padding:22px;color:var(--muted)">
-          No reviews yet.
-        </p>
-      </div>
 
+        <!-- Search + filter chips -->
+        <div class="rv-toolbar">
+          <div class="rv-search">
+            <svg viewBox="0 0 20 20"><circle cx="9" cy="9" r="6"/><path d="M14 14l4 4"/></svg>
+            <input type="search" id="rvSearch" placeholder="Search by reviewer, property or comment" autocomplete="off" />
+          </div>
+          <div class="rv-chips" id="rvChips">
+            <button type="button" class="rv-chip active" data-filter="all">All<span class="n"></span></button>
+            <button type="button" class="rv-chip" data-filter="low">Low rating<span class="n"></span></button>
+          </div>
+        </div>
+
+        <p class="rv-count" id="rvCount"></p>
+
+        <!-- Review cards -->
+        <div id="rvList">
+          <div class="rv-item" th:each="card : ${reviewCards}"
+               th:attr="data-rating=${card.rating},
+                        data-search=${#strings.toLowerCase(card.anonName + ' ' + card.propertyTitle + ' ' + (card.comment ?: ''))}">
+            <div class="rv-head">
+              <div class="rv-who">
+                <div class="rv-av" th:text="${card.initials}">AB</div>
+                <div>
+                  <div class="rv-name" th:text="${card.anonName}">anonymous1</div>
+                  <div class="rv-role">Student reviewer</div>
+                </div>
+              </div>
+              <div class="rv-meta">
+                <span class="stars" th:attr="aria-label=${card.rating} + ' out of 5 stars'">
+                  <svg th:each="i : ${#numbers.sequence(1,5)}" th:classappend="${i <= card.rating} ? 'on'" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.8 6.8 19.6l1-5.8L3.5 9.7l5.9-.8L12 3.5z"/></svg>
+                </span>
+                <div class="rv-date" th:text="${card.dateDisplay}">Oct 8, 2026</div>
+              </div>
+            </div>
+
+            <div class="rv-tags">
+              <span class="rv-pill"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg><span th:text="${card.propertyTitle}">Property</span></span>
+              <span class="rv-pill low" th:if="${card.rating <= 2}">Low rating</span>
+            </div>
+
+            <p class="rv-text" th:if="${card.comment != null and !#strings.isEmpty(card.comment)}" th:text="${card.comment}">Comment text</p>
+            <p class="rv-text none" th:unless="${card.comment != null and !#strings.isEmpty(card.comment)}">No written comment.</p>
+
+          </div>
+        </div>
+
+        <div class="ap-empty" id="rvNoMatch" style="display:none">
+          <svg class="ap-empty-art" viewBox="0 0 240 170" fill="none" aria-hidden="true">
+            <ellipse class="ap-shadow" cx="120" cy="156" rx="64" ry="7" fill="#0b3b4a" opacity=".12"/>
+            <g class="ap-float">
+              <path d="M52 92L108 48l56 44v50a8 8 0 0 1-8 8H60a8 8 0 0 1-8-8V92Z" fill="#dcf1ef" stroke="#93C0C5" stroke-width="2.5" stroke-linejoin="round"/>
+              <path d="M44 96l64-52 64 52" stroke="#0f8a8a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              <rect x="96" y="108" width="24" height="42" rx="4" fill="#fff" stroke="#93C0C5" stroke-width="2"/>
+              <circle cx="162" cy="88" r="26" fill="#ffffff" stroke="#0f8a8a" stroke-width="4"/>
+              <path d="M181 107l22 22" stroke="#071C2D" stroke-width="7" stroke-linecap="round"/>
+              <circle cx="153" cy="85" r="2.6" fill="#0f8a8a"/>
+              <circle cx="171" cy="85" r="2.6" fill="#0f8a8a"/>
+              <path d="M154 97q8-7 16 0" stroke="#0f8a8a" stroke-width="2.6" stroke-linecap="round"/>
+            </g>
+            <path class="ap-spark" style="--d:0s" d="M206 30l3 8 8 3-8 3-3 8-3-8-8-3 8-3z" fill="#14C8BE"/>
+            <path class="ap-spark" style="--d:1s" d="M32 70l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#F5D450"/>
+            <path class="ap-spark" style="--d:1.8s" d="M214 130l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#9FF0E8"/>
+          </svg>
+          <p class="ap-empty-title">No reviews match this filter</p>
+          <p class="ap-empty-sub">Try a different search, rating or filter.</p>
+          <button type="button" class="ap-empty-clear" id="rvClear">Clear filters</button>
+        </div>
+        <div class="ap-empty" th:if="${#lists.isEmpty(reviewCards)}">
+          <svg class="ap-empty-art" viewBox="0 0 240 170" fill="none" aria-hidden="true">
+            <ellipse class="ap-shadow" cx="120" cy="156" rx="64" ry="7" fill="#0b3b4a" opacity=".12"/>
+            <g class="ap-float">
+              <path d="M52 92L108 48l56 44v50a8 8 0 0 1-8 8H60a8 8 0 0 1-8-8V92Z" fill="#dcf1ef" stroke="#93C0C5" stroke-width="2.5" stroke-linejoin="round"/>
+              <path d="M44 96l64-52 64 52" stroke="#0f8a8a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              <rect x="96" y="108" width="24" height="42" rx="4" fill="#fff" stroke="#93C0C5" stroke-width="2"/>
+              <circle cx="162" cy="88" r="26" fill="#ffffff" stroke="#0f8a8a" stroke-width="4"/>
+              <path d="M181 107l22 22" stroke="#071C2D" stroke-width="7" stroke-linecap="round"/>
+              <circle cx="153" cy="85" r="2.6" fill="#0f8a8a"/>
+              <circle cx="171" cy="85" r="2.6" fill="#0f8a8a"/>
+              <path d="M154 97q8-7 16 0" stroke="#0f8a8a" stroke-width="2.6" stroke-linecap="round"/>
+            </g>
+            <path class="ap-spark" style="--d:0s" d="M206 30l3 8 8 3-8 3-3 8-3-8-8-3 8-3z" fill="#14C8BE"/>
+            <path class="ap-spark" style="--d:1s" d="M32 70l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#F5D450"/>
+            <path class="ap-spark" style="--d:1.8s" d="M214 130l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#9FF0E8"/>
+          </svg>
+          <p class="ap-empty-title">No reviews yet</p>
+          <p class="ap-empty-sub">Student reviews will show up here as soon as they are posted.</p>
+        </div>
+
+      </div>
     </div>
   </div>
 </div>
 
-<div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null)}"></div>
+<script>
+  // Search + rating filter (breakdown bars) + chips (All / Low rating), all combined.
+  (function () {
+    var items = Array.prototype.slice.call(document.querySelectorAll('#rvList .rv-item'));
+    var search = document.getElementById('rvSearch');
+    var chips = Array.prototype.slice.call(document.querySelectorAll('#rvChips .rv-chip'));
+    var bars = Array.prototype.slice.call(document.querySelectorAll('.rb-row'));
+    var state = { q: '', chip: 'all', rating: null };
+
+    function chipOk(el, f) {
+      if (f === 'low') return parseInt(el.getAttribute('data-rating'), 10) <= 2;
+      return true;
+    }
+    function textOk(el) { return !state.q || (el.getAttribute('data-search') || '').indexOf(state.q) > -1; }
+    function ratingOk(el) { return state.rating === null || parseInt(el.getAttribute('data-rating'), 10) === state.rating; }
+
+    function apply() {
+      var shown = 0;
+      items.forEach(function (el) {
+        var ok = chipOk(el, state.chip) && textOk(el) && ratingOk(el);
+        el.style.display = ok ? '' : 'none';
+        if (ok) shown++;
+      });
+      // chip counts follow the search + rating filter
+      chips.forEach(function (c) {
+        var f = c.getAttribute('data-filter');
+        var n = items.filter(function (el) { return chipOk(el, f) && textOk(el) && ratingOk(el); }).length;
+        c.querySelector('.n').textContent = '(' + n + ')';
+        c.classList.toggle('active', f === state.chip);
+      });
+      bars.forEach(function (b) {
+        b.classList.toggle('active', state.rating !== null && parseInt(b.getAttribute('data-rating'), 10) === state.rating);
+      });
+      document.getElementById('rvCount').textContent = items.length
+              ? 'Showing ' + shown + ' of ' + items.length + ' review' + (items.length === 1 ? '' : 's') : '';
+      document.getElementById('rvNoMatch').style.display = (items.length && !shown) ? '' : 'none';
+    }
+
+    if (search) search.addEventListener('input', function () { state.q = search.value.trim().toLowerCase(); apply(); });
+    chips.forEach(function (c) { c.addEventListener('click', function () { state.chip = c.getAttribute('data-filter'); apply(); }); });
+    bars.forEach(function (b) {
+      b.addEventListener('click', function () {
+        var r = parseInt(b.getAttribute('data-rating'), 10);
+        state.rating = (state.rating === r) ? null : r;   // tap again to clear
+        apply();
+      });
+    });
+    var clear = document.getElementById('rvClear');
+    if (clear) clear.addEventListener('click', function (e) {
+      e.preventDefault(); state = { q: '', chip: 'all', rating: null }; if (search) search.value = ''; apply();
+    });
+    apply();
+  })();
+</script>
 </body>
 </html>

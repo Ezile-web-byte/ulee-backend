@@ -31,9 +31,9 @@
         body {
             margin: 0; font-family: var(--font-body); color: var(--on-surface); min-height: 100vh;
             background:
-                radial-gradient(900px 420px at 100% -10%, rgba(20,200,190,.10), transparent 60%),
-                radial-gradient(700px 380px at 20% 110%, rgba(0,113,120,.07), transparent 60%),
-                var(--primary-tint);
+                    radial-gradient(900px 420px at 100% -10%, rgba(20,200,190,.10), transparent 60%),
+                    radial-gradient(700px 380px at 20% 110%, rgba(0,113,120,.07), transparent 60%),
+                    var(--primary-tint);
         }
         h1, h2, h3 { font-family: var(--font-display); margin: 0; }
         .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; line-height: 1; }
@@ -214,6 +214,8 @@
                 <a class="chip-btn" th:href="@{/student-dashboard}">
                     <span class="material-symbols-outlined" aria-hidden="true">search</span>Find a room
                 </a>
+                <!-- Notification bell (fragments/student-notifications.html) -->
+                <div th:replace="~{fragments/student-notifications :: bell}"></div>
                 <span class="avatar" th:text="${userInitials != null ? userInitials : 'ST'}" aria-hidden="true">ST</span>
             </div>
         </div>

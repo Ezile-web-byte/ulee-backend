@@ -29,9 +29,9 @@
         body {
             margin: 0; font-family: var(--font-body); color: var(--on-surface); min-height: 100vh;
             background:
-                radial-gradient(900px 420px at 100% -10%, rgba(20,200,190,.10), transparent 60%),
-                radial-gradient(700px 380px at 20% 110%, rgba(0,113,120,.07), transparent 60%),
-                var(--primary-tint);
+                    radial-gradient(900px 420px at 100% -10%, rgba(20,200,190,.10), transparent 60%),
+                    radial-gradient(700px 380px at 20% 110%, rgba(0,113,120,.07), transparent 60%),
+                    var(--primary-tint);
         }
         h1, h2, h3 { font-family: var(--font-display); margin: 0; }
         .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; line-height: 1; }
@@ -105,7 +105,7 @@
             background-image: linear-gradient(rgba(20,200,190,.14) 1px, transparent 1px), linear-gradient(90deg, rgba(20,200,190,.14) 1px, transparent 1px);
             background-size: 44px 44px;
             -webkit-mask-image: radial-gradient(ellipse 60% 90% at 85% 50%, #000 15%, transparent 75%);
-                    mask-image: radial-gradient(ellipse 60% 90% at 85% 50%, #000 15%, transparent 75%);
+            mask-image: radial-gradient(ellipse 60% 90% at 85% 50%, #000 15%, transparent 75%);
             animation: grid-drift 22s linear infinite;
         }
         .orb { position: absolute; border-radius: 50%; filter: blur(60px); z-index: -1; pointer-events: none; }
@@ -320,6 +320,10 @@
             <a class="nav-item" th:href="@{/my-applications}">
                 <span class="material-symbols-outlined" aria-hidden="true">description</span><span>My Applications</span>
                 <span class="nav-badge" th:if="${totalApplications > 0}" th:text="${totalApplications}">0</span>
+            </a>
+            <a class="nav-item" th:href="@{/my-stay}">
+                <span class="material-symbols-outlined" aria-hidden="true">rate_review</span><span>My Stay</span>
+                <span class="nav-badge" th:if="${acceptedCount > 0}" th:text="${acceptedCount}">0</span>
             </a>
             <a class="nav-item" th:href="@{/saved-properties}">
                 <span class="material-symbols-outlined" aria-hidden="true">favorite</span><span>Saved Properties</span>

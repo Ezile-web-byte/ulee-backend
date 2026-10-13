@@ -11,11 +11,6 @@
     <link rel="stylesheet" th:href="@{/landlord-style.css}" href="/landlord-style.css" />
     <link rel="stylesheet" th:href="@{/listProperty.css}" href="/listProperty.css" />
 
-    <!--
-        All styles for THIS page live here (not in edit-property-page.css), so the page
-        looks right even if that file is missing or not being served.
-        Placed after the two <link> tags so these rules win on equal specificity.
-    -->
     <style>
         :root {
             --teal-800: #0b5656;
@@ -35,18 +30,15 @@
             --shadow-md: 0 10px 28px rgba(15, 45, 45, 0.08);
         }
 
-        /* ── Topbar: initials pinned to the right ── */
         .main > .topbar {
             justify-content: flex-end;
             padding: 16px 32px;
         }
 
-        /* ── Page shell ── */
         .main { font-size: 16px; }
         .field input[type="file"] { font-size: 15px; }
         .container { max-width: 1160px; margin: 0 auto; padding: 0 32px 64px; }
 
-        /* ── Compact banner: bordered, gradient, drawing behind the text ── */
         .head-banner {
             position: relative;
             overflow: hidden;
@@ -77,7 +69,6 @@
             color: rgba(255,255,255,.88);
         }
 
-        /* Drawing (background artwork) */
         .banner-skyline {
             position: absolute; right: 0; bottom: 0;
             height: 100%; width: auto; max-width: 58%; z-index: 1;
@@ -115,7 +106,15 @@
         .required-asterisk { color: var(--danger); font-weight: 700; margin-left: 3px; }
         .field-invalid { border: 2px solid var(--danger) !important; background: var(--danger-bg) !important; }
 
-        /* ── Form card: every section visible, stacked ── */
+        /* NEW — admin feedback / re-review notices */
+        .review-banner { padding: 16px 20px; border-radius: var(--r-md); margin-bottom: 20px; font-size: 15px; line-height: 1.5; }
+        .review-banner strong { display: block; font-size: 16.5px; margin-bottom: 4px; }
+        .review-banner p { margin: 4px 0 8px; white-space: pre-line; }
+        .review-banner small { display: block; opacity: .85; }
+        .review-banner--rejected { background: #FDECEA; border: 1px solid #F3B7B0; color: #7A1F16; }
+        .review-banner--info { background: #FFF6DD; border: 1px solid #F0DA9A; color: #6B5300; }
+
+        /* ── Form card ── */
         .wizard-card {
             background: #fff; border: 1px solid var(--border);
             border-radius: var(--r-lg); box-shadow: var(--shadow-sm); overflow: hidden;
@@ -147,7 +146,6 @@
         .field textarea { min-height: 150px; resize: vertical; }
         .hint-text { font-size: 13.5px; color: var(--ink-soft); margin-top: 7px; line-height: 1.45; }
 
-        /* No up/down arrows on number inputs */
         input[type="number"]::-webkit-outer-spin-button,
         input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
@@ -222,7 +220,7 @@
         .actions-bar .btn-danger:hover { background: var(--danger-bg); border-color: var(--danger); }
         .actions-bar .btn:active { transform: scale(.98); }
 
-        /* ── Save Changes: standalone teal button below the two ── */
+        /* ── Save Changes ── */
         #saveChangesBtn {
             display: block; width: 100%; margin-top: 18px; padding: 19px 0;
             font-family: inherit; font-size: 18px; font-weight: 700; text-align: center;
@@ -233,7 +231,6 @@
         #saveChangesBtn:hover  { background: var(--teal-800); box-shadow: var(--shadow-md); }
         #saveChangesBtn:active { transform: scale(.99); }
 
-        /* ── Responsive ── */
         @media (max-width: 720px) {
             .main > .topbar { padding: 14px 18px; }
             .container { padding: 0 16px 48px; }
@@ -254,10 +251,8 @@
 <body>
 
 <div class="app-shell">
-    <!-- ============ SIDEBAR (shared fragment) ============ -->
     <div th:replace="~{fragments/landlord-sidebar :: sidebar('properties')}"></div>
 
-    <!-- ============ MAIN ============ -->
     <main class="main">
 
         <header class="topbar">
@@ -266,7 +261,6 @@
 
         <div class="container" style="padding-top: 1.75rem;">
 
-            <!-- Compact banner: gradient + drawing behind the text -->
             <div class="head-banner">
                 <svg class="banner-skyline" viewBox="0 0 560 200" preserveAspectRatio="xMaxYMax meet" aria-hidden="true">
                     <defs>
@@ -326,8 +320,24 @@
                     Back to My Properties
                 </a>
                 <h1>Edit Property</h1>
-                <p>Update your property details, photos, and amenities. Draft listings are reviewed by our admin team before going live for students.</p>
+                <p>Update your property details, photos, and amenities. Listings are reviewed by our admin team before going live for students.</p>
             </div>
+
+            <!-- NEW — rejected: show the admin's comment -->
+            <div class="review-banner review-banner--rejected" th:if="${property.status == 'Rejected'}" role="alert">
+                <strong>Your listing needs changes</strong>
+                <p th:text="${!#strings.isEmpty(property.rejectionReason)} ? ${property.rejectionReason} : 'The admin did not leave a comment.'">Feedback</p>
+                <small>Fix these points, then press “Resubmit for review”. This updates the same listing, it does not create a new one.</small>
+            </div>
+
+            <!-- NEW — live listing: explain which edits need re-approval -->
+            <div class="review-banner review-banner--info" th:if="${property.status == 'Active'}">
+                Changing the <b>rent, address, capacity or photos</b> hides this listing from students until an admin approves it again. All other edits go live straight away.
+            </div>
+
+            <p class="status-note" th:if="${property.status == 'Pending'}">
+                This listing is <strong>awaiting admin approval</strong>. You can still edit it; it stays hidden from students until it is approved.
+            </p>
 
             <p class="status-note" th:if="${property.status == 'Draft'}">
                 This listing is still a <strong>Draft</strong>. It won't be visible to students until you fill in the required fields and hit "Save Changes" to submit it for approval.
@@ -384,7 +394,6 @@
                                 <p class="hint-text">This is what caps how many applications you can accept for this property.</p>
                             </div>
 
-                            <!-- NEW: who can stay here (property.occupantRestriction; empty/null counts as Mixed) -->
                             <div class="field f-col-2">
                                 <label for="occupantRestriction">Who can stay here?</label>
                                 <select id="occupantRestriction" name="occupantRestriction">
@@ -420,7 +429,6 @@
                                 <input type="number" step="0.01" name="deposit" th:value="${property.deposit}" />
                             </div>
 
-                            <!-- NEW: accepted funding (property.acceptedFunding; empty/null counts as Any) -->
                             <div class="field f-col-2">
                                 <label for="acceptedFunding">Accepted funding</label>
                                 <select id="acceptedFunding" name="acceptedFunding">
@@ -437,8 +445,13 @@
                             </div>
 
                             <div class="field">
-                                <label>Suburb</label>
-                                <input type="text" name="city" th:value="${property.city}" placeholder="e.g. Summerstrand" />
+                                <label for="suburb">Suburb</label>
+                                <select id="suburb" name="suburb"
+                                        th:with="current=${property.suburb != null and property.suburb != '' ? property.suburb : property.city}">
+                                    <option value="">Select a suburb</option>
+                                    <option th:each="s : ${T(java.util.List).of('On Campus','Summerstrand','Humewood','Town','North End','Central','Pier 14')}"
+                                            th:value="${s}" th:text="${s}" th:selected="${current == s}"></option>
+                                </select>
                             </div>
                             <div class="field">
                                 <label>Full Address<span class="required-asterisk">*</span></label>
@@ -511,14 +524,7 @@
                         </div>
                     </div>
 
-                    <!--
-                        Photos.
-                        Each delete button is bound to THIS form via form="editPropertyForm"
-                        plus formaction/formmethod — it is NOT a nested <form>
-                        (nested forms are invalid HTML and would orphan the Save buttons).
-                        The data-confirm attributes make the shared popup ask first
-                        (handled in ulee-modal.js); the old confirm() is gone.
-                    -->
+                    <!-- Photos -->
                     <div class="edit-step" data-step="5">
                         <div class="panel-header">
                             <h2>Property Photos</h2>
@@ -581,10 +587,9 @@
 
             </form>
 
-            <!-- Standalone Save Changes — teal, below the two buttons.
-                 formnovalidate: required-field checks are done by edit-property-validation.js,
-                 which blocks the save until every required field is valid. -->
-            <button type="submit" form="editPropertyForm" formnovalidate id="saveChangesBtn">Save Changes</button>
+            <!-- Standalone Save button. Reads "Resubmit for review" on a rejected listing. -->
+            <button type="submit" form="editPropertyForm" formnovalidate id="saveChangesBtn"
+                    th:text="${property.status == 'Rejected'} ? 'Resubmit for review' : 'Save Changes'">Save Changes</button>
 
         </div>
     </main>
@@ -592,7 +597,6 @@
 
 <script src="/landlord-sidebar-toggle.js" defer></script>
 <script>
-    /* Page helpers (inline so nothing else has to load): tile selection + photo previews */
     function selectEditTile(label, name) {
         var input = label.querySelector('input[type="radio"]');
         if (!input) return;
@@ -631,7 +635,6 @@
     }
 </script>
 
-<!-- Shared popup (css + js + post-redirect popup). Must come BEFORE edit-property-validation.js. -->
 <th:block th:replace="~{fragments/modal :: assets}"></th:block>
 
 <script th:src="@{/edit-property-validation.js}" src="/edit-property-validation.js"></script>

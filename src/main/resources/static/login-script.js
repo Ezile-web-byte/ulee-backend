@@ -57,6 +57,9 @@ function getFieldValue(primaryId, fallbackId) {
   return field ? field.value.trim() : '';
 }
 
+// Student email rule: "s" + exactly 9 digits + @mandela.ac.za
+const STUDENT_EMAIL_RE = /^s\d{9}@mandela\.ac\.za$/;
+
 // ─────────────────────────────
 // 🔹 AUTH HANDLERS (FRONTEND)
 // ─────────────────────────────
@@ -93,11 +96,16 @@ function handleLogin() {
 
 function handleRegister() {
   const fn = document.getElementById('reg-fname')?.value.trim();
-  const em = getFieldValue('reg-email', 'reg-user');
+  const em = getFieldValue('reg-email', 'reg-user').toLowerCase();
   const pw = document.getElementById('reg-pass')?.value;
 
   if (!fn || !em || !pw) {
     showToast('Please fill in all fields.', 'info');
+    return;
+  }
+
+  if (!STUDENT_EMAIL_RE.test(em)) {
+    showToast('Use your student email: an "s", 9 digits, then @mandela.ac.za (e.g. s227676637@mandela.ac.za).', 'error');
     return;
   }
 

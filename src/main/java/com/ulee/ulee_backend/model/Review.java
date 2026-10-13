@@ -31,6 +31,13 @@ public class Review {
     private Integer yearOfStudy;
     private String residencyStatus; // "Current" or "Past"
 
+    // NEW — has the landlord opened this review yet? Every freshly written
+    // review starts as false ("new"). It flips to true when the landlord
+    // opens that review on the property's reviews page. Reviews that existed
+    // before this column was added have NULL here and are treated as already
+    // viewed, so they never show up in the sidebar count.
+    private Boolean landlordViewed = false;
+
     public Integer getReviewID() { return reviewID; }
     public void setReviewID(Integer reviewID) { this.reviewID = reviewID; }
 
@@ -77,4 +84,7 @@ public class Review {
 
     public String getReportReason() { return reportReason; }
     public void setReportReason(String reportReason) { this.reportReason = reportReason; }
+
+    public Boolean getLandlordViewed() { return landlordViewed; }
+    public void setLandlordViewed(Boolean landlordViewed) { this.landlordViewed = landlordViewed; }
 }

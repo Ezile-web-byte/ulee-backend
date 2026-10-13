@@ -4,260 +4,325 @@
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>Register – ULEE</title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-    <script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    "colors": {
-                        "primary-fixed": "#bbeaff",
-                        "tertiary": "#705d00",
-                        "on-tertiary-container": "#4c3f00",
-                        "on-primary-fixed-variant": "#004d62",
-                        "surface-container-highest": "#e1e3e4",
-                        "primary-container": "#147592",
-                        "inverse-primary": "#82d1f1",
-                        "surface": "#f8f9fa",
-                        "on-secondary": "#ffffff",
-                        "on-error": "#ffffff",
-                        "primary": "#005b74",
-                        "surface-variant": "#e1e3e4",
-                        "surface-container-high": "#e7e8e9",
-                        "on-secondary-fixed-variant": "#572d9a",
-                        "secondary": "#6f47b4",
-                        "tertiary-fixed-dim": "#e5c542",
-                        "on-secondary-fixed": "#260058",
-                        "secondary-container": "#b78eff",
-                        "surface-container-lowest": "#ffffff",
-                        "on-tertiary-fixed-variant": "#544600",
-                        "on-primary-container": "#d9f2ff",
-                        "on-tertiary-fixed": "#221b00",
-                        "surface-bright": "#f8f9fa",
-                        "tertiary-fixed": "#ffe170",
-                        "surface-dim": "#d9dadb",
-                        "secondary-fixed": "#ebdcff",
-                        "inverse-on-surface": "#f0f1f2",
-                        "on-background": "#191c1d",
-                        "primary-fixed-dim": "#82d1f1",
-                        "outline": "#6f787d",
-                        "on-primary-fixed": "#001f29",
-                        "on-primary": "#ffffff",
-                        "on-surface": "#191c1d",
-                        "inverse-surface": "#2e3132",
-                        "tertiary-container": "#c8a927",
-                        "outline-variant": "#bec8cd",
-                        "secondary-fixed-dim": "#d4bbff",
-                        "on-surface-variant": "#3f484d",
-                        "background": "#f8f9fa",
-                        "surface-container-low": "#f3f4f5",
-                        "error": "#ba1a1a",
-                        "on-secondary-container": "#491c8c",
-                        "on-tertiary": "#ffffff",
-                        "on-error-container": "#93000a",
-                        "surface-tint": "#006782",
-                        "surface-container": "#edeeef",
-                        "error-container": "#ffdad6"
-                    },
-                    "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
-                    "spacing": {
-                        "sm": "12px", "lg": "48px", "margin-mobile": "16px", "xl": "80px",
-                        "base": "8px", "gutter": "24px", "md": "24px", "margin-desktop": "64px", "xs": "4px"
-                    },
-                    "fontFamily": {
-                        "display-lg": ["Plus Jakarta Sans"], "label-sm": ["Hanken Grotesk"],
-                        "body-md": ["Hanken Grotesk"], "headline-sm": ["Plus Jakarta Sans"],
-                        "body-lg": ["Hanken Grotesk"], "headline-md": ["Plus Jakarta Sans"], "label-bold": ["Hanken Grotesk"]
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-
-        @keyframes heroKenBurns {
-            0% { transform: scale(1.05) translate(0, 0); }
-            100% { transform: scale(1.15) translate(-1.5%, -1%); }
-        }
-        .hero-ken-burns {
-            animation: heroKenBurns 28s ease-in-out infinite alternate;
-            will-change: transform;
-        }
-        @media (prefers-reduced-motion: reduce) {
-            .hero-ken-burns { animation: none; }
-        }
-
-        .ulee-brand-link { text-decoration: none; cursor: pointer; transition: opacity 0.2s ease; }
-        .ulee-brand-link:hover { opacity: 0.85; }
-        .ulee-brand-mark { position: relative; display: inline-block; }
-        .ulee-brand-mark::after {
-            content: '';
-            position: absolute;
-            top: -3px; right: -9px;
-            width: 9px; height: 9px;
-            background: #ffe170;
-            border-radius: 50% 50% 50% 0;
-            transform: rotate(-45deg);
-            box-shadow: 0 1px 2px rgba(0,0,0,0.15);
-        }
-
-        .role-fields { display: none; }
-        .role-fields.visible { display: block; }
-    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/login-style.css">
     <link rel="stylesheet" href="/speak-with-ai.css">
     <script src="/speak-with-ai-logic.js" defer></script>
     <script src="/speak-with-ai.js" defer></script>
 </head>
-<body class="bg-background text-on-surface font-body-md overflow-x-hidden">
+<body>
 
-<!-- ── Real dashboard nav + hero, dimmed behind the register card — same treatment as the login modal ── -->
-<nav class="bg-surface/90 backdrop-blur-md w-full top-0 sticky z-0 shadow-[0px_4px_20px_rgba(20,117,146,0.08)]">
-    <div class="flex justify-between items-center w-full px-margin-desktop py-base max-w-7xl mx-auto">
-        <div class="flex items-center gap-md">
-            <a href="/student-dashboard" class="ulee-brand-link flex flex-col leading-none">
-                <span class="ulee-brand-mark font-display-lg text-display-lg font-extrabold text-primary tracking-tight">ULEE</span>
-                <span class="text-[9px] font-bold uppercase tracking-[0.12em] text-on-surface-variant mt-0.5">Student Living</span>
-            </a>
-        </div>
-        <div class="hidden md:flex items-center gap-lg">
-            <a class="font-label-bold text-label-bold text-primary border-b-2 border-tertiary-fixed pb-1" href="/student-dashboard">Properties</a>
-            <a class="font-label-bold text-label-bold text-on-surface-variant" href="/student-dashboard#life-at-ulee">Life at ULEE</a>
-            <a class="font-label-bold text-label-bold text-on-surface-variant" href="#">About Us</a>
-            <a class="font-label-bold text-label-bold text-on-surface-variant" href="#">Contact</a>
-        </div>
-        <div class="flex items-center gap-md">
-            <span class="hidden md:block text-on-surface-variant font-label-bold">Login</span>
-            <span class="bg-tertiary-fixed text-on-tertiary-fixed px-md py-sm rounded-full font-label-bold">Apply Now</span>
-        </div>
-    </div>
-</nav>
+<div class="auth-shell">
 
-<header class="relative w-full h-[85vh] flex items-center overflow-hidden z-0">
-    <div class="absolute inset-0 z-0">
-        <div class="w-full h-full bg-cover bg-center scale-105 hero-ken-burns" style="background-image: url('/uploads/student-background.png')"></div>
-        <div class="absolute inset-0 bg-gradient-to-r from-primary/80 to-transparent"></div>
-    </div>
-    <div class="relative z-10 w-full max-w-7xl mx-auto px-margin-desktop">
-        <div class="max-w-2xl space-y-md">
-            <h1 class="font-display-lg text-display-lg font-extrabold text-white leading-tight">
-                The Future of <span class="text-tertiary-fixed">Student Living</span> in Gqeberha
-            </h1>
-            <p class="text-body-lg font-body-lg text-white/90 max-w-lg">
-                Premium living designed for the ambitious. Search real, available rooms from landlords near your campus.
-            </p>
-            <div class="bg-white/10 backdrop-blur-xl p-base rounded-2xl flex items-center gap-xs mt-lg border border-white/20 max-w-xl">
-                <span class="material-symbols-outlined text-tertiary-fixed">location_on</span>
-                <div class="flex flex-col w-full">
-                    <span class="text-[10px] uppercase font-bold text-white/60 tracking-wider">Location</span>
-                    <span class="text-white/50 font-label-bold">Search by location...</span>
-                </div>
-            </div>
-        </div>
-    </div>
-</header>
+    <!-- ───── Navy hero ───── -->
+    <aside class="auth-hero" aria-hidden="false">
+        <a href="/student-dashboard" class="auth-brand">
+            <svg viewBox="0 0 20 20"><path d="M10 2L3 7v11h14V7L10 2zm0 2.6 5 3.5V16H5V8.1l5-3.5zM8 10h4v6H8z"/></svg>
+            <span>
+                <div class="auth-brand-name">ULEE</div>
+                <div class="auth-brand-tag">Student Living. Simplified.</div>
+            </span>
+        </a>
 
-<!-- Dim overlay to match the login modal's backdrop treatment -->
-<div class="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"></div>
-
-<!-- ── Register card — same white card, rounded-2xl, and layout as the login modal ── -->
-<div class="fixed inset-0 z-50 flex items-start justify-center px-margin-mobile pt-16 pb-lg overflow-y-auto">
-    <div class="bg-white w-full max-w-lg rounded-[24px] px-xl pt-lg pb-xl">
-        <a href="/student-dashboard" class="ulee-brand-link font-display-lg text-2xl font-extrabold text-primary block mb-1">ULEE</a>
-        <p class="text-sm text-on-surface-variant mb-md">The Future Of Student Living</p>
-
-        <div th:if="${error}" class="bg-error-container text-on-error-container text-sm px-md py-sm rounded-lg mb-md" th:text="${error}">Error message</div>
-
-        <div class="flex bg-surface-container-low rounded-full p-1 mb-md">
-            <button type="button" id="studentToggle" onclick="setRole('student')"
-                    class="flex-1 py-sm rounded-full font-label-bold text-sm transition-colors">I'm a Student</button>
-            <button type="button" id="landlordToggle" onclick="setRole('landlord')"
-                    class="flex-1 py-sm rounded-full font-label-bold text-sm transition-colors">I'm a Landlord</button>
+        <div class="auth-hero-copy">
+            <h1>Find a room near campus, or fill the ones you have.</h1>
+            <p>One account for students looking for a place and landlords listing in Gqeberha.</p>
+            <ul class="auth-hero-points">
+                <li>
+                    <svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>
+                    Real rooms from landlords near your campus
+                </li>
+                <li>
+                    <svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>
+                    Apply to a property in a few clicks
+                </li>
+                <li>
+                    <svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>
+                    Landlords manage listings and applications in one place
+                </li>
+            </ul>
         </div>
 
-        <form th:action="@{/register}" method="post" class="space-y-md" autocomplete="off">
-            <input type="hidden" name="role" id="roleInput" th:value="${role != null ? role : 'student'}" value="student"/>
+        <svg class="auth-stars" viewBox="0 0 200 90" aria-hidden="true">
+            <g fill="#9FF0E8">
+                <circle class="star" cx="150" cy="20" r="1.6" style="--d:0s"/>
+                <circle class="star" cx="180" cy="44" r="1.3" style="--d:1.2s"/>
+                <circle class="star" cx="120" cy="52" r="1.2" style="--d:.5s"/>
+                <circle class="star" cx="95"  cy="18" r="1.1" style="--d:2s"/>
+                <circle class="star" cx="170" cy="72" r="1.2" style="--d:.8s"/>
+            </g>
+        </svg>
+        <svg class="auth-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true">
+            <path class="w-back"  d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+            <path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+        </svg>
+    </aside>
 
-            <div class="grid grid-cols-2 gap-sm">
-                <div>
-                    <label class="text-[11px] uppercase font-bold text-on-surface-variant tracking-wider">First Name</label>
-                    <input type="text" name="firstName" autocomplete="off" required class="w-full mt-xs border border-outline-variant rounded-lg px-md py-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none"/>
+    <!-- ───── Form ───── -->
+    <main class="auth-main">
+        <div class="auth-main-inner">
+            <p class="sa-logo">ULEE</p>
+            <p class="sa-tagline">Student Living. Simplified.</p>
+
+            <div class="sa-card">
+                <h2 class="sa-title">Create your account</h2>
+                <p class="sa-sub">Tell us who you are and we'll set up the right dashboard.</p>
+
+                <div th:if="${error}" class="auth-error" th:text="${error}" role="alert">Error message</div>
+
+                <div class="role-switch" role="group" aria-label="Account type">
+                    <button type="button" id="studentToggle" class="role-btn" onclick="setRole('student')">I'm a student</button>
+                    <button type="button" id="landlordToggle" class="role-btn" onclick="setRole('landlord')">I'm a landlord</button>
                 </div>
-                <div>
-                    <label class="text-[11px] uppercase font-bold text-on-surface-variant tracking-wider">Last Name</label>
-                    <input type="text" name="lastName" autocomplete="off" required class="w-full mt-xs border border-outline-variant rounded-lg px-md py-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none"/>
-                </div>
+
+                <form id="registerForm" th:action="@{/register}" method="post" autocomplete="off" novalidate>
+                    <input type="hidden" name="role" id="roleInput" th:value="${role != null ? role : 'student'}" value="student"/>
+
+                    <div class="sa-row">
+                        <div class="sa-field">
+                            <label class="sa-label" for="firstName">First name</label>
+                            <input class="sa-input" type="text" id="firstName" name="firstName" autocomplete="off" required/>
+                            <p class="field-error" data-for="firstName"></p>
+                        </div>
+                        <div class="sa-field">
+                            <label class="sa-label" for="lastName">Last name</label>
+                            <input class="sa-input" type="text" id="lastName" name="lastName" autocomplete="off" required/>
+                            <p class="field-error" data-for="lastName"></p>
+                        </div>
+                    </div>
+
+                    <div class="sa-field">
+                        <label class="sa-label" for="email">Email</label>
+                        <input class="sa-input" type="email" id="email" name="email" autocomplete="off"
+                               placeholder="e.g. s227676637@mandela.ac.za" required/>
+                        <p class="field-hint" id="emailHint">Use your student email: s followed by 9 digits, then @mandela.ac.za</p>
+                        <p class="field-error" data-for="email"></p>
+                    </div>
+
+                    <div class="sa-field">
+                        <label class="sa-label" for="password">Password</label>
+                        <div class="sa-password-wrap">
+                            <input class="sa-input sa-password-input" type="password" id="password" name="password"
+                                   autocomplete="new-password" required/>
+                            <button class="sa-password-toggle" type="button" aria-label="Show password"
+                                    aria-pressed="false" aria-controls="password" onclick="togglePassword('password', this)">
+                                <span class="sa-eye-open" aria-hidden="true">👁</span>
+                                <span class="sa-eye-closed" aria-hidden="true">🙈</span>
+                            </button>
+                        </div>
+                        <p class="field-error" data-for="password"></p>
+                    </div>
+
+                    <div class="sa-row">
+                        <div class="sa-field">
+                            <label class="sa-label" for="dateOfBirth">Date of birth</label>
+                            <input class="sa-input" type="date" id="dateOfBirth" name="dateOfBirth"
+                                   min="1900-01-01" max="9999-12-31" autocomplete="off"/>
+                            <p class="field-error" data-for="dateOfBirth"></p>
+                        </div>
+                        <div class="sa-field">
+                            <label class="sa-label" for="phone">Phone</label>
+                            <input class="sa-input" type="text" id="phone" name="phone" autocomplete="off"
+                                   inputmode="numeric" maxlength="10" pattern="[0-9]{10}"
+                                   placeholder="e.g. 0821234567"/>
+                            <p class="field-error" data-for="phone"></p>
+                        </div>
+                    </div>
+
+                    <!-- Student-only -->
+                    <div id="studentFields" class="role-fields visible">
+                        <div class="sa-field">
+                            <label class="sa-label" for="yearOfStudy">Year of study</label>
+                            <input class="sa-input" type="number" id="yearOfStudy" name="yearOfStudy"
+                                   min="1" max="6" step="1" inputmode="numeric" placeholder="1 to 6"/>
+                            <p class="field-error" data-for="yearOfStudy"></p>
+                        </div>
+                    </div>
+
+                    <!-- Landlord-only -->
+                    <div id="landlordFields" class="role-fields">
+                        <div class="sa-field">
+                            <label class="sa-label" for="companyName">Company name <span class="opt">(optional)</span></label>
+                            <input class="sa-input" type="text" id="companyName" name="companyName" disabled/>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="sa-btn-primary">Create account</button>
+                </form>
+
+                <p class="sa-note">
+                    Already have an account?
+                    <a href="/student-dashboard?openLogin=true">Log in</a>
+                </p>
             </div>
-
-            <div>
-                <label class="text-[11px] uppercase font-bold text-on-surface-variant tracking-wider">Email</label>
-                <input type="email" name="email" autocomplete="off" placeholder="e.g. s227676637@mandela.ac.za" required class="w-full mt-xs border border-outline-variant rounded-lg px-md py-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none"/>
-            </div>
-
-            <div>
-                <label class="text-[11px] uppercase font-bold text-on-surface-variant tracking-wider">Password</label>
-                <input type="password" name="password" autocomplete="new-password" required class="w-full mt-xs border border-outline-variant rounded-lg px-md py-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none"/>
-            </div>
-
-            <div class="grid grid-cols-2 gap-sm">
-                <div>
-                    <label class="text-[11px] uppercase font-bold text-on-surface-variant tracking-wider">Date of Birth</label>
-                    <input type="date" name="dateOfBirth" autocomplete="off" class="w-full mt-xs border border-outline-variant rounded-lg px-md py-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none"/>
-                </div>
-                <div>
-                    <label class="text-[11px] uppercase font-bold text-on-surface-variant tracking-wider">Phone</label>
-                    <input type="text" name="phone" autocomplete="off" placeholder="e.g. 0821234567" class="w-full mt-xs border border-outline-variant rounded-lg px-md py-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none"/>
-                </div>
-            </div>
-
-            <!-- Student-only fields. Kept intentionally short: budget, funding
-                 status, and housing preferences are collected later, when the
-                 student actually applies to a property — not at signup. -->
-            <div id="studentFields" class="role-fields visible">
-                <label class="text-[11px] uppercase font-bold text-on-surface-variant tracking-wider">Year of Study</label>
-                <input type="number" name="yearOfStudy" min="1" max="7" class="w-full mt-xs border border-outline-variant rounded-lg px-md py-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none"/>
-            </div>
-
-            <!-- Landlord-only fields -->
-            <div id="landlordFields" class="role-fields">
-                <label class="text-[11px] uppercase font-bold text-on-surface-variant tracking-wider">Company Name</label>
-                <input type="text" name="companyName" class="w-full mt-xs border border-outline-variant rounded-lg px-md py-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none"/>
-            </div>
-
-            <button type="submit" class="w-full bg-primary text-white py-sm rounded-full font-label-bold hover:bg-primary-container transition-colors">Create Account</button>
-        </form>
-
-        <p class="text-center text-sm text-on-surface-variant mt-md">
-            Already have an account? <a href="/student-dashboard?openLogin=true" class="text-primary font-bold hover:underline">Log in</a>
-        </p>
-    </div>
+        </div>
+    </main>
 </div>
 
 <script>
-    function setRole(role) {
-        document.getElementById('roleInput').value = role;
+    /* ───────── Helpers ───────── */
+    const $ = (id) => document.getElementById(id);
+    const role = () => $('roleInput').value;
 
-        const studentBtn = document.getElementById('studentToggle');
-        const landlordBtn = document.getElementById('landlordToggle');
-        const activeClasses = ['bg-tertiary-fixed', 'text-on-tertiary-fixed'];
-        const inactiveClasses = ['text-on-surface-variant'];
-
-        studentBtn.classList.remove(...activeClasses, ...inactiveClasses);
-        landlordBtn.classList.remove(...activeClasses, ...inactiveClasses);
-
-        if (role === 'student') {
-            studentBtn.classList.add(...activeClasses);
-            landlordBtn.classList.add(...inactiveClasses);
-        } else {
-            landlordBtn.classList.add(...activeClasses);
-            studentBtn.classList.add(...inactiveClasses);
-        }
-
-        document.getElementById('studentFields').classList.toggle('visible', role === 'student');
-        document.getElementById('landlordFields').classList.toggle('visible', role === 'landlord');
+    function togglePassword(id, btn) {
+        const input = $(id);
+        const show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        btn.classList.toggle('is-visible', show);
+        btn.setAttribute('aria-pressed', String(show));
+        btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
     }
-    setRole(document.getElementById('roleInput').value || 'student');
+
+    function todayISO() {
+        const d = new Date();
+        const p = (n) => String(n).padStart(2, '0');
+        return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+    }
+
+    /* ───────── Validation rules ───────── */
+    const STUDENT_EMAIL = /^s\d{9}@mandela\.ac\.za$/;
+    const ANY_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    const rules = {
+        firstName: (v) => v.trim() ? '' : 'Enter your first name.',
+        lastName:  (v) => v.trim() ? '' : 'Enter your last name.',
+        password:  (v) => v ? '' : 'Enter a password.',
+
+        email: (v) => {
+            if (!v) return 'Enter your email address.';
+            if (role() === 'student') {
+                return STUDENT_EMAIL.test(v)
+                    ? ''
+                    : 'Student emails look like s227676637@mandela.ac.za: an "s", 9 digits, then @mandela.ac.za.';
+            }
+            return ANY_EMAIL.test(v) ? '' : 'Enter a valid email address.';
+        },
+
+        // Optional, but when filled it must be exactly 10 digits
+        phone: (v) => (v === '' || /^\d{10}$/.test(v)) ? '' : 'Phone must be exactly 10 digits, numbers only.',
+
+        yearOfStudy: (v) => {
+            if (v === '') return '';
+            const n = Number(v);
+            return (Number.isInteger(n) && n >= 1 && n <= 6) ? '' : 'Year of study must be between 1 and 6.';
+        },
+
+        dateOfBirth: (v) => {
+            if (v === '') return '';
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return 'The year must have exactly 4 digits.';
+            if (Number(v.slice(0, 4)) < 1900) return 'Enter a year from 1900 onwards.';
+            if (v > todayISO()) return 'Date of birth cannot be in the future.';
+            return '';
+        }
+    };
+
+    function showError(name, msg) {
+        const input = $(name);
+        const err = document.querySelector('.field-error[data-for="' + name + '"]');
+        if (input) input.classList.toggle('invalid', !!msg);
+        if (err) err.textContent = msg;
+        if (input) input.setAttribute('aria-invalid', msg ? 'true' : 'false');
+    }
+
+    function validateField(name) {
+        const input = $(name);
+        if (!input || input.disabled) return '';
+        const msg = rules[name](input.value);
+        showError(name, msg);
+        return msg;
+    }
+
+    /* ───────── Live input restrictions ───────── */
+    // Phone: digits only, max 10
+    $('phone').addEventListener('input', function () {
+        this.value = this.value.replace(/\D/g, '').slice(0, 10);
+        if (this.classList.contains('invalid')) validateField('phone');
+    });
+
+    // Year of study: whole numbers, clamped to 1-6
+    const yearInput = $('yearOfStudy');
+    yearInput.addEventListener('keydown', function (e) {
+        if (['e', 'E', '+', '-', '.', ','].includes(e.key)) e.preventDefault();
+    });
+    yearInput.addEventListener('input', function () {
+        let v = this.value.replace(/\D/g, '');
+        if (v !== '') {
+            let n = parseInt(v, 10);
+            if (n > 6) n = 6;
+            if (n < 1) n = 1;
+            v = String(n);
+        }
+        if (this.value !== v) this.value = v;
+        if (this.classList.contains('invalid')) validateField('yearOfStudy');
+    });
+
+    // Date of birth: cut the year down to 4 digits as soon as a 5th is typed
+    const dobInput = $('dateOfBirth');
+    dobInput.max = todayISO();
+    dobInput.addEventListener('input', function () {
+        const trimmed = this.value.replace(/^(\d{4})\d+/, '$1');
+        if (trimmed !== this.value) this.value = trimmed;
+        if (this.classList.contains('invalid')) validateField('dateOfBirth');
+    });
+
+    // Email: no spaces; students are always lowercase
+    $('email').addEventListener('input', function () {
+        let v = this.value.replace(/\s/g, '');
+        if (role() === 'student') v = v.toLowerCase();
+        if (this.value !== v) this.value = v;
+        if (this.classList.contains('invalid')) validateField('email');
+    });
+
+    // Validate on blur, then re-check live once a field has been flagged
+    Object.keys(rules).forEach(function (name) {
+        const el = $(name);
+        el.addEventListener('blur', function () { validateField(name); });
+        el.addEventListener('input', function () {
+            if (el.classList.contains('invalid')) validateField(name);
+        });
+    });
+
+    /* ───────── Role switch ───────── */
+    function setRole(r) {
+        $('roleInput').value = r;
+
+        $('studentToggle').classList.toggle('active', r === 'student');
+        $('landlordToggle').classList.toggle('active', r === 'landlord');
+
+        $('studentFields').classList.toggle('visible', r === 'student');
+        $('landlordFields').classList.toggle('visible', r === 'landlord');
+
+        // Disable hidden fields so they are neither validated nor submitted
+        yearInput.disabled = (r !== 'student');
+        $('companyName').disabled = (r !== 'landlord');
+
+        const email = $('email');
+        if (r === 'student') {
+            email.placeholder = 'e.g. s227676637@mandela.ac.za';
+            $('emailHint').textContent = 'Use your student email: s followed by 9 digits, then @mandela.ac.za';
+            email.value = email.value.toLowerCase();
+        } else {
+            email.placeholder = 'e.g. name@company.co.za';
+            $('emailHint').textContent = 'We will use this for your login and notifications.';
+        }
+        if (email.value) validateField('email'); else showError('email', '');
+    }
+
+    /* ───────── Submit ───────── */
+    $('registerForm').addEventListener('submit', function (e) {
+        let firstBad = null;
+        Object.keys(rules).forEach(function (name) {
+            if (validateField(name) && !firstBad) firstBad = $(name);
+        });
+        if (firstBad) {
+            e.preventDefault();
+            firstBad.focus();
+        }
+    });
+
+    setRole($('roleInput').value || 'student');
 </script>
 
 <div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null, null, null, null)}"></div>

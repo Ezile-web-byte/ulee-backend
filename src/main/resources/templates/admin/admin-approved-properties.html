@@ -4,190 +4,401 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ULEE — Approved Properties</title>
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=Fredoka:wght@500;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/admin-style.css">
     <script src="/admin-script.js" defer></script>
+    <script src="/landlord-sidebar-toggle.js" defer></script>
+    <style>
+        /* ── ULEE palette (from ULEE-design-system.md), prefixed so it never clashes with admin-style.css ── */
+        :root {
+            --u-navy: #071C2D;
+            --u-teal-bright: #14C8BE;
+            --u-teal-active: #007178;
+            --u-badge: #01A49F;
+            --u-primary-dark: #006A6A;
+            --u-tint: #F4FBFA;
+            --u-surface: #F0F7F6;
+            --u-outline: #E6E8E4;
+            --u-accent-border: #93C0C5;
+            --u-on-surface: #191c1d;
+            --u-on-variant: #3f484d;
+            --u-muted: #6f787d;
+            --u-font-display: 'Plus Jakarta Sans', sans-serif;
+            --u-font-body: 'Hanken Grotesk', sans-serif;
+        }
+        .main { font-family: var(--u-font-body); }
+        /* Page-name header: identical on every admin page (Plus Jakarta Sans, bold) */
+        header.topbar .topbar-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; letter-spacing: -0.01em; color: #191c1d; }
+        .topbar-title, .ap-title, .ap-rent, .ulee-metric-value { font-family: var(--u-font-display); }
+
+        /* ── Top bar: date · bell · avatar (avatar is display-only) ── */
+        .topbar-right { display: flex; align-items: center; gap: 14px; margin-left: auto; }
+        .ap-avatar { pointer-events: none; cursor: default; user-select: none; }
+        /* ── Page heading ── */
+        .ap-sub { margin: 0 0 20px; font-size: 15px; font-size: 14px; color: var(--u-muted); }
+
+        /* ── Toolbar: search (takes the free space) · academic year · Filter ── */
+        .ap-toolbar { position: relative; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 22px; }
+        .ap-search {
+            position: relative; flex: 1 1 320px; display: block; margin: 0;
+        }
+        .ap-search svg {
+            position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+            width: 18px; height: 18px; stroke: var(--u-muted); fill: none; stroke-width: 1.7; stroke-linecap: round;
+            pointer-events: none;
+        }
+        .ap-search input {
+            width: 100%; height: 48px; padding: 0 16px 0 44px; box-sizing: border-box;
+            background: #fff; border: 1px solid var(--u-outline); border-radius: 14px;
+            font-family: var(--u-font-body); font-size: 15px; color: var(--u-on-surface);
+            transition: border-color .15s ease, box-shadow .15s ease;
+        }
+        .ap-search input::placeholder { color: var(--u-muted); }
+        .ap-search input:focus { outline: none; border-color: var(--u-primary-dark); box-shadow: 0 0 0 3px rgba(20, 200, 190, .2); }
+
+        .ap-year { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 13px; font-weight: 600; color: var(--u-on-variant); }
+        .ap-year select, .ap-filter select, .ap-filter input[type=number] {
+            height: 42px; box-sizing: border-box; padding: 0 12px; background: #fff;
+            border: 1px solid var(--u-outline); border-radius: 10px; color: var(--u-on-surface);
+            font-family: var(--u-font-body); font-size: 14px;
+        }
+        .ap-year select { cursor: pointer; }
+        .ap-year select:focus, .ap-filter select:focus, .ap-filter input:focus {
+            outline: none; border-color: var(--u-primary-dark); box-shadow: 0 0 0 3px rgba(20, 200, 190, .2);
+        }
+
+        /* Filter button: ULEE navy with the teal border used on the navy cards */
+        .ap-filter-btn {
+            height: 48px; padding: 0 22px; display: inline-flex; align-items: center; gap: 8px;
+            background: var(--u-navy); color: #fff; border: 1.5px solid var(--u-teal-active); border-radius: 14px;
+            font-family: var(--u-font-display); font-size: 14px; font-weight: 700; cursor: pointer;
+            transition: background .2s ease, border-color .2s ease;
+        }
+        .ap-filter-btn:hover { background: #0A3A48; border-color: var(--u-teal-bright); }
+        .ap-filter-btn:focus-visible { outline: 2px solid var(--u-teal-bright); outline-offset: 3px; }
+        .ap-filter-btn svg { width: 16px; height: 16px; stroke: var(--u-teal-bright); fill: none; stroke-width: 1.8; stroke-linecap: round; }
+
+        .ap-filter {
+            display: none; position: absolute; top: calc(100% + 8px); right: 0; z-index: 20; width: 300px;
+            background: #fff; border: 1px solid var(--u-outline); border-radius: 14px; padding: 18px;
+            box-shadow: 0 12px 32px rgba(7, 28, 45, .16);
+        }
+        .ap-filter.open { display: block; }
+        .ap-filter label {
+            display: block; margin-bottom: 5px; font-size: 12px; font-weight: 700;
+            letter-spacing: .07em; text-transform: uppercase; color: var(--u-on-variant);
+        }
+        .ap-filter select { width: 100%; margin-bottom: 14px; }
+        .ap-filter .ap-price { display: flex; gap: 8px; margin-bottom: 14px; }
+        .ap-filter .ap-price input { width: 50%; }
+        .ap-filter-actions { display: flex; gap: 8px; }
+        .ap-apply, .ap-clear {
+            flex: 1; height: 42px; display: inline-flex; align-items: center; justify-content: center;
+            border-radius: 10px; font-family: var(--u-font-display); font-size: 14px; font-weight: 700;
+            cursor: pointer; text-decoration: none;
+        }
+        .ap-apply { background: var(--u-primary-dark); border: 1px solid var(--u-primary-dark); color: #fff; }
+        .ap-apply:hover { background: var(--u-teal-active); }
+        .ap-clear { background: #fff; border: 1px solid var(--u-accent-border); color: var(--u-primary-dark); }
+        .ap-clear:hover { background: var(--u-tint); }
+
+        .ap-result { margin: 0 0 16px; font-size: 13px; color: var(--u-muted); }
+        .ap-result a { color: var(--u-primary-dark); font-weight: 600; }
+
+        /* ── ULEE navy metric card (design system section 4) ── */
+        .ap-stats { display: grid; grid-template-columns: repeat(2, minmax(220px, 1fr)); gap: 20px; }
+        .ulee-metric-card {
+            position: relative; overflow: hidden; padding: 26px 30px 44px;
+            border: 1.5px solid rgba(20, 200, 190, 0.45); border-radius: 16px;
+            background: linear-gradient(115deg, #071C2D 0%, #0A3A48 55%, #0F6C70 100%);
+            box-shadow: 0 6px 18px rgba(7, 28, 45, 0.18); color: #fff;
+            transition: transform .2s ease, box-shadow .2s ease;
+            animation: ulee-metric-in .6s cubic-bezier(.2, .8, .2, 1) backwards;
+        }
+        .ulee-metric-card:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(7, 28, 45, .28); }
+        .ulee-metric-card:nth-child(2) { animation-delay: .08s; }
+        .ulee-metric-card::before {
+            content: ''; position: absolute; top: 0; left: -60%; width: 40%; height: 100%;
+            background: linear-gradient(100deg, transparent, rgba(255,255,255,.12), transparent);
+            transform: skewX(-20deg); animation: ulee-metric-shine 7s ease-in-out infinite;
+        }
+        .ulee-metric-card::after {
+            content: ''; position: absolute; top: -60px; right: -40px; width: 170px; height: 170px;
+            border-radius: 50%; background: radial-gradient(circle, rgba(20,200,190,.28) 0%, transparent 70%);
+            animation: ulee-metric-pulse 4.5s ease-in-out infinite;
+        }
+        .ulee-metric-label { position: relative; z-index: 2; font-size: 13.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: rgba(255,255,255,.78); }
+        .ulee-metric-value { position: relative; z-index: 2; font-size: 42px; font-weight: 800; margin-top: 8px; color: #fff; }
+        .ulee-metric-sub { position: relative; z-index: 2; font-size: 13.5px; color: #7DF0E6; margin-top: 2px; }
+        .ulee-metric-stars { position: absolute; top: 0; right: 0; width: 52%; height: 80%; z-index: 1; }
+        .ulee-metric-stars .star { animation: ulee-metric-twinkle 4s ease-in-out infinite; animation-delay: var(--d, 0s); }
+        .ulee-metric-wave { position: absolute; left: 0; bottom: 0; width: 200%; height: 26px; z-index: 1; animation: ulee-metric-wave 16s linear infinite; }
+        .ulee-metric-wave .w-back  { fill: rgba(14,116,128,.55); }
+        .ulee-metric-wave .w-front { fill: #071C2D; stroke: #14C8BE; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+        @keyframes ulee-metric-in      { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+        @keyframes ulee-metric-shine   { 0%,55% { left: -60%; } 100% { left: 130%; } }
+        @keyframes ulee-metric-pulse   { 0%,100% { opacity: .6; transform: scale(1); } 50% { opacity: 1; transform: scale(1.12); } }
+        @keyframes ulee-metric-twinkle { 0%,100% { opacity: .25; } 50% { opacity: 1; } }
+        @keyframes ulee-metric-wave    { to { transform: translateX(-50%); } }
+        @media (prefers-reduced-motion: reduce) {
+            .ulee-metric-card, .ulee-metric-card::before, .ulee-metric-card::after,
+            .ulee-metric-wave, .ulee-metric-stars .star { animation: none !important; }
+        }
+        @media (max-width: 560px) { .ap-stats { grid-template-columns: 1fr; } }
+
+        /* ── Property cards ── */
+        .ap-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; margin-top: 24px; }
+        .ap-card { background: #fff; border: 1px solid var(--u-outline); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; }
+        .ap-photo { position: relative; display: block; height: 150px; background: var(--u-surface); }
+        .ap-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+        /* "Approved" badge on the photo */
+        .ap-badge {
+            position: absolute; top: 12px; left: 12px; padding: 5px 12px; border-radius: 999px;
+            background: var(--u-navy); color: var(--u-teal-bright); border: 1px solid rgba(20, 200, 190, .55);
+            font-family: var(--u-font-display); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+            box-shadow: 0 2px 8px rgba(7, 28, 45, .35);
+        }
+
+        .ap-body { padding: 14px; display: flex; flex-direction: column; flex: 1; }
+        .ap-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+        .ap-title { font-weight: 700; font-size: 15px; color: var(--u-on-surface); text-decoration: none; }
+        .ap-title:hover { color: var(--u-primary-dark); text-decoration: underline; }
+        .ap-rent { font-weight: 800; font-size: 14px; color: var(--u-primary-dark); white-space: nowrap; }
+        .ap-city { margin-top: 4px; font-size: 13px; color: var(--u-muted); }
+
+        /* Exactly three detail chips per property */
+        .ap-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+        .ap-chip {
+            background: var(--u-surface); color: var(--u-primary-dark); border: 1px solid rgba(147, 192, 197, .55);
+            font-size: 10px; font-weight: 700; letter-spacing: .04em; padding: 3px 8px; border-radius: 6px;
+        }
+
+        .ap-report {
+            margin-top: auto; padding: 9px 0; display: flex; align-items: center; justify-content: center; gap: 6px;
+            background: var(--u-tint); border: 1px solid var(--u-accent-border); border-radius: 10px;
+            color: var(--u-primary-dark); font-size: 13px; font-weight: 700; text-decoration: none;
+            transition: background .15s ease;
+        }
+        .ap-body .ap-chips + .ap-report { margin-top: 14px; }
+        .ap-report:hover { background: var(--u-surface); }
+        .ap-report svg { width: 13px; height: 13px; fill: var(--u-primary-dark); }
+
+        /* ── Empty state (same look as the property reviews page) ── */
+        .ap-empty {
+            display: flex; flex-direction: column; align-items: center; text-align: center;
+            margin-top: 24px; padding: 40px 20px 44px;
+            background: linear-gradient(180deg, #ffffff 0%, var(--u-tint) 100%);
+            border: 2px dashed var(--u-accent-border); border-radius: 20px;
+        }
+        .ap-empty-art { width: 220px; max-width: 70%; height: auto; overflow: visible; }
+        .ap-empty-title, .ap-empty-sub { font-family: 'Fredoka', var(--u-font-display), sans-serif; }
+        .ap-empty-title { font-size: 27px; font-weight: 600; color: var(--u-primary-dark); margin: 14px 0 4px; }
+        .ap-empty-sub { font-size: 17px; font-weight: 500; color: var(--u-muted); margin: 0; }
+        .ap-empty-clear {
+            margin-top: 18px; height: 42px; padding: 0 22px; display: inline-flex; align-items: center;
+            background: var(--u-navy); color: #fff; border: 1.5px solid var(--u-teal-active); border-radius: 12px;
+            font-family: var(--u-font-display); font-size: 14px; font-weight: 700; text-decoration: none;
+            transition: background .2s ease, border-color .2s ease;
+        }
+        .ap-empty-clear:hover { background: #0A3A48; border-color: var(--u-teal-bright); }
+        .ap-empty-clear:focus-visible { outline: 2px solid var(--u-teal-bright); outline-offset: 3px; }
+        .ap-float { transform-box: fill-box; transform-origin: 50% 100%; animation: ap-float 3.6s ease-in-out infinite; }
+        .ap-shadow { transform-box: fill-box; transform-origin: center; animation: ap-shadow 3.6s ease-in-out infinite; }
+        .ap-spark { transform-box: fill-box; transform-origin: center; animation: ap-spark 2.6s ease-in-out infinite; animation-delay: var(--d, 0s); }
+        @keyframes ap-float  { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+        @keyframes ap-shadow { 0%,100% { transform: scaleX(1); opacity: .12; } 50% { transform: scaleX(.9); opacity: .08; } }
+        @keyframes ap-spark  { 0%,100% { opacity: .2; transform: scale(.6) rotate(0deg); } 50% { opacity: 1; transform: scale(1) rotate(20deg); } }
+        @media (prefers-reduced-motion: reduce) { .ap-float, .ap-shadow, .ap-spark { animation: none !important; } }
+
+    </style>
+    <link rel="stylesheet" href="/admin-theme.css">
 </head>
 <body>
 
 <div class="shell">
 
-    <!-- ============ SIDEBAR (same as Dashboard, for consistent navigation) ============ -->
+    <!-- ============ SIDEBAR ============ -->
     <div th:replace="~{fragments/admin-sidebar :: sidebar('approved-properties')}"></div>
 
     <div class="main">
 
-        <!-- ============ TOPBAR — search, notifications, log out ============ -->
+        <!-- ============ TOPBAR — title, notifications, avatar (opens logout popup) ============ -->
         <header class="topbar">
             <div class="topbar-title" id="topbar-title">Approved Properties</div>
-
-            <div style="flex:1;max-width:420px;margin:0 24px;position:relative">
-                <svg viewBox="0 0 20 20" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;stroke:#9aa1a9;fill:none;stroke-width:1.6">
-                    <circle cx="9" cy="9" r="6"/><path d="M14 14l4 4"/>
-                </svg>
-                <input type="text" id="searchInput" th:value="${search}" placeholder="Search approved properties…"
-                       onkeydown="if(event.key==='Enter'){applyFilters();}"
-                       style="width:100%;padding:9px 12px 9px 34px;border:1px solid #e5e7eb;border-radius:8px;font-family:inherit;font-size:14px" />
+            <div class="topbar-right">
+                <div th:replace="~{fragments/notification-bell :: bell}"></div>
+                <span class="avatar ap-avatar" th:text="${adminInitials} ?: 'AD'">UG</span>
             </div>
-
-            <div th:replace="~{fragments/notification-bell :: bell}"></div>
-
-            <button class="logout-btn" onclick="confirmAdminLogout()">
-                <svg viewBox="0 0 20 20"><path d="M13 3h4v14h-4M9 14l4-4-4-4M13 10H5"/></svg>
-                <span>Log out</span>
-            </button>
         </header>
 
         <div class="content">
 
             <div class="section active" id="sec-approved-properties">
 
-                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap;gap:12px">
-                    <div>
-                        <h2 style="margin:0 0 4px;font-size:22px">Approved Properties</h2>
-                        <p style="margin:0;color:var(--muted)">Manage and edit all university-accredited student residences.</p>
-                    </div>
-                    <div style="display:flex;gap:10px;align-items:center;position:relative">
-                        <!-- Picking a year re-sorts the grid so that year's properties (by availableFrom) show first -->
-                        <label style="font-size:14px;color:var(--muted);display:flex;align-items:center;gap:6px">
-                            Academic Year:
-                            <select onchange="window.location.href='/admin/approved-properties?academicYear='+this.value"
-                                    style="border:1px solid #e5e7eb;border-radius:8px;padding:9px 14px;font-size:14px;font-family:inherit;cursor:pointer;color:#1a1a1a">
-                                <option th:each="yr : ${academicYearOptions}"
-                                        th:value="${yr}"
-                                        th:text="${yr} + '/' + ${#numbers.formatInteger((yr+1) % 100, 2)}"
-                                        th:selected="${yr == selectedAcademicYear}">2025/26</option>
-                            </select>
-                        </label>
-                        <button id="filterToggleBtn" type="button" onclick="toggleFilterPanel()"
-                                style="background:#ffe170;border:1px solid #ffe170;color:#221b00;border-radius:8px;padding:9px 16px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px">
-                            <svg viewBox="0 0 20 20" style="width:14px;height:14px;stroke:#221b00;fill:none;stroke-width:1.6"><path d="M3 5h14M6 10h8M9 15h2"/></svg>
-                            Filter
-                        </button>
+                <p class="ap-sub">Manage all approved properties</p>
 
-                        <!-- Filter panel: city, price range -->
-                        <div id="filterPanel" style="display:none;position:absolute;top:44px;right:0;z-index:20;background:#fff;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.08);padding:16px;width:260px">
-                            <label style="display:block;font-size:12px;font-weight:600;color:#555;margin-bottom:4px">City</label>
-                            <select id="cityFilter" style="width:100%;padding:7px 8px;border:1px solid #e5e7eb;border-radius:6px;margin-bottom:12px;font-family:inherit;font-size:13px">
-                                <option value="">All cities</option>
-                                <option th:each="c : ${cityOptions}" th:value="${c}" th:text="${c}"
-                                        th:selected="${selectedCity != null and selectedCity.equalsIgnoreCase(c)}">City</option>
-                            </select>
+                <!-- Search · Filter -->
+                <div class="ap-toolbar">
+                    <label class="ap-search">
+                        <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="9" cy="9" r="6"/><path d="M14 14l4 4"/></svg>
+                        <input type="text" id="searchInput" th:value="${search}" placeholder="Search approved properties…"
+                               aria-label="Search approved properties"
+                               onkeydown="if(event.key==='Enter'){applyFilters();}" />
+                    </label>
 
-                            <label style="display:block;font-size:12px;font-weight:600;color:#555;margin-bottom:4px">Price range (R)</label>
-                            <div style="display:flex;gap:8px;margin-bottom:12px">
-                                <input type="number" id="minPriceFilter" th:value="${minPrice}" placeholder="Min"
-                                       style="width:50%;padding:7px 8px;border:1px solid #e5e7eb;border-radius:6px;font-family:inherit;font-size:13px" />
-                                <input type="number" id="maxPriceFilter" th:value="${maxPrice}" placeholder="Max"
-                                       style="width:50%;padding:7px 8px;border:1px solid #e5e7eb;border-radius:6px;font-family:inherit;font-size:13px" />
-                            </div>
+                    <button id="filterToggleBtn" type="button" class="ap-filter-btn" onclick="toggleFilterPanel()"
+                            aria-haspopup="true" aria-controls="filterPanel">
+                        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M6 10h8M9 15h2"/></svg>
+                        Filter
+                    </button>
 
-                            <label style="display:block;font-size:12px;font-weight:600;color:#555;margin-bottom:4px">Type</label>
-                            <select id="typeFilter" style="width:100%;padding:7px 8px;border:1px solid #e5e7eb;border-radius:6px;margin-bottom:14px;font-family:inherit;font-size:13px">
-                                <option value="" th:selected="${selectedType == null or selectedType.isEmpty()}">Any</option>
-                                <option value="Single" th:selected="${selectedType == 'Single'}">Single</option>
-                                <option value="Sharing" th:selected="${selectedType == 'Sharing'}">Sharing</option>
-                            </select>
+                    <!-- Filter panel: suburb, price range, room type -->
+                    <div id="filterPanel" class="ap-filter">
+                        <label for="suburbFilter">Suburb</label>
+                        <select id="suburbFilter">
+                            <option value="">All suburbs</option>
+                            <option th:each="sb : ${suburbOptions}" th:value="${sb}" th:text="${sb}"
+                                    th:selected="${selectedSuburb != null and selectedSuburb.equalsIgnoreCase(sb)}">Suburb</option>
+                        </select>
 
-                            <div style="display:flex;gap:8px">
-                                <button type="button" onclick="applyFilters()"
-                                        style="flex:1;background:#006078;border:1px solid #006078;color:#fff;border-radius:6px;padding:8px 0;font-size:13px;font-weight:600;cursor:pointer">Apply</button>
-                                <a href="/admin/approved-properties"
-                                   style="flex:1;text-align:center;border:1px solid #e5e7eb;color:#555;border-radius:6px;padding:8px 0;font-size:13px;text-decoration:none">Clear</a>
-                            </div>
+                        <label for="minPriceFilter">Price range (R)</label>
+                        <div class="ap-price">
+                            <input type="number" id="minPriceFilter" th:value="${minPrice}" placeholder="Min" />
+                            <input type="number" id="maxPriceFilter" aria-label="Maximum price" th:value="${maxPrice}" placeholder="Max" />
+                        </div>
+
+                        <label for="typeFilter">Room type</label>
+                        <select id="typeFilter">
+                            <option value="" th:selected="${selectedType == null or selectedType.isEmpty()}">Any</option>
+                            <option th:each="t : ${typeOptions}" th:value="${t}" th:text="${t}"
+                                    th:selected="${selectedType != null and selectedType.equalsIgnoreCase(t)}">Single</option>
+                        </select>
+
+                        <div class="ap-filter-actions">
+                            <button type="button" class="ap-apply" onclick="applyFilters()">Apply</button>
+                            <a href="/admin/approved-properties" class="ap-clear">Clear</a>
                         </div>
                     </div>
                 </div>
 
-                <p th:if="${search != null and !search.isEmpty()} or ${selectedCity != null and !selectedCity.isEmpty()} or ${minPrice != null} or ${maxPrice != null} or ${selectedType != null and !selectedType.isEmpty()}"
-                   style="margin:0 0 16px;font-size:13px;color:var(--muted)"
-                   th:text="${#lists.size(approvedProperties)} + ' result(s) match your filters'">0 results</p>
+                <p class="ap-result" th:if="${hasActiveFilters and !#lists.isEmpty(approvedProperties)}">
+                    <strong th:text="${#lists.size(approvedProperties)}">0</strong> result(s) match your filters
+                    · <a href="/admin/approved-properties">Clear filters</a>
+                </p>
 
-
-                <div class="stats" style="grid-template-columns:repeat(2,minmax(200px,1fr));max-width:560px">
-                    <div class="stat-card">
-                        <div class="stat-top">
-                            <div class="stat-icon" style="background:#e3eef1">
-                                <svg viewBox="0 0 20 20" style="stroke:#006078"><path d="M3 7l7-4 7 4v9H3V7z"/><path d="M8 11h4v5H8z"/></svg>
-                            </div>
-                        </div>
-                        <div class="stat-num" th:text="${totalApproved}">0</div>
-                        <div class="stat-label">Total Approved</div>
-                        <div style="font-size:12px;color:#006078;margin-top:2px" th:text="'+' + ${approvedThisMonth} + ' this month'">+0 this month</div>
+                <!-- ============ STAT CARDS (ULEE navy metric card) ============ -->
+                <div class="ap-stats">
+                    <div class="ulee-metric-card">
+                        <div class="ulee-metric-label">Total Approved</div>
+                        <div class="ulee-metric-value" th:text="${totalApproved}">0</div>
+                        <div class="ulee-metric-sub" th:text="'+' + ${approvedThisMonth} + ' this month'">+0 this month</div>
+                        <svg class="ulee-metric-stars" viewBox="0 0 200 90" aria-hidden="true"><g fill="#9FF0E8"><circle class="star" cx="150" cy="20" r="1.6" style="--d:0s"/><circle class="star" cx="180" cy="44" r="1.3" style="--d:1.2s"/><circle class="star" cx="120" cy="52" r="1.2" style="--d:.5s"/></g></svg>
+                        <svg class="ulee-metric-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true">
+                            <path class="w-back"  d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+                            <path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+                        </svg>
                     </div>
 
-                    <div class="stat-card">
-                        <div class="stat-top">
-                            <div class="stat-icon" style="background:#e3eef1">
-                                <svg viewBox="0 0 20 20" style="stroke:#006078"><circle cx="10" cy="10" r="7"/><path d="M10 6v4l3 2"/></svg>
-                            </div>
-                        </div>
-                        <div class="stat-num" th:text="${#numbers.formatDecimal(occupancyRate, 1, 1)} + '%'">0%</div>
-                        <div class="stat-label">Occupancy Rate</div>
-                        <div style="font-size:12px;color:var(--muted);margin-top:2px">Applicants vs. capacity</div>
+                    <div class="ulee-metric-card">
+                        <div class="ulee-metric-label">Occupancy Rate</div>
+                        <div class="ulee-metric-value" data-suffix="%" th:text="${#numbers.formatDecimal(occupancyRate, 1, 1)} + '%'">0%</div>
+                        <div class="ulee-metric-sub">Applicants vs. capacity</div>
+                        <svg class="ulee-metric-stars" viewBox="0 0 200 90" aria-hidden="true"><g fill="#9FF0E8"><circle class="star" cx="150" cy="20" r="1.6" style="--d:.6s"/><circle class="star" cx="180" cy="44" r="1.3" style="--d:1.8s"/><circle class="star" cx="120" cy="52" r="1.2" style="--d:1.1s"/></g></svg>
+                        <svg class="ulee-metric-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true">
+                            <path class="w-back"  d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+                            <path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
+                        </svg>
                     </div>
                 </div>
 
                 <!-- ============ PROPERTY CARDS ============ -->
-                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;margin-top:22px">
+                <div class="ap-grid">
 
-                    <div class="property-card" style="border:1px solid #eee;border-radius:12px;overflow:hidden;background:#fff"
-                         th:each="prop : ${approvedProperties}">
+                    <article class="ap-card" th:each="prop : ${approvedProperties}">
 
                         <!-- Clicking the photo opens the full listing detail (all info + all photos).
                              from=approved so the detail page's Back button returns here. -->
-                        <a th:href="@{/admin/listing/{id}(id=${prop.propertyID},from='approved')}" style="display:block;position:relative;text-decoration:none">
-                            <img th:if="${prop.mainImageUrl} != null" th:src="${prop.mainImageUrl}"
-                                 style="width:100%;height:150px;object-fit:cover;display:block" />
-                            <div th:if="${prop.mainImageUrl} == null"
-                                 style="width:100%;height:150px;background:#eee"></div>
+                        <a class="ap-photo" th:href="@{/admin/listing/{id}(id=${prop.propertyID},from='approved')}">
+                            <img th:if="${prop.mainImageUrl} != null" th:src="${prop.mainImageUrl}" th:alt="${prop.title}" alt="" />
 
-                            <!-- Decorative glow behind the APPROVED badge, tinted to match -->
-                            <span style="position:absolute;top:4px;left:2px;width:96px;height:36px;background:radial-gradient(circle at 30% 50%, rgba(255,225,112,0.65), rgba(255,225,112,0) 70%);filter:blur(7px);z-index:1;border-radius:999px;pointer-events:none"></span>
-
-                            <span style="position:absolute;top:10px;left:10px;z-index:2;background:#ffe170;color:#221b00;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;display:flex;align-items:center;gap:4px">
-                                <svg viewBox="0 0 20 20" style="width:10px;height:10px;fill:#221b00"><path d="M4 10l4 4 8-8"/></svg>
-                                APPROVED
-                            </span>
-
+                            <span class="ap-badge">Approved</span>
                         </a>
 
-                        <div style="padding:14px">
-                            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-                                <a th:href="@{/admin/listing/{id}(id=${prop.propertyID},from='approved')}"
-                                   th:text="${prop.title}"
-                                   style="font-weight:600;font-size:15px;color:#1a1a1a;text-decoration:none">Property Name</a>
-                                <span th:if="${prop.rent} != null" style="font-weight:700;color:#006078;white-space:nowrap"
-                                      th:text="'R' + ${prop.rent}">R0</span>
+                        <div class="ap-body">
+                            <div class="ap-head">
+                                <a class="ap-title" th:href="@{/admin/listing/{id}(id=${prop.propertyID},from='approved')}"
+                                   th:text="${prop.title}">Property Name</a>
+                                <span class="ap-rent" th:if="${prop.rent} != null" th:text="'R' + ${prop.rent}">R0</span>
                             </div>
-                            <div style="color:var(--muted);font-size:13px;margin-top:4px" th:text="${prop.city}">City</div>
+                            <div class="ap-city" th:text="${prop.city}">City</div>
 
-                            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
-                                <span th:if="${prop.type} != null" th:text="${#strings.toUpperCase(prop.type)}"
-                                      style="background:#f2f2f2;color:#555;font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px">TYPE</span>
-                                <span th:each="amenity : ${prop.amenities}" th:text="${#strings.toUpperCase(amenity.name)}"
-                                      style="background:#f2f2f2;color:#555;font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px">AMENITY</span>
+                            <!-- Room type first, then the first three amenities (an amenity that just repeats the room type is skipped) -->
+                            <div class="ap-chips" th:with="t=${prop.type != null ? prop.type.toLowerCase() : ''}">
+                                <span class="ap-chip ap-chip-type" th:if="${prop.type != null and !#strings.isEmpty(prop.type)}"
+                                      th:text="${#strings.toUpperCase((#strings.containsIgnoreCase(prop.type,'room') or #strings.equalsIgnoreCase(prop.type,'commune')) ? prop.type : prop.type + ' Room')}">SINGLE ROOM</span>
+                                <span class="ap-chip" th:each="amenity, st : ${prop.amenities}"
+                                      th:if="${st.index < 3 and (t == '' or !#strings.containsIgnoreCase(amenity.name, t))}"
+                                      th:text="${#strings.toUpperCase(amenity.name)}">AMENITY</span>
                             </div>
 
-                            <!-- Report status: always takes you straight into this property's own
-                                 Reported page — never the general queue — so "Review Report" from
-                                 Approved Properties lands exactly where the admin expects.
-                                 Uses .btn-view (the app's existing soft-navy pill, same one used
-                                 on the Review Properties table) instead of green, since green
-                                 isn't part of this project's palette. -->
-                            <a th:href="@{/admin/reported-listing/{id}(id=${prop.propertyID})}" class="btn btn-view"
-                               style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px;padding:9px 0;font-size:13px;text-decoration:none">
-                                <svg viewBox="0 0 20 20" style="width:13px;height:13px;fill:var(--pdp)"><path d="M5 2h10v16l-5-3-5 3V2z"/></svg>
+                            <!-- Opens this property's own report page. from=approved keeps the sidebar on
+                                 Approved properties and makes Back return here, not to the Reported queue. -->
+                            <a class="ap-report" th:href="@{/admin/reported-listing/{id}(id=${prop.propertyID},from='approved')}">
+                                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2h10v16l-5-3-5 3V2z"/></svg>
                                 Review Report
                             </a>
                         </div>
-                    </div>
+                    </article>
 
                 </div>
 
-                <p th:if="${#lists.isEmpty(approvedProperties)}" style="padding:22px;color:var(--muted);text-align:center">
-                    No approved properties yet.
-                </p>
+                <!-- Empty state: a filter/search matched nothing -->
+                <div class="ap-empty" th:if="${#lists.isEmpty(approvedProperties) and hasActiveFilters}">
+                    <svg class="ap-empty-art" viewBox="0 0 240 170" fill="none" aria-hidden="true">
+                        <ellipse class="ap-shadow" cx="120" cy="156" rx="64" ry="7" fill="#0b3b4a" opacity=".12"/>
+                        <g class="ap-float">
+                            <path d="M52 92L108 48l56 44v50a8 8 0 0 1-8 8H60a8 8 0 0 1-8-8V92Z" fill="#dcf1ef" stroke="#93C0C5" stroke-width="2.5" stroke-linejoin="round"/>
+                            <path d="M44 96l64-52 64 52" stroke="#0f8a8a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                            <rect x="96" y="108" width="24" height="42" rx="4" fill="#fff" stroke="#93C0C5" stroke-width="2"/>
+                            <circle cx="162" cy="88" r="26" fill="#ffffff" stroke="#0f8a8a" stroke-width="4"/>
+                            <path d="M181 107l22 22" stroke="#071C2D" stroke-width="7" stroke-linecap="round"/>
+                            <circle cx="153" cy="85" r="2.6" fill="#0f8a8a"/>
+                            <circle cx="171" cy="85" r="2.6" fill="#0f8a8a"/>
+                            <path d="M154 97q8-7 16 0" stroke="#0f8a8a" stroke-width="2.6" stroke-linecap="round"/>
+                        </g>
+                        <path class="ap-spark" style="--d:0s" d="M206 30l3 8 8 3-8 3-3 8-3-8-8-3 8-3z" fill="#14C8BE"/>
+                        <path class="ap-spark" style="--d:1s" d="M32 70l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#F5D450"/>
+                        <path class="ap-spark" style="--d:1.8s" d="M214 130l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#9FF0E8"/>
+                    </svg>
+                    <p class="ap-empty-title">No approved listing matches this filter</p>
+                    <p class="ap-empty-sub">Try a different search or widen your filters.</p>
+                    <a class="ap-empty-clear" href="/admin/approved-properties">Clear filters</a>
+                </div>
+
+                <!-- Empty state: nothing approved yet -->
+                <div class="ap-empty" th:if="${#lists.isEmpty(approvedProperties) and !hasActiveFilters}">
+                    <svg class="ap-empty-art" viewBox="0 0 240 170" fill="none" aria-hidden="true">
+                        <ellipse class="ap-shadow" cx="120" cy="156" rx="64" ry="7" fill="#0b3b4a" opacity=".12"/>
+                        <g class="ap-float">
+                            <path d="M52 92L108 48l56 44v50a8 8 0 0 1-8 8H60a8 8 0 0 1-8-8V92Z" fill="#dcf1ef" stroke="#93C0C5" stroke-width="2.5" stroke-linejoin="round"/>
+                            <path d="M44 96l64-52 64 52" stroke="#0f8a8a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                            <rect x="96" y="108" width="24" height="42" rx="4" fill="#fff" stroke="#93C0C5" stroke-width="2"/>
+                            <circle cx="162" cy="88" r="26" fill="#ffffff" stroke="#0f8a8a" stroke-width="4"/>
+                            <path d="M181 107l22 22" stroke="#071C2D" stroke-width="7" stroke-linecap="round"/>
+                            <circle cx="153" cy="85" r="2.6" fill="#0f8a8a"/>
+                            <circle cx="171" cy="85" r="2.6" fill="#0f8a8a"/>
+                            <path d="M154 97q8-7 16 0" stroke="#0f8a8a" stroke-width="2.6" stroke-linecap="round"/>
+                        </g>
+                        <path class="ap-spark" style="--d:0s" d="M206 30l3 8 8 3-8 3-3 8-3-8-8-3 8-3z" fill="#14C8BE"/>
+                        <path class="ap-spark" style="--d:1s" d="M32 70l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#F5D450"/>
+                        <path class="ap-spark" style="--d:1.8s" d="M214 130l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#9FF0E8"/>
+                    </svg>
+                    <p class="ap-empty-title">No approved properties yet</p>
+                    <p class="ap-empty-sub">Approved listings will show up here.</p>
+                </div>
 
             </div>
 
@@ -197,8 +408,7 @@
 
 <script>
     function toggleFilterPanel() {
-        var panel = document.getElementById('filterPanel');
-        panel.style.display = (panel.style.display === 'none' || !panel.style.display) ? 'block' : 'none';
+        document.getElementById('filterPanel').classList.toggle('open');
     }
 
     function applyFilters() {
@@ -207,8 +417,8 @@
         var search = document.getElementById('searchInput').value.trim();
         if (search) params.set('search', search);
 
-        var city = document.getElementById('cityFilter').value;
-        if (city) params.set('city', city);
+        var suburb = document.getElementById('suburbFilter').value;
+        if (suburb) params.set('suburb', suburb);
 
         var minPrice = document.getElementById('minPriceFilter').value;
         if (minPrice) params.set('minPrice', minPrice);
@@ -232,9 +442,32 @@
     document.addEventListener('click', function (e) {
         var panel = document.getElementById('filterPanel');
         var btn = document.getElementById('filterToggleBtn');
-        if (panel && panel.style.display === 'block' && !panel.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
-            panel.style.display = 'none';
+        if (panel && panel.classList.contains('open') && !panel.contains(e.target) && !btn.contains(e.target)) {
+            panel.classList.remove('open');
         }
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') document.getElementById('filterPanel').classList.remove('open');
+    });
+
+    // Stat numbers count up from 0 (ULEE design system)
+    window.addEventListener('load', function () {
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        document.querySelectorAll('.ulee-metric-value').forEach(function (el) {
+            var target = parseFloat(el.textContent);
+            if (!(target > 0)) return;
+            var suffix = el.getAttribute('data-suffix') || '';
+            var decimals = (el.textContent.split('.')[1] || '').replace(/\D/g, '').length;
+            var start = null, dur = 900;
+            el.textContent = (0).toFixed(decimals) + suffix;
+            function tick(now) {
+                if (start === null) start = now;
+                var t = Math.min((now - start) / dur, 1);
+                el.textContent = (target * (1 - Math.pow(1 - t, 3))).toFixed(decimals) + suffix;
+                if (t < 1) requestAnimationFrame(tick);
+            }
+            requestAnimationFrame(tick);
+        });
     });
 </script>
 

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--
+  Shared student sidebar + logout confirmation, in the ULEE navy/teal look.
+  Used by the My Stay pages. Place at: templates/fragments/student-sidebar.html
+
+  Usage (as a direct child of <div class="app-shell">):
+    <div th:replace="~{fragments/student-sidebar :: sidebar('my-stay')}"></div>
+
+  `active` is one of: 'dashboard' | 'applications' | 'my-stay' | 'saved' | 'browse'
+
+  Badge counts come from the model and are null-safe, so a page that does not
+  set them simply shows no badge: totalApplications, acceptedCount, savedCount.
+
+  The fragment root is a th:block so the sidebar AND the logout modal both come
+  through th:replace (anything outside the fragment root would be dropped).
+-->
+<th:block th:fragment="sidebar(active)">
+
+    <aside class="sidebar" id="sidebar" aria-label="Student navigation">
+        <a class="logo" th:href="@{/student-dashboard}" aria-label="ULEE home">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2L3 7v11h14V7L10 2zm0 2.6 5 3.5V16H5V8.1l5-3.5zM8 10h4v6H8z"/></svg>
+            <div>
+                <div class="logo-name">ULEE</div>
+                <div class="logo-tag">Student Living. Simplified.</div>
+            </div>
+        </a>
+
+        <div class="nav-label">Student portal</div>
+        <nav class="nav-list">
+            <a class="nav-item" th:classappend="${active == 'dashboard'} ? ' active'"
+               th:attr="aria-current=${active == 'dashboard' ? 'page' : null}" th:href="@{/my-dashboard}">
+                <span class="material-symbols-outlined" aria-hidden="true">space_dashboard</span><span>My Dashboard</span>
+            </a>
+            <a class="nav-item" th:classappend="${active == 'applications'} ? ' active'"
+               th:attr="aria-current=${active == 'applications' ? 'page' : null}" th:href="@{/my-applications}">
+                <span class="material-symbols-outlined" aria-hidden="true">description</span><span>My Applications</span>
+                <span class="nav-badge" th:if="${totalApplications != null and totalApplications > 0}" th:text="${totalApplications}">0</span>
+            </a>
+            <a class="nav-item" th:classappend="${active == 'my-stay'} ? ' active'"
+               th:attr="aria-current=${active == 'my-stay' ? 'page' : null}" th:href="@{/my-stay}">
+                <span class="material-symbols-outlined" aria-hidden="true">rate_review</span><span>My Stay</span>
+                <span class="nav-badge" th:if="${acceptedCount != null and acceptedCount > 0}" th:text="${acceptedCount}">0</span>
+            </a>
+            <a class="nav-item" th:classappend="${active == 'saved'} ? ' active'"
+               th:attr="aria-current=${active == 'saved' ? 'page' : null}" th:href="@{/saved-properties}">
+                <span class="material-symbols-outlined" aria-hidden="true">favorite</span><span>Saved Properties</span>
+                <span class="nav-badge" th:if="${savedCount != null and savedCount > 0}" th:text="${savedCount}">0</span>
+            </a>
+            <a class="nav-item" th:classappend="${active == 'browse'} ? ' active'"
+               th:attr="aria-current=${active == 'browse' ? 'page' : null}" th:href="@{/student-dashboard}">
+                <span class="material-symbols-outlined" aria-hidden="true">travel_explore</span><span>Browse Properties</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-foot">
+            <form id="logoutForm" th:action="@{/logout}" method="post">
+                <button type="button" class="nav-item logout" id="openLogout">
+                    <span class="material-symbols-outlined" aria-hidden="true">logout</span><span>Log out</span>
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    <!-- Logout confirmation (POSTs the real /logout form only on confirm) -->
+    <div class="modal" id="logoutModal" role="dialog" aria-modal="true" aria-labelledby="logoutTitle">
+        <div class="modal-card">
+            <div class="modal-icon"><span class="material-symbols-outlined" aria-hidden="true">logout</span></div>
+            <h2 id="logoutTitle">Log out of ULEE?</h2>
+            <p>You will need to log in again to see your dashboard, applications and saved rooms.</p>
+            <div class="modal-row">
+                <button type="button" class="btn-cancel" id="cancelLogout">Cancel</button>
+                <button type="button" class="btn-danger" id="confirmLogout">Log out</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            var modal = document.getElementById('logoutModal');
+            var openBtn = document.getElementById('openLogout');
+            if (!modal || !openBtn) return;
+            function close() { modal.classList.remove('open'); openBtn.focus(); }
+            openBtn.addEventListener('click', function () {
+                modal.classList.add('open');
+                document.getElementById('cancelLogout').focus();
+            });
+            document.getElementById('cancelLogout').addEventListener('click', close);
+            document.getElementById('confirmLogout').addEventListener('click', function () {
+                document.getElementById('logoutForm').submit();
+            });
+            modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+            document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && modal.classList.contains('open')) close(); });
+        })();
+    </script>
+
+</th:block>
+
+</body>
+</html>

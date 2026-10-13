@@ -1,21 +1,22 @@
 const STEPS = [
-  { label: 'Basic info' },
-  { label: 'Pricing & location' },
-  { label: 'Description' },
-  { label: 'Amenities' },
-  { label: 'Photos' },
-  { label: 'Features' },
-  { label: 'Review' }
+    { label: 'Basic info' },
+    { label: 'Pricing & location' },
+    { label: 'Description' },
+    { label: 'Amenities' },
+    { label: 'Photos' },
+    { label: 'Features' },
+    { label: 'Review' }
 ];
 
 // NEW: option lists for the two new fields. Values are exactly what the
 // controller stores in Property.occupantRestriction / acceptedFunding.
 const OCCUPANT_OPTIONS = ['Mixed', 'Female only', 'Male only', 'Seniors only', 'First years'];
+const SUBURB_OPTIONS = ['On Campus', 'Summerstrand', 'Humewood', 'Town', 'North End', 'Central', 'Pier 14'];
 const FUNDING_OPTIONS = [
-  { value: 'Any', label: 'Any (all funding types)' },
-  { value: 'NSFAS', label: 'NSFAS' },
-  { value: 'Bursary', label: 'Bursary' },
-  { value: 'Self-Paying', label: 'Self-Paying' }
+    { value: 'Any', label: 'Any (all funding types)' },
+    { value: 'NSFAS', label: 'NSFAS' },
+    { value: 'Bursary', label: 'Bursary' },
+    { value: 'Self-Paying', label: 'Self-Paying' }
 ];
 
 let currentStep = 0;
@@ -31,26 +32,26 @@ const AMENITY_CATEGORIES = window.AMENITY_CATEGORIES || {};
 // Flat id -> name map, so the preview card can render amenity BADGES
 // (names) rather than just a count of how many are ticked.
 const AMENITY_NAMES = (() => {
-  const map = {};
-  Object.values(AMENITY_CATEGORIES).forEach(list => {
-    (list || []).forEach(a => { map[a.amenityID] = a.name; });
-  });
-  return map;
+    const map = {};
+    Object.values(AMENITY_CATEGORIES).forEach(list => {
+        (list || []).forEach(a => { map[a.amenityID] = a.name; });
+    });
+    return map;
 })();
 
 const state = {
-  title: '',
-  type: '',
-  capacity: '1',
-  occupantRestriction: 'Mixed',   // NEW
-  city: '',
-  address: '',
-  commuteType: '',
-  rent: '',
-  deposit: '',
-  acceptedFunding: 'Any',         // NEW
-  availableFrom: '',
-  description: ''
+    title: '',
+    type: '',
+    capacity: '',                   // CHANGED: was '1'. Starts empty so the landlord has to answer it.
+    occupantRestriction: 'Mixed',   // NEW
+    surburb: '',
+    address: '',
+    commuteType: '',
+    rent: '',
+    deposit: '',
+    acceptedFunding: 'Any',         // NEW
+    availableFrom: '',
+    description: ''
 };
 
 // ── Required-field validation ──
@@ -60,11 +61,11 @@ const state = {
 // instead — see updateNavButtons() below. The readiness checklist in the
 // right column surfaces this BEFORE they get there.
 const REQUIRED_FIELDS = [
-  { key: 'title', label: 'Property title', step: 0, validate: v => !!(v && v.trim().length > 0) },
-  { key: 'capacity', label: 'Capacity', step: 0, validate: v => !!(v && Number(v) >= 1) },
-  // Mirrors MIN_RENT in PropertyController. Keep the two in step.
-  { key: 'rent', label: 'Monthly rent (at least R1 000)', step: 1, validate: v => !!(v && Number(v) >= 1000) },
-  { key: 'address', label: 'Full address', step: 1, validate: v => !!(v && v.trim().length > 0) }
+    { key: 'title', label: 'Property title', step: 0, validate: v => !!(v && v.trim().length > 0) },
+    { key: 'capacity', label: 'Capacity', step: 0, validate: v => !!(v && Number(v) >= 1) },
+    // Mirrors MIN_RENT in PropertyController. Keep the two in step.
+    { key: 'rent', label: 'Monthly rent (at least R1 000)', step: 1, validate: v => !!(v && Number(v) >= 1000) },
+    { key: 'address', label: 'Full address', step: 1, validate: v => !!(v && v.trim().length > 0) }
 ];
 
 // Only start showing red borders once the landlord has actually tried to
@@ -72,18 +73,60 @@ const REQUIRED_FIELDS = [
 let validationAttempted = false;
 
 function isRequiredFieldInvalid(key) {
-  const field = REQUIRED_FIELDS.find(f => f.key === key);
-  if (!field) return false;
-  return validationAttempted && !field.validate(state[key]);
+    const field = REQUIRED_FIELDS.find(f => f.key === key);
+    if (!field) return false;
+    return validationAttempted && !field.validate(state[key]);
 }
 
 function invalidClass(key) {
-  return isRequiredFieldInvalid(key) ? 'field-invalid' : '';
+    return isRequiredFieldInvalid(key) ? 'field-invalid' : '';
 }
 
 function getInvalidRequiredFields() {
-  syncStateFromDOM();
-  return REQUIRED_FIELDS.filter(f => !f.validate(state[f.key]));
+    syncStateFromDOM();
+    return REQUIRED_FIELDS.filter(f => !f.validate(state[f.key]));
+}
+
+// ── Unique property names ──
+// Asks the server whether another property already uses this title. If the
+// request fails for any reason it answers "not taken" — the server repeats
+// the check when saving, so this is only for a friendlier experience.
+async function isTitleTaken(title) {
+    const t = (title || '').trim();
+    if (!t) return false;
+    try {
+        const res = await fetch('/check-property-title?title=' + encodeURIComponent(t), {
+            headers: { 'Accept': 'application/json' },
+            credentials: 'same-origin'
+        });
+        if (!res.ok) return false;
+        const data = await res.json();
+        return data.taken === true;
+    } catch (e) {
+        return false;
+    }
+}
+
+// Tells the landlord the name is taken, then takes them back to the title field.
+async function warnTitleTaken() {
+    await UleeModal.alert({
+        tone: 'warn',
+        title: 'That property name is already taken',
+        message: 'Every property needs its own name. Please choose a different title.',
+        okText: 'Change name'
+    });
+    if (currentStep !== 0) {
+        currentStep = 0;
+        renderTracker();
+        renderStepContent();
+    }
+    const el = document.querySelector('[name="title"]');
+    if (el) {
+        el.classList.add('ul-invalid');
+        el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        el.focus();
+        el.select();
+    }
 }
 
 // Clears the red border live as soon as the landlord fixes a field, and
@@ -91,85 +134,85 @@ function getInvalidRequiredFields() {
 // Also repaints the preview card on every keystroke — that live link is
 // the whole point of the right-hand column.
 function wireValidationListeners() {
-  const stepFieldNames = ['title', 'capacity', 'occupantRestriction', 'rent', 'address', 'city', 'type', 'commuteType', 'deposit', 'acceptedFunding', 'description'];
+    const stepFieldNames = ['title', 'capacity', 'occupantRestriction', 'rent', 'address', 'surburbstep', 'type', 'commuteType', 'deposit', 'acceptedFunding', 'description'];
 
-  stepFieldNames.forEach(name => {
-    const el = document.querySelector(`[name="${name}"]`);
-    if (!el) return;
-    const evt = el.tagName === 'SELECT' ? 'change' : 'input';
-    el.addEventListener(evt, () => {
-      state[name] = el.value;
+    stepFieldNames.forEach(name => {
+        const el = document.querySelector(`[name="${name}"]`);
+        if (!el) return;
+        const evt = el.tagName === 'SELECT' ? 'change' : 'input';
+        el.addEventListener(evt, () => {
+            state[name] = el.value;
 
-      const rule = REQUIRED_FIELDS.find(f => f.key === name);
-      if (rule) {
-        if (rule.validate(el.value)) {
-          el.classList.remove('field-invalid');
-        } else if (validationAttempted) {
-          el.classList.add('field-invalid');
-        }
-      }
-      // popup validation highlight (from UleeModal.collectProblems) clears once the browser says it's valid
-      if (el.checkValidity && el.checkValidity()) el.classList.remove('ul-invalid');
+            const rule = REQUIRED_FIELDS.find(f => f.key === name);
+            if (rule) {
+                if (rule.validate(el.value)) {
+                    el.classList.remove('field-invalid');
+                } else if (validationAttempted) {
+                    el.classList.add('field-invalid');
+                }
+            }
+            // popup validation highlight (from UleeModal.collectProblems) clears once the browser says it's valid
+            if (el.checkValidity && el.checkValidity()) el.classList.remove('ul-invalid');
 
-      renderPreview();
-      renderReadiness();
+            renderPreview();
+            renderReadiness();
+        });
     });
-  });
 }
 
 function injectValidationStyles() {
-  if (document.getElementById('requiredFieldValidationStyles')) return;
-  const style = document.createElement('style');
-  style.id = 'requiredFieldValidationStyles';
-  style.textContent = `
+    if (document.getElementById('requiredFieldValidationStyles')) return;
+    const style = document.createElement('style');
+    style.id = 'requiredFieldValidationStyles';
+    style.textContent = `
     .field-invalid { border: 2px solid #dc2626 !important; background: #fef2f2 !important; }
     .required-asterisk { color: #dc2626; font-weight: 700; margin-left: 3px; }
   `;
-  document.head.appendChild(style);
+    document.head.appendChild(style);
 }
 
 function syncStateFromDOM() {
-  const getVal = (name) => {
-    // FIX: for radio groups, read the CHECKED one. The old code read the
-    // first radio's value, which silently reset "Sharing"/"Commune" back to
-    // "Single Room" every time the preview repainted.
-    if (document.querySelector(`input[type="radio"][name="${name}"]`)) {
-      const checked = document.querySelector(`input[type="radio"][name="${name}"]:checked`);
-      return checked ? checked.value : (state[name] || '');
-    }
-    const el = document.querySelector(`[name="${name}"]`);
-    return el ? el.value : (state[name] || '');
-  };
-  state.title = getVal('title');
-  state.type = getVal('type');
-  state.capacity = getVal('capacity');
-  state.occupantRestriction = getVal('occupantRestriction') || 'Mixed';
-  state.city = getVal('city');
-  state.address = getVal('address');
-  state.commuteType = getVal('commuteType');
-  state.rent = getVal('rent');
-  state.deposit = getVal('deposit');
-  state.acceptedFunding = getVal('acceptedFunding') || 'Any';
-  state.availableFrom = getVal('availableFrom');
-  state.description = getVal('description');
+    const getVal = (name) => {
+        // FIX: for radio groups, read the CHECKED one. The old code read the
+        // first radio's value, which silently reset "Sharing"/"Commune" back to
+        // "Single Room" every time the preview repainted.
+        if (document.querySelector(`input[type="radio"][name="${name}"]`)) {
+            const checked = document.querySelector(`input[type="radio"][name="${name}"]:checked`);
+            return checked ? checked.value : (state[name] || '');
+        }
+        const el = document.querySelector(`[name="${name}"]`);
+        return el ? el.value : (state[name] || '');
+    };
+    state.title = getVal('title');
+    state.type = getVal('type');
+    state.capacity = getVal('capacity');
+    state.occupantRestriction = getVal('occupantRestriction') || 'Mixed';
+    state.suburb = getVal('suburb');
+    state.address = getVal('address');
+    state.commuteType = getVal('commuteType');
+    state.rent = getVal('rent');
+    state.deposit = getVal('deposit');
+    state.acceptedFunding = getVal('acceptedFunding') || 'Any';
+    state.availableFrom = getVal('availableFrom');
+    state.description = getVal('description');
 }
 
 // ── Tracker: numbered dots only. The step's NAME is printed once, in the
 //    caption above, instead of seven uppercase labels fighting the panel
 //    heading right below them. ──
 function renderTracker() {
-  const tracker = document.getElementById('stepsTracker');
-  const fill = document.getElementById('progressFill');
-  const count = document.getElementById('stepCount');
-  const name = document.getElementById('stepName');
+    const tracker = document.getElementById('stepsTracker');
+    const fill = document.getElementById('progressFill');
+    const count = document.getElementById('stepCount');
+    const name = document.getElementById('stepName');
 
-  if (count) count.textContent = `Step ${currentStep + 1} of ${STEPS.length}`;
-  if (name) name.textContent = STEPS[currentStep].label;
+    if (count) count.textContent = `Step ${currentStep + 1} of ${STEPS.length}`;
+    if (name) name.textContent = STEPS[currentStep].label;
 
-  if (fill) fill.style.width = `${((currentStep + 1) / STEPS.length) * 100}%`;
-  if (!tracker) return;
+    if (fill) fill.style.width = `${((currentStep + 1) / STEPS.length) * 100}%`;
+    if (!tracker) return;
 
-  tracker.innerHTML = STEPS.map((s, i) => `
+    tracker.innerHTML = STEPS.map((s, i) => `
     <button type="button"
             class="step-dot ${i === currentStep ? 'active' : ''} ${i < currentStep ? 'completed' : ''}"
             onclick="jumpToStep(${i})"
@@ -182,12 +225,12 @@ function renderTracker() {
 }
 
 function renderStepContent() {
-  const panel = document.getElementById('stepPanel');
-  if (!panel) return;
+    const panel = document.getElementById('stepPanel');
+    if (!panel) return;
 
-  switch(currentStep) {
-    case 0:
-      panel.innerHTML = `
+    switch(currentStep) {
+        case 0:
+            panel.innerHTML = `
         <div class="panel-header">
           <h2>Basic info &amp; accommodation type</h2>
           <p>Start by giving your listing a title and selecting the room setup.</p>
@@ -196,6 +239,7 @@ function renderStepContent() {
           <div class="field f-col-2">
             <label>Property title<span class="required-asterisk">*</span></label>
             <input type="text" name="title" placeholder="e.g. The Dunes Student Residence" value="${escapeHtml(state.title)}" required class="${invalidClass('title')}" />
+            <p class="hint-text">Every property needs its own name — no two properties can share one.</p>
           </div>
           <div class="field f-col-2">
             <label>Room type</label>
@@ -239,10 +283,10 @@ function renderStepContent() {
             <p class="hint-text">Tell students who this place is for.</p>
           </div>
         </div>`;
-      break;
+            break;
 
-    case 1:
-      panel.innerHTML = `
+        case 1:
+            panel.innerHTML = `
         <div class="panel-header">
           <h2>Pricing &amp; location</h2>
           <p>Students filter by price and distance, so these two do most of the work.</p>
@@ -265,8 +309,11 @@ function renderStepContent() {
             <p class="hint-text">Choose "Any" if you take every funding type.</p>
           </div>
           <div class="field">
-            <label>Suburb</label>
-            <input type="text" name="city" placeholder="e.g. Summerstrand" value="${escapeHtml(state.city)}" />
+            <label for="suburb">Suburb</label>
+            <select id="suburb" name="suburb">
+               <option value="">Select a suburb</option>
+               ${SUBURB_OPTIONS.map(s => `<option value="${s}" ${state.suburb === s ? 'selected' : ''}>${s}</option>`).join('')}
+            </select>
           </div>
           <div class="field">
             <label>Full address<span class="required-asterisk">*</span></label>
@@ -294,10 +341,10 @@ function renderStepContent() {
             </div>
           </div>
         </div>`;
-      break;
+            break;
 
-    case 2:
-      panel.innerHTML = `
+        case 2:
+            panel.innerHTML = `
         <div class="panel-header">
           <h2>Description</h2>
           <p>Highlight key selling points, house rules, and nearby universities.</p>
@@ -308,10 +355,10 @@ function renderStepContent() {
             <textarea name="description" placeholder="Tell students what makes this place worth renting...">${escapeHtml(state.description)}</textarea>
           </div>
         </div>`;
-      break;
+            break;
 
-    case 3:
-      panel.innerHTML = `
+        case 3:
+            panel.innerHTML = `
         <div class="panel-header">
           <h2>Amenities</h2>
           <p>Tick everything included. The first three appear as badges on your listing card — watch them land on the right.</p>
@@ -319,11 +366,11 @@ function renderStepContent() {
         <div id="amenitiesContainer">
           ${renderAmenityCategories()}
         </div>`;
-      wireAmenityCheckboxes();
-      break;
+            wireAmenityCheckboxes();
+            break;
 
-    case 4:
-      panel.innerHTML = `
+        case 4:
+            panel.innerHTML = `
         <div class="panel-header">
           <h2>Photos</h2>
           <p>Your cover photo fills the empty slot in the preview. Listings with five or more photos get seen more.</p>
@@ -344,12 +391,12 @@ function renderStepContent() {
             <div class="photo-grid" id="photosPreview"></div>
           </div>
         </div>`;
-      setupImageHandlers();
-      renderPhotoPreviews();
-      break;
+            setupImageHandlers();
+            renderPhotoPreviews();
+            break;
 
-    case 5:
-      panel.innerHTML = `
+        case 5:
+            panel.innerHTML = `
         <div class="panel-header">
           <h2>Special features</h2>
           <p>Unique highlights like braai areas, study hubs, or game rooms. You can attach photos to each one later from Manage Property.</p>
@@ -364,11 +411,11 @@ function renderStepContent() {
             <div class="feature-tag-wrap" id="featureTagList"></div>
           </div>
         </div>`;
-      renderFeatureTags();
-      break;
+            renderFeatureTags();
+            break;
 
-    case 6:
-      panel.innerHTML = `
+        case 6:
+            panel.innerHTML = `
         <div class="panel-header">
           <h2>Review</h2>
           <p>Check everything below, then publish.</p>
@@ -376,126 +423,125 @@ function renderStepContent() {
         <div class="review-table">
           <div class="review-row"><span class="review-key">Title</span><span class="review-val">${escapeHtml(state.title) || '—'}</span></div>
           <div class="review-row"><span class="review-key">Room type</span><span class="review-val">${escapeHtml(state.type) || '—'}</span></div>
-          <div class="review-row"><span class="review-key">Capacity</span><span class="review-val">${escapeHtml(state.capacity) || '—'} student(s)</span></div>
+          <div class="review-row"><span class="review-key">Capacity</span><span class="review-val">${state.capacity ? escapeHtml(state.capacity) + ' student(s)' : '—'}</span></div>
           <div class="review-row"><span class="review-key">Who can stay</span><span class="review-val">${escapeHtml(state.occupantRestriction) || 'Mixed'}</span></div>
           <div class="review-row"><span class="review-key">Monthly rent</span><span class="review-val price">R${escapeHtml(state.rent || '0')} / mo</span></div>
           <div class="review-row"><span class="review-key">Deposit</span><span class="review-val">R${escapeHtml(state.deposit || '0')}</span></div>
           <div class="review-row"><span class="review-key">Accepted funding</span><span class="review-val">${escapeHtml(state.acceptedFunding) || 'Any'}</span></div>
-          <div class="review-row"><span class="review-key">Location</span><span class="review-val">${escapeHtml(state.address)}${state.city ? ', ' + escapeHtml(state.city) : ''}</span></div>
+          <span class="review-val">${escapeHtml(state.address)}${state.suburb ? ', ' + escapeHtml(state.suburb) : ''}</span>
           <div class="review-row"><span class="review-key">Commute</span><span class="review-val">${escapeHtml(state.commuteType) || '—'}</span></div>
           <div class="review-row"><span class="review-key">Amenities</span><span class="review-val">${selectedAmenityIds.size} selected</span></div>
           <div class="review-row"><span class="review-key">Special features</span><span class="review-val">${customFeatures.length ? customFeatures.map(escapeHtml).join(', ') : '—'}</span></div>
           <div class="review-row"><span class="review-key">Photos</span><span class="review-val">${accumulatedImages.length + (coverImageFile ? 1 : 0)} attached</span></div>
         </div>`;
-      break;
-  }
+            break;
+    }
 
-  wireValidationListeners();
-  updateNavButtons();
-  renderPreview();
-  renderReadiness();
+    wireValidationListeners();
+    updateNavButtons();
+    renderPreview();
+    renderReadiness();
 }
 
 // ── The live listing card. This is the same shape students see on the
 //    browse grid, so the landlord is never guessing what they're building. ──
 function renderPreview() {
-  syncStateFromDOM();
+    syncStateFromDOM();
 
-  const titleEl = document.getElementById('previewTitle');
-  if (titleEl) {
-    titleEl.textContent = state.title.trim() || 'Untitled listing';
-    titleEl.classList.toggle('is-placeholder', !state.title.trim());
-  }
-
-  const rentEl = document.getElementById('previewRent');
-  if (rentEl) {
-    const rent = Number(state.rent);
-    rentEl.textContent = rent > 0 ? `R${rent.toLocaleString('en-ZA')} / month` : 'R— / month';
-    rentEl.classList.toggle('is-placeholder', !(rent > 0));
-  }
-
-  const locEl = document.getElementById('previewLocation');
-  if (locEl) {
-    const parts = [state.address.trim(), state.city.trim()].filter(Boolean);
-    locEl.textContent = parts.length ? parts.join(', ') : 'Address not set';
-    locEl.classList.toggle('is-placeholder', parts.length === 0);
-  }
-
-  const typeEl = document.getElementById('previewType');
-  if (typeEl) {
-    const bits = [state.type, state.capacity ? `${state.capacity} student(s)` : ''].filter(Boolean);
-    typeEl.textContent = bits.length ? bits.join(' · ') : 'Room type';
-    typeEl.classList.toggle('is-placeholder', bits.length === 0);
-  }
-
-  // Amenity badges — the first three, matching the real card's behaviour.
-  const badgeWrap = document.getElementById('previewBadges');
-  if (badgeWrap) {
-    const names = [...selectedAmenityIds].map(id => AMENITY_NAMES[id]).filter(Boolean).slice(0, 3);
-    const extra = selectedAmenityIds.size - names.length;
-    badgeWrap.innerHTML = names.map(n => `<span class="listing-badge">${escapeHtml(n)}</span>`).join('')
-        + (extra > 0 ? `<span class="listing-badge listing-badge--more">+${extra}</span>` : '');
-  }
-
-  // Cover photo fills the empty slot once it exists.
-  const img = document.getElementById('previewImage');
-  const empty = document.getElementById('previewMediaEmpty');
-  if (img && empty) {
-    if (coverImageFile) {
-      img.src = URL.createObjectURL(coverImageFile);
-      img.classList.add('is-visible');
-      empty.style.display = 'none';
-    } else {
-      img.classList.remove('is-visible');
-      img.removeAttribute('src');
-      empty.style.display = '';
+    const titleEl = document.getElementById('previewTitle');
+    if (titleEl) {
+        titleEl.textContent = state.title.trim() || 'Untitled listing';
+        titleEl.classList.toggle('is-placeholder', !state.title.trim());
     }
-  }
+
+    const rentEl = document.getElementById('previewRent');
+    if (rentEl) {
+        const rent = Number(state.rent);
+        rentEl.textContent = rent > 0 ? `R${rent.toLocaleString('en-ZA')} / month` : 'R— / month';
+        rentEl.classList.toggle('is-placeholder', !(rent > 0));
+    }
+    const locEl = document.getElementById('previewLocation');
+    if (locEl) {
+        const sub = state.suburb.trim();
+        locEl.textContent = sub || 'Suburb not set';
+        locEl.classList.toggle('is-placeholder', !sub);
+    }
+
+    const typeEl = document.getElementById('previewType');
+    if (typeEl) {
+        const bits = [state.type, state.capacity ? `${state.capacity} student(s)` : ''].filter(Boolean);
+        typeEl.textContent = bits.length ? bits.join(' · ') : 'Room type';
+        typeEl.classList.toggle('is-placeholder', bits.length === 0);
+    }
+
+    // Amenity badges — the first three, matching the real card's behaviour.
+    const badgeWrap = document.getElementById('previewBadges');
+    if (badgeWrap) {
+        const names = [...selectedAmenityIds].map(id => AMENITY_NAMES[id]).filter(Boolean).slice(0, 3);
+        const extra = selectedAmenityIds.size - names.length;
+        badgeWrap.innerHTML = names.map(n => `<span class="listing-badge">${escapeHtml(n)}</span>`).join('')
+            + (extra > 0 ? `<span class="listing-badge listing-badge--more">+${extra}</span>` : '');
+    }
+
+    // Cover photo fills the empty slot once it exists.
+    const img = document.getElementById('previewImage');
+    const empty = document.getElementById('previewMediaEmpty');
+    if (img && empty) {
+        if (coverImageFile) {
+            img.src = URL.createObjectURL(coverImageFile);
+            img.classList.add('is-visible');
+            empty.style.display = 'none';
+        } else {
+            img.classList.remove('is-visible');
+            img.removeAttribute('src');
+            empty.style.display = '';
+        }
+    }
 }
 
 // ── Readiness checklist: makes the draft-downgrade rule visible
 //    before the landlord hits Publish, instead of after. ──
 function renderReadiness() {
-  const list = document.getElementById('readinessList');
-  const countEl = document.getElementById('readinessCount');
-  const titleEl = document.getElementById('readinessTitle');
-  const noteEl = document.getElementById('readinessNote');
-  const wrap = document.getElementById('readiness');
-  if (!list) return;
+    const list = document.getElementById('readinessList');
+    const countEl = document.getElementById('readinessCount');
+    const titleEl = document.getElementById('readinessTitle');
+    const noteEl = document.getElementById('readinessNote');
+    const wrap = document.getElementById('readiness');
+    if (!list) return;
 
-  syncStateFromDOM();
+    syncStateFromDOM();
 
-  const done = REQUIRED_FIELDS.filter(f => f.validate(state[f.key]));
-  const allDone = done.length === REQUIRED_FIELDS.length;
+    const done = REQUIRED_FIELDS.filter(f => f.validate(state[f.key]));
+    const allDone = done.length === REQUIRED_FIELDS.length;
 
-  list.innerHTML = REQUIRED_FIELDS.map(f => {
-    const ok = f.validate(state[f.key]);
-    return `
+    list.innerHTML = REQUIRED_FIELDS.map(f => {
+        const ok = f.validate(state[f.key]);
+        return `
       <li class="readiness-item ${ok ? 'is-done' : ''}">
         <button type="button" onclick="jumpToStep(${f.step})">
           <span class="readiness-mark" aria-hidden="true">${ok ? '✓' : ''}</span>
           <span>${f.label}</span>
         </button>
       </li>`;
-  }).join('');
+    }).join('');
 
-  if (countEl) countEl.textContent = `${done.length} of ${REQUIRED_FIELDS.length}`;
-  if (wrap) wrap.classList.toggle('is-ready', allDone);
-  if (titleEl) titleEl.textContent = allDone ? 'Ready to publish' : 'Needed to publish';
-  if (noteEl) {
-    noteEl.textContent = allDone
-        ? 'You can publish from the review step whenever you\'re ready.'
-        : 'Anything still missing saves as a draft instead of going live.';
-  }
+    if (countEl) countEl.textContent = `${done.length} of ${REQUIRED_FIELDS.length}`;
+    if (wrap) wrap.classList.toggle('is-ready', allDone);
+    if (titleEl) titleEl.textContent = allDone ? 'Ready to publish' : 'Needed to publish';
+    if (noteEl) {
+        noteEl.textContent = allDone
+            ? 'You can publish from the review step whenever you\'re ready.'
+            : 'Anything still missing saves as a draft instead of going live.';
+    }
 }
 
 // ── Amenities: built from the real DB categories passed in by Thymeleaf ──
 function renderAmenityCategories() {
-  const categoryNames = Object.keys(AMENITY_CATEGORIES);
-  if (categoryNames.length === 0) {
-    return `<p class="hint-text">No amenities configured yet. Ask an admin to add some to the amenity table.</p>`;
-  }
-  return categoryNames.map(cat => `
+    const categoryNames = Object.keys(AMENITY_CATEGORIES);
+    if (categoryNames.length === 0) {
+        return `<p class="hint-text">No amenities configured yet. Ask an admin to add some to the amenity table.</p>`;
+    }
+    return categoryNames.map(cat => `
     <div class="amenity-cat">
       <div class="amenity-cat-title">${escapeHtml(cat)}</div>
       <div class="amenity-grid-list">
@@ -509,94 +555,111 @@ function renderAmenityCategories() {
 }
 
 function wireAmenityCheckboxes() {
-  document.querySelectorAll('.amenity-checkbox').forEach(cb => {
-    cb.addEventListener('change', () => {
-      const id = parseInt(cb.value, 10);
-      if (cb.checked) selectedAmenityIds.add(id);
-      else selectedAmenityIds.delete(id);
-      renderPreview(); // badges land on the card as they tick
+    document.querySelectorAll('.amenity-checkbox').forEach(cb => {
+        cb.addEventListener('change', () => {
+            const id = parseInt(cb.value, 10);
+            if (cb.checked) selectedAmenityIds.add(id);
+            else selectedAmenityIds.delete(id);
+            renderPreview(); // badges land on the card as they tick
+        });
     });
-  });
 }
 
 function selectTile(element, fieldName) {
-  const container = element.closest('.tile-selector');
-  container.querySelectorAll('.tile-option').forEach(el => el.classList.remove('selected'));
-  element.classList.add('selected');
-  const input = element.querySelector('input');
-  input.checked = true;
-  state[fieldName] = input.value;
-  renderPreview();
+    const container = element.closest('.tile-selector');
+    container.querySelectorAll('.tile-option').forEach(el => el.classList.remove('selected'));
+    element.classList.add('selected');
+    const input = element.querySelector('input');
+    input.checked = true;
+    state[fieldName] = input.value;
+    renderPreview();
 }
 
-function navigateStep(dir) {
-  syncStateFromDOM();
+// async now: leaving step 1 also asks the server whether the title is taken.
+async function navigateStep(dir) {
+    syncStateFromDOM();
 
-  if (dir === 1 && currentStep === 0 && (!state.title || !state.title.trim())) {
-    UleeModal.alert({
-      tone: 'warn',
-      title: 'Add a property title',
-      message: 'Students see the title first, so please enter one before continuing.',
-      okText: 'Got it'
-    });
-    return;
-  }
+    if (dir === 1 && currentStep === 0 && (!state.title || !state.title.trim())) {
+        UleeModal.alert({
+            tone: 'warn',
+            title: 'Add a property title',
+            message: 'Students see the title first, so please enter one before continuing.',
+            okText: 'Got it'
+        });
+        return;
+    }
 
-  if (dir === 1 && currentStep === 0 && (!state.capacity || Number(state.capacity) < 1)) {
-    UleeModal.alert({
-      tone: 'warn',
-      title: 'Add the capacity',
-      message: 'Enter how many students this listing can hold (at least 1).',
-      okText: 'Got it'
-    });
-    return;
-  }
+    if (dir === 1 && currentStep === 0 && (!state.capacity || Number(state.capacity) < 1)) {
+        UleeModal.alert({
+            tone: 'warn',
+            title: 'Add the capacity',
+            message: 'Enter how many students this listing can hold (at least 1).',
+            okText: 'Got it'
+        });
+        return;
+    }
 
-  // After the Photos step, ask whether the landlord wants to add any
-  // special features (braai area, study hub, etc.) before deciding whether
-  // to show the Features step or skip straight to Review.
-  if (dir === 1 && currentStep === 4) {
-    openSpecialFeatureModal();
-    return;
-  }
+    // NEW: no two properties may share a name.
+    if (dir === 1 && currentStep === 0 && await isTitleTaken(state.title)) {
+        await warnTitleTaken();
+        return;
+    }
 
-  currentStep = Math.max(0, Math.min(STEPS.length - 1, currentStep + dir));
-  renderTracker();
-  renderStepContent();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+    // After the Photos step, ask whether the landlord wants to add any
+    // special features (braai area, study hub, etc.) before deciding whether
+    // to show the Features step or skip straight to Review.
+    if (dir === 1 && currentStep === 4) {
+        openSpecialFeatureModal();
+        return;
+    }
+
+    currentStep = Math.max(0, Math.min(STEPS.length - 1, currentStep + dir));
+    renderTracker();
+    renderStepContent();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function jumpToStep(idx) {
-  syncStateFromDOM();
-  if (idx > currentStep && (!state.title || !state.title.trim())) {
-    UleeModal.alert({
-      tone: 'warn',
-      title: 'Finish the basic info first',
-      message: 'Add a property title before jumping ahead.',
-      okText: 'Got it'
-    });
-    return;
-  }
-  currentStep = idx;
-  renderTracker();
-  renderStepContent();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+    syncStateFromDOM();
+    if (idx > currentStep && (!state.title || !state.title.trim())) {
+        UleeModal.alert({
+            tone: 'warn',
+            title: 'Finish the basic info first',
+            message: 'Add a property title before jumping ahead.',
+            okText: 'Got it'
+        });
+        return;
+    }
+    // NEW: the step dots used to let a landlord skip past an empty capacity.
+    if (idx > currentStep && (!state.capacity || Number(state.capacity) < 1)) {
+        UleeModal.alert({
+            tone: 'warn',
+            title: 'Add the capacity first',
+            message: 'Enter how many students this listing can hold (at least 1) before jumping ahead.',
+            okText: 'Got it'
+        });
+        return;
+    }
+    currentStep = idx;
+    renderTracker();
+    renderStepContent();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function openSpecialFeatureModal() {
-  const modal = document.getElementById('specialFeatureModal');
-  if (modal) modal.classList.add('active');
+    const modal = document.getElementById('specialFeatureModal');
+    if (modal) modal.classList.add('active');
 }
 
 // wantsFeatures = true  -> go to the Features step (index 5)
 // wantsFeatures = false -> skip straight to Review (index 6)
 function closeSpecialModal(wantsFeatures) {
-  const modal = document.getElementById('specialFeatureModal');
-  if (modal) modal.classList.remove('active');
-  currentStep = wantsFeatures ? 5 : 6;
-  renderTracker();
-  renderStepContent();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+    const modal = document.getElementById('specialFeatureModal');
+    if (modal) modal.classList.remove('active');
+    currentStep = wantsFeatures ? 5 : 6;
+    renderTracker();
+    renderStepContent();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // IMPORTANT: nextBtn's type attribute is NEVER changed to "submit" here.
@@ -607,147 +670,147 @@ function closeSpecialModal(wantsFeatures) {
 // Review step. Instead, the button stays type="button" permanently, and on
 // the final step we submit explicitly and deliberately via requestSubmit().
 function updateNavButtons() {
-  const prevBtn = document.getElementById('prevBtn');
-  const nextBtn = document.getElementById('nextBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
 
-  if (prevBtn) prevBtn.style.visibility = currentStep === 0 ? 'hidden' : 'visible';
-  if (nextBtn) {
-    if (currentStep === STEPS.length - 1) {
-      nextBtn.textContent = 'Publish listing';
-      nextBtn.onclick = async () => {
-        const invalid = getInvalidRequiredFields();
-        const form = document.getElementById('listPropertyForm');
+    if (prevBtn) prevBtn.style.visibility = currentStep === 0 ? 'hidden' : 'visible';
+    if (nextBtn) {
+        if (currentStep === STEPS.length - 1) {
+            nextBtn.textContent = 'Publish listing';
+            nextBtn.onclick = async () => {
+                const invalid = getInvalidRequiredFields();
+                const form = document.getElementById('listPropertyForm');
 
-        if (invalid.length === 0) {
-          setSubmitAction('submit');
-          if (form) form.requestSubmit(); // fires the 'submit' listener, unlike form.submit()
-          return;
+                if (invalid.length === 0) {
+                    setSubmitAction('submit');
+                    if (form) form.requestSubmit(); // fires the 'submit' listener, unlike form.submit()
+                    return;
+                }
+
+                // At least one required field is missing or invalid. The landlord
+                // chooses: fix it now (default), or save what they have as a draft.
+                validationAttempted = true;
+                const pick = await UleeModal.choice({
+                    tone: 'warn',
+                    title: "This listing isn't ready to publish",
+                    message: 'These still need valid values:',
+                    list: invalid.map(f => f.label),
+                    buttons: [
+                        { label: 'Save as draft', value: 'draft', style: 'ghost' },
+                        { label: 'Fix them now', value: 'fix', style: 'primary' }
+                    ]
+                });
+
+                if (pick === 'draft') {
+                    setSubmitAction('draft');
+                    // Pass the draft button as the submitter: it has formnovalidate,
+                    // so the browser doesn't block the draft on empty required fields.
+                    const draftBtn = document.getElementById('draftBtn');
+                    if (form) form.requestSubmit(draftBtn || undefined);
+                    return;
+                }
+
+                // Anything else (Fix them now / Esc / click outside): jump to the first problem.
+                currentStep = invalid[0].step;
+                renderTracker();
+                renderStepContent();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+        } else {
+            nextBtn.textContent = 'Continue';
+            nextBtn.onclick = () => navigateStep(1);
         }
-
-        // At least one required field is missing or invalid. The landlord
-        // chooses: fix it now (default), or save what they have as a draft.
-        validationAttempted = true;
-        const pick = await UleeModal.choice({
-          tone: 'warn',
-          title: "This listing isn't ready to publish",
-          message: 'These still need valid values:',
-          list: invalid.map(f => f.label),
-          buttons: [
-            { label: 'Save as draft', value: 'draft', style: 'ghost' },
-            { label: 'Fix them now', value: 'fix', style: 'primary' }
-          ]
-        });
-
-        if (pick === 'draft') {
-          setSubmitAction('draft');
-          // Pass the draft button as the submitter: it has formnovalidate,
-          // so the browser doesn't block the draft on empty required fields.
-          const draftBtn = document.getElementById('draftBtn');
-          if (form) form.requestSubmit(draftBtn || undefined);
-          return;
-        }
-
-        // Anything else (Fix them now / Esc / click outside): jump to the first problem.
-        currentStep = invalid[0].step;
-        renderTracker();
-        renderStepContent();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      };
-    } else {
-      nextBtn.textContent = 'Continue';
-      nextBtn.onclick = () => navigateStep(1);
     }
-  }
 }
 
 function setSubmitAction(val) {
-  const actionEl = document.getElementById('formAction');
-  if (actionEl) actionEl.value = val;
+    const actionEl = document.getElementById('formAction');
+    if (actionEl) actionEl.value = val;
 }
 
 function setupImageHandlers() {
-  const dropZone = document.getElementById('dropZone');
-  const fileInput = document.getElementById('additionalPhotosInput');
-  const coverInput = document.getElementById('coverImageInput');
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('additionalPhotosInput');
+    const coverInput = document.getElementById('coverImageInput');
 
-  // Cover photo drives the preview card's media slot.
-  if (coverInput) {
-    coverInput.onchange = () => {
-      coverImageFile = coverInput.files && coverInput.files[0] ? coverInput.files[0] : null;
-      renderPreview();
-    };
-  }
+    // Cover photo drives the preview card's media slot.
+    if (coverInput) {
+        coverInput.onchange = () => {
+            coverImageFile = coverInput.files && coverInput.files[0] ? coverInput.files[0] : null;
+            renderPreview();
+        };
+    }
 
-  if (dropZone && fileInput) {
-    dropZone.onclick = () => fileInput.click();
-    fileInput.onchange = () => {
-      for (const file of fileInput.files) accumulatedImages.push(file);
-      fileInput.value = '';
-      renderPhotoPreviews();
-    };
-    dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('dragover'); };
-    dropZone.ondragleave = () => dropZone.classList.remove('dragover');
-    dropZone.ondrop = (e) => {
-      e.preventDefault();
-      dropZone.classList.remove('dragover');
-      for (const file of e.dataTransfer.files) accumulatedImages.push(file);
-      renderPhotoPreviews();
-    };
-  }
+    if (dropZone && fileInput) {
+        dropZone.onclick = () => fileInput.click();
+        fileInput.onchange = () => {
+            for (const file of fileInput.files) accumulatedImages.push(file);
+            fileInput.value = '';
+            renderPhotoPreviews();
+        };
+        dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('dragover'); };
+        dropZone.ondragleave = () => dropZone.classList.remove('dragover');
+        dropZone.ondrop = (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            for (const file of e.dataTransfer.files) accumulatedImages.push(file);
+            renderPhotoPreviews();
+        };
+    }
 }
 
 function renderPhotoPreviews() {
-  const container = document.getElementById('photosPreview');
-  if (!container) return;
-  container.innerHTML = '';
-  accumulatedImages.forEach((file, index) => {
-    const item = document.createElement('div');
-    item.className = 'photo-item';
+    const container = document.getElementById('photosPreview');
+    if (!container) return;
+    container.innerHTML = '';
+    accumulatedImages.forEach((file, index) => {
+        const item = document.createElement('div');
+        item.className = 'photo-item';
 
-    const img = document.createElement('img');
-    img.src = URL.createObjectURL(file);
-    item.appendChild(img);
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        item.appendChild(img);
 
-    const rm = document.createElement('button');
-    rm.type = 'button';
-    rm.className = 'rm-btn';
-    rm.innerHTML = '×';
-    rm.onclick = () => {
-      accumulatedImages.splice(index, 1);
-      renderPhotoPreviews();
-    };
-    item.appendChild(rm);
-    container.appendChild(item);
-  });
+        const rm = document.createElement('button');
+        rm.type = 'button';
+        rm.className = 'rm-btn';
+        rm.innerHTML = '×';
+        rm.onclick = () => {
+            accumulatedImages.splice(index, 1);
+            renderPhotoPreviews();
+        };
+        item.appendChild(rm);
+        container.appendChild(item);
+    });
 }
 
 function addFeatureTag() {
-  const input = document.getElementById('featureInput');
-  if (!input) return;
-  const val = input.value.trim();
-  if (val && !customFeatures.includes(val)) {
-    customFeatures.push(val);
-    input.value = '';
-    renderFeatureTags();
-  }
+    const input = document.getElementById('featureInput');
+    if (!input) return;
+    const val = input.value.trim();
+    if (val && !customFeatures.includes(val)) {
+        customFeatures.push(val);
+        input.value = '';
+        renderFeatureTags();
+    }
 }
 
 function removeFeatureTag(idx) {
-  customFeatures.splice(idx, 1);
-  renderFeatureTags();
+    customFeatures.splice(idx, 1);
+    renderFeatureTags();
 }
 
 function renderFeatureTags() {
-  const wrap = document.getElementById('featureTagList');
-  if (!wrap) return;
-  wrap.innerHTML = customFeatures.map((f, i) => `
+    const wrap = document.getElementById('featureTagList');
+    if (!wrap) return;
+    wrap.innerHTML = customFeatures.map((f, i) => `
     <div class="feature-chip">${escapeHtml(f)} <span onclick="removeFeatureTag(${i})">×</span></div>
   `).join('');
 }
 
 function escapeHtml(str) {
-  if (!str) return '';
-  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 // ── The single place that turns everything the user has entered across every
@@ -756,81 +819,115 @@ function escapeHtml(str) {
 //    wizard only ever renders ONE step's inputs into the DOM at a time, so
 //    without this step, most fields (and all amenities) never reach Spring. ──
 function prepareFormForSubmit(form) {
-  syncStateFromDOM();
+    syncStateFromDOM();
 
-  // Wipe any hidden inputs we injected on a previous attempt, so re-submits
-  // (e.g. clicking Draft, going back, then Publish) don't duplicate fields.
-  form.querySelectorAll('.js-injected-field').forEach(el => el.remove());
+    // Wipe any hidden inputs we injected on a previous attempt, so re-submits
+    // (e.g. clicking Draft, going back, then Publish) don't duplicate fields.
+    form.querySelectorAll('.js-injected-field').forEach(el => el.remove());
 
-  const addHidden = (name, value) => {
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = name;
-    input.value = value != null ? value : '';
-    input.className = 'js-injected-field';
-    form.appendChild(input);
-  };
+    const addHidden = (name, value) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        input.value = value != null ? value : '';
+        input.className = 'js-injected-field';
+        form.appendChild(input);
+    };
 
-  // Only inject a hidden field for a given name if the currently-rendered
-  // step doesn't already have a live input with that name (avoids sending
-  // the same field twice when the user submits while sitting on that step).
-  const hasLiveField = (name) => !!form.querySelector(`[name="${name}"]:not(.js-injected-field)`);
+    // Only inject a hidden field for a given name if the currently-rendered
+    // step doesn't already have a live input with that name (avoids sending
+    // the same field twice when the user submits while sitting on that step).
+    const hasLiveField = (name) => !!form.querySelector(`[name="${name}"]:not(.js-injected-field)`);
 
-  // state now includes occupantRestriction and acceptedFunding, so both are
-  // sent from any step (as hidden fields) or natively when their step is showing.
-  Object.keys(state).forEach(key => {
-    if (!hasLiveField(key)) addHidden(key, state[key]);
-  });
+    // state now includes occupantRestriction and acceptedFunding, so both are
+    // sent from any step (as hidden fields) or natively when their step is showing.
+    Object.keys(state).forEach(key => {
+        if (!hasLiveField(key)) addHidden(key, state[key]);
+    });
 
-  selectedAmenityIds.forEach(id => addHidden('amenityIds', id));
-  customFeatures.forEach(name => addHidden('featureNames', name));
+    selectedAmenityIds.forEach(id => addHidden('amenityIds', id));
+    customFeatures.forEach(name => addHidden('featureNames', name));
 
-  // Additional photos.
-  const dataTransfer = new DataTransfer();
-  accumulatedImages.forEach(file => dataTransfer.items.add(file));
-  let hiddenImagesInput = document.getElementById('imagesSubmitInput');
-  if (!hiddenImagesInput) {
-    hiddenImagesInput = document.createElement('input');
-    hiddenImagesInput.type = 'file';
-    hiddenImagesInput.id = 'imagesSubmitInput';
-    hiddenImagesInput.name = 'images';
-    hiddenImagesInput.multiple = true;
-    hiddenImagesInput.style.display = 'none';
-    form.appendChild(hiddenImagesInput);
-  }
-  hiddenImagesInput.files = dataTransfer.files;
-
-  // Cover photo — the live input only exists while the Photos step is
-  // rendered, so re-attach it from memory when submitting from any other step.
-  if (coverImageFile && !hasLiveField('coverImage')) {
-    let hiddenCover = document.getElementById('coverSubmitInput');
-    if (!hiddenCover) {
-      hiddenCover = document.createElement('input');
-      hiddenCover.type = 'file';
-      hiddenCover.id = 'coverSubmitInput';
-      hiddenCover.name = 'coverImage';
-      hiddenCover.style.display = 'none';
-      form.appendChild(hiddenCover);
+    // Additional photos.
+    const dataTransfer = new DataTransfer();
+    accumulatedImages.forEach(file => dataTransfer.items.add(file));
+    let hiddenImagesInput = document.getElementById('imagesSubmitInput');
+    if (!hiddenImagesInput) {
+        hiddenImagesInput = document.createElement('input');
+        hiddenImagesInput.type = 'file';
+        hiddenImagesInput.id = 'imagesSubmitInput';
+        hiddenImagesInput.name = 'images';
+        hiddenImagesInput.multiple = true;
+        hiddenImagesInput.style.display = 'none';
+        form.appendChild(hiddenImagesInput);
     }
-    const coverTransfer = new DataTransfer();
-    coverTransfer.items.add(coverImageFile);
-    hiddenCover.files = coverTransfer.files;
-  }
+    hiddenImagesInput.files = dataTransfer.files;
+
+    // Cover photo — the live input only exists while the Photos step is
+    // rendered, so re-attach it from memory when submitting from any other step.
+    if (coverImageFile && !hasLiveField('coverImage')) {
+        let hiddenCover = document.getElementById('coverSubmitInput');
+        if (!hiddenCover) {
+            hiddenCover = document.createElement('input');
+            hiddenCover.type = 'file';
+            hiddenCover.id = 'coverSubmitInput';
+            hiddenCover.name = 'coverImage';
+            hiddenCover.style.display = 'none';
+            form.appendChild(hiddenCover);
+        }
+        const coverTransfer = new DataTransfer();
+        coverTransfer.items.add(coverImageFile);
+        hiddenCover.files = coverTransfer.files;
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  injectValidationStyles();
+    injectValidationStyles();
 
-  renderTracker();
-  renderStepContent();
+    renderTracker();
+    renderStepContent();
 
-  const form = document.getElementById('listPropertyForm');
-  if (form) {
-    // Native 'submit' fires for BOTH the Draft button (type=submit) and the
-    // Publish path via requestSubmit() — so this one listener covers every
-    // real way the form can be sent.
-    form.addEventListener('submit', function() {
-      prepareFormForSubmit(this);
-    });
-  }
+    // The server bounces a create request back here if the name was taken
+    // after all (the wizard normally catches it first, on Continue / submit).
+    const errorParam = new URLSearchParams(window.location.search).get('error');
+    if (errorParam === 'duplicate-title') {
+        window.history.replaceState({}, document.title, window.location.pathname);
+        UleeModal.alert({
+            tone: 'warn',
+            title: 'That property name is already taken',
+            message: "Your listing wasn't saved. Every property needs its own name, so please start again with a different title.",
+            okText: 'Got it'
+        });
+    }
+
+    const form = document.getElementById('listPropertyForm');
+    if (form) {
+        // Native 'submit' fires for BOTH the Draft button (type=submit) and the
+        // Publish path via requestSubmit() — so this one listener covers every
+        // real way the form can be sent.
+        //
+        // NEW: the first pass cancels the submit and asks the server whether the
+        // title is taken. If it's free, the form is submitted again with a flag
+        // set, and that second pass does the normal field preparation.
+        form.addEventListener('submit', function (e) {
+            if (form.dataset.titleChecked === '1') {
+                form.dataset.titleChecked = '';
+                prepareFormForSubmit(form);
+                return; // let it through
+            }
+
+            e.preventDefault();
+            const submitter = e.submitter || null;
+            syncStateFromDOM();
+
+            isTitleTaken(state.title).then(function (taken) {
+                if (taken) {
+                    warnTitleTaken();
+                    return;
+                }
+                form.dataset.titleChecked = '1';
+                form.requestSubmit(submitter || undefined);
+            });
+        });
+    }
 });
