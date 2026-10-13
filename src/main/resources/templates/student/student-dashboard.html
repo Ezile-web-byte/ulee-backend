@@ -316,15 +316,6 @@
         .um-input:focus { border-color: #006A6A; box-shadow: 0 0 0 3px rgba(0, 106, 106, .15); }
         .um-pw { position: relative; }
         .um-pw .um-input { padding-right: 46px; }
-        .um-pw-toggle {
-            position: absolute; top: 50%; right: 7px; transform: translateY(-50%);
-            width: 34px; height: 34px;
-            display: inline-flex; align-items: center; justify-content: center;
-            border: none; background: transparent; border-radius: 8px; cursor: pointer;
-            color: #6f787d;
-        }
-        .um-pw-toggle:hover { background: #F0F7F6; }
-        .um-pw-toggle:focus-visible { outline: 2px solid #006A6A; outline-offset: 1px; }
 
         .um-link { font-size: 13px; font-weight: 600; color: #006A6A; background: none; border: none; cursor: pointer; padding: 0; }
         .um-link:hover { text-decoration: underline; text-underline-offset: 2px; }
@@ -890,11 +881,10 @@
                 </div>
                 <div class="um-field">
                     <label class="um-label" for="loginPassword">Password</label>
+                    <!-- CHANGED: custom show/hide button removed — the browser's own
+                         "show password" icon (which appears while typing) is the only one now. -->
                     <div class="um-pw">
                         <input type="password" id="loginPassword" name="password" class="um-input" placeholder="Enter your password" required/>
-                        <button type="button" class="um-pw-toggle" aria-label="Show password" aria-pressed="false" onclick="toggleModalPassword('loginPassword', this)">
-                            <span class="material-symbols-outlined text-[20px]">visibility</span>
-                        </button>
                     </div>
                 </div>
                 <p class="text-right" style="margin: 12px 0 18px;">
@@ -969,18 +959,6 @@
     <div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null, null, null, null)}"></div>
 </div>
 <script>
-    // ── Show / hide password inside the modals ──
-    function toggleModalPassword(inputId, btn) {
-        const input = document.getElementById(inputId);
-        if (!input) return;
-        const show = input.type === 'password';
-        input.type = show ? 'text' : 'password';
-        btn.setAttribute('aria-pressed', String(show));
-        btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
-        const icon = btn.querySelector('.material-symbols-outlined');
-        if (icon) icon.textContent = show ? 'visibility_off' : 'visibility';
-    }
-
     // ── Login modal ──
     const loginOverlay = document.getElementById('loginModalOverlay');
     document.getElementById('openLoginBtn')?.addEventListener('click', () => loginOverlay.classList.add('open'));

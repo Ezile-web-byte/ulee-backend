@@ -3,9 +3,8 @@
 <body>
 
 <!--
-  Landlord notification bell. This is where official warnings show up
-  (issue #4/#6) — "Dear [Landlord], this serves as an official warning…"
-  with the complaints attached and the complainer's identity left out.
+  Landlord notification bell. Shows official warnings, listing-removed
+  notices and "student applied" notices.
 
   HOW TO USE:
   Paste this one line wherever your topbar/header currently is on the
@@ -13,29 +12,21 @@
 
     <div th:replace="~{fragments/landlord-notifications :: bell}"></div>
 
-  That's it — no controller changes needed. It talks to
-  NotificationController (/landlord/notifications) on its own using the
-  logged-in session, so it works on any landlord page without that page's
-  controller adding anything to the Model.
+  No controller changes needed. It talks to NotificationController
+  (/landlord/notifications) using the logged-in session.
 
-  FIX #1: this used to reuse the .icon-btn / .notif-wrap / .notif-dot class
-  names to match the admin-side bell — but those classes were only ever
-  defined in the admin stylesheet, never in landlord-style.css. On the
-  landlord dashboard that meant the button rendered as a bare, unstyled
-  <button> (a plain square with no visible icon). Fixed by giving this
-  fragment its own scoped <style> block instead of depending on classes
-  that may not exist.
+  NOTES (kept from earlier fixes):
+  - Styles are scoped inside this fragment (no dependency on admin CSS).
+  - The <script> must stay INSIDE the fragment div: th:replace only pulls
+    in the element carrying th:fragment and its children.
 
-  FIX #2: the <script> block that wires up clicks and calls
-  loadNotifications() was sitting as a SIBLING after this fragment's
-  closing </div>, instead of nested inside it — the exact bug
-  notification-bell.html's own comment warns about. th:fragment only pulls
-  in the element it's attached to (plus everything nested inside that
-  element); anything after it in the same file gets left behind entirely
-  when referenced via th:replace. That meant the bell rendered and looked
-  right, but clicking it did nothing at all — no click handler had
-  actually been included on the page. Moving the script inside the
-  fragment div (as its last child) fixes this.
+  NEW: each message can be minimized / maximized.
+  - Click a message (or its arrow) to expand or collapse it.
+  - Expanding an unread message marks it as read.
+  - "Collapse all" / "Expand all" toggles every message at once.
+  - When there are more than 3 messages they start collapsed (showing the
+    title, a one-line preview and the time); otherwise they start expanded.
+  - Expanded/collapsed state is kept when the list refreshes every 60s.
 -->
 <div th:fragment="bell" class="notif-wrap" id="landlordNotifWrap" style="position:relative">
     <style>
@@ -52,9 +43,7 @@
             position: relative;
             padding: 0;
         }
-        #landlordNotifWrap .landlord-notif-btn:hover {
-            background: #e6ecee;
-        }
+        #landlordNotifWrap .landlord-notif-btn:hover { background: #e6ecee; }
         #landlordNotifWrap .landlord-notif-btn svg {
             width: 20px;
             height: 20px;
@@ -73,6 +62,58 @@
             border: 2px solid #fff;
             display: none;
         }
+        #landlordNotifWrap .landlord-notif-link {
+            background: none;
+            border: none;
+            color: #2f6fed;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0;
+        }
+        #landlordNotifWrap .landlord-notif-row {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f5f5f5;
+            cursor: pointer;
+        }
+        #landlordNotifWrap .landlord-notif-row.unread { background: #f4faf7; }
+        #landlordNotifWrap .landlord-notif-row:hover { background: #f7f9fa; }
+        #landlordNotifWrap .landlord-notif-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+        #landlordNotifWrap .landlord-notif-body {
+            font-size: 12.5px;
+            color: #555;
+            line-height: 1.5;
+            white-space: pre-line;
+            margin-top: 4px;
+        }
+        #landlordNotifWrap .landlord-notif-preview {
+            font-size: 12px;
+            color: #777;
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        #landlordNotifWrap .landlord-notif-time {
+            font-size: 11px;
+            color: #9aa1a9;
+            margin-top: 6px;
+        }
+        #landlordNotifWrap .landlord-notif-chevron {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+            margin-top: 3px;
+            fill: none;
+            stroke: #9aa1a9;
+            stroke-width: 2;
+            transition: transform .15s ease;
+        }
+        #landlordNotifWrap .landlord-notif-row.expanded .landlord-notif-chevron { transform: rotate(180deg); }
     </style>
 
     <button class="landlord-notif-btn" id="landlordNotifBtn" title="Notifications" type="button">
@@ -82,12 +123,12 @@
 
     <div id="landlordNotifDropdown" style="display:none;position:absolute;top:calc(100% + 10px);right:0;width:360px;max-height:420px;overflow-y:auto;background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,0.14);z-index:50">
 
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #f0f0f0">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #f0f0f0;position:sticky;top:0;background:#fff;z-index:1">
             <strong style="font-size:14px">Notifications</strong>
-            <button type="button" id="landlordNotifMarkAll"
-                    style="background:none;border:none;color:#2f6fed;font-size:12px;font-weight:600;cursor:pointer;padding:0">
-                Mark all as read
-            </button>
+            <div style="display:flex;gap:14px">
+                <button type="button" id="landlordNotifToggleAll" class="landlord-notif-link" style="display:none">Collapse all</button>
+                <button type="button" id="landlordNotifMarkAll" class="landlord-notif-link">Mark all as read</button>
+            </div>
         </div>
 
         <div id="landlordNotifList"></div>
@@ -105,11 +146,15 @@
             var list = document.getElementById('landlordNotifList');
             var empty = document.getElementById('landlordNotifEmpty');
             var markAllBtn = document.getElementById('landlordNotifMarkAll');
+            var toggleAllBtn = document.getElementById('landlordNotifToggleAll');
 
-            // Guard against double-wiring if this fragment is ever accidentally
-            // included twice on one page.
             if (!btn || btn.dataset.wired === '1') return;
             btn.dataset.wired = '1';
+
+            var COLLAPSE_THRESHOLD = 3;   // more than this many => start collapsed
+            var expandedIds = {};          // id -> true/false (explicit user choice)
+            var currentNotifications = [];
+            var firstRender = true;
 
             function escapeHtml(str) {
                 var div = document.createElement('div');
@@ -117,47 +162,86 @@
                 return div.innerHTML;
             }
 
+            function isExpanded(n) {
+                if (expandedIds.hasOwnProperty(n.id)) return expandedIds[n.id];
+                return currentNotifications.length <= COLLAPSE_THRESHOLD;
+            }
+
+            function firstLine(text) {
+                var lines = (text || '').split('\n');
+                for (var i = 0; i < lines.length; i++) {
+                    if (lines[i].trim()) return lines[i].trim();
+                }
+                return '';
+            }
+
+            function updateToggleAllLabel() {
+                var allExpanded = currentNotifications.length > 0 &&
+                    currentNotifications.every(isExpanded);
+                toggleAllBtn.textContent = allExpanded ? 'Collapse all' : 'Expand all';
+                toggleAllBtn.style.display = currentNotifications.length > 1 ? 'inline' : 'none';
+            }
+
+            function markRead(id) {
+                return fetch('/landlord/notifications/' + id + '/read', { method: 'POST' });
+            }
+
             function renderNotifications(data) {
-                var notifications = data.notifications || [];
+                currentNotifications = data.notifications || [];
                 dot.style.display = data.unreadCount > 0 ? 'block' : 'none';
 
-                if (notifications.length === 0) {
+                if (currentNotifications.length === 0) {
                     list.innerHTML = '';
                     empty.style.display = 'block';
+                    updateToggleAllLabel();
                     return;
                 }
                 empty.style.display = 'none';
 
-                list.innerHTML = notifications.map(function (n) {
-                    var unreadStyle = n.isRead ? '' : 'background:#f4faf7;';
+                list.innerHTML = currentNotifications.map(function (n) {
+                    var expanded = isExpanded(n);
+                    var classes = 'landlord-notif-row' + (n.isRead ? '' : ' unread') + (expanded ? ' expanded' : '');
                     return '' +
-                        '<div class="landlord-notif-row" data-id="' + n.id + '" ' +
-                        'style="padding:14px 16px;border-bottom:1px solid #f5f5f5;cursor:pointer;' + unreadStyle + '">' +
+                        '<div class="' + classes + '" data-id="' + n.id + '">' +
                         '  <div style="display:flex;align-items:flex-start;gap:8px">' +
-                        '    <div style="flex:1">' +
-                        '      <div style="font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:3px">' + escapeHtml(n.title) + '</div>' +
-                        '      <div style="font-size:12.5px;color:#555;line-height:1.5;white-space:pre-line">' + escapeHtml(n.message) + '</div>' +
-                        '      <div style="font-size:11px;color:#9aa1a9;margin-top:6px">' + escapeHtml(n.createdAt) + '</div>' +
+                        '    <div style="flex:1;min-width:0">' +
+                        '      <div style="display:flex;align-items:center;gap:6px">' +
+                        '        <div class="landlord-notif-title" style="flex:1">' + escapeHtml(n.title) + '</div>' +
+                        (n.isRead ? '' : '<span style="width:8px;height:8px;border-radius:50%;background:#2f6fed;flex-shrink:0"></span>') +
+                        '      </div>' +
+                        (expanded
+                            ? '<div class="landlord-notif-body">' + escapeHtml(n.message) + '</div>'
+                            : '<div class="landlord-notif-preview">' + escapeHtml(firstLine(n.message)) + '</div>') +
+                        '      <div class="landlord-notif-time">' + escapeHtml(n.createdAt) + '</div>' +
                         '    </div>' +
-                        (n.isRead ? '' : '<span style="width:8px;height:8px;border-radius:50%;background:#2f6fed;flex-shrink:0;margin-top:4px"></span>') +
+                        '    <svg class="landlord-notif-chevron" viewBox="0 0 14 14"><path d="M2 5l5 5 5-5"/></svg>' +
                         '  </div>' +
                         '</div>';
                 }).join('');
 
                 Array.prototype.forEach.call(list.querySelectorAll('.landlord-notif-row'), function (row) {
                     row.addEventListener('click', function () {
-                        var id = row.getAttribute('data-id');
-                        fetch('/landlord/notifications/' + id + '/read', { method: 'POST' })
-                            .then(function () { loadNotifications(); });
+                        var id = parseInt(row.getAttribute('data-id'), 10);
+                        var n = currentNotifications.filter(function (x) { return x.id === id; })[0];
+                        if (!n) return;
+                        var nowExpanded = !isExpanded(n);
+                        expandedIds[id] = nowExpanded;
+                        if (nowExpanded && !n.isRead) {
+                            markRead(id).then(loadNotifications);
+                        } else {
+                            renderNotifications({ notifications: currentNotifications, unreadCount: data.unreadCount });
+                        }
                     });
                 });
+
+                updateToggleAllLabel();
             }
 
             function loadNotifications() {
                 fetch('/landlord/notifications')
                     .then(function (res) { return res.ok ? res.json() : { notifications: [], unreadCount: 0 }; })
                     .then(renderNotifications)
-                    .catch(function () { /* fail quietly — bell just shows no unread dot */ });
+                    .catch(function () { /* fail quietly */ });
             }
 
             btn.addEventListener('click', function (e) {
@@ -165,6 +249,16 @@
                 var isOpen = dropdown.style.display === 'block';
                 dropdown.style.display = isOpen ? 'none' : 'block';
                 if (!isOpen) loadNotifications();
+            });
+
+            toggleAllBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                var allExpanded = currentNotifications.every(isExpanded);
+                currentNotifications.forEach(function (n) { expandedIds[n.id] = !allExpanded; });
+                renderNotifications({
+                    notifications: currentNotifications,
+                    unreadCount: currentNotifications.filter(function (n) { return !n.isRead; }).length
+                });
             });
 
             markAllBtn.addEventListener('click', function (e) {
@@ -179,7 +273,6 @@
                 }
             });
 
-            // Poll every 60s so the dot updates even if the landlord never opens the dropdown
             loadNotifications();
             setInterval(loadNotifications, 60000);
         })();

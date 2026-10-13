@@ -73,6 +73,12 @@ public class AdminController {
     @Autowired
     private com.ulee.ulee_backend.repository.AdminActivityLogRepository adminActivityLogRepository;
 
+    @Autowired
+    private com.ulee.ulee_backend.service.LandlordNotificationService landlordNotificationService;
+
+    @Autowired
+    private com.ulee.ulee_backend.service.StudentNotificationService studentNotificationService;
+
     /**
      * Runs before every request handled by this controller and injects the
      * currently logged-in admin's display name + initials into the model, so
@@ -1049,6 +1055,9 @@ public class AdminController {
         property.setReportReason(null);
         propertyRepository.save(property);
 
+        // The students who reported this listing are told it was handled.
+        notifyReportersHandled(reporterIdsFor(propertyId));
+
         logActivity("Warned landlord", "Warned " + safeName(landlordUser) + " about \"" + property.getTitle() + "\"");
 
         redirectAttributes.addFlashAttribute("actionMessage",
@@ -1091,6 +1100,9 @@ public class AdminController {
             notification.setIsRead(false);
             notificationRepository.save(notification);
         }
+
+        // The students who reported this listing are told it was handled.
+        notifyReportersHandled(reporterIdsFor(id));
 
         logActivity("Suspended", "Suspended \"" + property.getTitle() + "\"");
         redirectAttributes.addFlashAttribute("actionMessage", "Suspended \"" + property.getTitle() + "\"");
@@ -1152,8 +1164,41 @@ public class AdminController {
         }
         String title = propertyOpt.get().getTitle();
 
+        // Capture everything the landlord's notice needs BEFORE the cascade
+        // delete below wipes the property and its reports. Reasons come from
+        // Report.reason / Report.description only (never the student), so
+        // complainers stay anonymous, same as warnLandlordForListing().
+        Integer removedLandlordId = propertyOpt.get().getLandlordID();
+        List<String> removalReasons = new ArrayList<>();
+        for (Report r : reportRepository.findByPropertyIDOrderByReportedAtAsc(id)) {
+            String reasonPart = (r.getReason() != null && !r.getReason().isBlank()) ? r.getReason() + ": " : "";
+            String descPart = (r.getDescription() != null && !r.getDescription().isBlank()) ? r.getDescription() : "No details provided";
+            removalReasons.add("• " + reasonPart + descPart);
+        }
+        String legacyReason = propertyOpt.get().getReportReason();
+        if (removalReasons.isEmpty() && legacyReason != null && !legacyReason.isBlank()) {
+            removalReasons.add("• " + legacyReason);
+        }
+        // Who reported it: collected now because the cascade delete removes the reports.
+        List<Integer> removedReporterIds = reporterIdsFor(id);
+
         try {
             deletePropertyCascade(id);
+
+            // Tell the students who reported it that their report was handled.
+            notifyReportersHandled(removedReporterIds);
+
+            // Tell the landlord the listing is gone and why (shown in their bell).
+            if (removedLandlordId != null) {
+                String landlordName = userRepository.findById(removedLandlordId).map(this::safeName).orElse("Landlord");
+                String reasonText = removalReasons.isEmpty()
+                        ? "It was removed by an administrator for not meeting the platform's listing standards."
+                        : "It was reported and removed after review. The following complaint(s) were raised:\n"
+                        + String.join("\n", removalReasons);
+                // propertyID is null on purpose: the property row no longer exists.
+                landlordNotificationService.notifyListingRemoved(removedLandlordId, null, landlordName, title, reasonText);
+            }
+
             logActivity("Removed", "Removed listing \"" + title + "\"");
             redirectAttributes.addFlashAttribute("actionMessage", "Removed listing \"" + title + "\"");
         } catch (Exception e) {
@@ -1649,6 +1694,30 @@ public class AdminController {
         if (propertyImageRepository.findByPropertyID(property.getPropertyID()).isEmpty()) issues.add("No property images uploaded");
 
         return issues;
+    }
+
+    /** Distinct IDs of the students who filed a report on this property. */
+    private List<Integer> reporterIdsFor(Integer propertyId) {
+        return reportRepository.findByPropertyIDOrderByReportedAtAsc(propertyId).stream()
+                .map(Report::getStudentID)
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Tells each reporting student their report was handled (shows in the
+     * student bell). A notification problem must never break the admin's
+     * action, so failures are swallowed.
+     */
+    private void notifyReportersHandled(List<Integer> studentIds) {
+        for (Integer studentId : studentIds) {
+            try {
+                studentNotificationService.reportHandled(studentId);
+            } catch (Exception ignored) {
+                // intentionally ignored, see javadoc
+            }
+        }
     }
 
     private String safeName(User user) {

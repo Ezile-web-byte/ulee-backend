@@ -22,6 +22,8 @@
         <a class="chip-btn" th:href="@{/student-dashboard}">
           <span class="material-symbols-outlined" aria-hidden="true">search</span>Find a room
         </a>
+        <!-- Notification bell (fragments/student-notifications.html) -->
+        <div th:replace="~{fragments/student-notifications :: bell}"></div>
         <span class="avatar" th:text="${userInitials != null ? userInitials : 'ST'}" aria-hidden="true">ST</span>
       </div>
     </div>

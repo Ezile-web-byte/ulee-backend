@@ -128,6 +128,11 @@ public class SecurityConfig {
                 // Logs out anyone already signed in whose account has since been
                 // deactivated (e.g. when the 10-minute notice runs out).
                 .addFilterAfter(new DeactivatedAccountFilter(userRepository, adminSessionRepository),
+                        SecurityContextHolderFilter.class)
+                // NEW: an admin or landlord who opens the public landing / login pages
+                // (for example in a second tab) is signed out first, instead of being
+                // treated as a logged-in student. Students are not affected.
+                .addFilterAfter(new RoleLandingLogoutFilter(adminSessionRepository),
                         SecurityContextHolderFilter.class);
 
         return http.build();

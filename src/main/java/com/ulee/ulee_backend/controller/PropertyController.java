@@ -70,6 +70,12 @@ public class PropertyController {
     @Autowired
     private com.ulee.ulee_backend.repository.StudentRepository studentRepository;
 
+    // In-app notification bells: one for landlords, one for students.
+    @Autowired
+    private com.ulee.ulee_backend.service.LandlordNotificationService landlordNotificationService;
+    @Autowired
+    private com.ulee.ulee_backend.service.StudentNotificationService studentNotificationService;
+
     // The one exact status string that means "live and visible to students".
     // Every query/branch that decides visibility should use this constant
     // instead of typing "Active" by hand, so a typo can't silently break
@@ -1831,8 +1837,20 @@ public class PropertyController {
             }
         }
 
+        String previousStatus = application.getStatus();
         application.setStatus(status);
         applicationRepository.save(application);
+
+        // Tell the student, but only when the decision actually changed
+        // (re-submitting "Accepted" must not notify twice). Moving back to
+        // Pending sends nothing.
+        if (!status.equalsIgnoreCase(previousStatus)) {
+            if ("Accepted".equalsIgnoreCase(status)) {
+                notifyStudentOfDecision(application, property, true);
+            } else if ("Rejected".equalsIgnoreCase(status)) {
+                notifyStudentOfDecision(application, property, false);
+            }
+        }
         return redirectBase;
     }
 
@@ -1883,8 +1901,10 @@ public class PropertyController {
 
         for (int i = 0; i < pending.size(); i++) {
             Application app = pending.get(i);
-            app.setStatus(i < remaining ? "Accepted" : "Rejected");
+            boolean accepting = i < remaining;
+            app.setStatus(accepting ? "Accepted" : "Rejected");
             applicationRepository.save(app);
+            notifyStudentOfDecision(app, property, accepting);
         }
 
         return "redirect:/property-applications/" + propertyId;
@@ -1947,6 +1967,7 @@ public class PropertyController {
                 Application app = pending.get(i);
                 app.setStatus("Accepted");
                 applicationRepository.save(app);
+                notifyStudentOfDecision(app, property, true);
             }
         }
 
@@ -1986,6 +2007,7 @@ public class PropertyController {
                 if ("Pending".equalsIgnoreCase(app.getStatus())) {
                     app.setStatus("Rejected");
                     applicationRepository.save(app);
+                    notifyStudentOfDecision(app, property, false);
                 }
             }
         }
@@ -2091,6 +2113,16 @@ public class PropertyController {
         doc.setUploadedAt(java.time.LocalDateTime.now());
         applicationDocumentRepository.save(doc);
 
+        // Notify both sides now that the application and its documents are
+        // fully saved: the student's bell ("application submitted") and the
+        // landlord's bell ("<student> has applied for <property>").
+        try {
+            studentNotificationService.applicationSubmitted(studentID, property.getTitle());
+        } catch (Exception ignored) {
+            // a notification problem must never fail the application
+        }
+        landlordNotificationService.notifyStudentApplied(savedApplication); // never throws
+
         // Redirects back to the property page (not the broken /my-applications
         // view — that template moved to templates/student/ during the reorg
         // and this route hasn't been updated to match). Uses ?toast=applied
@@ -2150,6 +2182,17 @@ public class PropertyController {
     }
 
 
+    // Tells a student their application was accepted or rejected. Never
+    // throws: a notification problem must not undo the landlord's decision.
+    private void notifyStudentOfDecision(Application application, Property property, boolean accepted) {
+        try {
+            studentNotificationService.applicationDecision(
+                    application.getStudentID(), property.getTitle(), accepted);
+        } catch (Exception ignored) {
+            // intentionally ignored, see comment above
+        }
+    }
+
     private boolean toggleSaved(Integer studentID, Integer propertyId) {
         List<SavedProperty> existing = savedPropertyRepository.findByStudentIDAndPropertyID(studentID, propertyId);
         if (!existing.isEmpty()) {
@@ -2161,6 +2204,15 @@ public class PropertyController {
         saved.setPropertyID(propertyId);
         saved.setSavedStatus(true);
         savedPropertyRepository.save(saved);
+
+        // Only on ADD (the remove branch above returns early), so un-saving
+        // and re-saving doesn't pile up duplicate "removed" noise.
+        try {
+            String savedTitle = propertyRepository.findById(propertyId).map(Property::getTitle).orElse(null);
+            studentNotificationService.favouriteAdded(studentID, propertyId, savedTitle);
+        } catch (Exception ignored) {
+            // a notification problem must never block saving a property
+        }
         return true;
     }
 
@@ -2282,6 +2334,13 @@ public class PropertyController {
         review.setComment(comment);
         review.setReviewDate(java.time.LocalDateTime.now());
         reviewRepository.save(review);
+
+        try {
+            String reviewedTitle = propertyRepository.findById(propertyId).map(Property::getTitle).orElse(null);
+            studentNotificationService.reviewSubmitted(studentID, propertyId, reviewedTitle);
+        } catch (Exception ignored) {
+            // a notification problem must never fail the review
+        }
         return "redirect:/property/" + propertyId;
     }
 
