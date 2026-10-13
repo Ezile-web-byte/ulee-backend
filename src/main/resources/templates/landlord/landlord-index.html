@@ -230,13 +230,7 @@
   <!-- ============ MAIN ============ -->
   <main class="main">
 
-    <header class="topbar">
-      <h1 class="topbar-title">My Properties</h1>
-      <div class="topbar-actions">
-        <div th:replace="~{fragments/landlord-notifications :: bell}"></div>
-        <div class="avatar-initials" th:text="${userInitials != null ? userInitials : 'EH'}">EH</div>
-      </div>
-    </header>
+    <div th:replace="~{fragments/landlord-topbar :: topbar('My Properties')}"></div>
 
     <div class="page-body">
 

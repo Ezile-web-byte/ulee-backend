@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<header class="topbar" th:fragment="topbar(title)">
+  <h1 class="topbar-title" th:text="${title}">Title</h1>
+  <div class="topbar-actions">
+    <div th:replace="~{fragments/landlord-notifications :: bell}"></div>
+    <div class="avatar-initials" th:text="${landlordInitials != null ? landlordInitials : '?'}">?</div>
+  </div>
+</header>
+
+</body>
+</html>
