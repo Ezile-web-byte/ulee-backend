@@ -139,6 +139,11 @@ public class RegisterController {
             }
         }
 
+        String passwordError = com.ulee.ulee_backend.util.PasswordRules.check(password);
+        if (passwordError != null) {
+            return reject(model, normalizedRole, passwordError);
+        }
+
         // Gender: required for every new account, "Female" or "Male".
         String cleanedGender = null;
         if (gender != null && gender.trim().equalsIgnoreCase("Female")) cleanedGender = "Female";

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
@@ -243,6 +243,7 @@
     :has(> .stat-card) { grid-template-columns: 1fr !important; }
   }
 </style>
+<link rel="stylesheet" th:href="@{/ulee-select.css}">
 </head>
 <body>
 
@@ -559,5 +560,6 @@
 
 <script src="/landlord-sidebar-toggle.js" defer></script>
 
+<script th:src="@{/ulee-select.js}"></script>
 </body>
 </html>

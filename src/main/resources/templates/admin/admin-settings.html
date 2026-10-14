@@ -227,7 +227,7 @@
                     <svg viewBox="0 0 20 20"><circle cx="10" cy="7" r="3"/><path d="M4 17c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>Account
                 </button>
                 <button type="button" class="stg-tab" data-tab="security" onclick="stgShowTab('security')">
-                    <svg viewBox="0 0 20 20"><rect x="4" y="9" width="12" height="8" rx="2"/><path d="M6.5 9V6a3.5 3.5 0 017 0v3"/></svg>Password
+                    <svg viewBox="0 0 20 20"><rect x="4" y="9" width="12" height="8" rx="2"/><path d="M6.5 9V6a3.5 3.5 0 017 0v3"/></svg>Reset requests
                 </button>
             </div>
 
@@ -274,31 +274,13 @@
                 <div class="stg-panel">
                     <div class="stg-panel-head">
                         <div class="ic"><svg viewBox="0 0 20 20"><rect x="4" y="9" width="12" height="8" rx="2"/><path d="M6.5 9V6a3.5 3.5 0 017 0v3"/></svg></div>
-                        <div><h3>Password</h3><p>Change the password you use to sign in</p></div>
+                        <div><h3>Reset requests</h3><p>Send users the link to reset their password</p></div>
                     </div>
                     <div class="stg-panel-div"></div>
                     <div class="stg-panel-body">
-                        <form id="stg-password-form" onsubmit="return stgSubmitPassword(event)">
-                            <div class="stg-field" style="margin-bottom:14px">
-                                <label>Current password</label>
-                                <input type="password" name="currentPassword" required minlength="8" />
-                            </div>
-                            <div class="stg-grid2">
-                                <div class="stg-field">
-                                    <label>New password</label>
-                                    <input type="password" name="newPassword" id="stg-new-password" required minlength="8" />
-                                </div>
-                                <div class="stg-field">
-                                    <label>Confirm new password</label>
-                                    <input type="password" name="confirmPassword" id="stg-confirm-password" required minlength="8" />
-                                </div>
-                            </div>
-                            <p class="stg-hint">Use at least 8 characters. You'll stay signed in on this device.</p>
-                            <div class="stg-form-actions">
-                                <span class="stg-form-msg" id="stg-password-msg"></span>
-                                <button type="submit" class="stg-btn-primary" id="stg-password-btn">Update password</button>
-                            </div>
-                        </form>
+                        <p class="stg-sub" id="rr-empty" style="display:none">There are no open reset requests.</p>
+                        <div id="rr-list"></div>
+                        <p class="stg-hint">Check that the person is who they say they are before you send the link. Each link works once and expires at the time shown.</p>
                     </div>
                 </div>
 
@@ -323,7 +305,29 @@
 </div>
 
 <script>
+    function rrLoad() {
+        fetch('/admin/password-resets/data').then(function (r) { return r.json(); }).then(function (rows) {
+            var list = document.getElementById('rr-list');
+            list.innerHTML = '';
+            document.getElementById('rr-empty').style.display = rows.length ? 'none' : 'block';
+            rows.forEach(function (r) {
+                var row = document.createElement('div'); row.className = 'stg-row';
+                var main = document.createElement('div'); main.className = 'stg-row-main';
+                var t = document.createElement('div'); t.className = 'stg-row-title'; t.textContent = r.email;
+                var s = document.createElement('div'); s.className = 'stg-row-sub'; s.textContent = 'Link expires ' + r.expires;
+                main.appendChild(t); main.appendChild(s);
+                var side = document.createElement('div'); side.className = 'stg-row-side';
+                var a = document.createElement('a'); a.className = 'stg-btn-primary'; a.href = r.mailto; a.textContent = 'Send by email';
+                a.style.cssText = 'display:inline-flex;align-items:center;text-decoration:none;margin-right:8px';
+                var b = document.createElement('button'); b.type = 'button'; b.className = 'stg-btn-primary'; b.textContent = 'Copy link';
+                b.onclick = function () { navigator.clipboard.writeText(r.link); b.textContent = 'Copied'; };
+                side.appendChild(a); side.appendChild(b);
+                row.appendChild(main); row.appendChild(side); list.appendChild(row);
+            });
+        }).catch(function () { });
+    }
     function stgShowTab(name) {
+        if (name === 'security') rrLoad();
         document.querySelectorAll('.stg-tab').forEach(function (btn) {
             btn.classList.toggle('active', btn.getAttribute('data-tab') === name);
         });

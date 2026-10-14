@@ -116,6 +116,7 @@
             gap: 14px;
         }
     </style>
+<link rel="stylesheet" th:href="@{/ulee-select.css}">
 </head>
 <body>
 
@@ -274,11 +275,6 @@
                             <p class="application-meta" th:if="${row.fundingStatus != null and !row.fundingStatus.isEmpty()}">
                                 <strong>Funding:</strong> <span th:text="${row.fundingStatus}">Self-Paying</span>
                             </p>
-                            <div class="application-message" th:if="${row.messageToLandlord != null and !row.messageToLandlord.isEmpty()}">
-                                <p class="application-message-label">Message to you</p>
-                                <p class="application-message-text" th:text="${row.messageToLandlord}">Message text</p>
-                            </div>
-
                             <div class="application-documents" th:if="${row.documents != null and !row.documents.isEmpty()}">
                                 <p class="application-message-label">Documents</p>
                                 <div class="document-chip-list">
@@ -320,14 +316,6 @@
                                         <svg viewBox="0 0 24 24" fill="none"><path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                                         Reject
                                     </button>
-                                </form>
-
-                                <!-- Opens the student's email client client-side (JS below),
-                                     then marks landlordResponded=true server-side. -->
-                                <form th:action="@{/mark-application-responded/{id}(id=${row.applicationID})}" method="post"
-                                      class="inline-form respond-form"
-                                      th:attr="data-email=${row.studentEmail}, data-subject='Regarding your application for ' + ${row.propertyName}">
-                                    <button class="btn-respond" type="submit" th:text="${row.landlordResponded} ? '✓ Responded' : 'Respond'">Respond</button>
                                 </form>
                             </div>
                         </div>
@@ -397,20 +385,6 @@
 </script>
 
 <script>
-    // "Respond" opens the landlord's email client addressed to the student,
-    // then lets the form submit normally to record that they followed up.
-    document.querySelectorAll('.respond-form').forEach(form => {
-        form.addEventListener('submit', function () {
-            const email = this.dataset.email;
-            const subject = this.dataset.subject;
-            if (email) {
-                window.open('mailto:' + email + '?subject=' + encodeURIComponent(subject), '_blank');
-            }
-        });
-    });
-</script>
-
-<script>
     // Numbers on the Capacity / Accepted cards count up from 0 on load.
     (function () {
         if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -430,5 +404,6 @@
     })();
 </script>
 
+<script th:src="@{/ulee-select.js}"></script>
 </body>
 </html>

@@ -48,6 +48,17 @@ public class ReviewController {
         return r == null || (r >= 1 && r <= 5);
     }
 
+    // The one property a student may review: their newest accepted application
+    // whose stay has started. Any other accepted place is read-only for them.
+    private Integer currentStayPropertyId(Integer studentId) {
+        return applicationRepository.findByStudentID(studentId).stream()
+                .filter(a -> "Accepted".equalsIgnoreCase(a.getStatus()) && a.getPropertyID() != null)
+                .filter(a -> propertyRepository.findById(a.getPropertyID()).map(StayEligibility::hasStarted).orElse(false))
+                .max(java.util.Comparator.comparing(com.ulee.ulee_backend.model.Application::getApplicationID))
+                .map(com.ulee.ulee_backend.model.Application::getPropertyID)
+                .orElse(null);
+    }
+
     // A500: show the review form for a specific property
     @GetMapping("/write-review/{propertyId}")
     public String showReviewForm(@PathVariable Integer propertyId, Model model,
@@ -88,6 +99,11 @@ public class ReviewController {
             return "redirect:/property/" + propertyId;
         }
 
+        if (!propertyId.equals(currentStayPropertyId(studentId))) {
+            redirectAttributes.addFlashAttribute("actionError",
+                    "You can only review the place you're currently staying at.");
+            return "redirect:/property/" + propertyId;
+        }
         String imageUrl = propertyImageRepository.findByPropertyID(propertyId).stream()
                 .findFirst().map(PropertyImage::getUrl).orElse(null);
 
@@ -159,6 +175,11 @@ public class ReviewController {
             return "redirect:/property/" + propertyId;
         }
 
+        if (!propertyId.equals(currentStayPropertyId(studentId))) {
+            redirectAttributes.addFlashAttribute("actionError",
+                    "You can only review the place you're currently staying at.");
+            return "redirect:/property/" + propertyId;
+        }
         Review review = new Review();
         review.setStudentID(studentId);
         review.setPropertyID(propertyId);

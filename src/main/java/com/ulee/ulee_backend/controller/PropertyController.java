@@ -993,16 +993,6 @@ public class PropertyController {
                 .filter(s -> id.equals(s.getPropertyID()))
                 .collect(Collectors.toList()));
 
-        // 3. Special features and their photos
-        for (PropertyFeature f : propertyFeatureRepository.findByPropertyID(id)) {
-            List<PropertyFeatureImage> fImages = propertyFeatureImageRepository.findByFeatureID(f.getFeatureID());
-            for (PropertyFeatureImage fi : fImages) {
-                deleteUploadedFileQuietly(fi.getUrl());
-            }
-            propertyFeatureImageRepository.deleteAll(fImages);
-            propertyFeatureRepository.delete(f);
-        }
-
         // 4. Property photos (rows + files)
         List<PropertyImage> images = propertyImageRepository.findByPropertyID(id);
         for (PropertyImage img : images) {
@@ -1089,12 +1079,15 @@ public class PropertyController {
                 alreadyReviewed = rawReviews.stream()
                         .anyMatch(r -> studentID.equals(r.getStudentID()));
 
-                // Can only review once you have an ACCEPTED application for
-                // THIS property, and haven't already reviewed it.
-                boolean hasAcceptedApplication = applicationRepository.findByStudentID(studentID).stream()
-                        .anyMatch(a -> id.equals(a.getPropertyID()) && "Accepted".equalsIgnoreCase(a.getStatus()));
-                canWriteReview = hasAcceptedApplication && !alreadyReviewed
-                        && StayEligibility.hasStarted(property);
+                // Can only review your CURRENT stay: the newest accepted
+                // application whose stay has started, if not reviewed yet.
+                Integer currentStayId = applicationRepository.findByStudentID(studentID).stream()
+                        .filter(a -> "Accepted".equalsIgnoreCase(a.getStatus()) && a.getPropertyID() != null)
+                        .filter(a -> propertyRepository.findById(a.getPropertyID()).map(StayEligibility::hasStarted).orElse(false))
+                        .max(Comparator.comparing(Application::getApplicationID))
+                        .map(Application::getPropertyID)
+                        .orElse(null);
+                canWriteReview = id.equals(currentStayId) && !alreadyReviewed;
             }
         }
 
@@ -1174,6 +1167,7 @@ public class PropertyController {
             }
         }
 
+        java.util.Map<Integer, java.time.LocalDateTime> latestReview = new java.util.HashMap<>();
         List<ReviewOverviewView> summaries = new ArrayList<>();
         long totalReviewsAll = 0;
         for (Property p : myProperties) {
@@ -1190,10 +1184,12 @@ public class PropertyController {
             view.setUnviewedCount(unviewed);
             summaries.add(view);
             totalReviewsAll += reviews.size();
+            reviews.stream().map(Review::getReviewDate).filter(java.util.Objects::nonNull).max(java.util.Comparator.naturalOrder()).ifPresent(d -> latestReview.put(p.getPropertyID(), d));
         }
 
+        java.util.Comparator<java.time.LocalDateTime> newestFirst = java.util.Comparator.nullsLast(java.util.Comparator.reverseOrder());
         summaries.sort(Comparator
-                .comparingLong(ReviewOverviewView::getUnviewedCount).reversed()
+                .comparing((ReviewOverviewView v) -> latestReview.get(v.getPropertyID()), newestFirst)
                 .thenComparing(ReviewOverviewView::getTitleSortKey));
 
         model.addAttribute("summaries", summaries);
@@ -1282,20 +1278,35 @@ public class PropertyController {
                 .sorted((a, b) -> a.getTitle().compareToIgnoreCase(b.getTitle()))
                 .collect(Collectors.toList());
 
+        // Arrows: only properties that have reviews, newest review first.
+        java.util.Map<Integer, java.time.LocalDateTime> arrowLatest = new java.util.HashMap<>();
+        for (Property ep : eligibleProperties) {
+            reviewRepository.findByPropertyID(ep.getPropertyID()).stream()
+                    .map(Review::getReviewDate)
+                    .filter(java.util.Objects::nonNull)
+                    .max(java.util.Comparator.naturalOrder())
+                    .ifPresent(d -> arrowLatest.put(ep.getPropertyID(), d));
+        }
+        List<Property> arrowList = eligibleProperties.stream()
+                .filter(ep -> arrowLatest.containsKey(ep.getPropertyID()))
+                .sorted(Comparator
+                        .comparing((Property ep) -> arrowLatest.get(ep.getPropertyID()), Comparator.reverseOrder())
+                        .thenComparing(ep -> ep.getTitle() == null ? "" : ep.getTitle().toLowerCase()))
+                .collect(Collectors.toList());
+
         Integer nextPropertyId = property.getPropertyID();
-        if (!eligibleProperties.isEmpty()) {
+        if (!arrowList.isEmpty()) {
             int currentIndex = -1;
-            for (int i = 0; i < eligibleProperties.size(); i++) {
-                if (eligibleProperties.get(i).getPropertyID().equals(id)) {
+            for (int i = 0; i < arrowList.size(); i++) {
+                if (arrowList.get(i).getPropertyID().equals(id)) {
                     currentIndex = i;
                     break;
                 }
             }
             nextPropertyId = (currentIndex == -1)
-                    ? eligibleProperties.get(0).getPropertyID()
-                    : eligibleProperties.get((currentIndex + 1) % eligibleProperties.size()).getPropertyID();
+                    ? arrowList.get(0).getPropertyID()
+                    : arrowList.get((currentIndex + 1) % arrowList.size()).getPropertyID();
         }
-
         model.addAttribute("property", property);
         model.addAttribute("reviews", pageReviews);
         model.addAttribute("reviewCount", reviewCount);
@@ -1330,30 +1341,6 @@ public class PropertyController {
 
         review.setIsReported(false);
         reviewRepository.save(review);
-        return "redirect:/property-reviews/" + property.getPropertyID();
-    }
-
-    // C102 — Landlord responds to (or edits their existing response on) a
-    // review. Single response per review — write-and-overwrite, no
-    // threading. Ownership is checked via the review's PROPERTY, so a
-    // landlord can only respond to reviews left on their own listings.
-    @PostMapping("/respond-to-review/{reviewId}")
-    public String respondToReview(
-            @PathVariable Integer reviewId,
-            @RequestParam String response,
-            Principal principal) {
-
-        Integer landlordID = getCurrentUser(principal).getUserID();
-
-        Review review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new RuntimeException("Review not found with id: " + reviewId));
-
-        Property property = getOwnedProperty(review.getPropertyID(), landlordID);
-
-        review.setLandlordResponse(response);
-        review.setResponseDate(java.time.LocalDateTime.now());
-        reviewRepository.save(review);
-
         return "redirect:/property-reviews/" + property.getPropertyID();
     }
 
@@ -1463,10 +1450,9 @@ public class PropertyController {
         }
 
         // Priority order: most pending first, then most recent activity, then A-Z.
+        java.util.Comparator<java.time.LocalDateTime> newestFirst = java.util.Comparator.nullsLast(java.util.Comparator.reverseOrder());
         summaries.sort(Comparator
-                .comparingLong(ApplicationOverviewView::getPendingCount).reversed()
-                .thenComparing(ApplicationOverviewView::getLatestApplicationDate,
-                        Comparator.nullsLast(Comparator.reverseOrder()))
+                .comparing(ApplicationOverviewView::getLatestApplicationDate, newestFirst)
                 .thenComparing(ApplicationOverviewView::getTitleSortKey));
 
         long totalPendingAll = summaries.stream().mapToLong(ApplicationOverviewView::getPendingCount).sum();
@@ -1650,28 +1636,43 @@ public class PropertyController {
                 .sorted((a, b) -> a.getTitle().compareToIgnoreCase(b.getTitle()))
                 .collect(Collectors.toList());
 
+        // Arrows: only properties that have applications, newest application first.
+        java.util.Map<Integer, java.time.LocalDateTime> arrowLatest = new java.util.HashMap<>();
+        if (!eligibleProperties.isEmpty()) {
+            List<Integer> arrowIds = eligibleProperties.stream()
+                    .map(Property::getPropertyID)
+                    .collect(Collectors.toList());
+            for (Application ea : applicationRepository.findByPropertyIDIn(arrowIds)) {
+                if (ea.getPropertyID() != null && ea.getApplicationDate() != null) {
+                    arrowLatest.merge(ea.getPropertyID(), ea.getApplicationDate(), (d1, d2) -> d1.isAfter(d2) ? d1 : d2);
+                }
+            }
+        }
+        List<Property> arrowList = eligibleProperties.stream()
+                .filter(ep -> arrowLatest.containsKey(ep.getPropertyID()))
+                .sorted(Comparator
+                        .comparing((Property ep) -> arrowLatest.get(ep.getPropertyID()), Comparator.reverseOrder())
+                        .thenComparing(ep -> ep.getTitle() == null ? "" : ep.getTitle().toLowerCase()))
+                .collect(Collectors.toList());
+
         Integer nextPropertyId = property.getPropertyID();
         Integer previousPropertyId = property.getPropertyID();
-        if (!eligibleProperties.isEmpty()) {
+        if (!arrowList.isEmpty()) {
             int currentIndex = -1;
-            for (int i = 0; i < eligibleProperties.size(); i++) {
-                if (eligibleProperties.get(i).getPropertyID().equals(id)) {
+            for (int i = 0; i < arrowList.size(); i++) {
+                if (arrowList.get(i).getPropertyID().equals(id)) {
                     currentIndex = i;
                     break;
                 }
             }
-            int size = eligibleProperties.size();
+            int arrowSize = arrowList.size();
             nextPropertyId = (currentIndex == -1)
-                    ? eligibleProperties.get(0).getPropertyID()
-                    : eligibleProperties.get((currentIndex + 1) % size).getPropertyID();
-            // NEW — mirrors nextPropertyId but walks the list backward
-            // (with wraparound), for the back arrow to the left of the
-            // "All Properties" switcher.
+                    ? arrowList.get(0).getPropertyID()
+                    : arrowList.get((currentIndex + 1) % arrowSize).getPropertyID();
             previousPropertyId = (currentIndex == -1)
-                    ? eligibleProperties.get(0).getPropertyID()
-                    : eligibleProperties.get((currentIndex - 1 + size) % size).getPropertyID();
+                    ? arrowList.get(0).getPropertyID()
+                    : arrowList.get((currentIndex - 1 + arrowSize) % arrowSize).getPropertyID();
         }
-
         // NEW — pending (new) applications per property, so the dropdown can
         // show "Albert Luthuli (3 new)", plus the same properties in
         // priority order (most pending first) for the dropdown to list.
@@ -1774,28 +1775,6 @@ public class PropertyController {
             }
         }
         return redirectBase;
-    }
-
-    // Marks that the landlord has emailed the student directly about their
-    // application. Nothing is sent or stored by the app itself — the
-    // landlord's email client opens client-side (see the template's JS) —
-    // this endpoint just flips a flag so the landlord can see at a glance
-    // who they've already followed up with.
-    @PostMapping("/mark-application-responded/{applicationId}")
-    public String markApplicationResponded(@PathVariable Integer applicationId, Principal principal) {
-        Application application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> new RuntimeException("Application not found with id: " + applicationId));
-
-        Integer landlordID = getCurrentUser(principal).getUserID();
-        Property property = propertyRepository.findById(application.getPropertyID())
-                .orElseThrow(() -> new RuntimeException("Property not found for this application"));
-        if (!property.getLandlordID().equals(landlordID)) {
-            throw new RuntimeException("You do not have permission to manage this application");
-        }
-
-        application.setLandlordResponded(true);
-        applicationRepository.save(application);
-        return "redirect:/property-applications/" + property.getPropertyID();
     }
 
     // "Accept up to capacity" for ONE property: FIRST COME, FIRST SERVED —
@@ -2293,28 +2272,6 @@ public class PropertyController {
         return "student/my-dashboard";
     }
 
-    // A500 — Write Review and Rating
-    @PostMapping("/review/{propertyId}")
-    public String submitReview(@PathVariable Integer propertyId, @RequestParam Integer rating,
-                               @RequestParam String comment, Principal principal) {
-        Integer studentID = getCurrentUser(principal).getUserID();
-
-        Review review = new Review();
-        review.setStudentID(studentID);
-        review.setPropertyID(propertyId);
-        review.setRating(rating);
-        review.setComment(comment);
-        review.setReviewDate(java.time.LocalDateTime.now());
-        reviewRepository.save(review);
-
-        try {
-            String reviewedTitle = propertyRepository.findById(propertyId).map(Property::getTitle).orElse(null);
-            studentNotificationService.reviewSubmitted(studentID, propertyId, reviewedTitle);
-        } catch (Exception ignored) {
-            // a notification problem must never fail the review
-        }
-        return "redirect:/property/" + propertyId;
-    }
 
     // A201 — Submit Documents
     @PostMapping("/submit-documents/{applicationId}")
@@ -2556,8 +2513,7 @@ public class PropertyController {
         // server-rendered and every field persists in the DOM regardless.)
         if (!isDraft && (!meetsPublishRequirements(property.getTitle(), property.getRent(), property.getAddress(), property.getCapacity())
                 || !hasRequiredPhotos(coverImage, images))) {
-            isDraft = true;
-            downgradedToDraft = true;
+            return "redirect:/list-property?error=incomplete";
         }
         property.setStatus(isDraft ? "Draft" : "Pending");
 

@@ -65,7 +65,7 @@ public class SecurityConfig {
                         // (see .loginPage(...) below) instead of seeing the page.
                         .requestMatchers(
                                 "/", "/student-dashboard", "/search",
-                                "/register", "/login",
+                                "/register", "/login", "/forgot-password", "/reset-password",
                                 // "Speak with AI" widget endpoints (listings for the chips, chat for free text)
                                 "/api/listings", "/api/chat",
                                 "/images/**", "/*.css", "/*.js",

@@ -942,7 +942,7 @@
 
         <div class="um-body">
             <h2 class="um-title" id="forgotTitle">Reset your password</h2>
-            <p class="um-sub">Enter your email and we'll send you a link to set a new password.</p>
+            <p class="um-sub">Enter your email and the administrator will send you a link to set a new password.</p>
             <form th:action="@{/forgot-password}" method="post" id="forgotPasswordForm">
                 <div class="um-field">
                     <label class="um-label" for="forgotEmail">Email</label>
@@ -951,7 +951,7 @@
                 <button type="submit" class="um-btn" style="margin-top: 20px;">Send reset link</button>
             </form>
             <p id="forgotPasswordConfirmation" class="hidden um-success">
-                If that email is registered, a reset link is on its way. Check your inbox.
+                If that email is registered, your request has been sent to the administrator, who will send you a reset link.
             </p>
         </div>
     </div>

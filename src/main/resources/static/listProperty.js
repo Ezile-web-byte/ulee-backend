@@ -853,6 +853,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // The server bounces a create request back here if the name was taken
     // after all (the wizard normally catches it first, on Continue / submit).
     const errorParam = new URLSearchParams(window.location.search).get('error');
+    if (errorParam === 'incomplete') {
+        window.history.replaceState({}, document.title, window.location.pathname);
+        UleeModal.alert({
+            tone: 'warn',
+            title: 'Your listing is incomplete',
+            message: 'Nothing was saved. Please fill in every required field, add the cover photo and at least one more photo, then submit again.',
+            okText: 'Got it'
+        });
+    }
     if (errorParam === 'duplicate-title') {
         window.history.replaceState({}, document.title, window.location.pathname);
         UleeModal.alert({

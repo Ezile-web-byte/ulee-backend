@@ -977,7 +977,7 @@
             You've already reviewed this property.
         </p>
         <p th:if="${not canWriteReview and isLoggedIn and isStudent and not alreadyReviewed}" class="no-reviews" style="margin-top:16px;">
-            You can write a review once your application for this property has been accepted.
+            You can only review the place you're currently staying at, once your stay has started.
         </p>
     </div>
 
@@ -1081,12 +1081,6 @@
                         </div>
                     </div>
                 </th:block>
-
-                <div class="form-field full-width">
-                    <label for="messageToLandlord">Message to Landlord (optional)</label>
-                    <textarea id="messageToLandlord" name="messageToLandlord"
-                              placeholder="Ask a question or tell the landlord something about your application..."></textarea>
-                </div>
 
                 <button type="submit" class="apply-btn apply-submit-btn">Submit My Application</button>
             </div>

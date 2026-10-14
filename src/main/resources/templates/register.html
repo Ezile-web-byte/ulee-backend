@@ -201,7 +201,7 @@
     const rules = {
         firstName: (v) => v.trim() ? '' : 'Enter your first name.',
         lastName:  (v) => v.trim() ? '' : 'Enter your last name.',
-        password:  (v) => v ? '' : 'Enter a password.',
+        password:  (v) => !v ? 'Enter a password.' : (v.length < 8 || !/[A-Za-z]/.test(v) || !/[0-9]/.test(v)) ? 'Use at least 8 characters, with a letter and a number.' : '',
         gender:    (v) => (v === 'Female' || v === 'Male') ? '' : 'Please choose your gender.',
 
         email: (v) => {

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Check your email - ULEE</title>
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f1f5f5;font-family:'Hanken Grotesk',Arial,sans-serif;color:#10302f}
+.card{background:#fff;max-width:420px;width:calc(100% - 32px);padding:32px;border-radius:16px;box-shadow:0 8px 30px rgba(11,79,85,.12)}
+h1{margin:0 0 12px;font-size:22px;color:#0b4f55}
+p{line-height:1.5;margin:0 0 16px}
+label{display:block;font-weight:600;margin:14px 0 6px}
+input{width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #c5d6d6;border-radius:8px;font-size:15px}
+.btn{display:inline-block;margin-top:18px;padding:11px 20px;background:#0b4f55;color:#fff;border:0;border-radius:8px;font-size:15px;font-weight:600;text-decoration:none;cursor:pointer}
+.err{color:#b42318;background:#fef3f2;padding:10px 12px;border-radius:8px}</style>
+</head>
+<body>
+<main class="card">
+  <h1>Request sent</h1>
+  <p>If an account exists for <strong th:text="${email}">your email</strong>, your request has been sent to the administrator. After verifying your identity they will send you a reset link, which works for 24 hours.</p>
+  <a class="btn" th:href="@{/student-dashboard}">Back to ULEE</a>
+</main>
+</body>
+</html>
