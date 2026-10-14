@@ -204,6 +204,10 @@
         #locationDropdownPanel { display: none; }
         #locationDropdownPanel.open { display: block; }
 
+        /* Room type dropdown (hero search) — same design as the location dropdown */
+        #typeDropdownPanel { display: none; }
+        #typeDropdownPanel.open { display: block; }
+
         /* ═══════════════ ULEE logo (design system, section 3) ═══════════════ */
         .logo-link { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; transition: opacity .2s; }
         .logo-link:hover { opacity: .88; }
@@ -462,9 +466,12 @@
     </div>
 </nav>
 
-<!-- Hero Section -->
-<header class="relative w-full h-[85vh] flex items-center overflow-hidden">
-    <div class="absolute inset-0 z-0">
+<!-- Hero Section
+     CHANGED: overflow-x-clip (instead of overflow-hidden) so the Location / Room Type
+     dropdown lists can hang below the hero without being cut off. The background
+     wrapper below carries overflow-hidden so the Ken Burns zoom stays contained. -->
+<header class="relative w-full h-[85vh] flex items-center overflow-x-clip">
+    <div class="absolute inset-0 z-0 overflow-hidden">
         <div class="w-full h-full bg-cover bg-center scale-105 hero-ken-burns" style="background-image: url('/uploads/student-background.png')"></div>
         <div class="absolute inset-0 hero-wash"></div>
     </div>
@@ -505,19 +512,30 @@
                     </div>
                 </div>
                 <div class="w-px h-8 bg-white/20 hidden md:block"></div>
-                <div class="flex-1 px-md py-sm flex items-center gap-sm">
+
+                <!-- CHANGED: Room Type now uses the same custom dropdown design as Location.
+                     The hidden input keeps the id "heroTypeSelect" so the existing filter
+                     code (setType / search submit) keeps working unchanged.
+                     Values match the real DB `type` column values (Single Room / Commune / Sharing). -->
+                <div class="flex-1 px-md py-sm flex items-center gap-sm relative" id="typeFieldWrap">
                     <span class="material-symbols-outlined text-teal-bright">bed</span>
                     <div class="flex flex-col w-full">
                         <span class="text-[10px] uppercase font-bold text-white/60 tracking-wider">Room Type</span>
-                        <!-- Values match the real DB `type` column values (Single Room / Commune / Sharing). -->
-                        <select name="type" id="heroTypeSelect" class="bg-transparent text-white font-label-bold border-none p-0 focus:ring-0 w-full">
-                            <option class="text-on-surface" value="">Any type</option>
-                            <option class="text-on-surface" value="Single Room">Single Room</option>
-                            <option class="text-on-surface" value="Commune">Commune</option>
-                            <option class="text-on-surface" value="Sharing">Sharing</option>
-                        </select>
+                        <button type="button" id="typeDropdownBtn" class="bg-transparent font-label-bold border-none p-0 focus:ring-0 w-full flex items-center justify-between text-left">
+                            <span id="typeDropdownLabel" class="text-white/50">Any type</span>
+                            <span class="material-symbols-outlined text-white/60 text-[18px]">expand_more</span>
+                        </button>
+                    </div>
+                    <input type="hidden" name="type" id="heroTypeSelect" value="" />
+
+                    <div id="typeDropdownPanel" class="absolute left-0 top-full mt-xs w-56 bg-white rounded-xl shadow-lg border border-outline-variant/30 py-xs z-50">
+                        <button type="button" class="type-option w-full text-left px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors" data-type="">Any type</button>
+                        <button type="button" class="type-option w-full text-left px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors" data-type="Single Room">Single Room</button>
+                        <button type="button" class="type-option w-full text-left px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors" data-type="Commune">Commune</button>
+                        <button type="button" class="type-option w-full text-left px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors" data-type="Sharing">Sharing</button>
                     </div>
                 </div>
+
                 <!-- One of the only two yellow CTAs left: buttons on photo banners (design system) -->
                 <button type="submit" class="bg-accent-yellow text-navy px-xl py-md rounded-xl font-label-bold flex items-center justify-center gap-sm hover:brightness-95 transition">
                     <span class="material-symbols-outlined">search</span>
@@ -1129,6 +1147,9 @@
     const locationPanel = document.getElementById('locationDropdownPanel');
     const locationLabel = document.getElementById('locationDropdownLabel');
     const locationHidden = document.getElementById('locationHiddenInput');
+    const typeBtn = document.getElementById('typeDropdownBtn');
+    const typePanel = document.getElementById('typeDropdownPanel');
+    const typeLabel = document.getElementById('typeDropdownLabel');
     const activeLocationChip = document.getElementById('activeLocationChip');
     const activeLocationChipText = document.getElementById('activeLocationChipText');
     const noFilterMatches = document.getElementById('noFilterMatches');
@@ -1138,9 +1159,13 @@
         return activeTab ? activeTab.dataset.type : 'all';
     }
 
+    // CHANGED: also updates the Room Type dropdown's label
     function setType(type) {
         tabs.forEach(t => t.classList.toggle('active', t.dataset.type === type));
         document.getElementById('heroTypeSelect').value = type === 'all' ? '' : type;
+        typeLabel.textContent = type === 'all' ? 'Any type' : type;
+        typeLabel.classList.toggle('text-white/50', type === 'all');
+        typeLabel.classList.toggle('text-white', type !== 'all');
     }
 
     function setLocation(val) {
@@ -1209,8 +1234,10 @@
         });
     });
 
+    // CHANGED: opening one hero dropdown closes the other
     locationBtn?.addEventListener('click', (e) => {
         e.stopPropagation();
+        typePanel?.classList.remove('open');
         locationPanel.classList.toggle('open');
     });
 
@@ -1222,9 +1249,28 @@
         });
     });
 
+    // NEW: Room Type dropdown (same behaviour as the Location dropdown)
+    typeBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        locationPanel.classList.remove('open');
+        typePanel.classList.toggle('open');
+    });
+
+    document.querySelectorAll('.type-option').forEach(opt => {
+        opt.addEventListener('click', () => {
+            setType(opt.dataset.type || 'all');
+            typePanel.classList.remove('open');
+            applyFilters();
+        });
+    });
+
+    // CHANGED: clicking anywhere else closes whichever hero dropdown is open
     document.addEventListener('click', (e) => {
         if (locationPanel && !locationPanel.contains(e.target) && e.target !== locationBtn) {
             locationPanel.classList.remove('open');
+        }
+        if (typePanel && !typePanel.contains(e.target) && e.target !== typeBtn) {
+            typePanel.classList.remove('open');
         }
     });
 

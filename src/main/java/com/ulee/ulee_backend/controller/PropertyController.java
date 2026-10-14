@@ -1106,6 +1106,79 @@ public class PropertyController {
                 : "redirect:/landlord-index";
     }
 
+    // ============================================================
+    // Delete a property permanently (the Delete button on the edit page).
+    // Unlike togglePropertyStatus above (a soft "Inactive" flag), this
+    // removes the row for good, along with everything that points at it.
+    // ============================================================
+    @PostMapping("/delete-property/{id}")
+    @org.springframework.transaction.annotation.Transactional
+    public String deleteProperty(@PathVariable Integer id, Principal principal) {
+        Integer landlordID = getCurrentUser(principal).getUserID();
+        Property property = getOwnedProperty(id, landlordID); // ownership check
+
+        // Safety guard: don't delete a listing that already has accepted
+        // students living in it. Remove this block if you don't want it.
+        List<Application> applications = applicationRepository.findByPropertyIDIn(List.of(id));
+        boolean hasAccepted = applications.stream()
+                .anyMatch(a -> "Accepted".equalsIgnoreCase(a.getStatus()));
+        if (hasAccepted) {
+            return "redirect:/edit-property/" + id + "?error=has-accepted-students";
+        }
+
+        // 1. Application documents (rows + files on disk), then the applications
+        for (Application app : applications) {
+            List<ApplicationDocument> docs = applicationDocumentRepository.findByApplicationID(app.getApplicationID());
+            for (ApplicationDocument d : docs) {
+                deleteFileQuietly(d.getFilePath());
+            }
+            applicationDocumentRepository.deleteAll(docs);
+        }
+        applicationRepository.deleteAll(applications);
+
+        // 2. Reviews and saved-property hearts
+        reviewRepository.deleteAll(reviewRepository.findByPropertyID(id));
+        savedPropertyRepository.deleteAll(savedPropertyRepository.findAll().stream()
+                .filter(s -> id.equals(s.getPropertyID()))
+                .collect(Collectors.toList()));
+
+        // 3. Special features and their photos
+        for (PropertyFeature f : propertyFeatureRepository.findByPropertyID(id)) {
+            List<PropertyFeatureImage> fImages = propertyFeatureImageRepository.findByFeatureID(f.getFeatureID());
+            for (PropertyFeatureImage fi : fImages) {
+                deleteUploadedFileQuietly(fi.getUrl());
+            }
+            propertyFeatureImageRepository.deleteAll(fImages);
+            propertyFeatureRepository.delete(f);
+        }
+
+        // 4. Property photos (rows + files)
+        List<PropertyImage> images = propertyImageRepository.findByPropertyID(id);
+        for (PropertyImage img : images) {
+            deleteUploadedFileQuietly(img.getUrl());
+        }
+        propertyImageRepository.deleteAll(images);
+
+        // 5. The property itself (its amenity links go with it)
+        propertyRepository.delete(property);
+
+        return "redirect:/landlord-index?toast=deleted";
+    }
+
+    // Best-effort file cleanup: a missing file must never block the delete.
+    private void deleteFileQuietly(String path) {
+        if (path == null || path.isBlank()) return;
+        try { Files.deleteIfExists(Paths.get(path)); } catch (Exception ignored) { }
+    }
+
+    // Photo URLs are stored as "/uploads/<filename>"; the file lives in uploadDir.
+    private void deleteUploadedFileQuietly(String url) {
+        if (url == null || !url.startsWith("/uploads/")) return;
+        try {
+            Files.deleteIfExists(Paths.get(uploadDir).resolve(url.substring("/uploads/".length())));
+        } catch (Exception ignored) { }
+    }
+
 
     // FIX: this previously only passed "property", "reviews", and
     // "vrImages" to the template — meaning the image gallery, amenities,
