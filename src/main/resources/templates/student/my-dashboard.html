@@ -360,7 +360,7 @@
                 <span class="nav-badge" th:if="${acceptedCount > 0}" th:text="${acceptedCount}">0</span>
             </a>
             <a class="nav-item" th:href="@{/saved-properties}">
-                <span class="material-symbols-outlined" aria-hidden="true">favorite</span><span>Saved Properties</span>
+                <span class="material-symbols-outlined" aria-hidden="true">favorite</span><span>Favourite Properties</span>
                 <span class="nav-badge" th:if="${savedCount > 0}" th:text="${savedCount}">0</span>
             </a>
             <a class="nav-item" th:href="@{/student-dashboard}">
@@ -383,6 +383,8 @@
                 <a class="chip-btn" th:href="@{/student-dashboard}">
                     <span class="material-symbols-outlined" aria-hidden="true">search</span>Find a room
                 </a>
+                <!-- Notification bell (fragments/student-notifications.html) -->
+                <div th:replace="~{fragments/student-notifications :: bell}"></div>
                 <span class="avatar" th:text="${userInitials != null ? userInitials : 'ST'}" aria-hidden="true">ST</span>
             </div>
         </div>
@@ -433,7 +435,7 @@
         <!-- Metric cards -->
         <section class="metrics" aria-label="Your numbers">
             <a class="ulee-metric-card" th:href="@{/saved-properties}">
-                <div class="ulee-metric-label"><span class="material-symbols-outlined" aria-hidden="true">favorite</span>Saved</div>
+                <div class="ulee-metric-label"><span class="material-symbols-outlined" aria-hidden="true">favorite</span>Favourites</div>
                 <div class="ulee-metric-value" th:text="${savedCount}">0</div>
                 <div class="ulee-metric-sub">Rooms on your shortlist</div>
                 <svg class="ulee-metric-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true"><path class="w-back" d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/><path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/></svg>
@@ -499,7 +501,7 @@
             <!-- Saved properties -->
             <section class="panel" aria-labelledby="savedHeading">
                 <div class="panel-head">
-                    <h2 class="panel-title" id="savedHeading"><span class="material-symbols-outlined" aria-hidden="true">favorite</span>Saved rooms</h2>
+                    <h2 class="panel-title" id="savedHeading"><span class="material-symbols-outlined" aria-hidden="true">favorite</span>Favourite rooms</h2>
                     <a class="view-all" th:href="@{/saved-properties}">View all<span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a>
                 </div>
 
@@ -538,7 +540,7 @@
             </a>
             <a class="action" th:href="@{/saved-properties}">
                 <span class="action-icon"><span class="material-symbols-outlined" aria-hidden="true">bookmark_heart</span></span>
-                <span><strong>Compare saved</strong><small>Your shortlisted rooms</small></span>
+                <span><strong>Compare favourites</strong><small>Your favourite rooms</small></span>
             </a>
         </section>
     </main>

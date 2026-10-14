@@ -79,17 +79,6 @@
                         <label class="sa-label" for="login-pass">Password</label>
                         <div class="sa-password-wrap">
                             <input class="sa-input sa-password-input" type="password" placeholder="Enter your password" id="login-pass" />
-                            <button
-                                    class="sa-password-toggle"
-                                    type="button"
-                                    aria-label="Show password"
-                                    aria-pressed="false"
-                                    aria-controls="login-pass"
-                                    onclick="togglePassword('login-pass', this)"
-                            >
-                                <span class="sa-eye-open" aria-hidden="true">👁</span>
-                                <span class="sa-eye-closed" aria-hidden="true">🙈</span>
-                            </button>
                         </div>
                     </div>
                     <a class="sa-forgot" onclick="showForgot()">Forgot password?</a>
@@ -127,17 +116,6 @@
                         <label class="sa-label" for="reg-pass">Password</label>
                         <div class="sa-password-wrap">
                             <input class="sa-input sa-password-input" type="password" placeholder="At least 8 characters" id="reg-pass" />
-                            <button
-                                    class="sa-password-toggle"
-                                    type="button"
-                                    aria-label="Show password"
-                                    aria-pressed="false"
-                                    aria-controls="reg-pass"
-                                    onclick="togglePassword('reg-pass', this)"
-                            >
-                                <span class="sa-eye-open" aria-hidden="true">👁</span>
-                                <span class="sa-eye-closed" aria-hidden="true">🙈</span>
-                            </button>
                         </div>
                     </div>
                     <button class="sa-btn-primary" onclick="handleRegister()">Create account</button>

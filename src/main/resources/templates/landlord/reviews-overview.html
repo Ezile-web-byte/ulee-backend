@@ -37,13 +37,8 @@
     <!-- ============ MAIN ============ -->
     <main class="main">
 
-        <header class="topbar">
-            <h1 class="topbar-title">Reviews</h1>
-            <div class="topbar-actions">
-                <div th:replace="~{fragments/landlord-notifications :: bell}"></div>
-                <div class="avatar-initials" th:text="${landlordInitials != null ? landlordInitials : '?'}">?</div>
-            </div>
-        </header>
+
+        <div th:replace="~{fragments/landlord-topbar :: topbar('Reviews')}"></div>
 
         <div class="page-body">
 

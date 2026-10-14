@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Saved Properties – ULEE</title>
+    <title>Favourite Properties – ULEE</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
@@ -224,7 +224,7 @@
                 <span class="nav-badge" th:if="${totalApplications != null and totalApplications > 0}" th:text="${totalApplications}">0</span>
             </a>
             <a class="nav-item active" th:href="@{/saved-properties}" aria-current="page">
-                <span class="material-symbols-outlined" aria-hidden="true">favorite</span><span>Saved Properties</span>
+                <span class="material-symbols-outlined" aria-hidden="true">favorite</span><span>Favourite Properties</span>
                 <span class="nav-badge" th:if="${savedCount != null and savedCount > 0}" th:text="${savedCount}">0</span>
             </a>
             <a class="nav-item" th:href="@{/student-dashboard}">
@@ -243,7 +243,7 @@
 
     <main class="main">
         <div class="topbar">
-            <div class="crumbs"><a th:href="@{/my-dashboard}">Student portal</a> / <strong>Saved Properties</strong></div>
+            <div class="crumbs"><a th:href="@{/my-dashboard}">Student portal</a> / <strong>Favourite Properties</strong></div>
             <div class="topbar-right">
                 <a class="chip-btn" th:href="@{/student-dashboard}">
                     <span class="material-symbols-outlined" aria-hidden="true">search</span>Find a room
@@ -261,7 +261,7 @@
             <div class="orb two" aria-hidden="true"></div>
             <div>
                 <p class="eyebrow"><span class="live-dot" aria-hidden="true"></span>Your shortlist</p>
-                <h1 id="pageHeading">Saved <span class="text-gradient">Properties</span></h1>
+                <h1 id="pageHeading">Favourite <span class="text-gradient">Properties</span></h1>
                 <p class="lead">
                     Rooms you've hearted<span th:if="${currentUserFirstName != null}" th:text="', ' + ${currentUserFirstName}">, Student</span>.
                     Compare them side by side and apply when you're ready.
@@ -269,7 +269,7 @@
             </div>
             <div class="hero-count">
                 <div class="hero-count-num" th:text="${#lists.size(properties)}">0</div>
-                <div class="hero-count-label"><span class="material-symbols-outlined" aria-hidden="true">favorite</span>Saved</div>
+                <div class="hero-count-label"><span class="material-symbols-outlined" aria-hidden="true">favorite</span>Favourites</div>
             </div>
         </section>
 
@@ -321,8 +321,8 @@
 
         <section class="empty" th:if="${#lists.isEmpty(properties)}">
             <div class="empty-icon"><span class="material-symbols-outlined" aria-hidden="true">favorite</span></div>
-            <h2>No saved properties yet</h2>
-            <p>Tap the heart on any room to save it here for later.</p>
+            <h2>No favourite properties yet</h2>
+            <p>Tap the heart on any room to add it to your favourites.</p>
             <a class="btn btn-yellow" th:href="@{/student-dashboard}">
                 <span class="material-symbols-outlined" aria-hidden="true">travel_explore</span>Browse rooms
             </a>

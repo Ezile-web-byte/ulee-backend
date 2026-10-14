@@ -111,15 +111,13 @@
 
     <!-- CHANGED: Log out lives in its own bottom block (divider above it).
          Spring Security expects logout as a POST.
-         data-confirm: the shared popup asks "Log out?" before the form is sent. -->
+         CHANGED: the button no longer uses the shared data-confirm popup. It opens
+         the same "Log out?" popup the admin dashboard uses (defined at the bottom
+         of this fragment); the form below is only submitted when the landlord
+         presses "Log out" in that popup. th:action adds the CSRF token itself. -->
     <div class="sidebar-bottom">
-        <form th:action="@{/logout}" method="post" class="nav-logout-form">
-            <button type="submit" class="nav-item nav-item--logout"
-                    data-confirm
-                    data-confirm-title="Log out?"
-                    data-confirm-message="You'll need to sign in again to manage your properties."
-                    data-confirm-ok="Log out"
-                    data-confirm-icon="👋">
+        <form th:action="@{/logout}" method="post" class="nav-logout-form" id="uleeLogoutForm">
+            <button type="button" class="nav-item nav-item--logout" onclick="confirmLandlordLogout()">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 17l5-5-5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 <span>Log out</span>
             </button>
@@ -129,6 +127,157 @@
 
     <!-- Shared popup assets (css + js), so "Log out?" works on every page with this sidebar -->
     <th:block th:replace="~{fragments/modal :: assets}"></th:block>
+
+    <!--
+      "Log out?" popup: same ULEE design-system look as the admin dashboard
+      (white card, pale teal icon circle, solid teal confirm button), with a
+      message written for landlords. It sits INSIDE <aside> on purpose:
+      th:replace only pulls in the element carrying th:fragment and its
+      children, so anything after </aside> would be dropped.
+    -->
+    <div class="ulee-logout-overlay" id="uleeLogoutOverlay" aria-hidden="true">
+        <div class="ulee-logout-modal" role="alertdialog" aria-modal="true" aria-labelledby="uleeLogoutTitle">
+            <div class="ulee-logout-icon">
+                <svg viewBox="0 0 24 24"><path d="M9 4H5v16h4M16 8l4 4-4 4M20 12H9"/></svg>
+            </div>
+            <h3 id="uleeLogoutTitle" class="ulee-logout-title">Log out?</h3>
+            <p class="ulee-logout-text">You’ll need to log in again to manage your properties, applications and reviews.</p>
+            <div class="ulee-logout-actions">
+                <button type="button" id="uleeLogoutCancelBtn" class="ulee-logout-btn ulee-logout-cancel" onclick="cancelLandlordLogout()">Cancel</button>
+                <button type="button" class="ulee-logout-btn ulee-logout-confirm" onclick="doLandlordLogout()">Log out</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        #sidebar { z-index: 1500; }   /* lifts the sidebar (and the logout popup inside it) above the page content */
+
+        .ulee-logout-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 30, 38, 0.45);
+            backdrop-filter: blur(3px);
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity .18s ease;
+        }
+        .ulee-logout-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+        .ulee-logout-modal {
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 28px 26px 22px;
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.25);
+            transform: translateY(14px) scale(.97);
+            transition: transform .18s ease;
+            font-family: 'Hanken Grotesk', sans-serif;
+        }
+        .ulee-logout-overlay.active .ulee-logout-modal {
+            transform: translateY(0) scale(1);
+        }
+        .ulee-logout-icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 16px;
+            border-radius: 50%;
+            background: #E3F6F3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .ulee-logout-icon svg {
+            width: 28px;
+            height: 28px;
+            fill: none;
+            stroke: #006A6A;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .ulee-logout-title {
+            margin: 0 0 6px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 19px;
+            font-weight: 700;
+            color: #12262d;
+        }
+        .ulee-logout-text {
+            margin: 0 0 22px;
+            font-size: 13.5px;
+            line-height: 1.6;
+            color: #5b6b71;
+        }
+        .ulee-logout-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .ulee-logout-btn {
+            flex: 1;
+            padding: 12px 0;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform .1s ease, filter .15s ease;
+        }
+        .ulee-logout-btn:hover { filter: brightness(0.96); }
+        .ulee-logout-btn:active { transform: scale(0.97); }
+        .ulee-logout-btn:focus-visible { outline: 2px solid #14C8BE; outline-offset: 3px; }
+        .ulee-logout-cancel {
+            background: #ffffff;
+            border: 1px solid #d9dfe2;
+            color: #444;
+        }
+        .ulee-logout-confirm {
+            background: #006A6A;
+            border: 1px solid #006A6A;
+            color: #fff;
+        }
+    </style>
+
+    <script>
+        function confirmLandlordLogout() {
+            var overlay = document.getElementById('uleeLogoutOverlay');
+            if (!overlay) return;
+            overlay.setAttribute('aria-hidden', 'false');
+            overlay.classList.add('active');
+            var cancel = document.getElementById('uleeLogoutCancelBtn');
+            if (cancel) cancel.focus();
+        }
+
+        function cancelLandlordLogout() {
+            var overlay = document.getElementById('uleeLogoutOverlay');
+            if (!overlay) return;
+            overlay.classList.remove('active');
+            overlay.setAttribute('aria-hidden', 'true');
+        }
+
+        function doLandlordLogout() {
+            var form = document.getElementById('uleeLogoutForm');
+            if (form) form.submit();
+        }
+
+        document.addEventListener('click', function (e) {
+            var overlay = document.getElementById('uleeLogoutOverlay');
+            if (overlay && overlay.classList.contains('active') && e.target === overlay) {
+                cancelLandlordLogout();
+            }
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') cancelLandlordLogout();
+        });
+    </script>
 </aside>
 
 </body>

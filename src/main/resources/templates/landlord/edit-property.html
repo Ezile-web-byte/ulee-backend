@@ -30,14 +30,14 @@
             --shadow-md: 0 10px 28px rgba(15, 45, 45, 0.08);
         }
 
-        .main > .topbar {
-            justify-content: flex-end;
-            padding: 16px 32px;
-        }
+        .topbar-actions { display: flex; align-items: center; gap: 14px; }
+
+        /* Make the page background match the content area so there is no white band at the bottom */
+        html, body { background: #f7faf9; }
 
         .main { font-size: 16px; }
         .field input[type="file"] { font-size: 15px; }
-        .container { max-width: 1160px; margin: 0 auto; padding: 0 32px 64px; }
+        .container { max-width: 1160px; margin: 0 auto; padding: 0 32px 24px; }
 
         .head-banner {
             position: relative;
@@ -232,7 +232,6 @@
         #saveChangesBtn:active { transform: scale(.99); }
 
         @media (max-width: 720px) {
-            .main > .topbar { padding: 14px 18px; }
             .container { padding: 0 16px 48px; }
             .head-banner { padding: 18px 20px 30px; }
             .banner-skyline { opacity: .3; max-width: 100%; }
@@ -246,6 +245,12 @@
         @media (prefers-reduced-motion: reduce) {
             .bld, .glow-a, .glow-b, .beacon, .star, .banner-waves { animation: none; }
         }
+
+        html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: var(--surface) !important;
+        }
     </style>
 </head>
 <body>
@@ -255,9 +260,7 @@
 
     <main class="main">
 
-        <header class="topbar">
-            <div class="avatar-initials" th:text="${userInitials != null ? userInitials : 'EH'}">EH</div>
-        </header>
+        <div th:replace="~{fragments/landlord-topbar :: topbar('My Properties')}"></div>
 
         <div class="container" style="padding-top: 1.75rem;">
 
@@ -575,14 +578,14 @@
                             onclick="document.getElementById('formAction').value='draft';">Save Draft</button>
                     <button type="submit"
                             class="btn btn-danger"
-                            th:formaction="@{/toggle-property-status/{id}(id=${property.propertyID}, isAvailable=false)}"
+                            th:formaction="@{/delete-property/{id}(id=${property.propertyID})}"
                             formmethod="post"
                             formnovalidate
                             data-confirm
-                            data-confirm-title="Deactivate this property?"
-                            data-confirm-ok="Deactivate"
+                            data-confirm-title="Delete this property?"
+                            data-confirm-ok="Delete"
                             data-confirm-tone="danger"
-                            th:attr="data-confirm-message=${'“' + property.title + '” will stop showing to students until you reactivate it.'}">Delete</button>
+                            th:attr="data-confirm-message=${'“' + property.title + '” and its photos will be permanently deleted. This cannot be undone.'}">Delete</button>
                 </div>
 
             </form>

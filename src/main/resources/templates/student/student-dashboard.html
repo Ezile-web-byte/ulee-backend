@@ -219,6 +219,10 @@
         #locationDropdownPanel { display: none; }
         #locationDropdownPanel.open { display: block; }
 
+        /* Room type dropdown (hero search) — same design as the location dropdown */
+        #typeDropdownPanel { display: none; }
+        #typeDropdownPanel.open { display: block; }
+
         /* ═══════════════ ULEE logo (design system, section 3) ═══════════════ */
         .logo-link { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; transition: opacity .2s; }
         .logo-link:hover { opacity: .88; }
@@ -331,15 +335,6 @@
         .um-input:focus { border-color: #006A6A; box-shadow: 0 0 0 3px rgba(0, 106, 106, .15); }
         .um-pw { position: relative; }
         .um-pw .um-input { padding-right: 46px; }
-        .um-pw-toggle {
-            position: absolute; top: 50%; right: 7px; transform: translateY(-50%);
-            width: 34px; height: 34px;
-            display: inline-flex; align-items: center; justify-content: center;
-            border: none; background: transparent; border-radius: 8px; cursor: pointer;
-            color: #6f787d;
-        }
-        .um-pw-toggle:hover { background: #F0F7F6; }
-        .um-pw-toggle:focus-visible { outline: 2px solid #006A6A; outline-offset: 1px; }
 
         .um-link { font-size: 13px; font-weight: 600; color: #006A6A; background: none; border: none; cursor: pointer; padding: 0; }
         .um-link:hover { text-decoration: underline; text-underline-offset: 2px; }
@@ -471,7 +466,7 @@
                 <div id="userMenuDropdown" class="hidden absolute right-0 mt-xs w-56 bg-white rounded-xl shadow-lg border border-outline-variant/30 py-xs z-50">
                     <a href="/my-dashboard" class="block px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors">My Dashboard</a>
                     <a href="/my-applications" class="block px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors">My Applications</a>
-                    <a href="/saved-properties" class="block px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors">Saved Properties</a>
+                    <a href="/saved-properties" class="block px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors">Favourite Properties</a>
                     <div class="border-t border-outline-variant/30 my-xs"></div>
                     <form id="logoutForm" th:action="@{/logout}" method="post">
                         <button type="button" onclick="openLogoutConfirm()" class="w-full text-left px-md py-sm text-sm text-error hover:bg-surface-container-low transition-colors">Logout</button>
@@ -486,9 +481,12 @@
     </div>
 </nav>
 
-<!-- Hero Section -->
-<header class="relative w-full h-[85vh] flex items-center overflow-hidden">
-    <div class="absolute inset-0 z-0">
+<!-- Hero Section
+     CHANGED: overflow-x-clip (instead of overflow-hidden) so the Location / Room Type
+     dropdown lists can hang below the hero without being cut off. The background
+     wrapper below carries overflow-hidden so the Ken Burns zoom stays contained. -->
+<header class="relative w-full h-[85vh] flex items-center overflow-x-clip">
+    <div class="absolute inset-0 z-0 overflow-hidden">
         <div class="w-full h-full bg-cover bg-center scale-105 hero-ken-burns" style="background-image: url('/uploads/student-background.png')"></div>
         <div class="absolute inset-0 hero-wash"></div>
     </div>
@@ -529,19 +527,30 @@
                     </div>
                 </div>
                 <div class="w-px h-8 bg-white/20 hidden md:block"></div>
-                <div class="flex-1 px-md py-sm flex items-center gap-sm">
+
+                <!-- CHANGED: Room Type now uses the same custom dropdown design as Location.
+                     The hidden input keeps the id "heroTypeSelect" so the existing filter
+                     code (setType / search submit) keeps working unchanged.
+                     Values match the real DB `type` column values (Single Room / Commune / Sharing). -->
+                <div class="flex-1 px-md py-sm flex items-center gap-sm relative" id="typeFieldWrap">
                     <span class="material-symbols-outlined text-teal-bright">bed</span>
                     <div class="flex flex-col w-full">
                         <span class="text-[10px] uppercase font-bold text-white/60 tracking-wider">Room Type</span>
-                        <!-- Values match the real DB `type` column values (Single Room / Commune / Sharing). -->
-                        <select name="type" id="heroTypeSelect" class="bg-transparent text-white font-label-bold border-none p-0 focus:ring-0 w-full">
-                            <option class="text-on-surface" value="">Any type</option>
-                            <option class="text-on-surface" value="Single Room">Single Room</option>
-                            <option class="text-on-surface" value="Commune">Commune</option>
-                            <option class="text-on-surface" value="Sharing">Sharing</option>
-                        </select>
+                        <button type="button" id="typeDropdownBtn" class="bg-transparent font-label-bold border-none p-0 focus:ring-0 w-full flex items-center justify-between text-left">
+                            <span id="typeDropdownLabel" class="text-white/50">Any type</span>
+                            <span class="material-symbols-outlined text-white/60 text-[18px]">expand_more</span>
+                        </button>
+                    </div>
+                    <input type="hidden" name="type" id="heroTypeSelect" value="" />
+
+                    <div id="typeDropdownPanel" class="absolute left-0 top-full mt-xs w-56 bg-white rounded-xl shadow-lg border border-outline-variant/30 py-xs z-50">
+                        <button type="button" class="type-option w-full text-left px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors" data-type="">Any type</button>
+                        <button type="button" class="type-option w-full text-left px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors" data-type="Single Room">Single Room</button>
+                        <button type="button" class="type-option w-full text-left px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors" data-type="Commune">Commune</button>
+                        <button type="button" class="type-option w-full text-left px-md py-sm text-sm text-on-surface hover:bg-surface-container-low transition-colors" data-type="Sharing">Sharing</button>
                     </div>
                 </div>
+
                 <!-- One of the only two yellow CTAs left: buttons on photo banners (design system) -->
                 <button type="submit" class="bg-accent-yellow text-navy px-xl py-md rounded-xl font-label-bold flex items-center justify-center gap-sm hover:brightness-95 transition">
                     <span class="material-symbols-outlined">search</span>
@@ -853,7 +862,7 @@
             <ul class="space-y-xs">
                 <li><a class="text-sidebar-text hover:text-white u-transition" href="/student-dashboard">All Residences</a></li>
                 <li><a class="text-sidebar-text hover:text-white u-transition" href="/my-applications">My Applications</a></li>
-                <li><a class="text-sidebar-text hover:text-white u-transition" href="/saved-properties">Saved Properties</a></li>
+                <li><a class="text-sidebar-text hover:text-white u-transition" href="/saved-properties">Favourite Properties</a></li>
             </ul>
         </div>
         <div class="space-y-md">
@@ -920,11 +929,10 @@
                 </div>
                 <div class="um-field">
                     <label class="um-label" for="loginPassword">Password</label>
+                    <!-- CHANGED: custom show/hide button removed — the browser's own
+                         "show password" icon (which appears while typing) is the only one now. -->
                     <div class="um-pw">
                         <input type="password" id="loginPassword" name="password" class="um-input" placeholder="Enter your password" required/>
-                        <button type="button" class="um-pw-toggle" aria-label="Show password" aria-pressed="false" onclick="toggleModalPassword('loginPassword', this)">
-                            <span class="material-symbols-outlined text-[20px]">visibility</span>
-                        </button>
                     </div>
                 </div>
                 <p class="text-right" style="margin: 12px 0 18px;">
@@ -999,18 +1007,6 @@
     <div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null, null, null, null)}"></div>
 </div>
 <script>
-    // ── Show / hide password inside the modals ──
-    function toggleModalPassword(inputId, btn) {
-        const input = document.getElementById(inputId);
-        if (!input) return;
-        const show = input.type === 'password';
-        input.type = show ? 'text' : 'password';
-        btn.setAttribute('aria-pressed', String(show));
-        btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
-        const icon = btn.querySelector('.material-symbols-outlined');
-        if (icon) icon.textContent = show ? 'visibility_off' : 'visibility';
-    }
-
     // ── Login modal ──
     const loginOverlay = document.getElementById('loginModalOverlay');
     document.getElementById('openLoginBtn')?.addEventListener('click', () => loginOverlay.classList.add('open'));
@@ -1181,6 +1177,9 @@
     const locationPanel = document.getElementById('locationDropdownPanel');
     const locationLabel = document.getElementById('locationDropdownLabel');
     const locationHidden = document.getElementById('locationHiddenInput');
+    const typeBtn = document.getElementById('typeDropdownBtn');
+    const typePanel = document.getElementById('typeDropdownPanel');
+    const typeLabel = document.getElementById('typeDropdownLabel');
     const activeLocationChip = document.getElementById('activeLocationChip');
     const activeLocationChipText = document.getElementById('activeLocationChipText');
     const noFilterMatches = document.getElementById('noFilterMatches');
@@ -1190,9 +1189,13 @@
         return activeTab ? activeTab.dataset.type : 'all';
     }
 
+    // CHANGED: also updates the Room Type dropdown's label
     function setType(type) {
         tabs.forEach(t => t.classList.toggle('active', t.dataset.type === type));
         document.getElementById('heroTypeSelect').value = type === 'all' ? '' : type;
+        typeLabel.textContent = type === 'all' ? 'Any type' : type;
+        typeLabel.classList.toggle('text-white/50', type === 'all');
+        typeLabel.classList.toggle('text-white', type !== 'all');
     }
 
     function setLocation(val) {
@@ -1261,8 +1264,10 @@
         });
     });
 
+    // CHANGED: opening one hero dropdown closes the other
     locationBtn?.addEventListener('click', (e) => {
         e.stopPropagation();
+        typePanel?.classList.remove('open');
         locationPanel.classList.toggle('open');
     });
 
@@ -1274,9 +1279,28 @@
         });
     });
 
+    // NEW: Room Type dropdown (same behaviour as the Location dropdown)
+    typeBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        locationPanel.classList.remove('open');
+        typePanel.classList.toggle('open');
+    });
+
+    document.querySelectorAll('.type-option').forEach(opt => {
+        opt.addEventListener('click', () => {
+            setType(opt.dataset.type || 'all');
+            typePanel.classList.remove('open');
+            applyFilters();
+        });
+    });
+
+    // CHANGED: clicking anywhere else closes whichever hero dropdown is open
     document.addEventListener('click', (e) => {
         if (locationPanel && !locationPanel.contains(e.target) && e.target !== locationBtn) {
             locationPanel.classList.remove('open');
+        }
+        if (typePanel && !typePanel.contains(e.target) && e.target !== typeBtn) {
+            typePanel.classList.remove('open');
         }
     });
 

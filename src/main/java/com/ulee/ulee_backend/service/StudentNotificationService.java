@@ -7,9 +7,13 @@ import org.springframework.stereotype.Service;
 
 /**
  * Call these from the places where the events already happen
- * (landlord accepts/rejects, student submits a review/report, admin handles a report).
+ * (student applies, landlord accepts/rejects, student saves a favourite,
+ * student submits a review/report, admin handles a report).
  * Each call just inserts one row, so a failure here should never break the main action:
  * wrap the call in try/catch if you want that guarantee.
+ *
+ * type values (drive the icon + heading in the bell):
+ *   accepted | rejected | submitted | favourite | review | report | handled
  */
 @Service
 public class StudentNotificationService {
@@ -17,9 +21,21 @@ public class StudentNotificationService {
     @Autowired
     private StudentNotificationRepository repository;
 
+    private static String nameOrDefault(String propertyTitle) {
+        return (propertyTitle == null || propertyTitle.isBlank()) ? "a property" : propertyTitle;
+    }
+
+    /** Student's application was submitted. */
+    public void applicationSubmitted(Integer studentId, String propertyTitle) {
+        repository.save(new StudentNotification(
+                studentId, "submitted",
+                "Your application for " + nameOrDefault(propertyTitle) + " was submitted. The landlord will review it.",
+                "/my-applications"));
+    }
+
     /** Landlord accepted or rejected the student's application. */
     public void applicationDecision(Integer studentId, String propertyTitle, boolean accepted) {
-        String title = (propertyTitle == null || propertyTitle.isBlank()) ? "a property" : propertyTitle;
+        String title = nameOrDefault(propertyTitle);
         repository.save(new StudentNotification(
                 studentId,
                 accepted ? "accepted" : "rejected",
@@ -28,12 +44,19 @@ public class StudentNotificationService {
                 "/my-applications"));
     }
 
+    /** Student added a property to their favourites. Call on ADD only, not on remove. */
+    public void favouriteAdded(Integer studentId, Integer propertyId, String propertyTitle) {
+        repository.save(new StudentNotification(
+                studentId, "favourite",
+                nameOrDefault(propertyTitle) + " was added to your favourites.",
+                propertyId != null ? "/property/" + propertyId : "/my-dashboard"));
+    }
+
     /** Student's review was saved. */
     public void reviewSubmitted(Integer studentId, Integer propertyId, String propertyTitle) {
-        String title = (propertyTitle == null || propertyTitle.isBlank()) ? "a property" : propertyTitle;
         repository.save(new StudentNotification(
                 studentId, "review",
-                "Your review for " + title + " was submitted successfully.",
+                "Your review for " + nameOrDefault(propertyTitle) + " was submitted successfully.",
                 propertyId != null ? "/property/" + propertyId : "/my-dashboard"));
     }
 

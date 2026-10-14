@@ -164,9 +164,9 @@
                         </p>
 
                         <div class="amenity-chips">
-                            <span class="amenity-chip" th:text="${property.bedrooms} + ' bed'">Beds</span>
-                            <span class="amenity-chip" th:text="${property.bathrooms} + ' bath'">Baths</span>
-                            <span class="amenity-chip" th:if="${property.furnished}">Furnished</span>
+                           <span class="amenity-chip"
+                                 th:each="a : ${property.featuredAmenities}"
+                                 th:text="${a.name}">Amenity</span>
                         </div>
 
                         <div class="property-footer">

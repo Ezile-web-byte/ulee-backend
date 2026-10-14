@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -341,11 +341,6 @@
 
         .amenity-item { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text); }
         .amenity-item .item-icon { font-size: 15px; width: 20px; text-align: center; }
-
-        .custom-feature-list { display: flex; flex-direction: column; gap: 14px; margin-top: 18px; }
-        .custom-feature-item { border-top: 1px solid var(--border); padding-top: 14px; }
-        .custom-feature-item h3 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
-        .custom-feature-item p { font-size: 13px; color: var(--muted); }
 
         .no-features { font-size: 14px; color: var(--muted); }
 
@@ -693,9 +688,9 @@
         body {
             font-family: var(--font-body);
             background:
-                radial-gradient(900px 420px at 100% -10%, rgba(20,200,190,.10), transparent 60%),
-                radial-gradient(700px 380px at 0% 60%, rgba(0,113,120,.06), transparent 60%),
-                var(--bg);
+                    radial-gradient(900px 420px at 100% -10%, rgba(20,200,190,.10), transparent 60%),
+                    radial-gradient(700px 380px at 0% 60%, rgba(0,113,120,.06), transparent 60%),
+                    var(--bg);
         }
         .detail-title, .detail-description h2, .detail-features h2, .detail-vr h2,
         .detail-map-card h2, .detail-reviews h2, .detail-apply-card h2, .review-quote-mark,
@@ -755,7 +750,7 @@
             background-image: linear-gradient(rgba(20,200,190,.12) 1px, transparent 1px), linear-gradient(90deg, rgba(20,200,190,.12) 1px, transparent 1px);
             background-size: 36px 36px;
             -webkit-mask-image: radial-gradient(ellipse 70% 80% at 100% 0%, #000 10%, transparent 70%);
-                    mask-image: radial-gradient(ellipse 70% 80% at 100% 0%, #000 10%, transparent 70%);
+            mask-image: radial-gradient(ellipse 70% 80% at 100% 0%, #000 10%, transparent 70%);
         }
         .detail-info-card::after {
             content: ''; position: absolute; top: -70px; right: -50px; width: 200px; height: 200px; border-radius: 50%; z-index: -1;
@@ -969,8 +964,8 @@
     <div class="detail-features">
         <h2>Amenities</h2>
 
-        <div th:if="${(amenityCategoryViews == null or amenityCategoryViews.isEmpty()) and (features == null or features.isEmpty())}" class="no-features">
-            No amenities or special features listed for this property yet.
+        <div th:if="${amenityCategoryViews == null or amenityCategoryViews.isEmpty()}" class="no-features">
+            No amenities listed for this property yet.
         </div>
 
         <div class="amenity-category-block" th:each="cat : ${amenityCategoryViews}">
@@ -985,13 +980,6 @@
                 </div>
             </div>
         </div>
-
-        <div class="custom-feature-list" th:if="${features != null and not features.isEmpty()}">
-            <div class="custom-feature-item" th:each="feature : ${features}">
-                <h3 th:text="${feature.name}">Feature name</h3>
-                <p th:if="${feature.description != null}" th:text="${feature.description}">Feature description</p>
-            </div>
-        </div>
     </div>
 
     <!-- 3. LOCATION MAP -->
@@ -1004,23 +992,12 @@
         </iframe>
     </div>
 
-    <div class="detail-vr" th:if="${not #lists.isEmpty(vrImages)}">
-        <h2>360° Virtual Tour</h2>
-        <div class="vr-viewer">
-            <img th:src="${vrImages[0].url}" alt="360 tour view" class="vr-image" />
-            <span class="vr-badge">🌐 360° View</span>
-        </div>
-        <a th:href="@{/property/{id}/vr-tour(id=${property.propertyID})}" class="vr-tour-btn">
-            🌐 Launch Full 360° Tour
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
-                <path d="M9 18l6-6-6-6"/>
-            </svg>
-        </a>
-    </div>
+    <!-- VR / 360° virtual tour removed -->
+
 
     <!-- 4. REVIEWS — quote-card style, matches what the landlord sees -->
     <div class="detail-reviews">
-        <h2>Reviews & Ratings</h2>
+        <h2>Reviews &amp; Ratings</h2>
 
         <div class="no-reviews-card" th:if="${#lists.isEmpty(reviews)}">
             🏡 This accommodation is new — there are currently no reviews yet.
@@ -1097,16 +1074,16 @@
 
             <div class="apply-form-grid">
                 <div class="form-field">
-                    <label>Name</label>
-                    <input type="text" th:value="${currentUser.firstName}" readonly />
+                    <label for="applicantFirstName">Name</label>
+                    <input type="text" id="applicantFirstName" th:value="${currentUser.firstName}" readonly />
                 </div>
                 <div class="form-field">
-                    <label>Surname</label>
-                    <input type="text" th:value="${currentUser.lastName}" readonly />
+                    <label for="applicantLastName">Surname</label>
+                    <input type="text" id="applicantLastName" th:value="${currentUser.lastName}" readonly />
                 </div>
                 <div class="form-field full-width">
-                    <label>Email</label>
-                    <input type="email" th:value="${currentUser.email}" readonly />
+                    <label for="applicantEmail">Email</label>
+                    <input type="email" id="applicantEmail" th:value="${currentUser.email}" readonly />
                 </div>
 
                 <div class="form-field">
@@ -1185,27 +1162,16 @@
         </div>
     </div>
 </div>
-<!--
-  PASTE THIS into the property detail template, right after the
-  "validationModalBackdrop" </div> and BEFORE the first <script> near the bottom.
 
-  (The three <link>/<script> lines for speak-with-ai.css / -logic.js / .js are
-   already in your <head>, so nothing else is needed.)
--->
-
-<!-- ULEE AI assistant (floating chat icon) -->
-<div th:with="propertyFeatures=${
-         (property.amenities != null and !property.amenities.isEmpty() ? #strings.listJoin(property.amenities.![name], ', ') : '')
-         + (features != null and !features.isEmpty()
-             ? ((property.amenities != null and !property.amenities.isEmpty()) ? ', ' : '') + #strings.listJoin(features.![name], ', ')
-             : '')
-     }">
-    <div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(
-             ${property.propertyID}, ${property.title},
-             ${property.address + ', ' + property.city}, ${property.commuteType},
-             ${propertyFeatures})}">
-    </div>
+<!-- ULEE AI assistant (floating chat icon).
+     "propertyFeatures" is now a plain text list of the amenity names, built in
+     PropertyController.viewPropertyDetail, so no projection syntax is needed here. -->
+<div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(
+         ${property.propertyID}, ${property.title},
+         ${property.address + ', ' + property.city}, ${property.commuteType},
+         ${propertyFeatures})}">
 </div>
+
 <script>
     (function () {
         const thumbImgs = Array.from(document.querySelectorAll('.detail-thumb img'));

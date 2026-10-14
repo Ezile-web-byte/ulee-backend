@@ -1,10 +1,10 @@
 package com.ulee.ulee_backend.controller;
 
-import com.ulee.ulee_backend.dto.ChatRequestDTO;
 import com.ulee.ulee_backend.dto.ChatResponseDTO;
 import com.ulee.ulee_backend.model.Property;
 import com.ulee.ulee_backend.repository.PropertyImageRepository;
 import com.ulee.ulee_backend.repository.PropertyRepository;
+import com.ulee.ulee_backend.repository.UserRepository;
 import com.ulee.ulee_backend.service.SwaiChatService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,20 +28,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Controller-level tests for SwaiApiController. PropertyRepository,
- * PropertyImageRepository, and SwaiChatService are all mocked — this
- * class verifies only HTTP adaptation (request parsing, delegation,
- * response shape), never any business logic, since the controller itself
- * contains none: all intent detection, property lookup, Geoapify/Groq
- * calls, and fallback decisions are already covered by
- * SwaiChatServiceTest, GeoapifyPlacesServiceTest, and GroqAiServiceTest.
- *
- * Security filters are disabled for this slice (@AutoConfigureMockMvc
- * (addFilters = false)) so these tests isolate controller behavior from
- * the security filter chain — the permitAll() addition for
- * /api/swai/chat in SecurityConfig is a one-line, directly readable
- * change and is not re-verified via a separate filter-chain integration
- * test here.
+ * Controller-level tests for SwaiApiController. Repositories and
+ * SwaiChatService are mocked; this class verifies only HTTP adaptation
+ * (request parsing, delegation, response shape). Security filters are
+ * disabled for this slice (addFilters = false).
  */
 @WebMvcTest(SwaiApiController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -56,12 +46,14 @@ class SwaiApiControllerTest {
     private PropertyImageRepository propertyImageRepository;
     @MockitoBean
     private SwaiChatService swaiChatService;
+    @MockitoBean
+    private UserRepository userRepository;
 
     // ---- POST /api/swai/chat -----------------------------------------
 
     @Test
     void chat_returnsChatResponseDTO_asJson() throws Exception {
-        when(swaiChatService.handle(any())).thenReturn(new ChatResponseDTO("Hello! How can I help?"));
+        when(swaiChatService.handle(any(), any())).thenReturn(new ChatResponseDTO("Hello! How can I help?"));
 
         mockMvc.perform(post("/api/swai/chat")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -72,7 +64,7 @@ class SwaiApiControllerTest {
 
     @Test
     void chat_passesMessageAndPropertyId_toSwaiChatService() throws Exception {
-        when(swaiChatService.handle(any())).thenReturn(new ChatResponseDTO("ok"));
+        when(swaiChatService.handle(any(), any())).thenReturn(new ChatResponseDTO("ok"));
 
         mockMvc.perform(post("/api/swai/chat")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -81,12 +73,12 @@ class SwaiApiControllerTest {
 
         verify(swaiChatService).handle(argThat(request ->
                 "What is the rent?".equals(request.getMessage())
-                        && Integer.valueOf(42).equals(request.getPropertyId())));
+                        && Integer.valueOf(42).equals(request.getPropertyId())), any());
     }
 
     @Test
     void chat_withNullPropertyId_isAcceptedAndPassedThrough() throws Exception {
-        when(swaiChatService.handle(any())).thenReturn(new ChatResponseDTO("General context reply."));
+        when(swaiChatService.handle(any(), any())).thenReturn(new ChatResponseDTO("General context reply."));
 
         mockMvc.perform(post("/api/swai/chat")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -96,33 +88,26 @@ class SwaiApiControllerTest {
 
         verify(swaiChatService).handle(argThat(request ->
                 "What is ULEE?".equals(request.getMessage())
-                        && request.getPropertyId() == null));
+                        && request.getPropertyId() == null), any());
     }
 
     @Test
     void chat_withNoRequestBody_stillCallsService_withNullRequest() throws Exception {
-        when(swaiChatService.handle(null)).thenReturn(new ChatResponseDTO("Please type a question."));
+        when(swaiChatService.handle(null, null)).thenReturn(new ChatResponseDTO("Please type a question."));
 
-        // No .content(...) at all — required = false on @RequestBody means
-        // Spring resolves the parameter to null rather than rejecting the
-        // request with a 400.
+        // No body at all: required = false on @RequestBody means Spring
+        // passes null instead of rejecting the request with a 400.
         mockMvc.perform(post("/api/swai/chat").contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.reply").value("Please type a question."));
 
-        verify(swaiChatService).handle(null);
+        verify(swaiChatService).handle(null, null);
     }
 
     @Test
     void chat_isAPureAdapter_returnsExactlyWhatServiceReturns_noWrappingOrModification() throws Exception {
-        // Demonstrates the controller cannot introduce a new leak of
-        // exception details, provider names, or keys: whatever
-        // SwaiChatService.handle(...) decides is safe to return (which is
-        // where every fallback/error-handling decision lives — see
-        // SwaiChatServiceTest) is passed straight through, byte for byte,
-        // with no additional processing in this controller.
         String safeFallback = "I'm having trouble answering right now. Please try again in a moment.";
-        when(swaiChatService.handle(any())).thenReturn(new ChatResponseDTO(safeFallback));
+        when(swaiChatService.handle(any(), any())).thenReturn(new ChatResponseDTO(safeFallback));
 
         mockMvc.perform(post("/api/swai/chat")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -131,7 +116,7 @@ class SwaiApiControllerTest {
                 .andExpect(jsonPath("$.reply").value(safeFallback));
     }
 
-    // ---- GET /api/listings — preserved exactly ------------------------
+    // ---- GET /api/listings --------------------------------------------
 
     @Test
     void listings_stillReturnsExpectedShape_unaffectedByChatEndpointAddition() throws Exception {

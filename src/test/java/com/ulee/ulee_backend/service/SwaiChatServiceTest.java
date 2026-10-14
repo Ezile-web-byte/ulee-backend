@@ -213,7 +213,7 @@ class SwaiChatServiceTest {
         // Factual nearby-place context present: name, category, distance, address
         assertTrue(systemPrompt.contains("Baywest Mall"));
         assertTrue(systemPrompt.contains("shopping_mall"));
-        assertTrue(systemPrompt.contains("1200") || systemPrompt.contains("1,200"));
+        assertTrue(systemPrompt.contains("1201m"));
         assertTrue(systemPrompt.contains("Corner Pharmacy"));
         assertTrue(systemPrompt.contains("pharmacy"));
         assertTrue(systemPrompt.contains("350"));

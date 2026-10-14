@@ -1,33 +1,36 @@
 /*
  * speak-with-ai.css
- * Styles for the "Speak with AI" floating chat widget.
+ * Styles for the "Speak with AI" floating chat widget — ULEE navy/teal design.
  *
  * Everything is scoped under .swai-root / #swai-icon / #swai-panel (and their
- * children) so nothing here can leak into or be affected by whichever design
- * system the host page uses (hero-yellow, teal/Sora dashboards, legacy pages).
+ * children) so nothing here can leak into or be affected by the host page.
  *
- * Cross-theme consistency (Requirement 6) comes from a --swai-* variable
- * chain defined on .swai-root that falls back through the real hero design
- * tokens declared in hero-theme.css, and finally to hard-coded ULEE brand
- * defaults (yellow header/CTA, teal icon/accents) when a host page doesn't
- * define those tokens at all.
+ * The --swai-* variable chain is kept. It now defaults to the ULEE navy/teal
+ * design-system palette; a host page can still override any --swai-* value.
+ * Requires the Google Fonts <link> from the ULEE design system (section 1).
  */
 
 .swai-root {
-    --swai-accent: var(--hero-yellow, #ffe170);
-    --swai-on-accent: var(--hero-on-yellow, #221b00);
-    --swai-teal: var(--hero-teal, #0f9e94);
-    --swai-teal-deep: var(--hero-teal-deep, #0b7d75);
-    --swai-teal-pale: var(--hero-teal-pale, #e4f5f3);
+    --swai-navy: #071C2D;
+    --swai-teal-bright: #14C8BE;
+    --swai-active: #007178;
+    --swai-teal: #096C6C;
+    --swai-teal-deep: #006A6A;
+    --swai-teal-pale: #F0F7F6;
+    --swai-field: #F4FBFA;
+    --swai-border: #93C0C5;
+    --swai-line: #E6E8E4;
+    --swai-ink: #191c1d;
+    --swai-muted: #3f484d;
+    --swai-accent: var(--hero-yellow, #f5d450);
+    --swai-on-accent: #071C2D;
     --swai-on-teal: #ffffff;
-    --swai-radius: var(--hero-radius-pill, 999px);
-    --swai-panel-radius: var(--hero-radius-glass, 16px);
-    --swai-font: var(--hero-font-body, 'Hanken Grotesk', sans-serif);
-    --swai-font-display: var(--hero-font-display, 'Plus Jakarta Sans', sans-serif);
+    --swai-radius: 9999px;
+    --swai-panel-radius: 20px;
+    --swai-font: 'Hanken Grotesk', var(--hero-font-body, sans-serif);
+    --swai-font-display: 'Plus Jakarta Sans', var(--hero-font-display, sans-serif);
 
-    /* Corner placement — bottom-right, matching the live site. Override with
-       --swai-offset-x / --swai-offset-y on a host page if a corner ever needs
-       to shift (e.g. to clear a footer chat widget from another tool). */
+    /* Corner placement — bottom-right. Override with --swai-offset-x / -y. */
     position: fixed;
     bottom: var(--swai-offset-y, 20px);
     right: var(--swai-offset-x, 20px);
@@ -44,20 +47,19 @@
     justify-content: center;
     width: 68px;
     height: 68px;
-    border-radius: var(--swai-radius);
-    background: var(--swai-teal);
-    color: var(--swai-on-teal);
-    border: none;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+    border-radius: 50%;
+    background: linear-gradient(135deg, #071C2D 0%, #0F6C70 100%);
+    color: var(--swai-teal-bright);
+    border: 1.5px solid rgba(20, 200, 190, 0.6);
+    box-shadow: 0 8px 22px rgba(7, 28, 45, 0.35);
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .swai-root #swai-icon:hover,
 .swai-root .swai-icon:hover {
-    background: var(--swai-teal-deep);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.24);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 28px rgba(7, 28, 45, 0.45);
 }
 
 .swai-root #swai-icon:active,
@@ -67,14 +69,14 @@
 
 .swai-root #swai-icon:focus-visible,
 .swai-root .swai-icon:focus-visible {
-    outline: 2px solid var(--swai-teal-deep);
+    outline: 3px solid var(--swai-teal-bright);
     outline-offset: 2px;
 }
 
 .swai-root #swai-icon svg,
 .swai-root .swai-icon svg {
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
 }
 
 /* ---------- Chat panel ---------- */
@@ -84,11 +86,13 @@
     position: absolute;
     bottom: 84px;
     right: 0;
-    width: 340px;
-    max-height: 480px;
+    width: 360px;
+    max-width: calc(100vw - 24px);
+    max-height: 520px;
     border-radius: var(--swai-panel-radius);
     background: #ffffff;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.22);
+    border: 1.5px solid rgba(20, 200, 190, 0.45);
+    box-shadow: 0 18px 48px rgba(7, 28, 45, 0.28);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -112,45 +116,119 @@
     }
 }
 
-/* ---------- Panel header ---------- */
+/* ---------- Panel header (navy gradient + wave) ---------- */
 
 .swai-root .swai-panel-header {
+    position: relative;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 12px 14px;
-    background: var(--swai-accent);
-    color: var(--swai-on-accent);
+    gap: 12px;
+    padding: 14px 16px 28px;
+    overflow: hidden;
+    background: linear-gradient(115deg, #071C2D 0%, #0A3A48 55%, #0F6C70 100%);
+    color: #ffffff;
     flex-shrink: 0;
+}
+
+/* breathing teal glow in the corner */
+.swai-root .swai-panel-header::after {
+    content: '';
+    position: absolute;
+    top: -60px;
+    right: -30px;
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(20, 200, 190, 0.3), transparent 70%);
+    animation: swaiPulse 4.5s ease-in-out infinite;
+    pointer-events: none;
+}
+
+.swai-root .swai-avatar {
+    position: relative;
+    z-index: 2;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    background: rgba(20, 200, 190, 0.14);
+    border: 1px solid rgba(20, 200, 190, 0.5);
+    flex-shrink: 0;
+}
+
+.swai-root .swai-avatar svg {
+    width: 22px;
+    height: 22px;
+    fill: var(--swai-teal-bright);
+}
+
+.swai-root .swai-who {
+    position: relative;
+    z-index: 2;
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
 }
 
 .swai-root .swai-title {
     font-family: var(--swai-font-display);
-    font-weight: 700;
-    font-size: 14px;
+    font-weight: 800;
+    font-size: 16px;
+    color: var(--swai-teal-bright);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
+.swai-root .swai-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.78);
+}
+
+.swai-root .swai-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #7DF0E6;
+    animation: swaiPing 2.4s infinite;
+}
+
 .swai-root .swai-close {
+    position: relative;
+    z-index: 2;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
+    width: 32px;
+    height: 32px;
     border: none;
-    background: transparent;
-    color: var(--swai-on-accent);
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
     font-size: 18px;
     line-height: 1;
     cursor: pointer;
-    border-radius: 50%;
+    border-radius: 10px;
+    flex-shrink: 0;
     transition: background 0.15s ease, transform 0.15s ease;
 }
 
+.swai-root .swai-close svg {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+}
+
 .swai-root .swai-close:hover {
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.16);
 }
 
 .swai-root .swai-close:active {
@@ -158,8 +236,43 @@
 }
 
 .swai-root .swai-close:focus-visible {
-    outline: 2px solid var(--swai-on-accent);
+    outline: 3px solid var(--swai-teal-bright);
     outline-offset: 2px;
+}
+
+.swai-root .swai-wave {
+    position: absolute;
+    left: 0;
+    bottom: -1px;
+    width: 200%;
+    height: 20px;
+    z-index: 1;
+    animation: swaiWave 16s linear infinite;
+}
+
+.swai-root .swai-wave .w-back {
+    fill: rgba(14, 116, 128, 0.55);
+}
+
+.swai-root .swai-wave .w-front {
+    fill: #ffffff;
+    stroke: #14C8BE;
+    stroke-width: 1.5;
+    vector-effect: non-scaling-stroke;
+}
+
+@keyframes swaiWave {
+    to { transform: translateX(-50%); }
+}
+
+@keyframes swaiPulse {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.12); }
+}
+
+@keyframes swaiPing {
+    0% { box-shadow: 0 0 0 0 rgba(125, 240, 230, 0.6); }
+    70%, 100% { box-shadow: 0 0 0 7px rgba(125, 240, 230, 0); }
 }
 
 /* ---------- Message history ---------- */
@@ -169,31 +282,41 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    padding: 8px 0;
+    padding: 6px 0 8px;
     min-height: 0;
     gap: 2px;
+    background: #ffffff;
 }
 
 .swai-root .swai-msg {
-    padding: 8px 12px;
-    border-radius: 12px;
-    margin: 4px 8px;
-    max-width: 82%;
-    font-size: 13px;
-    line-height: 1.4;
+    padding: 10px 14px;
+    margin: 4px 14px;
+    max-width: 84%;
+    font-size: 14px;
+    line-height: 1.45;
     word-wrap: break-word;
+    animation: swaiMsgIn 0.25s ease-out;
 }
 
 .swai-root .swai-msg-user {
-    background: var(--swai-teal);
-    color: var(--swai-on-teal);
+    background: var(--swai-navy);
+    color: #ffffff;
+    font-weight: 500;
     margin-left: auto;
+    border-radius: 16px 4px 16px 16px;
 }
 
 .swai-root .swai-msg-assistant {
     background: var(--swai-teal-pale);
-    color: #0c2b28;
+    color: var(--swai-ink);
+    border: 1px solid var(--swai-line);
     margin-right: auto;
+    border-radius: 4px 16px 16px 16px;
+}
+
+@keyframes swaiMsgIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
 }
 
 /* ---------- Category chips ---------- */
@@ -201,25 +324,26 @@
 .swai-root .swai-chip-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
-    margin: 2px 8px 10px;
+    gap: 8px;
+    margin: 2px 14px 10px;
 }
 
 .swai-root .swai-chip {
-    border: 1.5px solid var(--swai-teal);
+    border: 1.5px solid var(--swai-border);
     background: #ffffff;
     color: var(--swai-teal-deep);
     font-family: var(--swai-font);
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
-    padding: 7px 12px;
+    padding: 8px 13px;
     border-radius: var(--swai-radius);
     cursor: pointer;
-    transition: background 0.15s ease, color 0.15s ease;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 .swai-root .swai-chip:hover:not(:disabled) {
-    background: var(--swai-teal);
+    background: var(--swai-active);
+    border-color: var(--swai-active);
     color: var(--swai-on-teal);
 }
 
@@ -229,7 +353,7 @@
 }
 
 .swai-root .swai-chip:focus-visible {
-    outline: 2px solid var(--swai-teal-deep);
+    outline: 3px solid var(--swai-teal-bright);
     outline-offset: 2px;
 }
 
@@ -237,19 +361,25 @@
 
 .swai-root .swai-result {
     display: flex;
-    gap: 10px;
-    margin: 4px 8px 10px;
-    padding: 8px;
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    border-radius: 12px;
+    gap: 12px;
+    margin: 4px 14px 10px;
+    padding: 10px;
+    border: 1.5px solid var(--swai-line);
+    border-radius: 14px;
     background: #ffffff;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.swai-root .swai-result:hover {
+    border-color: var(--swai-border);
+    box-shadow: 0 6px 16px rgba(7, 28, 45, 0.1);
 }
 
 .swai-root .swai-result-thumb {
-    width: 64px;
-    height: 64px;
+    width: 68px;
+    height: 68px;
     flex-shrink: 0;
-    border-radius: 8px;
+    border-radius: 10px;
     background: var(--swai-teal-pale);
     overflow: hidden;
 }
@@ -270,14 +400,14 @@
     margin: 0 0 2px;
     font-family: var(--swai-font-display);
     font-weight: 700;
-    font-size: 13px;
-    color: #132024;
+    font-size: 13.5px;
+    color: var(--swai-navy);
 }
 
 .swai-root .swai-result-loc {
     margin: 0 0 6px;
-    font-size: 11px;
-    color: #667;
+    font-size: 11.5px;
+    color: var(--swai-muted);
 }
 
 .swai-root .swai-result-tags {
@@ -288,12 +418,12 @@
 }
 
 .swai-root .swai-result-tags span {
-    font-size: 9.5px;
+    font-size: 10px;
     font-weight: 700;
-    letter-spacing: 0.02em;
     background: var(--swai-teal-pale);
     color: var(--swai-teal-deep);
-    padding: 2px 7px;
+    border: 1px solid var(--swai-line);
+    padding: 2px 8px;
     border-radius: var(--swai-radius);
 }
 
@@ -301,21 +431,22 @@
     display: inline-block;
     background: var(--swai-accent);
     color: var(--swai-on-accent);
-    font-family: var(--swai-font);
-    font-weight: 700;
-    font-size: 11px;
+    font-family: var(--swai-font-display);
+    font-weight: 800;
+    font-size: 11.5px;
     text-decoration: none;
-    padding: 6px 12px;
+    padding: 6px 14px;
     border-radius: var(--swai-radius);
-    transition: box-shadow 0.15s ease;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
 }
 
 .swai-root .swai-result-apply:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+    box-shadow: 0 4px 12px rgba(7, 28, 45, 0.2);
+    transform: translateY(-1px);
 }
 
 .swai-root .swai-result-apply:focus-visible {
-    outline: 2px solid var(--swai-on-accent);
+    outline: 3px solid var(--swai-teal-bright);
     outline-offset: 2px;
 }
 
@@ -325,44 +456,57 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 10px;
-    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    padding: 12px 14px;
+    border-top: 1px solid var(--swai-line);
+    background: #ffffff;
     flex-shrink: 0;
 }
 
 .swai-root .swai-input {
     flex: 1 1 auto;
     min-width: 0;
-    padding: 8px 12px;
-    border: 1px solid rgba(0, 0, 0, 0.15);
+    height: 44px;
+    padding: 0 16px;
+    border: 1.5px solid var(--swai-line);
     border-radius: var(--swai-radius);
+    background: var(--swai-field);
+    color: var(--swai-ink);
     font-family: var(--swai-font);
-    font-size: 13px;
+    font-size: 14px;
+    font-weight: 500;
     outline: none;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
+.swai-root .swai-input::placeholder {
+    color: var(--swai-muted);
+    opacity: 0.8;
+}
+
 .swai-root .swai-input:focus {
-    border-color: var(--swai-teal);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--swai-teal) 30%, transparent);
+    border-color: #01A49F;
+    box-shadow: 0 0 0 3px rgba(1, 164, 159, 0.2);
 }
 
 .swai-root .swai-send {
     flex-shrink: 0;
-    padding: 8px 14px;
+    height: 44px;
+    padding: 0 20px;
     border: none;
     border-radius: var(--swai-radius);
-    background: var(--swai-accent);
-    color: var(--swai-on-accent);
-    font-family: var(--swai-font);
-    font-weight: 600;
-    font-size: 13px;
+    background: linear-gradient(135deg, #007178 0%, #01A49F 100%);
+    color: #ffffff;
+    font-family: var(--swai-font-display);
+    font-weight: 800;
+    font-size: 14px;
     cursor: pointer;
     transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 
 .swai-root .swai-send:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+    background: #01A49F;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(1, 164, 159, 0.35);
 }
 
 .swai-root .swai-send:active {
@@ -370,40 +514,23 @@
 }
 
 .swai-root .swai-send:focus-visible {
-    outline: 2px solid var(--swai-on-accent);
+    outline: 3px solid var(--swai-teal-bright);
     outline-offset: 2px;
-}
-
-/* ---------- Reduced motion ---------- */
-
-@media (prefers-reduced-motion: reduce) {
-    .swai-root #swai-panel,
-    .swai-root .swai-panel {
-        animation: none;
-    }
-
-    .swai-root #swai-icon,
-    .swai-root .swai-icon,
-    .swai-root .swai-close,
-    .swai-root .swai-send,
-    .swai-root .swai-chip,
-    .swai-root .swai-result-apply {
-        transition: none;
-    }
 }
 
 /* ---------- Hello bubble (teaser) ---------- */
 
 .swai-root .swai-teaser {
     position: absolute;
-    bottom: 0;
+    bottom: 6px;
     right: 82px;
-    width: 230px;
-    padding: 12px 14px;
-    background: #ffffff;
-    color: #132024;
-    border-radius: 14px;
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.2);
+    width: 240px;
+    padding: 12px 30px 12px 16px;
+    background: var(--swai-navy);
+    color: rgba(255, 255, 255, 0.82);
+    border: 1.5px solid rgba(20, 200, 190, 0.45);
+    border-radius: 16px 16px 4px 16px;
+    box-shadow: 0 8px 22px rgba(7, 28, 45, 0.3);
     font-size: 13px;
     line-height: 1.4;
     cursor: pointer;
@@ -418,18 +545,22 @@
     display: block;
     margin-bottom: 2px;
     font-family: var(--swai-font-display);
+    font-weight: 800;
     font-size: 14px;
+    color: var(--swai-teal-bright);
 }
 
-/* little speech-bubble tail pointing at the chat icon */
+/* tail pointing at the chat icon */
 .swai-root .swai-teaser::after {
     content: '';
     position: absolute;
-    right: -6px;
-    bottom: 26px;
+    right: -7px;
+    bottom: 22px;
     width: 12px;
     height: 12px;
-    background: #ffffff;
+    background: var(--swai-navy);
+    border-top: 1.5px solid rgba(20, 200, 190, 0.45);
+    border-right: 1.5px solid rgba(20, 200, 190, 0.45);
     transform: rotate(45deg);
     border-radius: 2px;
 }
@@ -438,11 +569,11 @@
     position: absolute;
     top: 6px;
     right: 6px;
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     border: none;
     background: transparent;
-    color: #667;
+    color: rgba(255, 255, 255, 0.7);
     font-size: 16px;
     line-height: 1;
     cursor: pointer;
@@ -450,7 +581,8 @@
 }
 
 .swai-root .swai-teaser-close:hover {
-    background: rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.14);
+    color: #ffffff;
 }
 
 @keyframes swaiTeaserIn {
@@ -470,8 +602,267 @@
     }
 }
 
+/* ---------- Reduced motion ---------- */
+
 @media (prefers-reduced-motion: reduce) {
-    .swai-root .swai-teaser {
+    .swai-root #swai-panel,
+    .swai-root .swai-panel,
+    .swai-root .swai-teaser,
+    .swai-root .swai-msg,
+    .swai-root .swai-wave,
+    .swai-root .swai-dot,
+    .swai-root .swai-panel-header::after {
         animation: none;
     }
+
+    .swai-root #swai-icon,
+    .swai-root .swai-icon,
+    .swai-root .swai-close,
+    .swai-root .swai-send,
+    .swai-root .swai-chip,
+    .swai-root .swai-result,
+    .swai-root .swai-result-apply {
+        transition: none;
+    }
+}
+
+
+/* ---------- "This is AI" cues ---------- */
+
+/* launcher: sparkle + AI badge */
+.swai-root .swai-icon { position: relative; }
+
+.swai-root .swai-ai-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px 7px 3px 5px;
+    border-radius: var(--swai-radius);
+    background: #14C8BE;
+    color: #071C2D;
+    border: 2px solid #ffffff;
+    font-family: var(--swai-font-display);
+    font-weight: 800;
+    font-size: 11px;
+    line-height: 1;
+    box-shadow: 0 3px 8px rgba(7, 28, 45, 0.3);
+}
+
+.swai-root .swai-ai-badge svg {
+    width: 11px;
+    height: 11px;
+    fill: #071C2D;
+    stroke: none;
+}
+
+/* gentle sparkle twinkle on the badge icon */
+.swai-root .swai-ai-badge svg { animation: swaiTwinkle 3s ease-in-out infinite; }
+
+@keyframes swaiTwinkle {
+    0%, 100% { transform: scale(1) rotate(0); }
+    50% { transform: scale(1.25) rotate(20deg); }
+}
+
+/* "AI" tag in the hello bubble */
+.swai-root .swai-ai-tag {
+    display: inline-block;
+    margin-left: 4px;
+    padding: 2px 7px;
+    border-radius: var(--swai-radius);
+    background: #14C8BE;
+    color: #071C2D;
+    font-style: normal;
+    font-weight: 800;
+    font-size: 10.5px;
+    vertical-align: 1px;
+}
+
+/* sparkle on the header avatar */
+.swai-root .swai-avatar { overflow: visible; }
+
+.swai-root .swai-avatar-spark {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 18px;
+    height: 18px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: #14C8BE;
+    border: 2px solid #0A3A48;
+}
+
+.swai-root .swai-avatar-spark svg {
+    width: 10px;
+    height: 10px;
+    fill: #071C2D;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .swai-root .swai-ai-badge svg { animation: none; }
+}
+
+
+/* ---------- Hello box attached to the launcher ---------- */
+
+.swai-root .swai-teaser {
+    right: 78px;            /* sits right against the 68px icon */
+    bottom: 10px;           /* vertically centred on the icon */
+    width: auto;
+    max-width: 230px;
+    padding: 11px 34px 11px 16px;
+    border-radius: 16px;
+    white-space: nowrap;
+}
+
+.swai-root .swai-teaser strong {
+    margin-bottom: 1px;
+    font-size: 15px;
+}
+
+.swai-root .swai-teaser span {
+    font-size: 13px;
+}
+
+/* tail points straight at the icon, centred on the box */
+.swai-root .swai-teaser::after {
+    top: 50%;
+    bottom: auto;
+    margin-top: -6px;
+    right: -7px;
+}
+
+@media (max-width: 420px) {
+    .swai-root .swai-teaser { width: auto; max-width: 190px; }
+}
+
+
+/* ---------- Hello message box (chat-message style, above the launcher) ---------- */
+
+.swai-root .swai-teaser {
+    right: 0;
+    bottom: 84px;
+    width: auto;
+    max-width: 270px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 34px 12px 12px;
+    white-space: normal;
+    background: #ffffff;
+    color: var(--swai-ink);
+    border: 1.5px solid var(--swai-border);
+    border-radius: 16px 16px 4px 16px;
+    box-shadow: 0 10px 28px rgba(7, 28, 45, 0.22);
+}
+
+/* tail drops down toward the launcher */
+.swai-root .swai-teaser::after {
+    top: auto;
+    margin-top: 0;
+    right: 24px;
+    bottom: -7px;
+    background: #ffffff;
+    border: 0;
+    border-right: 1.5px solid var(--swai-border);
+    border-bottom: 1.5px solid var(--swai-border);
+}
+
+.swai-root .swai-teaser-avatar {
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 11px;
+    background: linear-gradient(135deg, #071C2D, #0F6C70);
+    border: 1px solid rgba(20, 200, 190, 0.5);
+}
+
+.swai-root .swai-teaser-avatar svg {
+    width: 20px;
+    height: 20px;
+    fill: var(--swai-teal-bright);
+}
+
+.swai-root .swai-teaser-msg { min-width: 0; }
+
+.swai-root .swai-teaser-name {
+    font-family: var(--swai-font-display);
+    font-weight: 700;
+    font-size: 11.5px;
+    color: var(--swai-teal-deep);
+    margin-bottom: 4px;
+}
+
+/* the message itself, styled like an assistant bubble */
+.swai-root .swai-teaser-text {
+    margin: 0;
+    padding: 8px 12px;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+    color: var(--swai-ink);
+    background: var(--swai-teal-pale);
+    border: 1px solid var(--swai-line);
+    border-radius: 4px 14px 14px 14px;
+    animation: swaiTeaserText 0.3s ease-out 1.1s backwards;
+}
+
+/* typing dots play first, then give way to the message */
+.swai-root .swai-teaser-typing {
+    display: flex;
+    gap: 4px;
+    padding: 0 4px;
+    overflow: hidden;
+    animation: swaiTypingOut 1.1s ease forwards;
+}
+
+.swai-root .swai-teaser-typing i {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--swai-teal-deep);
+    opacity: 0.4;
+    animation: swaiDot 0.9s infinite;
+}
+
+.swai-root .swai-teaser-typing i:nth-child(2) { animation-delay: 0.15s; }
+.swai-root .swai-teaser-typing i:nth-child(3) { animation-delay: 0.3s; }
+
+.swai-root .swai-teaser-close {
+    color: var(--swai-muted);
+}
+
+.swai-root .swai-teaser-close:hover {
+    background: rgba(7, 28, 45, 0.08);
+    color: var(--swai-navy);
+}
+
+@keyframes swaiDot {
+    50% { opacity: 1; transform: translateY(-2px); }
+}
+
+@keyframes swaiTypingOut {
+    0%, 88% { opacity: 1; height: 18px; }
+    100% { opacity: 0; height: 0; }
+}
+
+@keyframes swaiTeaserText {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .swai-root .swai-teaser-typing { display: none; }
+    .swai-root .swai-teaser-text,
+    .swai-root .swai-teaser-typing i { animation: none; }
+}
+
+@media (max-width: 420px) {
+    .swai-root .swai-teaser { max-width: 220px; }
 }

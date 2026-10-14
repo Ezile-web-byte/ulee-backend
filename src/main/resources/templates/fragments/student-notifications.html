@@ -9,6 +9,15 @@
 
   Style and script are nested INSIDE the fragment root on purpose: th:replace
   only pulls in that one element and its children.
+
+  Minimize / maximize (same idea as the landlord bell):
+  - Each message has an arrow: click it to expand or collapse that message.
+    (Clicking the message itself still opens its link, e.g. /my-applications.)
+  - Expanding an unread message marks it as read.
+  - "Collapse all" / "Expand all" toggles every message at once.
+  - With more than 3 messages they start collapsed (heading + one-line preview
+    + time); with 3 or fewer they start expanded.
+  - Open/closed choices are kept when the list refreshes every 60s.
 -->
 <div th:fragment="bell" class="notif-wrap" id="studentNotifWrap">
   <style>
@@ -26,7 +35,8 @@
       position: absolute; top: calc(100% + 10px); right: 0; width: 360px; max-height: 420px; overflow-y: auto; z-index: 60;
       background: #fff; border: 1px solid var(--outline-variant, #E6E8E4); border-radius: 16px; box-shadow: 0 12px 32px rgba(7,28,45,.16);
     }
-    .notif-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--outline-variant, #E6E8E4); font-size: 14px; }
+    .notif-head { position: sticky; top: 0; z-index: 1; background: #fff; display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--outline-variant, #E6E8E4); font-size: 14px; }
+    .notif-head-actions { display: flex; gap: 14px; }
     .notif-head button { background: none; border: 0; padding: 0; cursor: pointer; font: 700 12px var(--font-body, sans-serif); color: var(--primary-dark, #006A6A); }
     .notif-row { display: flex; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--outline-variant, #E6E8E4); text-decoration: none; color: inherit; }
     .notif-row:hover { background: var(--surface-tint, #F0F7F6); }
@@ -34,9 +44,15 @@
     .notif-ico { flex-shrink: 0; width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
     .notif-ico .material-symbols-outlined { font-size: 18px; }
     .notif-body { min-width: 0; flex: 1; }
-    .notif-msg { display: block; font-size: 13px; line-height: 1.35; color: var(--on-surface, #191c1d); }
+    .notif-heading { display: block; font-size: 13px; font-weight: 700; color: var(--on-surface, #191c1d); }
+    .notif-msg { display: block; font-size: 13px; line-height: 1.35; color: var(--on-surface, #191c1d); margin-top: 2px; }
+    .notif-row.collapsed .notif-msg { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--outline, #6f787d); font-size: 12.5px; }
     .notif-time { display: block; font-size: 11.5px; color: var(--outline, #6f787d); margin-top: 3px; }
     .notif-unread-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary-dark, #006A6A); flex-shrink: 0; margin-top: 5px; }
+    .notif-toggle { flex-shrink: 0; width: 24px; height: 24px; border: 0; background: none; padding: 0; cursor: pointer; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--outline, #6f787d); }
+    .notif-toggle:hover { background: rgba(7,28,45,.06); }
+    .notif-toggle .material-symbols-outlined { font-size: 20px; transition: transform .15s ease; }
+    .notif-row:not(.collapsed) .notif-toggle .material-symbols-outlined { transform: rotate(180deg); }
     .notif-empty { padding: 28px 16px; text-align: center; color: var(--outline, #6f787d); font-size: 13px; }
     @media (max-width: 520px) { .notif-dropdown { position: fixed; top: 70px; left: 12px; right: 12px; width: auto; } }
   </style>
@@ -49,7 +65,10 @@
   <div class="notif-dropdown" id="studentNotifDropdown" style="display:none">
     <div class="notif-head">
       <strong>Notifications</strong>
-      <button type="button" id="studentNotifMarkAll">Mark all as read</button>
+      <div class="notif-head-actions">
+        <button type="button" id="studentNotifToggleAll" style="display:none">Collapse all</button>
+        <button type="button" id="studentNotifMarkAll">Mark all as read</button>
+      </div>
     </div>
     <div id="studentNotifList"></div>
     <div class="notif-empty" id="studentNotifEmpty" style="display:none">No notifications yet</div>
@@ -66,34 +85,88 @@
       var list = document.getElementById('studentNotifList');
       var empty = document.getElementById('studentNotifEmpty');
       var markAll = document.getElementById('studentNotifMarkAll');
+      var toggleAll = document.getElementById('studentNotifToggleAll');
+
+      var COLLAPSE_THRESHOLD = 3;   // more than this many => start collapsed
+      var expandedIds = {};          // id -> true/false (explicit user choice)
+      var items = [];
 
       var TYPES = {
-        accepted: { icon: 'check_circle',  bg: '#DDF7F3', color: '#006A6A' },
-        rejected: { icon: 'cancel',        bg: '#FCE9E7', color: '#ba1a1a' },
-        review:   { icon: 'rate_review',   bg: '#FFF6D6', color: '#7A5E00' },
-        report:   { icon: 'flag',          bg: '#EEF4FF', color: '#3b6fd4' },
-        handled:  { icon: 'task_alt',      bg: '#DDF7F3', color: '#006A6A' }
+        accepted:  { icon: 'check_circle',  bg: '#DDF7F3', color: '#006A6A', heading: 'Application accepted' },
+        rejected:  { icon: 'cancel',        bg: '#FCE9E7', color: '#ba1a1a', heading: 'Application update' },
+        submitted: { icon: 'send',          bg: '#EEF4FF', color: '#3b6fd4', heading: 'Application submitted' },
+        favourite: { icon: 'favorite',      bg: '#FDEAF1', color: '#c2185b', heading: 'Added to favourites' },
+        review:    { icon: 'rate_review',   bg: '#FFF6D6', color: '#7A5E00', heading: 'Review submitted' },
+        report:    { icon: 'flag',          bg: '#EEF4FF', color: '#3b6fd4', heading: 'Report submitted' },
+        handled:   { icon: 'task_alt',      bg: '#DDF7F3', color: '#006A6A', heading: 'Report handled' }
       };
 
       function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
       function post(url) { return fetch(url, { method: 'POST' }); }
 
+      function isExpanded(n) {
+        if (expandedIds.hasOwnProperty(n.id)) return expandedIds[n.id];
+        return items.length <= COLLAPSE_THRESHOLD;
+      }
+
+      function updateToggleAll() {
+        var all = items.length > 0 && items.every(isExpanded);
+        toggleAll.textContent = all ? 'Collapse all' : 'Expand all';
+        toggleAll.style.display = items.length > 1 ? 'inline' : 'none';
+      }
+
+      function unreadTotal() {
+        return items.filter(function (n) { return !n.isRead; }).length;
+      }
+
       function render(data) {
-        var items = data.notifications || [];
+        items = data.notifications || [];
         dot.style.display = data.unreadCount > 0 ? 'block' : 'none';
         empty.style.display = items.length ? 'none' : 'block';
+
         list.innerHTML = items.map(function (n) {
-          var t = TYPES[n.type] || { icon: 'notifications', bg: '#F0F7F6', color: '#006A6A' };
-          return '<a class="notif-row' + (n.isRead ? '' : ' unread') + '" data-id="' + esc(n.id) + '" href="' + esc(n.link || '#') + '">' +
+          var t = TYPES[n.type] || { icon: 'notifications', bg: '#F0F7F6', color: '#006A6A', heading: 'Notification' };
+          var expanded = isExpanded(n);
+          return '<a class="notif-row' + (n.isRead ? '' : ' unread') + (expanded ? '' : ' collapsed') + '" data-id="' + esc(n.id) + '" href="' + esc(n.link || '#') + '">' +
                   '<span class="notif-ico" style="background:' + t.bg + ';color:' + t.color + '"><span class="material-symbols-outlined" aria-hidden="true">' + t.icon + '</span></span>' +
-                  '<span class="notif-body"><span class="notif-msg">' + esc(n.message) + '</span><span class="notif-time">' + esc(n.timeDisplay) + '</span></span>' +
-                  (n.isRead ? '' : '<span class="notif-unread-dot"></span>') + '</a>';
+                  '<span class="notif-body">' +
+                  '<span class="notif-heading">' + esc(t.heading) + '</span>' +
+                  '<span class="notif-msg">' + esc(n.message) + '</span>' +
+                  '<span class="notif-time">' + esc(n.timeDisplay) + '</span>' +
+                  '</span>' +
+                  (n.isRead ? '' : '<span class="notif-unread-dot"></span>') +
+                  '<button type="button" class="notif-toggle" data-toggle="' + esc(n.id) + '" aria-label="' + (expanded ? 'Minimize' : 'Maximize') + ' message">' +
+                  '<span class="material-symbols-outlined" aria-hidden="true">expand_more</span>' +
+                  '</button>' +
+                  '</a>';
         }).join('');
+
         Array.prototype.forEach.call(list.querySelectorAll('.notif-row'), function (row) {
+          // Clicking the message itself opens its link and marks it read (as before).
           row.addEventListener('click', function () {
             post('/student/notifications/' + row.getAttribute('data-id') + '/read').then(load);
           });
         });
+
+        // The arrow only minimizes/maximizes: it must not follow the link.
+        Array.prototype.forEach.call(list.querySelectorAll('.notif-toggle'), function (b) {
+          b.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var id = parseInt(b.getAttribute('data-toggle'), 10);
+            var n = items.filter(function (x) { return x.id === id; })[0];
+            if (!n) return;
+            var nowExpanded = !isExpanded(n);
+            expandedIds[id] = nowExpanded;
+            if (nowExpanded && !n.isRead) {
+              post('/student/notifications/' + id + '/read').then(load);
+            } else {
+              render({ notifications: items, unreadCount: unreadTotal() });
+            }
+          });
+        });
+
+        updateToggleAll();
       }
 
       function load() {
@@ -110,6 +183,14 @@
         btn.setAttribute('aria-expanded', String(!open));
         if (!open) load();
       });
+
+      toggleAll.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var all = items.every(isExpanded);
+        items.forEach(function (n) { expandedIds[n.id] = !all; });
+        render({ notifications: items, unreadCount: unreadTotal() });
+      });
+
       markAll.addEventListener('click', function (e) { e.stopPropagation(); post('/student/notifications/read-all').then(load); });
       document.addEventListener('click', function (e) {
         if (dropdown.style.display === 'block' && !dropdown.contains(e.target) && !btn.contains(e.target)) {

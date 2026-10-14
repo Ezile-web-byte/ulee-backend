@@ -19,8 +19,6 @@ import com.ulee.ulee_backend.repository.ApplicationRepository;
 import com.ulee.ulee_backend.repository.ReviewRepository;
 import com.ulee.ulee_backend.repository.ApplicationDocumentRepository;
 import com.ulee.ulee_backend.repository.AmenityRepository;
-import com.ulee.ulee_backend.repository.PropertyFeatureRepository;
-import com.ulee.ulee_backend.repository.PropertyFeatureImageRepository;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.beans.factory.annotation.Value;
 import java.io.IOException;
@@ -32,6 +30,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.Comparator;
+import com.ulee.ulee_backend.repository.PropertyFeatureRepository;
+import com.ulee.ulee_backend.repository.PropertyFeatureImageRepository;
 
 import com.ulee.ulee_backend.repository.PropertyImageRepository;
 
@@ -45,12 +45,13 @@ public class PropertyController {
     private PropertyImageRepository propertyImageRepository;
     @Autowired
     private ApplicationDocumentRepository applicationDocumentRepository;
-    @Autowired
+        @Autowired
     private AmenityRepository amenityRepository;
     @Autowired
-    private PropertyFeatureRepository propertyFeatureRepository;
+    private com.ulee.ulee_backend.repository.PropertyFeatureRepository propertyFeatureRepository;
     @Autowired
-    private PropertyFeatureImageRepository propertyFeatureImageRepository;
+    private com.ulee.ulee_backend.repository.PropertyFeatureImageRepository propertyFeatureImageRepository;
+
 
     // Where uploaded photos get saved on disk — configured in
     // application.properties as app.upload.dir
@@ -69,6 +70,12 @@ public class PropertyController {
     private com.ulee.ulee_backend.repository.UserRepository userRepository;
     @Autowired
     private com.ulee.ulee_backend.repository.StudentRepository studentRepository;
+
+    // In-app notification bells: one for landlords, one for students.
+    @Autowired
+    private com.ulee.ulee_backend.service.LandlordNotificationService landlordNotificationService;
+    @Autowired
+    private com.ulee.ulee_backend.service.StudentNotificationService studentNotificationService;
 
     // The one exact status string that means "live and visible to students".
     // Every query/branch that decides visibility should use this constant
@@ -706,7 +713,6 @@ public class PropertyController {
         model.addAttribute("images", propertyImageRepository.findByPropertyID(id));
         model.addAttribute("amenityCategories", amenityCategories);
         model.addAttribute("selectedAmenityIds", selectedAmenityIds);
-        model.addAttribute("features", propertyFeatureRepository.findByPropertyID(id));
         model.addAttribute("availableFromOptions", generateSemesterOptions());
         model.addAttribute("reviews", propertyReviews);
         model.addAttribute("reviewCount", propertyReviews.size());
@@ -1013,67 +1019,6 @@ public class PropertyController {
         return "redirect:/edit-property/" + property.getPropertyID();
     }
 
-    // Special features (Study Hub, Braai Area, etc.) — add a new one with
-    // its own photos.
-    @PostMapping("/add-property-feature/{propertyId}")
-    public String addPropertyFeature(
-            @PathVariable Integer propertyId,
-            @RequestParam String name,
-            @RequestParam(required = false) String description,
-            @RequestParam(value = "images", required = false) MultipartFile[] images,
-            Principal principal) throws IOException {
-
-        Integer landlordID = getCurrentUser(principal).getUserID();
-        getOwnedProperty(propertyId, landlordID); // ownership check only — result unused
-
-        PropertyFeature feature = new PropertyFeature();
-        feature.setPropertyID(propertyId);
-        feature.setName(name);
-        feature.setDescription(description);
-        PropertyFeature savedFeature = propertyFeatureRepository.save(feature);
-
-        if (images != null && images.length > 0) {
-            Path uploadPath = Paths.get(uploadDir);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
-
-            int order = 1;
-            for (MultipartFile image : images) {
-                if (!image.isEmpty()) {
-                    String uniqueFileName = "feature_" + savedFeature.getFeatureID() + "_"
-                            + System.currentTimeMillis() + "_" + image.getOriginalFilename();
-                    Path filePath = uploadPath.resolve(uniqueFileName);
-                    Files.copy(image.getInputStream(), filePath);
-
-                    PropertyFeatureImage featureImage = new PropertyFeatureImage();
-                    featureImage.setFeatureID(savedFeature.getFeatureID());
-                    featureImage.setUrl("/uploads/" + uniqueFileName);
-                    featureImage.setDisplayOrder(order);
-                    propertyFeatureImageRepository.save(featureImage);
-                    order++;
-                }
-            }
-        }
-
-        return "redirect:/edit-property/" + propertyId;
-    }
-
-    // Special features — remove one entirely (and its photos).
-    @PostMapping("/delete-property-feature/{featureId}")
-    public String deletePropertyFeature(@PathVariable Integer featureId, Principal principal) {
-        Integer landlordID = getCurrentUser(principal).getUserID();
-
-        PropertyFeature feature = propertyFeatureRepository.findById(featureId)
-                .orElseThrow(() -> new RuntimeException("Feature not found with id: " + featureId));
-        Property property = getOwnedProperty(feature.getPropertyID(), landlordID);
-
-        List<PropertyFeatureImage> featureImages = propertyFeatureImageRepository.findByFeatureID(featureId);
-        propertyFeatureImageRepository.deleteAll(featureImages);
-        propertyFeatureRepository.deleteById(featureId);
-
-        return "redirect:/edit-property/" + property.getPropertyID();
-    }
 
     // Deactivate or reactivate a listing. This is a SOFT delete — the row
     // is never removed from the database.
@@ -1104,6 +1049,79 @@ public class PropertyController {
                 : wasReactivated
                 ? "redirect:/landlord-index?toast=reactivated"
                 : "redirect:/landlord-index";
+    }
+
+    // ============================================================
+    // Delete a property permanently (the Delete button on the edit page).
+    // Unlike togglePropertyStatus above (a soft "Inactive" flag), this
+    // removes the row for good, along with everything that points at it.
+    // ============================================================
+    @PostMapping("/delete-property/{id}")
+    @org.springframework.transaction.annotation.Transactional
+    public String deleteProperty(@PathVariable Integer id, Principal principal) {
+        Integer landlordID = getCurrentUser(principal).getUserID();
+        Property property = getOwnedProperty(id, landlordID); // ownership check
+
+        // Safety guard: don't delete a listing that already has accepted
+        // students living in it. Remove this block if you don't want it.
+        List<Application> applications = applicationRepository.findByPropertyIDIn(List.of(id));
+        boolean hasAccepted = applications.stream()
+                .anyMatch(a -> "Accepted".equalsIgnoreCase(a.getStatus()));
+        if (hasAccepted) {
+            return "redirect:/edit-property/" + id + "?error=has-accepted-students";
+        }
+
+        // 1. Application documents (rows + files on disk), then the applications
+        for (Application app : applications) {
+            List<ApplicationDocument> docs = applicationDocumentRepository.findByApplicationID(app.getApplicationID());
+            for (ApplicationDocument d : docs) {
+                deleteFileQuietly(d.getFilePath());
+            }
+            applicationDocumentRepository.deleteAll(docs);
+        }
+        applicationRepository.deleteAll(applications);
+
+        // 2. Reviews and saved-property hearts
+        reviewRepository.deleteAll(reviewRepository.findByPropertyID(id));
+        savedPropertyRepository.deleteAll(savedPropertyRepository.findAll().stream()
+                .filter(s -> id.equals(s.getPropertyID()))
+                .collect(Collectors.toList()));
+
+        // 3. Special features and their photos
+        for (PropertyFeature f : propertyFeatureRepository.findByPropertyID(id)) {
+            List<PropertyFeatureImage> fImages = propertyFeatureImageRepository.findByFeatureID(f.getFeatureID());
+            for (PropertyFeatureImage fi : fImages) {
+                deleteUploadedFileQuietly(fi.getUrl());
+            }
+            propertyFeatureImageRepository.deleteAll(fImages);
+            propertyFeatureRepository.delete(f);
+        }
+
+        // 4. Property photos (rows + files)
+        List<PropertyImage> images = propertyImageRepository.findByPropertyID(id);
+        for (PropertyImage img : images) {
+            deleteUploadedFileQuietly(img.getUrl());
+        }
+        propertyImageRepository.deleteAll(images);
+
+        // 5. The property itself (its amenity links go with it)
+        propertyRepository.delete(property);
+
+        return "redirect:/landlord-index?toast=deleted";
+    }
+
+    // Best-effort file cleanup: a missing file must never block the delete.
+    private void deleteFileQuietly(String path) {
+        if (path == null || path.isBlank()) return;
+        try { Files.deleteIfExists(Paths.get(path)); } catch (Exception ignored) { }
+    }
+
+    // Photo URLs are stored as "/uploads/<filename>"; the file lives in uploadDir.
+    private void deleteUploadedFileQuietly(String url) {
+        if (url == null || !url.startsWith("/uploads/")) return;
+        try {
+            Files.deleteIfExists(Paths.get(uploadDir).resolve(url.substring("/uploads/".length())));
+        } catch (Exception ignored) { }
     }
 
 
@@ -1176,10 +1194,8 @@ public class PropertyController {
         model.addAttribute("property", property);
         model.addAttribute("images", propertyImages);
         model.addAttribute("amenityCategoryViews", buildAmenityCategoryViews(property));
-        model.addAttribute("features", propertyFeatureRepository.findByPropertyID(id));
         model.addAttribute("reviews", propertyReviews);
         model.addAttribute("vrImages", propertyImageRepository.findByPropertyIDAndIsVRTrue(id));
-
         model.addAttribute("isLoggedIn", isLoggedIn);
         model.addAttribute("isStudent", isStudent);
         model.addAttribute("hasApplied", hasApplied);
@@ -1837,8 +1853,20 @@ public class PropertyController {
             }
         }
 
+        String previousStatus = application.getStatus();
         application.setStatus(status);
         applicationRepository.save(application);
+
+        // Tell the student, but only when the decision actually changed
+        // (re-submitting "Accepted" must not notify twice). Moving back to
+        // Pending sends nothing.
+        if (!status.equalsIgnoreCase(previousStatus)) {
+            if ("Accepted".equalsIgnoreCase(status)) {
+                notifyStudentOfDecision(application, property, true);
+            } else if ("Rejected".equalsIgnoreCase(status)) {
+                notifyStudentOfDecision(application, property, false);
+            }
+        }
         return redirectBase;
     }
 
@@ -1889,8 +1917,10 @@ public class PropertyController {
 
         for (int i = 0; i < pending.size(); i++) {
             Application app = pending.get(i);
-            app.setStatus(i < remaining ? "Accepted" : "Rejected");
+            boolean accepting = i < remaining;
+            app.setStatus(accepting ? "Accepted" : "Rejected");
             applicationRepository.save(app);
+            notifyStudentOfDecision(app, property, accepting);
         }
 
         return "redirect:/property-applications/" + propertyId;
@@ -1953,6 +1983,7 @@ public class PropertyController {
                 Application app = pending.get(i);
                 app.setStatus("Accepted");
                 applicationRepository.save(app);
+                notifyStudentOfDecision(app, property, true);
             }
         }
 
@@ -1992,6 +2023,7 @@ public class PropertyController {
                 if ("Pending".equalsIgnoreCase(app.getStatus())) {
                     app.setStatus("Rejected");
                     applicationRepository.save(app);
+                    notifyStudentOfDecision(app, property, false);
                 }
             }
         }
@@ -2003,7 +2035,7 @@ public class PropertyController {
     // Student-side endpoints
     // ============================================================
 
-    @PostMapping("/apply/{propertyId}")
+      @PostMapping("/apply/{propertyId}")
     public String applyToProperty(
             @PathVariable Integer propertyId,
             @RequestParam(required = false) Integer yearOfStudy,
@@ -2013,39 +2045,26 @@ public class PropertyController {
             Principal principal) throws IOException {
         // NOTE: kept as required = false (rather than true) deliberately —
         // Spring's required=true throws a MissingServletRequestPartException
-        // BEFORE this method body runs, which bypasses the friendly
-        // redirect below and shows a raw 400 error page instead. The
-        // explicit null/empty check further down gives the student the
-        // same "attach your documents" message as every other validation
-        // error on this form, instead of a different failure mode just for
-        // this one field.
+        // BEFORE this method body runs, which shows a raw 400 error page.
+        // The explicit null/empty check below gives the student a friendly
+        // message instead.
 
         Integer studentID = getCurrentUser(principal).getUserID();
 
-        // NEW — nothing here previously stopped a student applying to a
-        // suspended listing or one belonging to a deactivated landlord (the
-        // "Apply" button being hidden on a page they couldn't even load is
-        // one thing, but this endpoint itself had no server-side check —
-        // a direct POST would still go through). Checked before the
-        // duplicate-application check below since there's no point telling
-        // someone "you already applied" to a listing they shouldn't be able
-        // to apply to at all.
+        // Block applying to a suspended listing or one belonging to a
+        // deactivated landlord, even via a direct POST.
         Property property = propertyRepository.findById(propertyId)
                 .orElseThrow(() -> new RuntimeException("Property not found with id: " + propertyId));
         if (!isVisibleToStudents(property)) {
             return "redirect:/student-dashboard?propertyUnavailable=true";
         }
 
-        // One application per student per property — enforced here regardless
-        // of what the UI already hides, since a resubmitted/replayed form
-        // should never be able to slip a second row in.
+        // One application per student per property.
         if (applicationRepository.existsByStudentIDAndPropertyID(studentID, propertyId)) {
             return "redirect:/property/" + propertyId + "?applyError=already-applied";
         }
 
-        // Documents are now compulsory — a student cannot submit an
-        // application without attaching the required zip of supporting
-        // documents (proof of acceptance, transcript, proof of funding, ID).
+        // Documents are compulsory: a zip of supporting documents.
         if (documents == null || documents.isEmpty()) {
             return "redirect:/property/" + propertyId + "?applyError=missing-file";
         }
@@ -2054,9 +2073,7 @@ public class PropertyController {
             return "redirect:/property/" + propertyId + "?applyError=invalid-file";
         }
 
-        // Year of study lives on the student's PROFILE (not per-application) —
-        // this is the same field the landlord's Applications view reads via
-        // ApplicationRowView.yearOfStudy, so it has to land here for that to work.
+        // Year of study lives on the student's PROFILE (not per-application).
         if (yearOfStudy != null) {
             Student studentProfile = studentRepository.findById(studentID).orElseGet(() -> {
                 Student s = new Student();
@@ -2076,15 +2093,8 @@ public class PropertyController {
         application.setMessageToLandlord(messageToLandlord);
         Application savedApplication = applicationRepository.save(application);
 
-        // Reuses the exact same storage pattern as /submit-documents so the
-        // landlord's existing document-download wiring (ApplicationDocumentRepository)
-        // needs zero changes to pick this up. documents is now guaranteed
-        // non-null/non-empty by the check above.
-        //
-        // Wrapped so a file-system hiccup can't bubble up as a raw 500 ("crash
-        // after applying"): if storing the zip fails we roll back the just-saved
-        // application row and send the student back with a friendly error
-        // instead of a Whitelabel page.
+        // Store the zip. If storing fails, roll back the application row and
+        // send the student back with a friendly error instead of a raw 500.
         try {
             Path uploadPath = Paths.get(uploadDir);
             if (!Files.exists(uploadPath)) {
@@ -2103,8 +2113,6 @@ public class PropertyController {
             doc.setUploadedAt(java.time.LocalDateTime.now());
             applicationDocumentRepository.save(doc);
         } catch (Exception ex) {
-            // Log the real cause so a persistent failure can be diagnosed instead
-            // of silently showing the generic "try again" message.
             System.err.println("[APPLY] Document save failed for property " + propertyId
                     + " / application " + savedApplication.getApplicationID() + ": " + ex);
             ex.printStackTrace();
@@ -2112,8 +2120,16 @@ public class PropertyController {
             return "redirect:/property/" + propertyId + "?applyError=upload-failed";
         }
 
-        // Centered success popup is shown by property-detail.html when it sees
-        // ?applied=1 (ULEE-styled modal, not the little corner toast).
+        // Notify both sides now that the application and its documents are
+        // fully saved: the student's bell and the landlord's bell.
+        try {
+            studentNotificationService.applicationSubmitted(studentID, property.getTitle());
+        } catch (Exception ignored) {
+            // a notification problem must never fail the application
+        }
+        landlordNotificationService.notifyStudentApplied(savedApplication); // never throws
+
+        // Centered success popup is shown by property-detail.html when it sees ?applied=1
         return "redirect:/property/" + propertyId + "?applied=1";
     }
 
@@ -2167,6 +2183,17 @@ public class PropertyController {
     }
 
 
+    // Tells a student their application was accepted or rejected. Never
+    // throws: a notification problem must not undo the landlord's decision.
+    private void notifyStudentOfDecision(Application application, Property property, boolean accepted) {
+        try {
+            studentNotificationService.applicationDecision(
+                    application.getStudentID(), property.getTitle(), accepted);
+        } catch (Exception ignored) {
+            // intentionally ignored, see comment above
+        }
+    }
+
     private boolean toggleSaved(Integer studentID, Integer propertyId) {
         List<SavedProperty> existing = savedPropertyRepository.findByStudentIDAndPropertyID(studentID, propertyId);
         if (!existing.isEmpty()) {
@@ -2178,6 +2205,15 @@ public class PropertyController {
         saved.setPropertyID(propertyId);
         saved.setSavedStatus(true);
         savedPropertyRepository.save(saved);
+
+        // Only on ADD (the remove branch above returns early), so un-saving
+        // and re-saving doesn't pile up duplicate "removed" noise.
+        try {
+            String savedTitle = propertyRepository.findById(propertyId).map(Property::getTitle).orElse(null);
+            studentNotificationService.favouriteAdded(studentID, propertyId, savedTitle);
+        } catch (Exception ignored) {
+            // a notification problem must never block saving a property
+        }
         return true;
     }
 
@@ -2297,6 +2333,13 @@ public class PropertyController {
         review.setComment(comment);
         review.setReviewDate(java.time.LocalDateTime.now());
         reviewRepository.save(review);
+
+        try {
+            String reviewedTitle = propertyRepository.findById(propertyId).map(Property::getTitle).orElse(null);
+            studentNotificationService.reviewSubmitted(studentID, propertyId, reviewedTitle);
+        } catch (Exception ignored) {
+            // a notification problem must never fail the review
+        }
         return "redirect:/property/" + propertyId;
     }
 
@@ -2569,23 +2612,6 @@ public class PropertyController {
                 String name = featureNames.get(i);
                 if (name == null || name.isBlank()) continue;
 
-                PropertyFeature feature = new PropertyFeature();
-                feature.setPropertyID(savedProperty.getPropertyID());
-                feature.setName(name.trim());
-                PropertyFeature savedFeature = propertyFeatureRepository.save(feature);
-
-                if (featureImages != null && i < featureImages.length && !featureImages[i].isEmpty()) {
-                    MultipartFile featureImage = featureImages[i];
-                    String uniqueFileName = "feature_" + savedFeature.getFeatureID() + "_"
-                            + System.currentTimeMillis() + "_" + featureImage.getOriginalFilename();
-                    Files.copy(featureImage.getInputStream(), uploadPath.resolve(uniqueFileName));
-
-                    PropertyFeatureImage img = new PropertyFeatureImage();
-                    img.setFeatureID(savedFeature.getFeatureID());
-                    img.setUrl("/uploads/" + uniqueFileName);
-                    img.setDisplayOrder(1);
-                    propertyFeatureImageRepository.save(img);
-                }
             }
         }
 
@@ -2653,4 +2679,7 @@ public class PropertyController {
         }
         return "redirect:/landlord-index?added=true";
     }
+   
 }
+
+

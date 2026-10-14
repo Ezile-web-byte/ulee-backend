@@ -143,14 +143,7 @@
     <!-- ============ MAIN ============ -->
     <main class="main">
 
-        <header class="topbar">
-            <h1 class="topbar-title">Applications Management</h1>
-            <div class="topbar-actions">
-                <div th:replace="~{fragments/landlord-notifications :: bell}"></div>
-                <!-- Initials come from the logged-in landlord's database account (PropertyController.addLandlordShellData) -->
-                <div class="avatar-initials" th:text="${landlordInitials != null ? landlordInitials : '?'}">?</div>
-            </div>
-        </header>
+        <div th:replace="~{fragments/landlord-topbar :: topbar('Applications')}"></div>
 
         <div class="page-body">
 
