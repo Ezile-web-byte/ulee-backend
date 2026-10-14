@@ -4,7 +4,6 @@ const STEPS = [
     { label: 'Description' },
     { label: 'Amenities' },
     { label: 'Photos' },
-    { label: 'Features' },
     { label: 'Review' }
 ];
 
@@ -22,7 +21,6 @@ const FUNDING_OPTIONS = [
 let currentStep = 0;
 let accumulatedImages = [];
 let coverImageFile = null;          // kept so the preview card can show it
-let customFeatures = [];
 let selectedAmenityIds = new Set(); // persists across steps, unlike DOM checkboxes
 
 // Real categories/amenities injected by Thymeleaf (see list-property.html).
@@ -44,7 +42,7 @@ const state = {
     type: '',
     capacity: '',                   // CHANGED: was '1'. Starts empty so the landlord has to answer it.
     occupantRestriction: 'Mixed',   // NEW
-    surburb: '',
+    suburb: '',                     // FIX: was misspelled "surburb"
     address: '',
     commuteType: '',
     rent: '',
@@ -134,7 +132,7 @@ async function warnTitleTaken() {
 // Also repaints the preview card on every keystroke — that live link is
 // the whole point of the right-hand column.
 function wireValidationListeners() {
-    const stepFieldNames = ['title', 'capacity', 'occupantRestriction', 'rent', 'address', 'surburbstep', 'type', 'commuteType', 'deposit', 'acceptedFunding', 'description'];
+    const stepFieldNames = ['title', 'capacity', 'occupantRestriction', 'rent', 'address', 'suburb', 'type', 'commuteType', 'deposit', 'acceptedFunding', 'description'];
 
     stepFieldNames.forEach(name => {
         const el = document.querySelector(`[name="${name}"]`);
@@ -398,25 +396,6 @@ function renderStepContent() {
         case 5:
             panel.innerHTML = `
         <div class="panel-header">
-          <h2>Special features</h2>
-          <p>Unique highlights like braai areas, study hubs, or game rooms. You can attach photos to each one later from Manage Property.</p>
-        </div>
-        <div class="f-grid">
-          <div class="field f-col-2">
-            <label>Add a feature</label>
-            <div style="display:flex; gap:10px;">
-              <input type="text" id="featureInput" placeholder="e.g. Braai area, quiet study lounge" />
-              <button type="button" class="btn btn-secondary" onclick="addFeatureTag()">Add</button>
-            </div>
-            <div class="feature-tag-wrap" id="featureTagList"></div>
-          </div>
-        </div>`;
-            renderFeatureTags();
-            break;
-
-        case 6:
-            panel.innerHTML = `
-        <div class="panel-header">
           <h2>Review</h2>
           <p>Check everything below, then publish.</p>
         </div>
@@ -428,10 +407,9 @@ function renderStepContent() {
           <div class="review-row"><span class="review-key">Monthly rent</span><span class="review-val price">R${escapeHtml(state.rent || '0')} / mo</span></div>
           <div class="review-row"><span class="review-key">Deposit</span><span class="review-val">R${escapeHtml(state.deposit || '0')}</span></div>
           <div class="review-row"><span class="review-key">Accepted funding</span><span class="review-val">${escapeHtml(state.acceptedFunding) || 'Any'}</span></div>
-          <span class="review-val">${escapeHtml(state.address)}${state.suburb ? ', ' + escapeHtml(state.suburb) : ''}</span>
+          <div class="review-row"><span class="review-key">Address</span><span class="review-val">${escapeHtml(state.address) || '—'}${state.suburb ? ', ' + escapeHtml(state.suburb) : ''}</span></div>
           <div class="review-row"><span class="review-key">Commute</span><span class="review-val">${escapeHtml(state.commuteType) || '—'}</span></div>
           <div class="review-row"><span class="review-key">Amenities</span><span class="review-val">${selectedAmenityIds.size} selected</span></div>
-          <div class="review-row"><span class="review-key">Special features</span><span class="review-val">${customFeatures.length ? customFeatures.map(escapeHtml).join(', ') : '—'}</span></div>
           <div class="review-row"><span class="review-key">Photos</span><span class="review-val">${accumulatedImages.length + (coverImageFile ? 1 : 0)} attached</span></div>
         </div>`;
             break;
@@ -605,14 +583,6 @@ async function navigateStep(dir) {
         return;
     }
 
-    // After the Photos step, ask whether the landlord wants to add any
-    // special features (braai area, study hub, etc.) before deciding whether
-    // to show the Features step or skip straight to Review.
-    if (dir === 1 && currentStep === 4) {
-        openSpecialFeatureModal();
-        return;
-    }
-
     currentStep = Math.max(0, Math.min(STEPS.length - 1, currentStep + dir));
     renderTracker();
     renderStepContent();
@@ -641,22 +611,6 @@ function jumpToStep(idx) {
         return;
     }
     currentStep = idx;
-    renderTracker();
-    renderStepContent();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function openSpecialFeatureModal() {
-    const modal = document.getElementById('specialFeatureModal');
-    if (modal) modal.classList.add('active');
-}
-
-// wantsFeatures = true  -> go to the Features step (index 5)
-// wantsFeatures = false -> skip straight to Review (index 6)
-function closeSpecialModal(wantsFeatures) {
-    const modal = document.getElementById('specialFeatureModal');
-    if (modal) modal.classList.remove('active');
-    currentStep = wantsFeatures ? 5 : 6;
     renderTracker();
     renderStepContent();
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -784,30 +738,6 @@ function renderPhotoPreviews() {
     });
 }
 
-function addFeatureTag() {
-    const input = document.getElementById('featureInput');
-    if (!input) return;
-    const val = input.value.trim();
-    if (val && !customFeatures.includes(val)) {
-        customFeatures.push(val);
-        input.value = '';
-        renderFeatureTags();
-    }
-}
-
-function removeFeatureTag(idx) {
-    customFeatures.splice(idx, 1);
-    renderFeatureTags();
-}
-
-function renderFeatureTags() {
-    const wrap = document.getElementById('featureTagList');
-    if (!wrap) return;
-    wrap.innerHTML = customFeatures.map((f, i) => `
-    <div class="feature-chip">${escapeHtml(f)} <span onclick="removeFeatureTag(${i})">×</span></div>
-  `).join('');
-}
-
 function escapeHtml(str) {
     if (!str) return '';
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -839,14 +769,13 @@ function prepareFormForSubmit(form) {
     // the same field twice when the user submits while sitting on that step).
     const hasLiveField = (name) => !!form.querySelector(`[name="${name}"]:not(.js-injected-field)`);
 
-    // state now includes occupantRestriction and acceptedFunding, so both are
+    // state includes occupantRestriction and acceptedFunding, so both are
     // sent from any step (as hidden fields) or natively when their step is showing.
     Object.keys(state).forEach(key => {
         if (!hasLiveField(key)) addHidden(key, state[key]);
     });
 
     selectedAmenityIds.forEach(id => addHidden('amenityIds', id));
-    customFeatures.forEach(name => addHidden('featureNames', name));
 
     // Additional photos.
     const dataTransfer = new DataTransfer();

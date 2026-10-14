@@ -19,8 +19,6 @@ import com.ulee.ulee_backend.repository.ApplicationRepository;
 import com.ulee.ulee_backend.repository.ReviewRepository;
 import com.ulee.ulee_backend.repository.ApplicationDocumentRepository;
 import com.ulee.ulee_backend.repository.AmenityRepository;
-import com.ulee.ulee_backend.repository.PropertyFeatureRepository;
-import com.ulee.ulee_backend.repository.PropertyFeatureImageRepository;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.beans.factory.annotation.Value;
 import java.io.IOException;
@@ -47,10 +45,7 @@ public class PropertyController {
     private ApplicationDocumentRepository applicationDocumentRepository;
     @Autowired
     private AmenityRepository amenityRepository;
-    @Autowired
-    private PropertyFeatureRepository propertyFeatureRepository;
-    @Autowired
-    private PropertyFeatureImageRepository propertyFeatureImageRepository;
+
 
     // Where uploaded photos get saved on disk — configured in
     // application.properties as app.upload.dir
@@ -706,7 +701,6 @@ public class PropertyController {
         model.addAttribute("images", propertyImageRepository.findByPropertyID(id));
         model.addAttribute("amenityCategories", amenityCategories);
         model.addAttribute("selectedAmenityIds", selectedAmenityIds);
-        model.addAttribute("features", propertyFeatureRepository.findByPropertyID(id));
         model.addAttribute("availableFromOptions", generateSemesterOptions());
         model.addAttribute("reviews", propertyReviews);
         model.addAttribute("reviewCount", propertyReviews.size());
@@ -1013,67 +1007,6 @@ public class PropertyController {
         return "redirect:/edit-property/" + property.getPropertyID();
     }
 
-    // Special features (Study Hub, Braai Area, etc.) — add a new one with
-    // its own photos.
-    @PostMapping("/add-property-feature/{propertyId}")
-    public String addPropertyFeature(
-            @PathVariable Integer propertyId,
-            @RequestParam String name,
-            @RequestParam(required = false) String description,
-            @RequestParam(value = "images", required = false) MultipartFile[] images,
-            Principal principal) throws IOException {
-
-        Integer landlordID = getCurrentUser(principal).getUserID();
-        getOwnedProperty(propertyId, landlordID); // ownership check only — result unused
-
-        PropertyFeature feature = new PropertyFeature();
-        feature.setPropertyID(propertyId);
-        feature.setName(name);
-        feature.setDescription(description);
-        PropertyFeature savedFeature = propertyFeatureRepository.save(feature);
-
-        if (images != null && images.length > 0) {
-            Path uploadPath = Paths.get(uploadDir);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
-
-            int order = 1;
-            for (MultipartFile image : images) {
-                if (!image.isEmpty()) {
-                    String uniqueFileName = "feature_" + savedFeature.getFeatureID() + "_"
-                            + System.currentTimeMillis() + "_" + image.getOriginalFilename();
-                    Path filePath = uploadPath.resolve(uniqueFileName);
-                    Files.copy(image.getInputStream(), filePath);
-
-                    PropertyFeatureImage featureImage = new PropertyFeatureImage();
-                    featureImage.setFeatureID(savedFeature.getFeatureID());
-                    featureImage.setUrl("/uploads/" + uniqueFileName);
-                    featureImage.setDisplayOrder(order);
-                    propertyFeatureImageRepository.save(featureImage);
-                    order++;
-                }
-            }
-        }
-
-        return "redirect:/edit-property/" + propertyId;
-    }
-
-    // Special features — remove one entirely (and its photos).
-    @PostMapping("/delete-property-feature/{featureId}")
-    public String deletePropertyFeature(@PathVariable Integer featureId, Principal principal) {
-        Integer landlordID = getCurrentUser(principal).getUserID();
-
-        PropertyFeature feature = propertyFeatureRepository.findById(featureId)
-                .orElseThrow(() -> new RuntimeException("Feature not found with id: " + featureId));
-        Property property = getOwnedProperty(feature.getPropertyID(), landlordID);
-
-        List<PropertyFeatureImage> featureImages = propertyFeatureImageRepository.findByFeatureID(featureId);
-        propertyFeatureImageRepository.deleteAll(featureImages);
-        propertyFeatureRepository.deleteById(featureId);
-
-        return "redirect:/edit-property/" + property.getPropertyID();
-    }
 
     // Deactivate or reactivate a listing. This is a SOFT delete — the row
     // is never removed from the database.
@@ -1249,10 +1182,8 @@ public class PropertyController {
         model.addAttribute("property", property);
         model.addAttribute("images", propertyImages);
         model.addAttribute("amenityCategoryViews", buildAmenityCategoryViews(property));
-        model.addAttribute("features", propertyFeatureRepository.findByPropertyID(id));
         model.addAttribute("reviews", propertyReviews);
         model.addAttribute("vrImages", propertyImageRepository.findByPropertyIDAndIsVRTrue(id));
-
         model.addAttribute("isLoggedIn", isLoggedIn);
         model.addAttribute("isStudent", isStudent);
         model.addAttribute("hasApplied", hasApplied);
@@ -2686,23 +2617,6 @@ public class PropertyController {
                 String name = featureNames.get(i);
                 if (name == null || name.isBlank()) continue;
 
-                PropertyFeature feature = new PropertyFeature();
-                feature.setPropertyID(savedProperty.getPropertyID());
-                feature.setName(name.trim());
-                PropertyFeature savedFeature = propertyFeatureRepository.save(feature);
-
-                if (featureImages != null && i < featureImages.length && !featureImages[i].isEmpty()) {
-                    MultipartFile featureImage = featureImages[i];
-                    String uniqueFileName = "feature_" + savedFeature.getFeatureID() + "_"
-                            + System.currentTimeMillis() + "_" + featureImage.getOriginalFilename();
-                    Files.copy(featureImage.getInputStream(), uploadPath.resolve(uniqueFileName));
-
-                    PropertyFeatureImage img = new PropertyFeatureImage();
-                    img.setFeatureID(savedFeature.getFeatureID());
-                    img.setUrl("/uploads/" + uniqueFileName);
-                    img.setDisplayOrder(1);
-                    propertyFeatureImageRepository.save(img);
-                }
             }
         }
 

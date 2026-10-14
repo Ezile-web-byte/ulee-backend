@@ -36,13 +36,9 @@
     <div th:replace="~{fragments/landlord-sidebar :: sidebar('properties')}"></div>
 
     <main class="main">
-        <header class="topbar">
-            <h1 class="topbar-title">Vacant Rooms</h1>
-            <div class="topbar-actions">
-                <div th:replace="~{fragments/landlord-notifications :: bell}"></div>
-                <div class="avatar-initials" th:text="${landlordInitials}">EH</div>
-            </div>
-        </header>
+
+        <div th:replace="~{fragments/landlord-topbar :: topbar('Vacant Rooms')}"></div>
+
 
         <div class="page-body">
             <a class="back-link" th:href="@{/landlord-index}">← Back to My Properties</a>
