@@ -30,6 +30,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.Comparator;
+import com.ulee.ulee_backend.repository.PropertyFeatureRepository;
+import com.ulee.ulee_backend.repository.PropertyFeatureImageRepository;
 
 import com.ulee.ulee_backend.repository.PropertyImageRepository;
 
@@ -43,8 +45,12 @@ public class PropertyController {
     private PropertyImageRepository propertyImageRepository;
     @Autowired
     private ApplicationDocumentRepository applicationDocumentRepository;
-    @Autowired
+        @Autowired
     private AmenityRepository amenityRepository;
+    @Autowired
+    private com.ulee.ulee_backend.repository.PropertyFeatureRepository propertyFeatureRepository;
+    @Autowired
+    private com.ulee.ulee_backend.repository.PropertyFeatureImageRepository propertyFeatureImageRepository;
 
 
     // Where uploaded photos get saved on disk — configured in
@@ -97,7 +103,12 @@ public class PropertyController {
     private static final String CITY = "Gqeberha";
 
     private boolean isVisibleToStudents(Property property) {
-        return LIVE_STATUS.equals(property.getStatus()) && Boolean.TRUE.equals(property.getIsAvailable());
+        // Status is the single source of truth for "can a student see this".
+        // isAvailable only HIDES a listing when it is explicitly false — a null
+        // value (e.g. older/merged rows that never had it set) is treated as
+        // available, otherwise every such Active listing silently disappears
+        // from the dashboard.
+        return LIVE_STATUS.equals(property.getStatus()) && !Boolean.FALSE.equals(property.getIsAvailable());
     }
 
     // The lowest monthly rent a listing is allowed to go live with.
@@ -522,9 +533,10 @@ public class PropertyController {
             User currentUser = getCurrentUser(principal);
             model.addAttribute("currentUserFirstName", currentUser.getFirstName());
 
-            String initials = ("" + currentUser.getFirstName().charAt(0)
-                    + (currentUser.getLastName() != null && !currentUser.getLastName().isBlank()
-                    ? currentUser.getLastName().charAt(0) : "")).toUpperCase();
+            // Null-safe: accounts can have no first/last name, and the raw
+            // charAt(0) threw a NullPointerException (500) on those. initialsOf()
+            // returns "?" when both are blank.
+            String initials = initialsOf(currentUser);
             model.addAttribute("userInitials", initials);
 
             Integer studentID = currentUser.getUserID();
@@ -2013,7 +2025,7 @@ public class PropertyController {
     // Student-side endpoints
     // ============================================================
 
-    @PostMapping("/apply/{propertyId}")
+      @PostMapping("/apply/{propertyId}")
     public String applyToProperty(
             @PathVariable Integer propertyId,
             @RequestParam(required = false) Integer yearOfStudy,
@@ -2023,39 +2035,26 @@ public class PropertyController {
             Principal principal) throws IOException {
         // NOTE: kept as required = false (rather than true) deliberately —
         // Spring's required=true throws a MissingServletRequestPartException
-        // BEFORE this method body runs, which bypasses the friendly
-        // redirect below and shows a raw 400 error page instead. The
-        // explicit null/empty check further down gives the student the
-        // same "attach your documents" message as every other validation
-        // error on this form, instead of a different failure mode just for
-        // this one field.
+        // BEFORE this method body runs, which shows a raw 400 error page.
+        // The explicit null/empty check below gives the student a friendly
+        // message instead.
 
         Integer studentID = getCurrentUser(principal).getUserID();
 
-        // NEW — nothing here previously stopped a student applying to a
-        // suspended listing or one belonging to a deactivated landlord (the
-        // "Apply" button being hidden on a page they couldn't even load is
-        // one thing, but this endpoint itself had no server-side check —
-        // a direct POST would still go through). Checked before the
-        // duplicate-application check below since there's no point telling
-        // someone "you already applied" to a listing they shouldn't be able
-        // to apply to at all.
+        // Block applying to a suspended listing or one belonging to a
+        // deactivated landlord, even via a direct POST.
         Property property = propertyRepository.findById(propertyId)
                 .orElseThrow(() -> new RuntimeException("Property not found with id: " + propertyId));
         if (!isVisibleToStudents(property)) {
             return "redirect:/student-dashboard?propertyUnavailable=true";
         }
 
-        // One application per student per property — enforced here regardless
-        // of what the UI already hides, since a resubmitted/replayed form
-        // should never be able to slip a second row in.
+        // One application per student per property.
         if (applicationRepository.existsByStudentIDAndPropertyID(studentID, propertyId)) {
             return "redirect:/property/" + propertyId + "?applyError=already-applied";
         }
 
-        // Documents are now compulsory — a student cannot submit an
-        // application without attaching the required zip of supporting
-        // documents (proof of acceptance, transcript, proof of funding, ID).
+        // Documents are compulsory: a zip of supporting documents.
         if (documents == null || documents.isEmpty()) {
             return "redirect:/property/" + propertyId + "?applyError=missing-file";
         }
@@ -2064,9 +2063,7 @@ public class PropertyController {
             return "redirect:/property/" + propertyId + "?applyError=invalid-file";
         }
 
-        // Year of study lives on the student's PROFILE (not per-application) —
-        // this is the same field the landlord's Applications view reads via
-        // ApplicationRowView.yearOfStudy, so it has to land here for that to work.
+        // Year of study lives on the student's PROFILE (not per-application).
         if (yearOfStudy != null) {
             Student studentProfile = studentRepository.findById(studentID).orElseGet(() -> {
                 Student s = new Student();
@@ -2086,30 +2083,35 @@ public class PropertyController {
         application.setMessageToLandlord(messageToLandlord);
         Application savedApplication = applicationRepository.save(application);
 
-        // Reuses the exact same storage pattern as /submit-documents so the
-        // landlord's existing document-download wiring (ApplicationDocumentRepository)
-        // needs zero changes to pick this up. documents is now guaranteed
-        // non-null/non-empty by the check above.
-        Path uploadPath = Paths.get(uploadDir);
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
+        // Store the zip. If storing fails, roll back the application row and
+        // send the student back with a friendly error instead of a raw 500.
+        try {
+            Path uploadPath = Paths.get(uploadDir);
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            String uniqueFileName = savedApplication.getApplicationID() + "_" + System.currentTimeMillis()
+                    + "_" + documents.getOriginalFilename();
+            Path filePath = uploadPath.resolve(uniqueFileName);
+            Files.copy(documents.getInputStream(), filePath);
+
+            ApplicationDocument doc = new ApplicationDocument();
+            doc.setApplicationID(savedApplication.getApplicationID());
+            doc.setFileName(documents.getOriginalFilename());
+            doc.setFilePath(filePath.toString());
+            doc.setUploadedAt(java.time.LocalDateTime.now());
+            applicationDocumentRepository.save(doc);
+        } catch (Exception ex) {
+            System.err.println("[APPLY] Document save failed for property " + propertyId
+                    + " / application " + savedApplication.getApplicationID() + ": " + ex);
+            ex.printStackTrace();
+            applicationRepository.deleteById(savedApplication.getApplicationID());
+            return "redirect:/property/" + propertyId + "?applyError=upload-failed";
         }
 
-        String uniqueFileName = savedApplication.getApplicationID() + "_" + System.currentTimeMillis()
-                + "_" + documents.getOriginalFilename();
-        Path filePath = uploadPath.resolve(uniqueFileName);
-        Files.copy(documents.getInputStream(), filePath);
-
-        ApplicationDocument doc = new ApplicationDocument();
-        doc.setApplicationID(savedApplication.getApplicationID());
-        doc.setFileName(documents.getOriginalFilename());
-        doc.setFilePath(filePath.toString());
-        doc.setUploadedAt(java.time.LocalDateTime.now());
-        applicationDocumentRepository.save(doc);
-
         // Notify both sides now that the application and its documents are
-        // fully saved: the student's bell ("application submitted") and the
-        // landlord's bell ("<student> has applied for <property>").
+        // fully saved: the student's bell and the landlord's bell.
         try {
             studentNotificationService.applicationSubmitted(studentID, property.getTitle());
         } catch (Exception ignored) {
@@ -2117,12 +2119,8 @@ public class PropertyController {
         }
         landlordNotificationService.notifyStudentApplied(savedApplication); // never throws
 
-        // Redirects back to the property page (not the broken /my-applications
-        // view — that template moved to templates/student/ during the reorg
-        // and this route hasn't been updated to match). Uses ?toast=applied
-        // so the shared toast.js picks it up and shows "✓ Application submitted!"
-        // automatically.
-        return "redirect:/property/" + propertyId + "?toast=applied";
+        // Centered success popup is shown by property-detail.html when it sees ?applied=1
+        return "redirect:/property/" + propertyId + "?applied=1";
     }
 
     // A200 — View Applications (student's own)
@@ -2150,8 +2148,7 @@ public class PropertyController {
                 .collect(Collectors.toMap(Property::getPropertyID, p -> p, (a, b) -> a));
 
         String lastName = currentUser.getLastName();
-        String initials = ("" + currentUser.getFirstName().charAt(0)
-                + (lastName != null && !lastName.isBlank() ? lastName.charAt(0) : "")).toUpperCase();
+        String initials = initialsOf(currentUser); // null-safe (see viewStudentDashboard)
 
         model.addAttribute("applications", applications);
         model.addAttribute("applicationProperties", applicationProperties);
@@ -2247,8 +2244,7 @@ public class PropertyController {
 
         // Sidebar/top-bar data shared with My Dashboard and My Applications.
         String lastName = currentUser.getLastName();
-        String initials = ("" + currentUser.getFirstName().charAt(0)
-                + (lastName != null && !lastName.isBlank() ? lastName.charAt(0) : "")).toUpperCase();
+        String initials = initialsOf(currentUser); // null-safe (see viewStudentDashboard)
         model.addAttribute("currentUserFirstName", currentUser.getFirstName());
         model.addAttribute("userInitials", initials);
         model.addAttribute("savedCount", savedProperties.size());
@@ -2299,8 +2295,7 @@ public class PropertyController {
                 .collect(Collectors.toMap(Property::getPropertyID, p -> p, (a, b) -> a));
 
         String lastName = currentUser.getLastName();
-        String initials = ("" + currentUser.getFirstName().charAt(0)
-                + (lastName != null && !lastName.isBlank() ? lastName.charAt(0) : "")).toUpperCase();
+        String initials = initialsOf(currentUser); // null-safe (see viewStudentDashboard)
 
         model.addAttribute("currentUserFirstName", currentUser.getFirstName());
         model.addAttribute("userInitials", initials);
@@ -2674,4 +2669,7 @@ public class PropertyController {
         }
         return "redirect:/landlord-index?added=true";
     }
+   
 }
+
+

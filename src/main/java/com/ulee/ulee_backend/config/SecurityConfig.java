@@ -12,15 +12,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.context.SecurityContextHolderFilter;
-import org.springframework.security.authentication.AccountStatusException;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
-
+import org.springframework.security.web.context.SecurityContextHolderFilter;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -37,20 +35,9 @@ public class SecurityConfig {
     @Autowired
     private AdminLoginActivityRepository adminLoginActivityRepository;
 
-    /**
-     * Passwords are stored as PLAIN TEXT. This is a deliberate project
-     * requirement: the lecturers test the project by reading passwords
-     * straight from the database. NoOpPasswordEncoder.encode() returns the
-     * password unchanged and matches() is a plain equals(), so registration,
-     * login and the admin "change password" screen all work on plain text.
-     * (NoOpPasswordEncoder is marked deprecated by Spring because plain-text
-     * storage is unsafe in a real system; that is why the warning is
-     * suppressed here.)
-     */
     @Bean
-    @SuppressWarnings("deprecation")
     public PasswordEncoder passwordEncoder() {
-        return NoOpPasswordEncoder.getInstance();
+        return new BCryptPasswordEncoder();
     }
 
     @Bean
@@ -59,10 +46,11 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable()) // TEMP: unblocks login without a CSRF token in the form
                 .authorizeHttpRequests(auth -> auth
                         // Public: homepage, browsing, registration, ALL static assets.
-                        // CHANGED: "/property/**" was removed from this list. A property's
-                        // detail page now needs a login, so a logged-out visitor who types
-                        // /property/5 into the address bar is sent to the login prompt
-                        // (see .loginPage(...) below) instead of seeing the page.
+                        // "/property/**" (property detail + 360° tour) is deliberately NOT
+                        // here any more: guests can browse the cards on /student-dashboard
+                        // and /search, but must log in to open a property. Spring saves the
+                        // requested URL, and roleBasedSuccessHandler() sends the user back
+                        // to it after login (see resolvePostLoginTarget()).
                         .requestMatchers(
                                 "/", "/student-dashboard", "/search",
                                 "/register", "/login",
@@ -88,7 +76,7 @@ public class SecurityConfig {
                                 "/listProperty",  // <-- BOTH MATCHED NOW
                                 "/edit-property/**", "/update-property/**", "/delete-property-image/**",
                                 "/add-property-feature/**", "/delete-property-feature/**", "/submit-property/**",
-                                "/toggle-property-status/**", "/manage-applications", "/applications-overview", "/my-property-reviews"
+                                "/toggle-property-status/**", "/manage-applications", "/my-property-reviews"
                         ).hasRole("LANDLORD")
 
                         .requestMatchers("/admin-dashboard", "/admin-index", "/admin/**").hasRole("ADMIN")
@@ -183,6 +171,14 @@ public class SecurityConfig {
                     })
                     .orElse("/student-dashboard");
 
+            // Students who were bounced to login from a protected page (e.g. a
+            // property they clicked) go straight back to it instead of the
+            // landing page. Landlords/admins keep their own dashboards.
+            if ("/student-dashboard".equals(redirectUrl)) {
+                String target = resolvePostLoginTarget(request, response);
+                if (target != null) redirectUrl = target;
+            }
+
             // The login modal submits via fetch (no page reload) and sends
             // X-Requested-With: XMLHttpRequest. For those requests reply with
             // JSON and let the page do the navigation; normal form posts keep
@@ -222,18 +218,48 @@ public class SecurityConfig {
 
             // AJAX login (the modal): answer 401 + JSON so the page can show the
             // error instantly without reloading. Non-AJAX posts still redirect.
-            // A deactivated/locked account is reported as such instead of the
-            // generic "Incorrect username or password." (which would be misleading).
-            boolean accountBlocked = exception instanceof AccountStatusException;
             if (isAjax(request)) {
-                String msg = accountBlocked ? DeactivatedAccountFilter.MESSAGE : "Incorrect username or password.";
-                writeJson(response, 401, "{\"error\":\"" + msg + "\"}");
+                writeJson(response, 401, "{\"error\":\"Incorrect username or password.\"}");
             } else {
-                response.sendRedirect(accountBlocked
-                        ? DeactivatedAccountFilter.REDIRECT_URL
-                        : "/student-dashboard?loginError=credentials");
+                response.sendRedirect("/student-dashboard?loginError=credentials");
             }
         };
+    }
+
+    // Only these student pages may be restored after login. Keeps the redirect
+    // on-site and avoids replaying odd saved requests (a POST to /favorite/7
+    // would come back as a GET and 405; /error or /favicon.ico are noise).
+    private static final java.util.List<String> RESTORABLE_PREFIXES = java.util.List.of(
+            "/property/", "/my-dashboard", "/my-applications", "/saved-properties");
+
+    /**
+     * Where a student should land after logging in, or null for the default.
+     * Two sources, in order:
+     *  1. The page Spring Security saved when it sent them to login (direct
+     *     links, bookmarks, shared URLs).
+     *  2. A "redirect" form field sent by the landing page's login modal when
+     *     a guest clicked a property card there (no server round trip, so
+     *     nothing was saved in step 1).
+     * Either way the value is reduced to a path and checked against
+     * RESTORABLE_PREFIXES, so it can never point off-site.
+     */
+    private String resolvePostLoginTarget(jakarta.servlet.http.HttpServletRequest request,
+                                          jakarta.servlet.http.HttpServletResponse response) {
+        org.springframework.security.web.savedrequest.HttpSessionRequestCache cache =
+                new org.springframework.security.web.savedrequest.HttpSessionRequestCache();
+        org.springframework.security.web.savedrequest.SavedRequest saved = cache.getRequest(request, response);
+        String candidate = null;
+        if (saved instanceof org.springframework.security.web.savedrequest.DefaultSavedRequest d) {
+            candidate = d.getRequestURI() + (d.getQueryString() != null ? "?" + d.getQueryString() : "");
+        }
+        if (saved != null) cache.removeRequest(request, response);
+        if (!isRestorable(candidate)) candidate = request.getParameter("redirect");
+        return isRestorable(candidate) ? candidate : null;
+    }
+
+    private boolean isRestorable(String path) {
+        if (path == null || !path.startsWith("/") || path.startsWith("//") || path.contains("\\")) return false;
+        return RESTORABLE_PREFIXES.stream().anyMatch(path::startsWith);
     }
 
     /** True when the request came from fetch/XHR with X-Requested-With set. */
