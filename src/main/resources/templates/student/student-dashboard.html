@@ -127,6 +127,21 @@
         }
         .rated-badge .material-symbols-outlined { font-size: 14px; font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 20; }
 
+        /* NEW — "Applied · <status>" badge on cards the student already applied to */
+        .applied-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            background: rgba(7, 28, 45, .82); color: #fff;
+            border: 1px solid rgba(20, 200, 190, .6);
+            padding: 5px 12px; border-radius: 9999px;
+            font-size: 10.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+            backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+            box-shadow: 0 2px 8px rgba(7, 28, 45, .3);
+        }
+        .applied-badge .material-symbols-outlined { font-size: 15px; color: #14C8BE; font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 20; }
+        .applied-badge.is-pending  .material-symbols-outlined { color: #f5d450; }
+        .applied-badge.is-rejected { border-color: rgba(255, 138, 128, .7); }
+        .applied-badge.is-rejected .material-symbols-outlined { color: #ff8a80; }
+
         /* NEW — View all / Minimise buttons */
         .section-toggle-btn {
             display: inline-flex; align-items: center; gap: 6px;
@@ -598,6 +613,7 @@
                 <div class="room-card flex-col bg-white rounded-[24px] overflow-hidden border border-outline-variant/60 u-shadow-card u-transition hover:-translate-y-2 group"
                      th:each="property, iterStat : ${entry.value}"
                      th:with="facilityAmenity=${property.firstFacilityAmenity},
+                              appliedStatus=${appliedStatusByProperty != null ? appliedStatusByProperty[property.propertyID] : null},
                               isRated=${highlyRatedIds != null and highlyRatedIds.contains(property.propertyID)},
                               funding=${property.acceptedFunding != null and !#strings.isEmpty(property.acceptedFunding) ? property.acceptedFunding : 'Any'},
                               restriction=${property.occupantRestriction != null and !#strings.isEmpty(property.occupantRestriction) ? property.occupantRestriction : 'Mixed'}"
@@ -607,12 +623,19 @@
                         <div class="relative aspect-[4/3] overflow-hidden bg-navy">
                             <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="/images/property-placeholder.svg" th:src="${property.mainImageUrl} ?: '/images/property-placeholder.svg'" th:alt="${property.title}" loading="lazy"/>
                             <div class="absolute top-4 left-4">
-                                <span class="bg-teal-deep text-white px-md py-xs rounded-full text-[10px] font-bold uppercase tracking-wider" th:if="${property.isAvailable}">Available</span>
-                                <span class="bg-error text-white px-md py-xs rounded-full text-[10px] font-bold uppercase tracking-wider" th:unless="${property.isAvailable}">Unavailable</span>
+                                <span class="bg-teal-deep text-white px-md py-xs rounded-full text-[10px] font-bold uppercase tracking-wider" th:if="${property.isAvailable == null or property.isAvailable}">Available</span>
+                                <span class="bg-error text-white px-md py-xs rounded-full text-[10px] font-bold uppercase tracking-wider" th:if="${property.isAvailable != null and !property.isAvailable}">Unavailable</span>
                             </div>
                             <!-- NEW: Highly rated badge (average rating 4.0 or above) -->
                             <div class="absolute top-4 right-4" th:if="${isRated}">
                                 <span class="rated-badge"><span class="material-symbols-outlined">star</span>Highly rated</span>
+                            </div>
+                            <!-- NEW: this student has already applied here (one application per property) -->
+                            <div class="absolute bottom-4 left-4" th:if="${appliedStatus != null}">
+                                <span class="applied-badge" th:classappend="'is-' + ${#strings.toLowerCase(appliedStatus)}">
+                                    <span class="material-symbols-outlined" aria-hidden="true">task_alt</span>
+                                    <span th:text="'Applied · ' + ${appliedStatus}">Applied · Pending</span>
+                                </span>
                             </div>
                         </div>
                     </a>
@@ -662,8 +685,15 @@
                                 <button type="submit" class="save-btn w-10 h-10 rounded-full border-2 border-primary text-primary flex items-center justify-center hover:bg-primary hover:text-white u-transition" title="Save"
                                         th:text="${savedPropertyIds != null and savedPropertyIds.contains(property.propertyID)} ? '❤️' : '🤍'">🤍</button>
                             </form>
-                            <a th:href="@{/property/{id}(id=${property.propertyID})}" class="property-link flex-1 text-center py-md border-2 border-primary text-primary rounded-xl font-label-bold hover:bg-primary hover:text-white u-transition">
+                            <a th:href="@{/property/{id}(id=${property.propertyID})}" th:if="${appliedStatus == null}" class="property-link flex-1 text-center py-md border-2 border-primary text-primary rounded-xl font-label-bold hover:bg-primary hover:text-white u-transition">
                                 View Property
+                            </a>
+                            <!-- Already applied: no second application is possible, so the
+                                 button says so and goes to My Applications to track it. -->
+                            <a th:href="@{/my-applications}" th:if="${appliedStatus != null}" class="flex-1 flex items-center justify-center gap-xs text-center py-md border-2 border-teal-deep bg-primary-fixed/50 text-teal-deep rounded-xl font-label-bold hover:bg-teal-deep hover:text-white u-transition"
+                               th:attr="aria-label='Already applied (' + ${appliedStatus} + '). Track it in My Applications'">
+                                <span class="material-symbols-outlined text-[18px]" aria-hidden="true">check_circle</span>
+                                Applied · Track status
                             </a>
                         </div>
                     </div>

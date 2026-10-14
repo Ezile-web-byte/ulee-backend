@@ -13,6 +13,8 @@
     <script src="/speak-with-ai.js" defer></script>
     <link rel="stylesheet" href="/ulee-toast.css">
     <script src="/ulee-toast.js" defer></script>
+    <!-- Shared sidebar collapse behaviour (same script the landlord dashboard uses) -->
+    <script src="/landlord-sidebar-toggle.js" defer></script>
 
     <style>
         /* ULEE design system palette (ULEE-design-system.md §2) — same as my-dashboard.html */
@@ -37,12 +39,17 @@
         }
         h1, h2, h3 { font-family: var(--font-display); margin: 0; }
         .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; line-height: 1; }
-        .app-shell { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+        .app-shell { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; transition: grid-template-columns .25s ease; }
 
         /* Dark sidebar (§5) */
         .sidebar { background: var(--sidebar-bg); border-right: 1px solid var(--sidebar-active-bg); display: flex; flex-direction: column; height: 100vh; position: sticky; top: 0; overflow-y: auto; padding: 0 20px 24px; }
-        .logo { display: flex; align-items: center; gap: 10px; padding: 26px 0 28px; text-decoration: none; }
-        .logo svg { width: 30px; height: 30px; fill: var(--sidebar-logo-teal); filter: drop-shadow(0 0 6px rgba(20,200,190,.5)); display: block; }
+        .logo { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 26px 0 28px; }
+        .logo-mark { display: flex; align-items: center; gap: 10px; text-decoration: none; min-width: 0; }
+        .logo-mark svg { width: 30px; height: 30px; fill: var(--sidebar-logo-teal); filter: drop-shadow(0 0 6px rgba(20,200,190,.5)); display: block; flex-shrink: 0; }
+        .logo-text { min-width: 0; overflow: hidden; white-space: nowrap; }
+        .sidebar-toggle { flex-shrink: 0; width: 28px; height: 28px; padding: 0; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--sidebar-text); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .15s ease, color .15s ease; }
+        .sidebar-toggle:hover { background: rgba(255,255,255,.08); color: #fff; }
+        .sidebar-toggle svg { width: 16px; height: 16px; transition: transform .25s ease; }
         .logo-name { font-family: var(--font-display); font-weight: 800; font-size: 22px; line-height: 1; color: var(--sidebar-logo-teal); }
         .logo-tag { font-size: 10.5px; font-weight: 600; color: var(--sidebar-logo-teal); opacity: .85; margin-top: 3px; }
         .nav-label { font-size: 10.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: rgba(183,195,203,.55); margin: 8px 0 8px 16px; }
@@ -57,6 +64,20 @@
         .nav-item.logout { color: #ff9b91; }
         .nav-item.logout:hover { background: rgba(255,138,128,.08); color: #ffb4ab; }
 
+        /* Collapsed icon-only rail (desktop only) — mirrors the landlord dashboard */
+        @media (min-width: 861px) {
+            .app-shell.sidebar-collapsed { grid-template-columns: 76px 1fr; }
+            .sidebar.collapsed { padding-left: 14px; padding-right: 14px; }
+            .sidebar.collapsed .logo { justify-content: center; }
+            .sidebar.collapsed .logo-mark { display: none; }
+            .sidebar.collapsed .sidebar-toggle svg { transform: rotate(180deg); }
+            .sidebar.collapsed .nav-label { display: none; }
+            .sidebar.collapsed .nav-item { justify-content: center; padding-left: 0; padding-right: 0; gap: 0; }
+            .sidebar.collapsed .nav-item > span:not(.material-symbols-outlined) { display: none; }
+            .sidebar.collapsed .nav-item.active { margin-left: -14px; margin-right: -14px; width: calc(100% + 28px); }
+        }
+        @media (max-width: 860px) { .sidebar-toggle { display: none; } }
+
         /* Main column */
         .main { min-width: 0; padding: 28px 40px 80px; max-width: 1240px; }
         .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
@@ -66,9 +87,9 @@
         .crumbs strong { color: var(--primary-dark); }
         .topbar-right { display: flex; align-items: center; gap: 12px; }
         .chip-btn { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: var(--radius-full); background: #fff; border: 1px solid var(--outline-variant); font-size: 13.5px; font-weight: 700; color: var(--primary-dark); text-decoration: none; transition: border-color .2s, box-shadow .2s; }
-        .chip-btn:hover { border-color: var(--accent-border); box-shadow: 0 4px 14px rgba(7,28,45,.08); }
+        .chip-btn:hover { background: var(--primary-dark); border-color: var(--primary-dark); color: #fff; box-shadow: 0 4px 14px rgba(0,106,106,.2); }
         .chip-btn .material-symbols-outlined { font-size: 18px; }
-        .avatar { width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #14C8BE, #007178); color: #071C2D; font-family: var(--font-display); font-weight: 800; font-size: 14px; box-shadow: 0 0 0 3px rgba(20,200,190,.25); }
+        .avatar { width: 42px; height: 42px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--primary-dark); color: #fff; font-family: var(--font-display); font-weight: 700; font-size: 14px; letter-spacing: .5px; box-shadow: 0 2px 8px rgba(0,106,106,.2); }
 
         /* Header banner */
         .hero { position: relative; overflow: hidden; isolation: isolate; border-radius: 24px; padding: 30px 36px; background: var(--navy-gradient); border: 1.5px solid rgba(20,200,190,.40); box-shadow: 0 18px 40px rgba(7,28,45,.22); color: #fff; margin-bottom: 26px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
@@ -119,11 +140,19 @@
         .btn:focus-visible { outline: 2px solid #14C8BE; outline-offset: 2px; }
         .btn-navy { flex: 1; background: var(--navy-gradient); color: #fff; border: 1px solid rgba(20,200,190,.45); }
         .btn-navy:hover { box-shadow: 0 8px 22px rgba(7,28,45,.3), 0 0 18px rgba(20,200,190,.25); transform: translateY(-1px); }
+        .btn-applied { flex: 1; background: #DDF7F3; color: #005454; border: 1px solid rgba(20,200,190,.55); }
+        .btn-applied:hover { background: #007178; color: #fff; }
+        .applied-badge { position: absolute; left: 14px; bottom: 14px; z-index: 2; display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: var(--radius-full); font-size: 10.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #fff; background: rgba(7,28,45,.82); border: 1px solid rgba(20,200,190,.6); backdrop-filter: blur(6px); }
+        .applied-badge::before { content: '✓'; color: #14C8BE; font-size: 12px; }
+        .applied-badge.is-pending::before { color: #f5d450; }
+        .applied-badge.is-rejected { border-color: rgba(255,138,128,.7); }
+        .applied-badge.is-rejected::before { content: '✕'; color: #ff8a80; }
         .btn-remove { width: 44px; height: 44px; padding: 0; border-radius: 50%; background: #fff; border: 1px solid var(--outline-variant); color: #e0526b; }
         .btn-remove .material-symbols-outlined { font-size: 20px; font-variation-settings: 'FILL' 1; }
         .btn-remove:hover { border-color: #e0526b; background: #FFF1F3; }
-        .btn-yellow { background: var(--accent-yellow); color: #221b00; border: 1px solid var(--accent-yellow); border-radius: var(--radius-full); }
-        .btn-yellow:hover { box-shadow: 0 0 22px rgba(245,212,80,.5); }
+        /* Primary button — landlord teal (#006A6A), brighter teal on hover */
+        .btn-yellow { background: var(--primary-dark); color: #fff; border: 1px solid var(--primary-dark); border-radius: var(--radius-full); box-shadow: 0 4px 12px rgba(0,106,106,.2); }
+        .btn-yellow:hover { background: var(--primary); border-color: var(--primary); box-shadow: 0 12px 32px rgba(0,106,106,.18); }
 
         /* Empty state */
         .empty { text-align: center; padding: 56px 24px; border-radius: 20px; background: #fff; border: 1.5px dashed var(--accent-border); }
@@ -172,13 +201,18 @@
 
     <!-- Dark sidebar — same as my-dashboard.html -->
     <aside class="sidebar" id="sidebar" aria-label="Student navigation">
-        <a class="logo" th:href="@{/student-dashboard}" aria-label="ULEE home">
-            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2L3 7v11h14V7L10 2zm0 2.6 5 3.5V16H5V8.1l5-3.5zM8 10h4v6H8z"/></svg>
-            <div>
-                <div class="logo-name">ULEE</div>
-                <div class="logo-tag">Student Living. Simplified.</div>
-            </div>
-        </a>
+        <div class="logo">
+            <a class="logo-mark" th:href="@{/student-dashboard}" aria-label="ULEE home">
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2L3 7v11h14V7L10 2zm0 2.6 5 3.5V16H5V8.1l5-3.5zM8 10h4v6H8z"/></svg>
+                <div class="logo-text">
+                    <div class="logo-name">ULEE</div>
+                    <div class="logo-tag">Student Living. Simplified.</div>
+                </div>
+            </a>
+            <button class="sidebar-toggle" id="sidebar-toggle" type="button" title="Toggle sidebar" aria-label="Toggle sidebar" aria-expanded="true">
+                <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M12 4l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+        </div>
 
         <div class="nav-label">Student portal</div>
         <nav class="nav-list">
@@ -222,7 +256,7 @@
 
         <!-- Header banner -->
         <section class="hero" aria-labelledby="pageHeading">
-            <div class="hero-grid" aria-hidden="true"></div>
+
             <div class="orb one" aria-hidden="true"></div>
             <div class="orb two" aria-hidden="true"></div>
             <div>
@@ -240,12 +274,17 @@
         </section>
 
         <div class="grid" th:if="${not #lists.isEmpty(properties)}">
-            <article class="card" th:each="property : ${properties}">
+            <article class="card" th:each="property : ${properties}"
+                     th:with="appliedStatus=${appliedStatusByProperty != null ? appliedStatusByProperty[property.propertyID] : null}">
                 <a class="card-photo" th:href="@{/property/{id}(id=${property.propertyID})}" tabindex="-1" aria-hidden="true">
                     <img alt="" src="/images/property-placeholder.svg" loading="lazy"
                          th:src="${property.mainImageUrl} ?: '/images/property-placeholder.svg'"/>
-                    <span class="badge" th:if="${property.isAvailable}">Available</span>
-                    <span class="badge off" th:unless="${property.isAvailable}">Unavailable</span>
+                    <span class="badge" th:if="${property.isAvailable == null or property.isAvailable}">Available</span>
+                    <span class="badge off" th:if="${property.isAvailable != null and !property.isAvailable}">Unavailable</span>
+                    <!-- NEW: already applied here (one application per property) -->
+                    <span class="applied-badge" th:if="${appliedStatus != null}"
+                          th:classappend="'is-' + ${#strings.toLowerCase(appliedStatus)}"
+                          th:text="'Applied · ' + ${appliedStatus}">Applied · Pending</span>
                     <span class="rent" th:if="${property.rent != null}">R<span th:text="${property.rent}">4500</span> <small>/ month</small></span>
                 </a>
                 <div class="card-body">
@@ -261,8 +300,12 @@
                         <span class="chip" th:if="${property.commuteType != null and !#strings.isEmpty(property.commuteType)}" th:text="${property.commuteType}">Walking distance</span>
                     </div>
                     <div class="card-actions">
-                        <a class="btn btn-navy" th:href="@{/property/{id}(id=${property.propertyID})}">
+                        <a class="btn btn-navy" th:href="@{/property/{id}(id=${property.propertyID})}" th:if="${appliedStatus == null}">
                             View property<span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+                        </a>
+                        <a class="btn btn-applied" th:href="@{/my-applications}" th:if="${appliedStatus != null}"
+                           th:attr="aria-label='Already applied (' + ${appliedStatus} + '). Track it in My Applications'">
+                            <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>Applied · Track status
                         </a>
                         <form th:action="@{/favorite/{id}(id=${property.propertyID})}" method="post" data-loading-text="...">
                             <input type="hidden" name="returnTo" value="/saved-properties" />

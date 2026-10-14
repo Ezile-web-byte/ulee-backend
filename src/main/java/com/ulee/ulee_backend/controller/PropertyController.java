@@ -96,7 +96,12 @@ public class PropertyController {
     private static final String CITY = "Gqeberha";
 
     private boolean isVisibleToStudents(Property property) {
-        return LIVE_STATUS.equals(property.getStatus()) && Boolean.TRUE.equals(property.getIsAvailable());
+        // Status is the single source of truth for "can a student see this".
+        // isAvailable only HIDES a listing when it is explicitly false — a null
+        // value (e.g. older/merged rows that never had it set) is treated as
+        // available, otherwise every such Active listing silently disappears
+        // from the dashboard.
+        return LIVE_STATUS.equals(property.getStatus()) && !Boolean.FALSE.equals(property.getIsAvailable());
     }
 
     // The lowest monthly rent a listing is allowed to go live with.
@@ -521,9 +526,10 @@ public class PropertyController {
             User currentUser = getCurrentUser(principal);
             model.addAttribute("currentUserFirstName", currentUser.getFirstName());
 
-            String initials = ("" + currentUser.getFirstName().charAt(0)
-                    + (currentUser.getLastName() != null && !currentUser.getLastName().isBlank()
-                    ? currentUser.getLastName().charAt(0) : "")).toUpperCase();
+            // Null-safe: accounts can have no first/last name, and the raw
+            // charAt(0) threw a NullPointerException (500) on those. initialsOf()
+            // returns "?" when both are blank.
+            String initials = initialsOf(currentUser);
             model.addAttribute("userInitials", initials);
 
             Integer studentID = currentUser.getUserID();
@@ -2074,29 +2080,41 @@ public class PropertyController {
         // landlord's existing document-download wiring (ApplicationDocumentRepository)
         // needs zero changes to pick this up. documents is now guaranteed
         // non-null/non-empty by the check above.
-        Path uploadPath = Paths.get(uploadDir);
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
+        //
+        // Wrapped so a file-system hiccup can't bubble up as a raw 500 ("crash
+        // after applying"): if storing the zip fails we roll back the just-saved
+        // application row and send the student back with a friendly error
+        // instead of a Whitelabel page.
+        try {
+            Path uploadPath = Paths.get(uploadDir);
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            String uniqueFileName = savedApplication.getApplicationID() + "_" + System.currentTimeMillis()
+                    + "_" + documents.getOriginalFilename();
+            Path filePath = uploadPath.resolve(uniqueFileName);
+            Files.copy(documents.getInputStream(), filePath);
+
+            ApplicationDocument doc = new ApplicationDocument();
+            doc.setApplicationID(savedApplication.getApplicationID());
+            doc.setFileName(documents.getOriginalFilename());
+            doc.setFilePath(filePath.toString());
+            doc.setUploadedAt(java.time.LocalDateTime.now());
+            applicationDocumentRepository.save(doc);
+        } catch (Exception ex) {
+            // Log the real cause so a persistent failure can be diagnosed instead
+            // of silently showing the generic "try again" message.
+            System.err.println("[APPLY] Document save failed for property " + propertyId
+                    + " / application " + savedApplication.getApplicationID() + ": " + ex);
+            ex.printStackTrace();
+            applicationRepository.deleteById(savedApplication.getApplicationID());
+            return "redirect:/property/" + propertyId + "?applyError=upload-failed";
         }
 
-        String uniqueFileName = savedApplication.getApplicationID() + "_" + System.currentTimeMillis()
-                + "_" + documents.getOriginalFilename();
-        Path filePath = uploadPath.resolve(uniqueFileName);
-        Files.copy(documents.getInputStream(), filePath);
-
-        ApplicationDocument doc = new ApplicationDocument();
-        doc.setApplicationID(savedApplication.getApplicationID());
-        doc.setFileName(documents.getOriginalFilename());
-        doc.setFilePath(filePath.toString());
-        doc.setUploadedAt(java.time.LocalDateTime.now());
-        applicationDocumentRepository.save(doc);
-
-        // Redirects back to the property page (not the broken /my-applications
-        // view — that template moved to templates/student/ during the reorg
-        // and this route hasn't been updated to match). Uses ?toast=applied
-        // so the shared toast.js picks it up and shows "✓ Application submitted!"
-        // automatically.
-        return "redirect:/property/" + propertyId + "?toast=applied";
+        // Centered success popup is shown by property-detail.html when it sees
+        // ?applied=1 (ULEE-styled modal, not the little corner toast).
+        return "redirect:/property/" + propertyId + "?applied=1";
     }
 
     // A200 — View Applications (student's own)
@@ -2124,8 +2142,7 @@ public class PropertyController {
                 .collect(Collectors.toMap(Property::getPropertyID, p -> p, (a, b) -> a));
 
         String lastName = currentUser.getLastName();
-        String initials = ("" + currentUser.getFirstName().charAt(0)
-                + (lastName != null && !lastName.isBlank() ? lastName.charAt(0) : "")).toUpperCase();
+        String initials = initialsOf(currentUser); // null-safe (see viewStudentDashboard)
 
         model.addAttribute("applications", applications);
         model.addAttribute("applicationProperties", applicationProperties);
@@ -2201,8 +2218,7 @@ public class PropertyController {
 
         // Sidebar/top-bar data shared with My Dashboard and My Applications.
         String lastName = currentUser.getLastName();
-        String initials = ("" + currentUser.getFirstName().charAt(0)
-                + (lastName != null && !lastName.isBlank() ? lastName.charAt(0) : "")).toUpperCase();
+        String initials = initialsOf(currentUser); // null-safe (see viewStudentDashboard)
         model.addAttribute("currentUserFirstName", currentUser.getFirstName());
         model.addAttribute("userInitials", initials);
         model.addAttribute("savedCount", savedProperties.size());
@@ -2253,8 +2269,7 @@ public class PropertyController {
                 .collect(Collectors.toMap(Property::getPropertyID, p -> p, (a, b) -> a));
 
         String lastName = currentUser.getLastName();
-        String initials = ("" + currentUser.getFirstName().charAt(0)
-                + (lastName != null && !lastName.isBlank() ? lastName.charAt(0) : "")).toUpperCase();
+        String initials = initialsOf(currentUser); // null-safe (see viewStudentDashboard)
 
         model.addAttribute("currentUserFirstName", currentUser.getFirstName());
         model.addAttribute("userInitials", initials);
