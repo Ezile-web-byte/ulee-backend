@@ -155,6 +155,23 @@
     .btn-manage { font-size: 14.5px; padding: 9px 18px; }
     .status-badge { font-size: 12px; }
 
+    /* NEW — Manage + Delete sit side by side in the card footer */
+    .card-actions { display: flex; align-items: center; gap: 8px; }
+    .card-actions form { margin: 0; }
+    .btn-delete {
+      font-family: inherit;
+      font-size: 14.5px;
+      font-weight: 600;
+      padding: 9px 16px;
+      border-radius: 999px;
+      border: 1.5px solid #dc2626;
+      background: #fff;
+      color: #dc2626;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .btn-delete:hover { background: #fef2f2; }
+
     /* NEW — rejected ("Needs Changes") listings */
     .status-badge--rejected { background: #C0392B; color: #fff; }
     .property-feedback {
@@ -342,7 +359,7 @@
             </p>
             <p class="property-commute" th:if="${property.commuteType != null}" th:text="${property.commuteType}">Walking distance</p>
 
-            <!-- NEW — the admin's comment on a rejected listing -->
+            <!-- The admin's comment on a rejected listing -->
             <div class="property-feedback" th:if="${property.status == 'Rejected'}">
               <strong>Admin feedback</strong>
               <p th:text="${!#strings.isEmpty(property.rejectionReason)} ? ${property.rejectionReason} : 'No comment was left. Please review your listing and resubmit.'">Feedback</p>
@@ -358,8 +375,24 @@
                 <span class="rent-value" th:text="'R' + ${property.rent} + ' / month'">R0 / month</span>
                 <span class="rooms-updated" th:text="${property.type}">Room type</span>
               </div>
-              <a class="btn-manage" th:href="@{/edit-property/{id}(id=${property.propertyID})}"
-                 th:text="${property.status == 'Rejected'} ? 'Fix & resubmit' : 'Manage'">Manage</a>
+
+              <!-- CHANGED — Manage + permanent Delete.
+                   Delete posts to /delete-property/{id}, which removes the row for good.
+                   (It does NOT call /toggle-property-status, which only deactivates.) -->
+              <div class="card-actions">
+                <a class="btn-manage" th:href="@{/edit-property/{id}(id=${property.propertyID})}"
+                   th:text="${property.status == 'Rejected'} ? 'Fix & resubmit' : 'Manage'">Manage</a>
+
+                <form th:action="@{/delete-property/{id}(id=${property.propertyID})}" method="post">
+                  <button type="submit"
+                          class="btn-delete"
+                          data-confirm
+                          data-confirm-title="Delete this property?"
+                          data-confirm-ok="Delete"
+                          data-confirm-tone="danger"
+                          th:attr="data-confirm-message=${'“' + property.title + '” and its photos will be permanently deleted. This cannot be undone.'}">Delete</button>
+                </form>
+              </div>
             </div>
           </div>
         </article>
@@ -406,11 +439,11 @@
 <th:block th:replace="~{fragments/modal :: assets}"></th:block>
 
 <script>
-  /* Centered popup for "saved / submitted / deactivated" messages.
+  /* Centered popup for "saved / submitted / deleted" messages.
      Understands both kinds of link the controller sends:
        - ?added=true, ?updated=true, ?draftSaved=true   (list-property wizard)
        - ?toast=submitted | updated | draft-saved | resubmitted | review-needed
-                | deactivated | reactivated   (edit page) */
+                | deactivated | reactivated | deleted   (edit page / dashboard) */
   (function () {
     const params = new URLSearchParams(window.location.search);
     const toast = params.get('toast');
@@ -460,6 +493,13 @@
         icon: '✅',
         title: 'Property reactivated',
         message: 'It is visible to students again.'
+      };
+    } else if (toast === 'deleted') {
+      /* NEW — deleteProperty() redirects here with ?toast=deleted */
+      popup = {
+        icon: '🗑️',
+        title: 'Property deleted',
+        message: 'The property and its photos were permanently deleted.'
       };
     }
 

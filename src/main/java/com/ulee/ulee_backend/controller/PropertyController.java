@@ -1075,24 +1075,14 @@ public class PropertyController {
                 .filter(s -> id.equals(s.getPropertyID()))
                 .collect(Collectors.toList()));
 
-        // 3. Special features and their photos
-        for (PropertyFeature f : propertyFeatureRepository.findByPropertyID(id)) {
-            List<PropertyFeatureImage> fImages = propertyFeatureImageRepository.findByFeatureID(f.getFeatureID());
-            for (PropertyFeatureImage fi : fImages) {
-                deleteUploadedFileQuietly(fi.getUrl());
-            }
-            propertyFeatureImageRepository.deleteAll(fImages);
-            propertyFeatureRepository.delete(f);
-        }
-
-        // 4. Property photos (rows + files)
+        // 3. Property photos (rows + files)
         List<PropertyImage> images = propertyImageRepository.findByPropertyID(id);
         for (PropertyImage img : images) {
             deleteUploadedFileQuietly(img.getUrl());
         }
         propertyImageRepository.deleteAll(images);
 
-        // 5. The property itself (its amenity links go with it)
+        // 4. The property itself (its amenity links go with it)
         propertyRepository.delete(property);
 
         return "redirect:/landlord-index?toast=deleted";

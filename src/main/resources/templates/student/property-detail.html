@@ -985,7 +985,8 @@
         </a>
     </div>
 
-    <!-- 4. REVIEWS — quote-card style, matches what the landlord sees -->
+    <!-- 4. REVIEWS — read-only. Students see existing reviews; writing a review
+         is no longer offered on this page. -->
     <div class="detail-reviews">
         <h2>Reviews &amp; Ratings</h2>
 
@@ -1008,17 +1009,6 @@
                 </div>
             </div>
         </div>
-
-        <a th:if="${canWriteReview}" th:href="@{/property/{id}/write-review(id=${property.propertyID})}" class="apply-btn" style="display:block; text-decoration:none; margin-top: 20px;">
-            Write a Review
-        </a>
-
-        <p th:if="${not canWriteReview and isLoggedIn and isStudent and alreadyReviewed}" class="no-reviews" style="margin-top:16px;">
-            You've already reviewed this property.
-        </p>
-        <p th:if="${not canWriteReview and isLoggedIn and isStudent and not alreadyReviewed}" class="no-reviews" style="margin-top:16px;">
-            You can write a review once your application for this property has been accepted.
-        </p>
     </div>
 
     <!-- 5. APPLY CARD -->

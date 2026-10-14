@@ -121,7 +121,10 @@ public class Property {
                 .limit(3)
                 .toList();
     }
-
+    @PrePersist
+    protected void onCreate() {
+        if (this.createdAt == null) this.createdAt = LocalDateTime.now();
+    }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
