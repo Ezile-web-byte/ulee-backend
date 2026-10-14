@@ -2,6 +2,7 @@ package com.ulee.ulee_backend.controller;
 
 import com.ulee.ulee_backend.model.*;
 import com.ulee.ulee_backend.repository.*;
+import com.ulee.ulee_backend.service.StayEligibility;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -76,6 +77,11 @@ public class ReviewController {
                     "You can only review properties you've been accepted to stay at.");
             return "redirect:/property/" + propertyId;
         }
+        if (!StayEligibility.hasStarted(propertyOpt.get())) {
+            redirectAttributes.addFlashAttribute("actionError",
+                    "You can review this property once your stay has started.");
+            return "redirect:/property/" + propertyId;
+        }
 
         if (reviewRepository.findByStudentIDAndPropertyID(studentId, propertyId).isPresent()) {
             redirectAttributes.addFlashAttribute("actionError", "You've already submitted a review for this property.");
@@ -138,6 +144,13 @@ public class ReviewController {
         if (!isAccepted) {
             redirectAttributes.addFlashAttribute("actionError",
                     "You can only review properties you've been accepted to stay at.");
+            return "redirect:/property/" + propertyId;
+        }
+
+        Optional<Property> stayProperty = propertyRepository.findById(propertyId);
+        if (stayProperty.isEmpty() || !StayEligibility.hasStarted(stayProperty.get())) {
+            redirectAttributes.addFlashAttribute("actionError",
+                    "You can review this property once your stay has started.");
             return "redirect:/property/" + propertyId;
         }
 

@@ -27,6 +27,20 @@ let selectedAmenityIds = new Set(); // persists across steps, unlike DOM checkbo
 // Shape: { "Room": [{amenityID:1, name:"Furnished", category:"Room"}, ...], "Kitchen & Bathroom": [...] }
 const AMENITY_CATEGORIES = window.AMENITY_CATEGORIES || {};
 
+// Semester start dates from the controller (availableFromOptions).
+// Normalised to "yyyy-MM-dd" whatever shape Thymeleaf serialised them in,
+// because LocalDate.parse() on the server needs exactly that format.
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const pad2 = n => String(n).padStart(2, '0');
+const AVAILABLE_FROM_OPTIONS = (window.AVAILABLE_FROM_OPTIONS || []).map(d =>
+    Array.isArray(d) ? `${d[0]}-${pad2(d[1])}-${pad2(d[2])}` : String(d).slice(0, 10)
+);
+function formatAvailableFrom(iso) {
+    if (!iso) return '';
+    const [y, m, d] = iso.split('-').map(Number);
+    return `${d} ${MONTH_NAMES[m - 1]} ${y}`;
+}
+
 // Flat id -> name map, so the preview card can render amenity BADGES
 // (names) rather than just a count of how many are ticked.
 const AMENITY_NAMES = (() => {
@@ -58,12 +72,17 @@ const state = {
 // "Publish listing", they are asked whether to fix them or save as a draft
 // instead — see updateNavButtons() below. The readiness checklist in the
 // right column surfaces this BEFORE they get there.
+// Photos needed to publish: one cover photo plus this many supporting photos.
+const MIN_SUPPORTING_PHOTOS = 1;
+
 const REQUIRED_FIELDS = [
     { key: 'title', label: 'Property title', step: 0, validate: v => !!(v && v.trim().length > 0) },
     { key: 'capacity', label: 'Capacity', step: 0, validate: v => !!(v && Number(v) >= 1) },
     // Mirrors MIN_RENT in PropertyController. Keep the two in step.
     { key: 'rent', label: 'Monthly rent (at least R1 000)', step: 1, validate: v => !!(v && Number(v) >= 1000) },
-    { key: 'address', label: 'Full address', step: 1, validate: v => !!(v && v.trim().length > 0) }
+    { key: 'address', label: 'Full address', step: 1, validate: v => !!(v && v.trim().length > 0) },
+    { key: 'coverImage', label: 'Cover photo', step: 4, validate: () => !!coverImageFile },
+    { key: 'photos', label: 'Supporting photos (at least ' + MIN_SUPPORTING_PHOTOS + ')', step: 4, validate: () => accumulatedImages.length >= MIN_SUPPORTING_PHOTOS }
 ];
 
 // Only start showing red borders once the landlord has actually tried to
@@ -132,7 +151,7 @@ async function warnTitleTaken() {
 // Also repaints the preview card on every keystroke — that live link is
 // the whole point of the right-hand column.
 function wireValidationListeners() {
-    const stepFieldNames = ['title', 'capacity', 'occupantRestriction', 'rent', 'address', 'suburb', 'type', 'commuteType', 'deposit', 'acceptedFunding', 'description'];
+    const stepFieldNames = ['title', 'capacity', 'occupantRestriction', 'rent', 'address', 'suburb', 'type', 'commuteType', 'deposit', 'acceptedFunding', 'availableFrom', 'description'];
 
     stepFieldNames.forEach(name => {
         const el = document.querySelector(`[name="${name}"]`);
@@ -306,6 +325,14 @@ function renderStepContent() {
             </select>
             <p class="hint-text">Choose "Any" if you take every funding type.</p>
           </div>
+          <div class="field f-col-2">
+            <label for="availableFrom">Available from</label>
+            <select id="availableFrom" name="availableFrom">
+              <option value="">Select a date</option>
+              ${AVAILABLE_FROM_OPTIONS.map(d => `<option value="${d}" ${state.availableFrom === d ? 'selected' : ''}>${formatAvailableFrom(d)}</option>`).join('')}
+            </select>
+            <p class="hint-text">When students can move in. Optional, you can set it later.</p>
+          </div>
           <div class="field">
             <label for="suburb">Suburb</label>
             <select id="suburb" name="suburb">
@@ -375,18 +402,19 @@ function renderStepContent() {
         </div>
         <div class="f-grid">
           <div class="field f-col-2">
-            <label>Cover photo</label>
-            <input type="file" id="coverImageInput" name="coverImage" accept="image/*" />
-            <p class="hint-text">This is the single image students see on the browse grid.</p>
+            <label>Cover photo<span class="required-asterisk">*</span></label>
+            <input type="file" id="coverImageInput" name="coverImage" accept="image/*" class="${invalidClass('coverImage')}" />
+            <p class="hint-text">This is the single image students see on the browse grid. Required to publish.</p>
           </div>
           <div class="field f-col-2" style="margin-top:10px;">
-            <label>Additional photos</label>
-            <div class="upload-box" id="dropZone">
+            <label>Supporting photos<span class="required-asterisk">*</span></label>
+            <div class="upload-box ${invalidClass('photos')}" id="dropZone">
               <div class="upload-icon">📸</div>
               <div class="upload-title">Drag photos here, or <b>browse files</b></div>
             </div>
             <input type="file" id="additionalPhotosInput" accept="image/*" multiple style="display:none;" />
             <div class="photo-grid" id="photosPreview"></div>
+            <p class="hint-text">Add at least ${MIN_SUPPORTING_PHOTOS} to publish. Without photos the listing saves as a draft.</p>
           </div>
         </div>`;
             setupImageHandlers();
@@ -407,6 +435,7 @@ function renderStepContent() {
           <div class="review-row"><span class="review-key">Monthly rent</span><span class="review-val price">R${escapeHtml(state.rent || '0')} / mo</span></div>
           <div class="review-row"><span class="review-key">Deposit</span><span class="review-val">R${escapeHtml(state.deposit || '0')}</span></div>
           <div class="review-row"><span class="review-key">Accepted funding</span><span class="review-val">${escapeHtml(state.acceptedFunding) || 'Any'}</span></div>
+          <div class="review-row"><span class="review-key">Available from</span><span class="review-val">${formatAvailableFrom(state.availableFrom) || '-'}</span></div>
           <div class="review-row"><span class="review-key">Address</span><span class="review-val">${escapeHtml(state.address) || '—'}${state.suburb ? ', ' + escapeHtml(state.suburb) : ''}</span></div>
           <div class="review-row"><span class="review-key">Commute</span><span class="review-val">${escapeHtml(state.commuteType) || '—'}</span></div>
           <div class="review-row"><span class="review-key">Amenities</span><span class="review-val">${selectedAmenityIds.size} selected</span></div>
@@ -691,7 +720,9 @@ function setupImageHandlers() {
     if (coverInput) {
         coverInput.onchange = () => {
             coverImageFile = coverInput.files && coverInput.files[0] ? coverInput.files[0] : null;
+            coverInput.classList.toggle('field-invalid', validationAttempted && !coverImageFile);
             renderPreview();
+            renderReadiness();
         };
     }
 
@@ -736,6 +767,9 @@ function renderPhotoPreviews() {
         item.appendChild(rm);
         container.appendChild(item);
     });
+    const dz = document.getElementById('dropZone');
+    if (dz) dz.classList.toggle('field-invalid', validationAttempted && accumulatedImages.length < MIN_SUPPORTING_PHOTOS);
+    renderReadiness();
 }
 
 function escapeHtml(str) {

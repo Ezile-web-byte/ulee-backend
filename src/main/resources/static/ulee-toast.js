@@ -41,15 +41,25 @@
   // ── Loading-state helper: any form with data-loading-text will disable
   // its submit button and swap its text while the request is in flight.
   document.querySelectorAll('form[data-loading-text]').forEach(form => {
-    form.addEventListener('submit', () => {
+    form.addEventListener('submit', (e) => {
       const btn = form.querySelector('button[type="submit"]');
-      if (btn) {
-        btn.dataset.originalText = btn.textContent;
-        btn.textContent = form.dataset.loadingText;
-        btn.disabled = true;
-        btn.style.opacity = '0.7';
-        btn.style.cursor = 'not-allowed';
-      }
+      if (!btn) return;
+      const originalText = btn.textContent;
+      const restore = () => {
+        btn.textContent = originalText;
+        btn.disabled = false;
+        btn.style.opacity = '';
+        btn.style.cursor = '';
+      };
+      btn.dataset.originalText = originalText;
+      btn.textContent = form.dataset.loadingText;
+      btn.disabled = true;
+      btn.style.opacity = '0.7';
+      btn.style.cursor = 'not-allowed';
+      // If another handler blocks the send (e.g. missing file), undo the loading state.
+      setTimeout(() => { if (e.defaultPrevented) restore(); }, 0);
+      // Coming back with the Back button should not show a stuck button.
+      window.addEventListener('pageshow', (ev) => { if (ev.persisted) restore(); }, { once: true });
     });
   });
 })();

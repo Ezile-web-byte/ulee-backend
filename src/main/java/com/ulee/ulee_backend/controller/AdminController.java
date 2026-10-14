@@ -70,8 +70,6 @@ public class AdminController {
     @Autowired
     private com.ulee.ulee_backend.repository.AdminNotificationReadRepository adminNotificationReadRepository;
 
-    @Autowired
-    private com.ulee.ulee_backend.repository.AdminActivityLogRepository adminActivityLogRepository;
 
     @Autowired
     private com.ulee.ulee_backend.service.LandlordNotificationService landlordNotificationService;
@@ -96,49 +94,6 @@ public class AdminController {
                 model.addAttribute("adminInitials", initialsFor(user));
             });
         }
-    }
-
-    /**
-     * Resolves the display name of whoever is currently logged in, so a
-     * logged activity can be attributed to the real admin who performed it
-     * without threading a Principal parameter through every action method
-     * below — pulled straight from Spring Security's context instead.
-     */
-    private String currentAdminName() {
-        org.springframework.security.core.Authentication auth =
-                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getName() != null) {
-            return userRepository.findByEmail(auth.getName()).map(this::safeName).orElse(auth.getName());
-        }
-        return "Admin";
-    }
-
-    /**
-     * Records one real admin action for the Dashboard's Recent Activity
-     * feed. This replaces the old approach (inferring "activity" from a
-     * property's updatedAt timestamp), which showed unrelated data changes
-     * — including ones from seed data — as if an admin had just acted on
-     * them, and never reflected user/review actions at all.
-     */
-    private void logActivity(String action, String message) {
-        com.ulee.ulee_backend.model.AdminActivityLog log = new com.ulee.ulee_backend.model.AdminActivityLog();
-        log.setActorName(currentAdminName());
-        log.setAction(action);
-        log.setMessage(message);
-        log.setTimestamp(LocalDateTime.now());
-        adminActivityLogRepository.save(log);
-    }
-
-    /** Two-letter initials from an admin's name, for the activity feed avatar. */
-    private String initialsFromName(String name) {
-        if (name == null || name.isBlank()) return "AD";
-        String[] parts = name.trim().split("\\s+");
-        StringBuilder sb = new StringBuilder();
-        for (String p : parts) {
-            if (sb.length() >= 2) break;
-            if (!p.isEmpty()) sb.append(Character.toUpperCase(p.charAt(0)));
-        }
-        return sb.length() > 0 ? sb.toString() : "AD";
     }
 
     /**
@@ -210,34 +165,6 @@ public class AdminController {
                     n.getCreatedAt(),
                     n.getCreatedAt().format(timeFormat),
                     n.getPropertyID() != null ? "/admin/reported-listing/" + n.getPropertyID() : null));
-        }
-
-        // Listings suspended and accounts deactivated. Neither Property
-        // nor User has its own "suspendedAt"/"deactivatedAt" timestamp column,
-        // but suspendListing() and deactivateUser() already call logActivity()
-        // with action "Suspended" / "Deactivated" for the Dashboard's Recent
-        // Activity feed — so this reuses that same AdminActivityLog table
-        // instead of adding new columns just for the bell.
-        for (com.ulee.ulee_backend.model.AdminActivityLog log : adminActivityLogRepository.findAllByOrderByTimestampDesc()) {
-            if (log.getTimestamp() == null || log.getAction() == null) continue;
-
-            if ("Suspended".equals(log.getAction())) {
-                items.add(new NotificationFeedItem(
-                        "suspended-" + log.getId(),
-                        "suspended",
-                        log.getMessage(),
-                        log.getTimestamp(),
-                        log.getTimestamp().format(timeFormat),
-                        "/admin/listings"));
-            } else if ("Deactivated".equals(log.getAction())) {
-                items.add(new NotificationFeedItem(
-                        "deactivated-" + log.getId(),
-                        "deactivated",
-                        log.getMessage(),
-                        log.getTimestamp(),
-                        log.getTimestamp().format(timeFormat),
-                        "/admin/manage-users"));
-            }
         }
 
         items.sort(Comparator.comparing(NotificationFeedItem::getTimestamp, Comparator.reverseOrder()));
@@ -568,7 +495,6 @@ public class AdminController {
             notificationRepository.save(notification);
         });
 
-        logActivity("Approved", "Approved \"" + property.getTitle() + "\"");
         redirectAttributes.addFlashAttribute("actionMessage", "Approved \"" + property.getTitle() + "\"");
         return "redirect:/admin-index?section=review-properties";
     }
@@ -619,7 +545,6 @@ public class AdminController {
             notificationRepository.save(notification);
         });
 
-        logActivity("Rejected", "Rejected \"" + property.getTitle() + "\"");
         redirectAttributes.addFlashAttribute("actionMessage", "Rejected \"" + property.getTitle() + "\"");
         return "redirect:/admin-index?section=review-properties";
     }
@@ -723,7 +648,6 @@ public class AdminController {
         Review review = reviewOpt.get();
         review.setIsReported(false);
         reviewRepository.save(review);
-        logActivity("Resolved review", "Marked a review resolved");
         redirectAttributes.addFlashAttribute("actionMessage", "Review marked resolved.");
         return "redirect:/admin/reviews?page=" + page;
     }
@@ -1058,7 +982,6 @@ public class AdminController {
         // The students who reported this listing are told it was handled.
         notifyReportersHandled(reporterIdsFor(propertyId));
 
-        logActivity("Warned landlord", "Warned " + safeName(landlordUser) + " about \"" + property.getTitle() + "\"");
 
         redirectAttributes.addFlashAttribute("actionMessage",
                 "Official warning sent to " + safeName(landlordUser) + "'s notifications (warning #" + (current + 1) + ")");
@@ -1104,7 +1027,6 @@ public class AdminController {
         // The students who reported this listing are told it was handled.
         notifyReportersHandled(reporterIdsFor(id));
 
-        logActivity("Suspended", "Suspended \"" + property.getTitle() + "\"");
         redirectAttributes.addFlashAttribute("actionMessage", "Suspended \"" + property.getTitle() + "\"");
         return "redirect:/admin/reported-listings";
     }
@@ -1150,7 +1072,6 @@ public class AdminController {
             notificationRepository.save(notification);
         });
 
-        logActivity("Unsuspended", "Unsuspended \"" + property.getTitle() + "\"");
         redirectAttributes.addFlashAttribute("actionMessage", "Unsuspended \"" + property.getTitle() + "\" — it's live again");
         return "redirect:" + back;
     }
@@ -1199,7 +1120,6 @@ public class AdminController {
                 landlordNotificationService.notifyListingRemoved(removedLandlordId, null, landlordName, title, reasonText);
             }
 
-            logActivity("Removed", "Removed listing \"" + title + "\"");
             redirectAttributes.addFlashAttribute("actionMessage", "Removed listing \"" + title + "\"");
         } catch (Exception e) {
             // NOTE: deliberately not calling setRollbackOnly() here. Doing so
@@ -1240,7 +1160,6 @@ public class AdminController {
         // anymore but its FK constraint still blocks deletion if a stray row
         // exists.
         jdbcTemplate.update("DELETE FROM property_amenity WHERE propertyID = ?", propertyId);
-        jdbcTemplate.update("DELETE FROM property_feature WHERE propertyID = ?", propertyId);
         jdbcTemplate.update("DELETE FROM savedproperty WHERE propertyID = ?", propertyId);
         jdbcTemplate.update("DELETE FROM report WHERE propertyID = ?", propertyId);
         // Same situation as "report" above: "review" (singular) is a separate
@@ -1444,7 +1363,6 @@ public class AdminController {
         List<Long> monthlyCountsList = new ArrayList<>(monthlyCounts.values());
         model.addAttribute("monthlyLabels", monthlyCounts.keySet().stream().map(m -> m.format(labelFormat)).collect(Collectors.toList()));
         model.addAttribute("monthlyCounts", monthlyCountsList);
-        model.addAttribute("recentActivity", buildRecentActivity());
 
         // Real listings-created-this-month count, for the "Total Listings"
         // stat card's "+X this month" delta — last entry in monthlyCounts is
@@ -1497,105 +1415,6 @@ public class AdminController {
         }
 
         return counts;
-    }
-
-    /**
-     * Full Activity Log page — everything logActivity() has ever recorded,
-     * paginated, newest first. This is what the Dashboard's Recent Activity
-     * "View all" link goes to.
-     */
-    @GetMapping("/admin/activity-log")
-    public String viewActivityLog(Model model, @RequestParam(required = false, defaultValue = "1") Integer page) {
-        DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("MMM d, h:mm a");
-        List<com.ulee.ulee_backend.model.AdminActivityLog> all = adminActivityLogRepository.findAllByOrderByTimestampDesc();
-
-        int pageSize = 20;
-        int total = all.size();
-        int totalPages = Math.max(1, (int) Math.ceil(total / (double) pageSize));
-        int currentPage = Math.min(Math.max(page, 1), totalPages);
-        int fromIndex = Math.min((currentPage - 1) * pageSize, total);
-        int toIndex = Math.min(fromIndex + pageSize, total);
-
-        List<ActivityItem> rows = all.subList(fromIndex, toIndex).stream()
-                .map(log -> new ActivityItem(
-                        log.getMessage(),
-                        log.getTimestamp().format(timeFormat),
-                        log.getAction(),
-                        initialsFromName(log.getActorName())))
-                .collect(Collectors.toList());
-
-        model.addAttribute("activityRows", rows);
-        model.addAttribute("totalActivity", total);
-        model.addAttribute("currentPage", currentPage);
-        model.addAttribute("totalPages", totalPages);
-        model.addAttribute("fromIndex", total == 0 ? 0 : fromIndex + 1);
-        model.addAttribute("toIndex", toIndex);
-        addSidebarCounts(model);
-        return "admin/admin-activity-log";
-    }
-
-    /**
-     * Builds the Dashboard's Recent Activity feed from real logged admin
-     * actions (see logActivity()), most recent first.
-     */
-    private List<ActivityItem> buildRecentActivity() {
-        DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("MMM d, h:mm a");
-
-        return adminActivityLogRepository.findTop5ByOrderByTimestampDesc().stream()
-                .map(log -> new ActivityItem(
-                        log.getMessage(),
-                        log.getTimestamp().format(timeFormat),
-                        log.getAction(),
-                        initialsFromName(log.getActorName())))
-                .collect(Collectors.toList());
-    }
-
-    /** Small holder for a single row in the Dashboard's recent-activity feed. */
-    public static class ActivityItem {
-        private final String message;
-        private final String timestamp;
-        private final String action;
-        private final String initials;
-
-        public ActivityItem(String message, String timestamp, String action, String initials) {
-            this.message = message;
-            this.timestamp = timestamp;
-            this.action = action;
-            this.initials = initials;
-        }
-
-        public String getAction() { return action; }
-        public String getInitials() { return initials; }
-        public String getMessage() { return message; }
-        public String getTimestamp() { return timestamp; }
-
-        /**
-         * Buckets the raw action name into a badge color the template can
-         * key off directly, instead of the template guessing at status
-         * strings that no longer apply (this feed shows admin actions now,
-         * not property statuses).
-         */
-        public String getTone() {
-            if (action == null) return "neutral";
-            switch (action) {
-                case "Approved":
-                case "Reactivated":
-                case "Unsuspended":
-                case "Resolved review":
-                    return "positive";
-                case "Rejected":
-                case "Suspended":
-                case "Removed":
-                case "Deactivated":
-                case "Deleted":
-                    return "negative";
-                case "Warned landlord":
-                case "Warned user":
-                    return "warning";
-                default:
-                    return "neutral";
-            }
-        }
     }
 
     @GetMapping("/admin/listing/{id}")
@@ -1855,7 +1674,6 @@ public class AdminController {
         notification.setIsRead(false);
         notificationRepository.save(notification);
 
-        logActivity("Warned user", "Warned " + safeName(user) + " (warning #" + newCount + ")");
 
         redirectAttributes.addFlashAttribute("actionMessage", "Warned " + safeName(user) + " (warning #" + newCount + ")"
                 + (autoSuspended ? ". Warning limit exceeded: the account was suspended automatically." : ""));
@@ -1929,7 +1747,6 @@ public class AdminController {
             scheduled.setIsRead(false);
             notificationRepository.save(scheduled);
 
-            logActivity("Scheduled deactivation", "Scheduled deactivation of " + safeName(user) + " in 10 minutes");
             redirectAttributes.addFlashAttribute("actionMessage",
                     safeName(user) + " will be deactivated in 10 minutes. You can cancel until then.");
             return "redirect:/admin/manage-users";
@@ -1973,7 +1790,6 @@ public class AdminController {
         notification.setIsRead(false);
         notificationRepository.save(notification);
 
-        logActivity("Deactivated", "Deactivated " + safeName(user));
 
         redirectAttributes.addFlashAttribute("actionMessage", "Deactivated " + safeName(user));
         return "redirect:/admin/manage-users";
@@ -2002,7 +1818,6 @@ public class AdminController {
         note.setIsRead(false);
         notificationRepository.save(note);
 
-        logActivity("Cancelled deactivation", "Cancelled the scheduled deactivation of " + safeName(user));
         redirectAttributes.addFlashAttribute("actionMessage", "Deactivation cancelled. " + safeName(user) + " stays active.");
         return "redirect:/admin/manage-users";
     }
@@ -2047,7 +1862,6 @@ public class AdminController {
             propertyRepository.saveAll(toRestore);
         }
 
-        logActivity("Reactivated", "Reactivated " + safeName(user));
 
         redirectAttributes.addFlashAttribute("actionMessage", "Reactivated " + safeName(user));
         return "redirect:/admin/manage-users";
@@ -2248,7 +2062,6 @@ public class AdminController {
         user.setPhone(phone);
         userRepository.save(user);
 
-        logActivity("Updated profile", "Updated their own profile details");
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("success", true);
@@ -2293,7 +2106,6 @@ public class AdminController {
         user.setPassword(newPassword);
         userRepository.save(user);
 
-        logActivity("Changed password", "Changed their own password");
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("success", true);
@@ -2350,7 +2162,6 @@ public class AdminController {
 
             accountSuspensionRepository.deleteAll(accountSuspensionRepository.findByUserID(id));
             userRepository.deleteById(id);
-            logActivity("Deleted", "Deleted " + name);
             redirectAttributes.addFlashAttribute("actionMessage", "Deleted " + name);
         } catch (Exception e) {
             // NOTE: deliberately not calling setRollbackOnly() here — see the
@@ -2408,7 +2219,6 @@ public class AdminController {
         note.setIsRead(false);
         notificationRepository.save(note);
 
-        logActivity("Auto-suspended", "Auto-suspended " + safeName(user) + " (warning limit exceeded)");
         return true;
     }
 

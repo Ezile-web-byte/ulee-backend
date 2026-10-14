@@ -2,6 +2,7 @@ package com.ulee.ulee_backend.controller;
 
 import com.ulee.ulee_backend.model.*;
 import com.ulee.ulee_backend.repository.*;
+import com.ulee.ulee_backend.service.StayEligibility;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -86,6 +87,11 @@ public class StayController {
         List<Property> stays = acceptedIds.stream()
                 .map(propertyLookup::get).filter(Objects::nonNull).collect(Collectors.toList());
         Set<Integer> reviewedIds = myReviews.stream().map(Review::getPropertyID).collect(Collectors.toSet());
+        Set<Integer> reviewableIds = stays.stream()
+                .filter(StayEligibility::hasStarted)
+                .map(Property::getPropertyID)
+                .collect(Collectors.toSet());
+        model.addAttribute("reviewableIds", reviewableIds);
 
         model.addAttribute("stays", stays);
         model.addAttribute("myReviews", myReviews);

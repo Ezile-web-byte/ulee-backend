@@ -10,7 +10,6 @@ public interface PropertyImageRepository extends JpaRepository<PropertyImage, In
     // Used by the edit/"Manage" page to list every photo for a single property
     List<PropertyImage> findByPropertyID(Integer propertyID);
 
-    List<PropertyImage> findByPropertyIDAndIsVRTrue(Integer propertyID);
 
     // Used by the landlord's property inventory grid to show one thumbnail per card
     List<PropertyImage> findByPropertyIDAndIsMainTrue(Integer propertyID);

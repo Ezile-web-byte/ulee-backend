@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
@@ -10,12 +10,12 @@
   <link rel="stylesheet" href="/landlord-style.css">
 
   <style>
-    /* ── Page intro: larger, teal ── */
+    /* â”€â”€ Page intro: larger, teal â”€â”€ */
     .page-title { font-size: 28px; color: var(--primary-dark); }
     .page-subtitle { font-size: 16.5px; }
     .page-head .btn { font-size: 15px; padding: 13px 22px; }
 
-    /* ── Stat cards: three cards spread evenly across the row ── */
+    /* â”€â”€ Stat cards: three cards spread evenly across the row â”€â”€ */
     .metrics-bar {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -131,11 +131,11 @@
     @keyframes sc-blink { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
     @keyframes sc-wave { to { transform: translateX(-50%); } }
 
-    /* ── Toolbar: a little larger ── */
+    /* â”€â”€ Toolbar: a little larger â”€â”€ */
     .chip { font-size: 14.5px; padding: 9px 18px; }
     .sort-select, .sort-select select { font-size: 14px; }
 
-    /* ── Property cards ── */
+    /* â”€â”€ Property cards â”€â”€ */
     .property-card { animation: pc-in 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
     .property-card:nth-child(3n+2) { animation-delay: 0.07s; }
     .property-card:nth-child(3n+3) { animation-delay: 0.14s; }
@@ -155,7 +155,7 @@
     .btn-manage { font-size: 14.5px; padding: 9px 18px; }
     .status-badge { font-size: 12px; }
 
-    /* NEW — rejected ("Needs Changes") listings */
+    /* NEW â€” rejected ("Needs Changes") listings */
     .status-badge--rejected { background: #C0392B; color: #fff; }
     .property-feedback {
       margin: 10px 0 0;
@@ -181,7 +181,7 @@
     }
     .property-media-placeholder svg { width: 38px; height: 38px; }
 
-    /* ── Cute empty states ── */
+    /* â”€â”€ Cute empty states â”€â”€ */
     .empty-properties {
       display: flex;
       flex-direction: column;
@@ -219,6 +219,30 @@
       gap: 14px;
     }
   </style>
+<style id="stat-card-enlarge">
+  :has(> .stat-card) {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 24px !important;
+  }
+  .stat-card {
+    width: auto !important;
+    max-width: none !important;
+    min-height: 190px !important;
+    padding: 32px 36px !important;
+  }
+  .stat-card .stat-label {
+    font-size: 1.05rem !important;
+    letter-spacing: 0.08em;
+  }
+  .stat-card .stat-value {
+    font-size: 4.5rem !important;
+    line-height: 1.1 !important;
+  }
+  @media (max-width: 700px) {
+    :has(> .stat-card) { grid-template-columns: 1fr !important; }
+  }
+</style>
 </head>
 <body>
 
@@ -273,19 +297,6 @@
           </svg>
         </div>
 
-        <!-- Vacant Rooms is now a real link to the Vacant Rooms page -->
-        <a class="stat-card" th:href="@{/vacant-rooms}" aria-label="View vacant rooms and their applications">
-          <svg class="sc-stars" viewBox="0 0 200 90" aria-hidden="true"><g fill="#9FF0E8"><circle class="star" cx="150" cy="20" r="1.6" style="--d:1.7s"/><circle class="star" cx="180" cy="44" r="1.3" style="--d:2.3s"/><circle class="star" cx="120" cy="52" r="1.2" style="--d:0.3s"/><circle class="star" cx="190" cy="12" r="1.4" style="--d:0.9s"/><circle class="star" cx="95" cy="18" r="1.1" style="--d:1.5s"/></g></svg>
-          <div class="stat-copy">
-            <span class="stat-label">Vacant Rooms</span>
-            <span class="stat-value" id="statVacantRooms" th:text="${vacantRooms}">15</span>
-            <span class="stat-hint">See applications →</span>
-          </div>
-          <svg class="sc-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true">
-            <path class="w-back"  d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
-            <path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
-          </svg>
-        </a>
       </section>
 
       <!-- Filter / sort row -->
@@ -302,8 +313,8 @@
           <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M6 8h12M8 12h8M10 16h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
           <select id="sortSelect" aria-label="Sort properties">
             <option value="date-added">Sort by: Date Added</option>
-            <option value="name-asc">Sort by: Name (A–Z)</option>
-            <option value="rent-desc">Sort by: Rent (High–Low)</option>
+            <option value="name-asc">Sort by: Name (Aâ€“Z)</option>
+            <option value="rent-desc">Sort by: Rent (Highâ€“Low)</option>
           </select>
         </label>
       </section>
@@ -342,7 +353,7 @@
             </p>
             <p class="property-commute" th:if="${property.commuteType != null}" th:text="${property.commuteType}">Walking distance</p>
 
-            <!-- NEW — the admin's comment on a rejected listing -->
+            <!-- NEW â€” the admin's comment on a rejected listing -->
             <div class="property-feedback" th:if="${property.status == 'Rejected'}">
               <strong>Admin feedback</strong>
               <p th:text="${!#strings.isEmpty(property.rejectionReason)} ? ${property.rejectionReason} : 'No comment was left. Please review your listing and resubmit.'">Feedback</p>
@@ -419,19 +430,19 @@
 
     if (params.get('added') === 'true' || toast === 'submitted') {
       popup = {
-        icon: '🎉',
+        icon: 'ðŸŽ‰',
         title: 'Submitted for approval',
         message: 'Your property was submitted and is now pending admin approval.'
       };
     } else if (params.get('updated') === 'true' || toast === 'updated') {
       popup = {
-        icon: '✅',
+        icon: 'âœ…',
         title: 'Changes saved',
         message: 'Your property has been updated.'
       };
     } else if (params.get('draftSaved') === 'true' || toast === 'draft-saved') {
       popup = {
-        icon: '📝',
+        icon: 'ðŸ“',
         title: 'Draft saved',
         message: params.get('incomplete') === 'true'
                 ? 'Some required details were missing, so this was saved as a draft instead of being submitted. You can finish it any time from My Properties.'
@@ -439,25 +450,25 @@
       };
     } else if (toast === 'resubmitted') {
       popup = {
-        icon: '📨',
+        icon: 'ðŸ“¨',
         title: 'Resubmitted for review',
         message: 'Your updated property is back with the admin. You will be notified of their decision.'
       };
     } else if (toast === 'review-needed') {
       popup = {
-        icon: '⏳',
+        icon: 'â³',
         title: 'Sent back for review',
         message: 'You changed the rent, address, capacity or photos, so this listing is hidden from students until an admin approves it again.'
       };
     } else if (toast === 'deactivated') {
       popup = {
-        icon: '✅',
+        icon: 'âœ…',
         title: 'Property deactivated',
         message: 'It will no longer show to students.'
       };
     } else if (toast === 'reactivated') {
       popup = {
-        icon: '✅',
+        icon: 'âœ…',
         title: 'Property reactivated',
         message: 'It is visible to students again.'
       };

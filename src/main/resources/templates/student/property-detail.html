@@ -344,33 +344,6 @@
 
         .no-features { font-size: 14px; color: var(--muted); }
 
-        .detail-vr {
-            grid-column: 1 / -1;
-            background: var(--white);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-sm);
-            padding: 28px;
-        }
-
-        .detail-vr h2 { font-family: 'Playfair Display', serif; font-size: 18px; margin-bottom: 16px; }
-
-        .vr-viewer { position: relative; border-radius: var(--radius); overflow: hidden; height: 320px; }
-        .vr-image { width: 100%; height: 100%; object-fit: cover; cursor: grab; }
-
-        .vr-badge {
-            position: absolute; top: 14px; left: 14px;
-            background: rgba(0,0,0,0.6); color: var(--white);
-            font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 20px;
-        }
-
-        .vr-tour-btn {
-            display: inline-flex; align-items: center; gap: 8px; margin-top: 14px;
-            background: var(--primary); color: var(--white);
-            font-size: 13px; font-weight: 600; padding: 10px 20px; border-radius: 999px;
-            text-decoration: none; transition: background var(--transition), transform 0.15s ease;
-        }
-        .vr-tour-btn:hover { background: var(--primary-dark); transform: translateX(2px); }
-
         /* ── LOCATION MAP ── */
         .detail-map-card {
             grid-column: 1 / -1;
@@ -692,7 +665,7 @@
                     radial-gradient(700px 380px at 0% 60%, rgba(0,113,120,.06), transparent 60%),
                     var(--bg);
         }
-        .detail-title, .detail-description h2, .detail-features h2, .detail-vr h2,
+        .detail-title, .detail-description h2, .detail-features h2, 
         .detail-map-card h2, .detail-reviews h2, .detail-apply-card h2, .review-quote-mark,
         .validation-modal-title { font-family: var(--font-display); }
         .back-btn, .header-apply-btn, .apply-btn, .validation-modal-ok,
@@ -774,13 +747,13 @@
         .info-cta .material-symbols-outlined { font-size: 18px; }
 
         /* Content panels */
-        .detail-description, .detail-features, .detail-vr, .detail-map-card, .detail-reviews, .detail-apply-card {
+        .detail-description, .detail-features, .detail-map-card, .detail-reviews, .detail-apply-card {
             border: 1px solid var(--border); border-radius: 22px; box-shadow: 0 6px 24px rgba(7,28,45,.06);
         }
-        .detail-description h2, .detail-features h2, .detail-vr h2, .detail-map-card h2, .detail-reviews h2, .detail-apply-card h2 {
+        .detail-description h2, .detail-features h2, .detail-map-card h2, .detail-reviews h2, .detail-apply-card h2 {
             display: flex; align-items: center; gap: 10px; font-size: 19px; font-weight: 800;
         }
-        .detail-description h2::before, .detail-features h2::before, .detail-vr h2::before,
+        .detail-description h2::before, .detail-features h2::before, 
         .detail-map-card h2::before, .detail-reviews h2::before, .detail-apply-card h2::before {
             content: ''; width: 4px; height: 20px; border-radius: 4px;
             background: linear-gradient(var(--teal-glow), #007178); box-shadow: 0 0 8px rgba(20,200,190,.55);
@@ -790,10 +763,6 @@
         .amenity-item-list { flex-direction: row; flex-wrap: wrap; gap: 8px; }
         .amenity-item { padding: 7px 12px; border-radius: 10px; background: var(--primary-pale); border: 1px solid rgba(147,192,197,.55); font-size: 13.5px; font-weight: 600; color: #005454; }
         .map-embed-frame { border-radius: 16px; border: 1px solid var(--border); }
-        .vr-viewer { border-radius: 16px; border: 1px solid rgba(20,200,190,.35); }
-        .vr-badge { background: rgba(7,28,45,.75); border: 1px solid rgba(20,200,190,.5); }
-        .vr-tour-btn { background: var(--navy-gradient); border: 1px solid rgba(20,200,190,.45); }
-        .vr-tour-btn:hover { box-shadow: 0 8px 22px rgba(7,28,45,.3), 0 0 18px rgba(20,200,190,.25); }
 
         /* Reviews */
         .no-reviews-card { background: var(--primary-pale); border: 1.5px dashed #93C0C5; color: var(--primary); border-radius: 16px; }
@@ -832,6 +801,11 @@
         @media (max-width: 520px) {
             .topbar-logo { display: none; }
         }
+    
+    /* Submit button uses the chat button's teal */
+    .apply-btn.apply-submit-btn { background: #0f9e94; border: 1px solid #0f9e94; color: #fff; box-shadow: none; }
+    .apply-btn.apply-submit-btn:hover { background: #0b7d75; border-color: #0b7d75; box-shadow: 0 8px 26px rgba(0,0,0,.24); transform: translateY(-2px); }
+    .apply-btn.apply-submit-btn:disabled { background: #0b7d75; border-color: #0b7d75; }
     </style>
 </head>
 <body>
@@ -971,20 +945,6 @@
         </iframe>
     </div>
 
-    <div class="detail-vr" th:if="${not #lists.isEmpty(vrImages)}">
-        <h2>360° Virtual Tour</h2>
-        <div class="vr-viewer">
-            <img th:src="${vrImages[0].url}" alt="360 tour view" class="vr-image" />
-            <span class="vr-badge">🌐 360° View</span>
-        </div>
-        <a th:href="@{/property/{id}/vr-tour(id=${property.propertyID})}" class="vr-tour-btn">
-            🌐 Launch Full 360° Tour
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
-                <path d="M9 18l6-6-6-6"/>
-            </svg>
-        </a>
-    </div>
-
     <!-- 4. REVIEWS — quote-card style, matches what the landlord sees -->
     <div class="detail-reviews">
         <h2>Reviews &amp; Ratings</h2>
@@ -1026,6 +986,15 @@
         <h2>Apply for this property</h2>
         <p class="apply-card-subtitle">Your details are sent directly to the landlord along with your application.</p>
 
+        <div class="apply-error-banner" th:if="${param.applyError != null and param.applyError[0] == 'gender-restricted'}">
+            This property only accepts students of a specific gender, so your application could not be sent.
+        </div>
+        <div class="apply-error-banner" th:if="${param.applyError != null and param.applyError[0] == 'senior-restricted'}">
+            This property is for senior students only (year 2 and above), so your application could not be sent.
+        </div>
+        <div class="apply-error-banner" th:if="${param.applyError != null and param.applyError[0] == 'first-year-restricted'}">
+            This property is for first-year students only, so your application could not be sent.
+        </div>
         <div class="apply-error-banner" th:if="${param.applyError != null and param.applyError[0] == 'already-applied'}">
             ⚠ You've already applied to this property — only one application per accommodation is allowed.
         </div>
@@ -1087,23 +1056,31 @@
                     <input type="file" id="documents" name="documents" accept=".zip" required />
                 </div>
 
-                <div class="form-field full-width">
-                    <label>Funding</label>
-                    <div class="funding-options">
-                        <div class="funding-option">
-                            <input type="radio" id="fundingBursary" name="fundingStatus" value="Bursary" checked />
-                            <label for="fundingBursary">Bursary</label>
-                        </div>
-                        <div class="funding-option">
-                            <input type="radio" id="fundingSelf" name="fundingStatus" value="Self-funded" />
-                            <label for="fundingSelf">Self-funded</label>
-                        </div>
-                        <div class="funding-option">
-                            <input type="radio" id="fundingNsfas" name="fundingStatus" value="NSFAS" />
-                            <label for="fundingNsfas">NSFAS</label>
+                <th:block th:with="restrictedFunding=${property.acceptedFunding != null and !#strings.isEmpty(property.acceptedFunding) and property.acceptedFunding != 'Any'}">
+                    <div class="form-field full-width" th:if="${restrictedFunding}">
+                        <label for="fundingDisplay">Funding</label>
+                        <input type="text" id="fundingDisplay" th:value="${property.acceptedFunding}" readonly />
+                        <input type="hidden" name="fundingStatus" th:value="${property.acceptedFunding}" />
+                        <p class="field-help">This landlord only accepts <span th:text="${property.acceptedFunding}">Bursary</span> funding, so it is set for you.</p>
+                    </div>
+                    <div class="form-field full-width" th:unless="${restrictedFunding}">
+                        <label>Funding</label>
+                        <div class="funding-options">
+                            <div class="funding-option">
+                                <input type="radio" id="fundingBursary" name="fundingStatus" value="Bursary" checked />
+                                <label for="fundingBursary">Bursary</label>
+                            </div>
+                            <div class="funding-option">
+                                <input type="radio" id="fundingSelf" name="fundingStatus" value="Self-Paying" />
+                                <label for="fundingSelf">Self-funded</label>
+                            </div>
+                            <div class="funding-option">
+                                <input type="radio" id="fundingNsfas" name="fundingStatus" value="NSFAS" />
+                                <label for="fundingNsfas">NSFAS</label>
+                            </div>
                         </div>
                     </div>
-                </div>
+                </th:block>
 
                 <div class="form-field full-width">
                     <label for="messageToLandlord">Message to Landlord (optional)</label>

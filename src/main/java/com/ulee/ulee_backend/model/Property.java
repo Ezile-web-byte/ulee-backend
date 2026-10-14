@@ -84,11 +84,6 @@ public class Property {
     @BatchSize(size = 50)
     private List<Amenity> amenities;
 
-    // ── Special features: landlord-authored extras (Study Hub, Braai Area) each with their own photos
-    @OneToMany(fetch = FetchType.LAZY)
-    @JoinColumn(name = "propertyID", referencedColumnName = "propertyID", insertable = false, updatable = false)
-    @BatchSize(size = 50)
-    private List<PropertyFeature> features;
 
     @Transient
     public String getMainImageUrl() {
@@ -207,6 +202,4 @@ public class Property {
     public List<Amenity> getAmenities() { return amenities; }
     public void setAmenities(List<Amenity> amenities) { this.amenities = amenities; }
 
-    public List<PropertyFeature> getFeatures() { return features; }
-    public void setFeatures(List<PropertyFeature> features) { this.features = features; }
 }
