@@ -40,18 +40,9 @@
      id="swai-root"
      th:attr="data-property-id=${propertyId},data-property-title=${propertyTitle},data-property-address=${propertyAddress},data-property-commute-type=${propertyCommuteType},data-property-features=${propertyFeatures}">
 
-    <!-- Hello bubble: always visible next to the chat icon while the chat is closed -->
-    <div id="swai-teaser" class="swai-teaser" role="status" hidden>
-        <div class="swai-teaser-avatar" aria-hidden="true">
-            <svg viewBox="0 0 20 20"><path d="M10 2L3 7v11h14V7L10 2zm0 2.6 5 3.5V16H5V8.1l5-3.5zM8 10h4v6H8z"/></svg>
-        </div>
-        <div class="swai-teaser-msg">
-            <div class="swai-teaser-name">ULEE &middot; AI assistant</div>
-            <div class="swai-teaser-typing" aria-hidden="true"><i></i><i></i><i></i></div>
-            <p class="swai-teaser-text">Hey, I&rsquo;m ULEE, your AI assistant &#128075;</p>
-        </div>
-        <button type="button" id="swai-teaser-close" class="swai-teaser-close" aria-label="Dismiss message">&times;</button>
-    </div>
+    <!-- Hello bubble intentionally never shown. The element is kept (permanently hidden) so
+         speak-with-ai.js can still find #swai-teaser / #swai-teaser-close without errors. -->
+    <div id="swai-teaser" class="swai-teaser" hidden aria-hidden="true" style="display:none !important"><button type="button" id="swai-teaser-close" tabindex="-1" aria-hidden="true"></button></div>
 
     <button type="button" id="swai-icon" class="swai-icon" aria-label="Open ULEE AI assistant" aria-expanded="false">
         <!-- single chat-bubble icon -->
