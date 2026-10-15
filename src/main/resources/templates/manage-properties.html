@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="/speak-with-ai.css">
     <script src="/speak-with-ai-logic.js" defer></script>
     <script src="/speak-with-ai.js" defer></script>
+<link rel="stylesheet" th:href="@{/ulee-select.css}">
 </head>
 <body>
 
@@ -202,5 +203,6 @@
 
 <script src="/manage-properties.js"></script>
 <div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null)}"></div>
+<script th:src="@{/ulee-select.js}"></script>
 </body>
 </html>

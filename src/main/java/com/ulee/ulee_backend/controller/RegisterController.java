@@ -82,6 +82,7 @@ public class RegisterController {
             @RequestParam String email,
             @RequestParam String password,
             @RequestParam(required = false) String dateOfBirth,
+            @RequestParam(required = false) String gender,
             @RequestParam(required = false) String phone,
             @RequestParam(required = false) Integer yearOfStudy,
             @RequestParam(required = false) String companyName,
@@ -138,6 +139,19 @@ public class RegisterController {
             }
         }
 
+        String passwordError = com.ulee.ulee_backend.util.PasswordRules.check(password);
+        if (passwordError != null) {
+            return reject(model, normalizedRole, passwordError);
+        }
+
+        // Gender: required for every new account, "Female" or "Male".
+        String cleanedGender = null;
+        if (gender != null && gender.trim().equalsIgnoreCase("Female")) cleanedGender = "Female";
+        else if (gender != null && gender.trim().equalsIgnoreCase("Male")) cleanedGender = "Male";
+        if (cleanedGender == null) {
+            return reject(model, normalizedRole, "Please choose your gender.");
+        }
+
         // Step 1 — create the shared User row first.
         User user = new User();
         user.setFirstName(firstName.trim());
@@ -151,6 +165,7 @@ public class RegisterController {
         user.setDateOfBirth(parsedDateOfBirth);
         user.setIsActive(true);
         user.setWarningCount(0);
+        user.setGender(cleanedGender);
 
         User savedUser = userRepository.save(user);
 

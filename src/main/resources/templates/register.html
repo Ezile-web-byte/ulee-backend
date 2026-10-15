@@ -9,6 +9,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/login-style.css">
     <link rel="stylesheet" href="/speak-with-ai.css">
+    <style>
+        .sa-back {
+            display: inline-flex; align-items: center; gap: 6px;
+            margin-bottom: 14px;
+            font-size: 14px; font-weight: 600;
+            color: #0b6b66; text-decoration: none;
+        }
+        .sa-back:hover { text-decoration: underline; }
+    </style>
     <script src="/speak-with-ai-logic.js" defer></script>
     <script src="/speak-with-ai.js" defer></script>
 </head>
@@ -29,20 +38,6 @@
         <div class="auth-hero-copy">
             <h1>Find a room near campus, or fill the ones you have.</h1>
             <p>One account for students looking for a place and landlords listing in Gqeberha.</p>
-            <ul class="auth-hero-points">
-                <li>
-                    <svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>
-                    Real rooms from landlords near your campus
-                </li>
-                <li>
-                    <svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>
-                    Apply to a property in a few clicks
-                </li>
-                <li>
-                    <svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>
-                    Landlords manage listings and applications in one place
-                </li>
-            </ul>
         </div>
 
         <svg class="auth-stars" viewBox="0 0 200 90" aria-hidden="true">
@@ -67,6 +62,14 @@
             <p class="sa-tagline">Student Living. Simplified.</p>
 
             <div class="sa-card">
+                <a href="/student-dashboard" class="sa-back">
+                    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                        <path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Back
+                </a>
+
                 <h2 class="sa-title">Create your account</h2>
                 <p class="sa-sub">Tell us who you are and we'll set up the right dashboard.</p>
 
@@ -131,6 +134,16 @@
                         </div>
                     </div>
 
+                    <div class="sa-field">
+                        <label class="sa-label" for="gender">Gender</label>
+                        <select class="sa-input" id="gender" name="gender" required>
+                            <option value="" disabled selected>Select your gender</option>
+                            <option value="Female">Female</option>
+                            <option value="Male">Male</option>
+                        </select>
+                        <p class="field-error" data-for="gender"></p>
+                    </div>
+
                     <!-- Student-only -->
                     <div id="studentFields" class="role-fields visible">
                         <div class="sa-field">
@@ -188,7 +201,8 @@
     const rules = {
         firstName: (v) => v.trim() ? '' : 'Enter your first name.',
         lastName:  (v) => v.trim() ? '' : 'Enter your last name.',
-        password:  (v) => v ? '' : 'Enter a password.',
+        password:  (v) => !v ? 'Enter a password.' : (v.length < 8 || !/[A-Za-z]/.test(v) || !/[0-9]/.test(v)) ? 'Use at least 8 characters, with a letter and a number.' : '',
+        gender:    (v) => (v === 'Female' || v === 'Male') ? '' : 'Please choose your gender.',
 
         email: (v) => {
             if (!v) return 'Enter your email address.';

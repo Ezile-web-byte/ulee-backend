@@ -18,7 +18,7 @@ public class User {
     private LocalDate dateOfBirth;
     private String email;
     private String phone;
-    private String avatar;
+    private String gender; // "Female" or "Male", chosen at registration
     private Integer warningCount;
     private Boolean isActive;
     public Boolean getIsActive() { return isActive; }
@@ -51,6 +51,7 @@ public class User {
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
 
-    public String getAvatar() { return avatar; }
-    public void setAvatar(String avatar) { this.avatar = avatar; }
+
+    public String getGender() { return gender; }
+    public void setGender(String gender) { this.gender = gender; }
 }

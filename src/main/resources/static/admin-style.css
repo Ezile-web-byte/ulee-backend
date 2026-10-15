@@ -644,8 +644,21 @@ tr:hover td { background: var(--pp); }
 .ulee-confirm-actions button:active { transform: scale(.97); }
 #uleeConfirmCancel { background: #ffffff; border: 1px solid var(--border); color: var(--text-2); }
 
-.ulee-confirm-card.tone-danger  .ulee-confirm-icon { background: #fdeceb; color: var(--danger); }
-.ulee-confirm-card.tone-danger  #uleeConfirmOk { background: var(--danger); border: 1px solid var(--danger); color: #ffffff; }
+/* Reject / destructive confirm: calm navy + teal (no red), matches the approve popup */
+/* (!important so pages with their own inline red rules, e.g. the dashboard, still get the calm look) */
+.ulee-confirm-card.tone-danger  .ulee-confirm-icon { background: #dcf5f1 !important; color: #0f8a8a !important; }
+.ulee-confirm-card.tone-danger  #uleeConfirmOk { background: #1e9b97 !important; border: 1px solid #1e9b97 !important; color: #ffffff !important; box-shadow: 0 10px 22px rgba(30,155,151,.30) !important; }
+.ulee-confirm-card.tone-danger  #uleeConfirmOk:hover { background: #0f8a8a !important; border-color: #0f8a8a !important; filter: none; }
+
+/* Result popup (after Approve / Reject) */
+#resultCard.tone-danger .ulee-confirm-icon { background: #dcf5f1 !important; color: #0f8a8a !important; }
+#resultCard.tone-danger h3 { color: #0f7f7a !important; }
+#resultCard.tone-danger #resultOk { background: #1e9b97 !important; border: 1px solid #1e9b97 !important; box-shadow: 0 10px 22px rgba(30,155,151,.30) !important; }
+
+/* Reject comment box (focus + validation) */
+#uleeConfirmReason:focus { border-color: #1e9b97 !important; box-shadow: 0 0 0 3px rgba(30,155,151,.15) !important; }
+#uleeConfirmReason.invalid { border-color: #b45309 !important; background: #fffaf3 !important; }
+#uleeConfirmReasonErr { color: #b45309 !important; }
 .ulee-confirm-card.tone-warning .ulee-confirm-icon { background: #fff4d6; color: #b57a00; }
 .ulee-confirm-card.tone-warning #uleeConfirmOk { background: var(--hero-yellow); border: 1px solid var(--yellow-hover); color: var(--on-yellow); }
 .ulee-confirm-card.tone-info    .ulee-confirm-icon { background: var(--surface-tint); color: var(--p); }

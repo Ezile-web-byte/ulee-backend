@@ -1,7 +1,6 @@
 package com.ulee.ulee_backend.service;
 
 import com.ulee.ulee_backend.model.AccountSuspension;
-import com.ulee.ulee_backend.model.AdminActivityLog;
 import com.ulee.ulee_backend.model.Notification;
 import com.ulee.ulee_backend.model.Property;
 import com.ulee.ulee_backend.model.User;
@@ -49,7 +48,6 @@ public class AccountSuspensionService {
     @Autowired private LandlordRepository landlordRepository;
     @Autowired private StudentRepository studentRepository;
     @Autowired private NotificationRepository notificationRepository;
-    @Autowired private AdminActivityLogRepository adminActivityLogRepository;
 
     // ------------------------------------------------------------ queries
 
@@ -155,14 +153,11 @@ public class AccountSuspensionService {
                     "Your ULEE account has been suspended because it went over the limit of "
                             + MAX_WARNINGS + " warnings. Your properties are hidden from students. "
                             + "An administrator will review your account.");
-            logSystem("Auto-suspended", "Suspended " + displayName(user)
-                    + " automatically (more than " + MAX_WARNINGS + " warnings)");
         } else {
             notifyUser(userID, "Account Deactivated",
                     "Your ULEE account has been deactivated by an administrator. Your properties are hidden "
                             + "from students and you cannot add new listings. "
                             + "If you believe this was done in error, please contact support.");
-            logSystem("Deactivated", "Deactivated " + displayName(user) + " after the notice period");
         }
     }
 
@@ -257,15 +252,6 @@ public class AccountSuspensionService {
         n.setCreatedAt(LocalDateTime.now());
         n.setIsRead(false);
         notificationRepository.save(n);
-    }
-
-    private void logSystem(String action, String message) {
-        AdminActivityLog entry = new AdminActivityLog();
-        entry.setActorName("System");
-        entry.setAction(action);
-        entry.setMessage(message);
-        entry.setTimestamp(LocalDateTime.now());
-        adminActivityLogRepository.save(entry);
     }
 
     private String displayName(User user) {

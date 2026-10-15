@@ -106,7 +106,7 @@
         .required-asterisk { color: var(--danger); font-weight: 700; margin-left: 3px; }
         .field-invalid { border: 2px solid var(--danger) !important; background: var(--danger-bg) !important; }
 
-        /* NEW — admin feedback / re-review notices */
+        /* Admin feedback / re-review notices */
         .review-banner { padding: 16px 20px; border-radius: var(--r-md); margin-bottom: 20px; font-size: 15px; line-height: 1.5; }
         .review-banner strong { display: block; font-size: 16.5px; margin-bottom: 4px; }
         .review-banner p { margin: 4px 0 8px; white-space: pre-line; }
@@ -252,6 +252,7 @@
             background: var(--surface) !important;
         }
     </style>
+<link rel="stylesheet" th:href="@{/ulee-select.css}">
 </head>
 <body>
 
@@ -326,14 +327,21 @@
                 <p>Update your property details, photos, and amenities. Listings are reviewed by our admin team before going live for students.</p>
             </div>
 
-            <!-- NEW — rejected: show the admin's comment -->
+            <!-- NEW — delete was blocked because students have already been accepted -->
+            <div class="review-banner review-banner--rejected"
+                 th:if="${param.error != null and param.error[0] == 'has-accepted-students'}" role="alert">
+                <strong>This property can't be deleted</strong>
+                <p>It has accepted students living in it. Deleting it would remove their applications too.</p>
+            </div>
+
+            <!-- Rejected: show the admin's comment -->
             <div class="review-banner review-banner--rejected" th:if="${property.status == 'Rejected'}" role="alert">
                 <strong>Your listing needs changes</strong>
                 <p th:text="${!#strings.isEmpty(property.rejectionReason)} ? ${property.rejectionReason} : 'The admin did not leave a comment.'">Feedback</p>
                 <small>Fix these points, then press “Resubmit for review”. This updates the same listing, it does not create a new one.</small>
             </div>
 
-            <!-- NEW — live listing: explain which edits need re-approval -->
+            <!-- Live listing: explain which edits need re-approval -->
             <div class="review-banner review-banner--info" th:if="${property.status == 'Active'}">
                 Changing the <b>rent, address, capacity or photos</b> hides this listing from students until an admin approves it again. All other edits go live straight away.
             </div>
@@ -576,10 +584,16 @@
                 <div class="actions-bar">
                     <button type="submit" formnovalidate class="btn"
                             onclick="document.getElementById('formAction').value='draft';">Save Draft</button>
+
+                    <!-- CHANGED — Delete now belongs to its own standalone form
+                         (#deletePropertyForm, below) instead of using formaction on the
+                         big edit form. If the confirm-popup script ever calls form.submit()
+                         (which ignores formaction), it would have submitted the EDIT form.
+                         With form="deletePropertyForm" the button's form is always the delete
+                         form, so it can only ever post to /delete-property/{id}. -->
                     <button type="submit"
                             class="btn btn-danger"
-                            th:formaction="@{/delete-property/{id}(id=${property.propertyID})}"
-                            formmethod="post"
+                            form="deletePropertyForm"
                             formnovalidate
                             data-confirm
                             data-confirm-title="Delete this property?"
@@ -589,6 +603,13 @@
                 </div>
 
             </form>
+
+            <!-- NEW — standalone permanent-delete form. Must stay OUTSIDE editPropertyForm
+                 (forms can't be nested). Hits deleteProperty(), which removes the row,
+                 not togglePropertyStatus(), which only deactivates. -->
+            <form id="deletePropertyForm"
+                  th:action="@{/delete-property/{id}(id=${property.propertyID})}"
+                  method="post" hidden></form>
 
             <!-- Standalone Save button. Reads "Resubmit for review" on a rejected listing. -->
             <button type="submit" form="editPropertyForm" formnovalidate id="saveChangesBtn"
@@ -641,5 +662,6 @@
 <th:block th:replace="~{fragments/modal :: assets}"></th:block>
 
 <script th:src="@{/edit-property-validation.js}" src="/edit-property-validation.js"></script>
+<script th:src="@{/ulee-select.js}"></script>
 </body>
 </html>

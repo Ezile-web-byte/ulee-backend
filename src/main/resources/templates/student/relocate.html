@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Choose a new room</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #f6f7f5; color: #191c1d; margin: 0; }
+    main { max-width: 640px; margin: 40px auto; padding: 0 16px; }
+    .card { background: #fff; border: 1px solid #e6e8e4; border-radius: 14px; padding: 16px; margin-top: 14px; display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+    .card h3 { margin: 0 0 4px; font-size: 16px; }
+    .muted { color: #6f787d; font-size: 14px; }
+    button { background: #006A6A; color: #fff; border: 0; border-radius: 999px; padding: 9px 16px; font-weight: 600; cursor: pointer; }
+    a { color: #006A6A; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Choose a new room</h1>
+  <p><strong th:text="${oldProperty.title}">Old property</strong> is closing. Pick one of your landlord's other properties below and your place moves with you.</p>
+  <p class="muted" th:if="${options.isEmpty()}">No other property of this landlord currently matches your details and has a free room. Please contact your landlord.</p>
+  <div class="card" th:each="p : ${options}">
+    <div>
+      <h3 th:text="${p.title}">Property</h3>
+      <div class="muted" th:text="${p.suburb} + ' · R' + ${p.rent} + ' / month · ' + ${p.type}">Suburb</div>
+    </div>
+    <form th:action="@{/relocate/{o}/to/{n}(o=${oldProperty.propertyID},n=${p.propertyID})}" method="post">
+      <button type="submit">Move here</button>
+    </form>
+  </div>
+  <p><a th:href="@{/my-applications}">Back to my applications</a></p>
+</main>
+</body>
+</html>

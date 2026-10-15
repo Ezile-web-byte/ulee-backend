@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Choose rooms - ULEE</title>
+<style>
+body{margin:0;background:#f1f5f5;font-family:Arial,sans-serif;color:#10302f;display:grid;place-items:center;min-height:100vh;padding:24px 12px;box-sizing:border-box}
+.card{background:#fff;max-width:560px;width:100%;padding:28px;border-radius:16px;box-shadow:0 8px 30px rgba(11,79,85,.12)}
+h1{margin:0 0 10px;font-size:22px;color:#0b4f55}p{line-height:1.5;margin:0 0 14px}
+.opt{display:flex;gap:12px;padding:12px;border:1px solid #c5d6d6;border-radius:10px;margin-bottom:10px;cursor:pointer}
+.err{color:#b42318;background:#fef3f2;padding:10px 12px;border-radius:8px}
+.row{display:flex;gap:10px;margin-top:18px}
+.btn{flex:1;text-align:center;padding:12px;border-radius:10px;font-weight:600;text-decoration:none;cursor:pointer;border:1px solid #0b4f55;background:#fff;color:#0b4f55}
+.primary{background:#0b4f55;color:#fff}.primary:disabled{opacity:.45;cursor:not-allowed}
+</style></head>
+<body><main class="card">
+<h1>Choose where the students move</h1>
+<p><strong th:text="${property.title}">Property</strong> has <strong th:text="${needed}">0</strong> accepted student(s). They need rooms in your other properties before it can close.</p>
+<p th:if="${alreadyOpen > 0}">Your other open properties already have <strong th:text="${alreadyOpen}">0</strong> free room(s).</p>
+<p class="err" th:if="${param.error != null}">The properties you chose do not have enough rooms. Please choose more.</p>
+<form id="f" method="post" th:action="@{/delete-property/{id}/open-rooms(id=${property.propertyID})}" th:attr="data-need=${needed},data-have=${alreadyOpen}">
+<p>Choose which properties to open now. Each one opens with today as its available-from date, which also applies to any student already booked there.</p>
+<p class="err" th:if="${#lists.isEmpty(rows)}">None of your other properties can take students.</p>
+<label class="opt" th:each="r : ${rows}">
+<input type="checkbox" name="openIds" th:value="${r['id']}" th:attr="data-free=${r['free']}">
+<span><strong th:text="${r['title']}">Title</strong><br><small th:text="${r['free']} + ' free room(s), available from ' + ${r['from']}">1 free room(s)</small></span>
+</label>
+<p id="count"></p>
+<div class="row">
+<a class="btn" th:href="@{/edit-property/{id}(id=${property.propertyID})}">Cancel</a>
+<button type="submit" id="go" class="btn primary" disabled>Close property</button>
+</div>
+</form></main>
+<script>
+(function(){var f=document.getElementById('f'),need=+f.dataset.need,have=+f.dataset.have,go=document.getElementById('go'),c=document.getElementById('count');
+function upd(){var s=have;f.querySelectorAll('input[name=openIds]:checked').forEach(function(i){s+=+i.dataset.free;});c.textContent='Rooms available: '+s+' of '+need+' needed.';go.disabled=s<need;}
+f.addEventListener('change',upd);upd();})();
+</script>
+</body></html>

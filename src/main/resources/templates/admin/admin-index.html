@@ -203,6 +203,29 @@
         .ulee-confirm-card.tone-danger #uleeConfirmOk { background: #c62828; border: 1px solid #c62828; color: #fff; }
         @keyframes uleeFade { from { opacity: 0; } to { opacity: 1; } }
         @keyframes uleePop { from { opacity: 0; transform: translateY(12px) scale(.94); } to { opacity: 1; transform: none; } }
+
+        /* ── Result popup (after Approve / Reject) ── */
+        #resultCard { max-width: 440px; padding: 36px 32px 30px; border-radius: 24px; }
+        #resultCard .ulee-confirm-icon { width: 84px; height: 84px; margin-bottom: 18px; }
+        #resultCard .ulee-confirm-icon svg { width: 40px; height: 40px; }
+        #resultCard h3 { margin: 0 0 8px; font-size: 24px; font-weight: 800; font-family: 'Plus Jakarta Sans', sans-serif; }
+        #resultCard .ulee-confirm-prop { margin: 0 0 12px; font-size: 13px; }
+        #resultCard p { margin: 0 0 26px; font-size: 14.5px; }
+        #resultOk { padding: 15px 0; border-radius: 14px; font-size: 16px; font-weight: 700; color: #fff; }
+        #resultCard.tone-success .ulee-confirm-icon { background: #dcf5f1; color: #0f8a8a; }
+        #resultCard.tone-success h3 { color: #0f7f7a; }
+        #resultCard.tone-success #resultOk { background: #1e9b97; border: 1px solid #1e9b97; box-shadow: 0 10px 22px rgba(30,155,151,.30); }
+        #resultCard.tone-danger .ulee-confirm-icon { background: #fdeceb; color: #c62828; }
+        #resultCard.tone-danger h3 { color: #c62828; }
+        #resultCard.tone-danger #resultOk { background: #c62828; border: 1px solid #c62828; box-shadow: 0 10px 22px rgba(198,40,40,.28); }
+
+        /* Comment box inside the Reject confirm */
+        #uleeConfirmReasonWrap { display: none; margin: -8px 0 20px; text-align: left; }
+        #uleeConfirmReason { width: 100%; min-height: 96px; resize: vertical; box-sizing: border-box; padding: 11px 14px; font-family: inherit; font-size: 14px; border: 1.5px solid #d9dfe2; border-radius: 10px; outline: none; }
+        #uleeConfirmReason:focus { border-color: #c62828; box-shadow: 0 0 0 3px rgba(198,40,40,.12); }
+        #uleeConfirmReason.invalid { border-color: #c62828; background: #fff8f8; }
+        #uleeConfirmReasonErr { display: none; margin-top: 6px; font-size: 12.5px; color: #c62828; }
+        #uleeConfirmReasonErr.show { display: block; }
     </style>
     <link rel="stylesheet" href="/admin-theme.css">
 </head>
@@ -385,31 +408,6 @@
 
                 </div>
 
-                <!-- Recent activity -->
-                <div class="panel" id="dashActivityPanel" style="margin-top:20px">
-                    <div class="panel-header">
-                        <div><span class="panel-title">Recent Activity</span></div>
-                        <a href="/admin/activity-log" class="see-all">View all</a>
-                    </div>
-                    <div style="padding:6px 0">
-                        <div th:each="activity : ${recentActivity}"
-                             style="display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid #f2f2f2">
-                            <div style="width:32px;height:32px;border-radius:50%;background:var(--pl);color:var(--pdp);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0"
-                                 th:text="${activity.initials}">??</div>
-                            <div style="flex:1;min-width:0">
-                                <div th:text="${activity.message}" style="font-size:14px">Activity description</div>
-                                <div th:text="${activity.timestamp}" style="color:var(--muted);font-size:12px;margin-top:2px">Just now</div>
-                            </div>
-                            <span class="badge"
-                                  th:classappend="${activity.tone == 'positive'} ? 'badge-green' : (${activity.tone == 'negative'} ? 'badge-red' : (${activity.tone == 'warning'} ? 'badge-amber' : 'badge-blue'))"
-                                  th:text="${activity.action}">Action</span>
-                        </div>
-                        <p th:if="${recentActivity == null or #lists.isEmpty(recentActivity)}"
-                           style="color:var(--muted);text-align:center;padding:30px 18px">
-                            No recent activity to show.
-                        </p>
-                    </div>
-                </div>
 
             </div>
 
@@ -558,7 +556,8 @@
                                     <td th:title="${#strings.isEmpty(#strings.trim(prop.type)) ? 'N/A' : prop.type}"
                                         th:text="${#strings.isEmpty(#strings.trim(prop.type)) ? 'N/A' : prop.type}">Single</td>
                                     <td class="rv-num" th:text="${prop.rent != null ? 'R' + #numbers.formatDecimal(prop.rent, 1, 'COMMA', 2, 'POINT') : 'N/A'}">R3,000.00</td>
-                                    <td th:text="${prop.createdAt != null ? #temporals.format(prop.createdAt, 'd MMM yyyy') : 'N/A'}">1 Sep 2026</td>
+                                    <td th:text="${prop.createdAt != null ? #temporals.format(prop.createdAt, 'd MMM yyyy')
+        : (prop.updatedAt != null ? #temporals.format(prop.updatedAt, 'd MMM yyyy') : 'N/A')}">1 Sep 2026</td>
                                     <td class="rv-act">
                                         <div class="rv-actions">
                                             <form th:action="@{/admin/approve-listing/{id}(id=${prop.propertyID})}" method="post"
@@ -570,7 +569,7 @@
                                                   class="rv-action-form confirm-form" data-kind="reject"
                                                   th:attr="data-property=${#strings.isEmpty(#strings.trim(prop.title)) ? 'this listing' : prop.title}"
                                                   data-title="Reject this listing?"
-                                                  data-text="It will be marked as Rejected and won't be visible to students."
+                                                  data-text="The listing will not be published and the landlord will be notified."
                                                   data-button="Yes, reject">
                                                 <button type="submit" class="btn btn-danger" style="border-radius:9999px;padding:7px 16px">Reject</button>
                                             </form>
@@ -720,7 +719,7 @@
         <div id="resultProp" class="ulee-confirm-prop"></div>
         <p id="resultText"></p>
         <div class="ulee-confirm-actions">
-            <button type="button" id="resultOk">OK</button>
+            <button type="button" id="resultOk">Got it</button>
         </div>
     </div>
 </div>
@@ -762,8 +761,9 @@
         $('uleeConfirmCancel').addEventListener('click', closeConfirm);
         $('uleeConfirmOk').addEventListener('click', function () {
             var f = pendingForm;
+            if (!f) return;
             closeConfirm();
-            if (f) runAction(f);
+            runAction(f);
         });
         confirmBackdrop.addEventListener('click', function (e) { if (e.target === confirmBackdrop) closeConfirm(); });
 
@@ -777,12 +777,12 @@
                 resultCard.className = 'ulee-confirm-card tone-success';
                 $('resultIcon').innerHTML = CHECK_ICON;
                 $('resultTitle').textContent = 'Listing approved';
-                $('resultText').textContent = 'You have approved this listing. It is now live for students to view and apply to.';
+                $('resultText').textContent = 'It is now live for students to view and apply to, and the landlord has been notified.';
             } else if (kind === 'reject') {
                 resultCard.className = 'ulee-confirm-card tone-danger';
                 $('resultIcon').innerHTML = REJECT_ICON;
                 $('resultTitle').textContent = 'Listing rejected';
-                $('resultText').textContent = 'You have rejected this listing. The landlord has been notified.';
+                $('resultText').textContent = 'The landlord has been notified.';
             } else {
                 resultCard.className = 'ulee-confirm-card tone-danger';
                 $('resultIcon').innerHTML = REJECT_ICON;

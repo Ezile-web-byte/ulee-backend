@@ -12,6 +12,10 @@
     <script src="/speak-with-ai.js" defer></script>
     <link rel="stylesheet" href="/ulee-toast.css">
     <script src="/ulee-toast.js" defer></script>
+    <!-- NEW: the project's own popup (UleeModal). Used for the "Application sent" popup and
+         for every validation popup on this page. -->
+    <link rel="stylesheet" th:href="@{/ulee-modal.css}">
+    <script th:src="@{/ulee-modal.js}"></script>
     <style>
         /* Remapped to the ULEE navy/teal design system (ULEE-design-system.md §2).
            Variable names are unchanged so every existing rule below still works. */
@@ -30,6 +34,8 @@
             --navy:           #071C2D;
             --teal-glow:      #14C8BE;
             --accent-yellow:  #f5d450;
+            --btn-teal:       #0F8A8A;   /* NEW: the button colour (was navy) */
+            --btn-teal-dark:  #0C7272;
             --navy-gradient:  linear-gradient(115deg, #071C2D 0%, #0A3A48 55%, #0F6C70 100%);
             --font-display:   'Plus Jakarta Sans', sans-serif;
             --font-body:      'Hanken Grotesk', sans-serif;
@@ -42,6 +48,15 @@
         }
 
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: 400; font-style: normal; line-height: 1;
+            letter-spacing: normal; text-transform: none;
+            display: inline-block; white-space: nowrap; word-wrap: normal; direction: ltr;
+            font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased;
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
 
         body {
             font-family: 'Sora', sans-serif;
@@ -120,9 +135,10 @@
             margin: 0 auto;
             padding: 0 2.5rem 4rem;
             display: grid;
-            grid-template-columns: 1.4fr 1fr;
+            grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
             gap: 32px;
         }
+        .detail-wrap > div { min-width: 0; }
 
         /* ── IMAGE GALLERY ── */
         .detail-img-wrap {
@@ -344,33 +360,6 @@
 
         .no-features { font-size: 14px; color: var(--muted); }
 
-        .detail-vr {
-            grid-column: 1 / -1;
-            background: var(--white);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-sm);
-            padding: 28px;
-        }
-
-        .detail-vr h2 { font-family: 'Playfair Display', serif; font-size: 18px; margin-bottom: 16px; }
-
-        .vr-viewer { position: relative; border-radius: var(--radius); overflow: hidden; height: 320px; }
-        .vr-image { width: 100%; height: 100%; object-fit: cover; cursor: grab; }
-
-        .vr-badge {
-            position: absolute; top: 14px; left: 14px;
-            background: rgba(0,0,0,0.6); color: var(--white);
-            font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 20px;
-        }
-
-        .vr-tour-btn {
-            display: inline-flex; align-items: center; gap: 8px; margin-top: 14px;
-            background: var(--primary); color: var(--white);
-            font-size: 13px; font-weight: 600; padding: 10px 20px; border-radius: 999px;
-            text-decoration: none; transition: background var(--transition), transform 0.15s ease;
-        }
-        .vr-tour-btn:hover { background: var(--primary-dark); transform: translateX(2px); }
-
         /* ── LOCATION MAP ── */
         .detail-map-card {
             grid-column: 1 / -1;
@@ -513,6 +502,7 @@
         .form-field input[type="email"],
         .form-field input[type="number"],
         .form-field input[type="file"],
+        .form-field select,
         .form-field textarea {
             font-family: 'Sora', sans-serif;
             font-size: 14px;
@@ -543,31 +533,6 @@
             margin-top: 2px;
         }
 
-        .funding-options { display: flex; gap: 10px; flex-wrap: wrap; }
-        .funding-option { flex: 1; min-width: 120px; }
-        .funding-option input[type="radio"] { display: none; }
-
-        .funding-option label {
-            display: block;
-            text-align: center;
-            font-size: 13px;
-            font-weight: 600;
-            padding: 11px 8px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            cursor: pointer;
-            color: var(--text);
-            text-transform: none;
-            letter-spacing: 0;
-            transition: background var(--transition), border-color var(--transition), color var(--transition);
-        }
-
-        .funding-option input[type="radio"]:checked + label {
-            background: var(--primary);
-            border-color: var(--primary);
-            color: var(--white);
-        }
-
         .apply-submit-btn { grid-column: 1 / -1; margin-top: 6px; }
 
         .apply-status-banner {
@@ -593,88 +558,6 @@
             margin-bottom: 20px;
         }
 
-        /* ── VALIDATION MODAL (centered card + blurred backdrop) ──
-           Replaces the native browser "Please select a file" tooltip.
-           Reusable: call showValidationModal("message") from anywhere. */
-        .validation-modal-backdrop {
-            position: fixed;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.28);
-            backdrop-filter: blur(6px);
-            -webkit-backdrop-filter: blur(6px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.18s ease;
-            z-index: 1000;
-            padding: 20px;
-        }
-
-        .validation-modal-backdrop.open {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .validation-modal-card {
-            background: var(--white);
-            border-radius: 18px;
-            padding: 30px 26px 24px;
-            width: 100%;
-            max-width: 340px;
-            text-align: center;
-            box-shadow: var(--shadow-hover);
-            transform: scale(0.94) translateY(8px);
-            transition: transform 0.18s ease;
-        }
-
-        .validation-modal-backdrop.open .validation-modal-card {
-            transform: scale(1) translateY(0);
-        }
-
-        .validation-modal-icon {
-            width: 46px;
-            height: 46px;
-            margin: 0 auto 14px;
-            border-radius: 50%;
-            background: hsl(38, 92%, 93%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-        }
-
-        .validation-modal-title {
-            font-size: 16px;
-            font-weight: 700;
-            margin-bottom: 6px;
-            color: var(--text);
-        }
-
-        .validation-modal-body {
-            font-size: 13px;
-            color: var(--muted);
-            line-height: 1.55;
-            margin-bottom: 22px;
-        }
-
-        .validation-modal-ok {
-            width: 100%;
-            padding: 11px;
-            background: var(--primary);
-            color: var(--white);
-            border: none;
-            border-radius: 999px;
-            font-family: 'Sora', sans-serif;
-            font-size: 13px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: background var(--transition);
-        }
-
-        .validation-modal-ok:hover { background: var(--primary-dark); }
-
         /* ── RESPONSIVE ── */
         @media (max-width: 800px) {
             .detail-wrap { grid-template-columns: 1fr; padding: 0 1.25rem 3rem; }
@@ -692,12 +575,11 @@
                     radial-gradient(700px 380px at 0% 60%, rgba(0,113,120,.06), transparent 60%),
                     var(--bg);
         }
-        .detail-title, .detail-description h2, .detail-features h2, .detail-vr h2,
-        .detail-map-card h2, .detail-reviews h2, .detail-apply-card h2, .review-quote-mark,
-        .validation-modal-title { font-family: var(--font-display); }
-        .back-btn, .header-apply-btn, .apply-btn, .validation-modal-ok,
+        .detail-title, .detail-description h2, .detail-features h2,
+        .detail-map-card h2, .detail-reviews h2, .detail-apply-card h2, .review-quote-mark { font-family: var(--font-display); }
+        .back-btn, .header-apply-btn, .apply-btn,
         .form-field input[type="text"], .form-field input[type="email"], .form-field input[type="number"],
-        .form-field input[type="file"], .form-field textarea { font-family: var(--font-body); }
+        .form-field input[type="file"], .form-field select, .form-field textarea { font-family: var(--font-body); }
 
         /* Top bar: dark glass with the ULEE logo */
         .detail-topbar {
@@ -727,10 +609,11 @@
             background: rgba(7,28,45,.75); border: 1px solid rgba(20,200,190,.6);
             backdrop-filter: blur(8px); font-weight: 800; font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
         }
-        .detail-badge.is-available::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--teal-glow); box-shadow: 0 0 6px var(--teal-glow); }
+        .detail-badge.is-available { background: var(--btn-teal); border-color: var(--btn-teal); }
+        .detail-badge.is-available::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #fff; }
         .detail-badge.is-unavailable { background: rgba(186,26,26,.88); border-color: transparent; }
-        .detail-badge.is-applied { background: rgba(7,28,45,.75); border: 1px solid rgba(20,200,190,.6); }
-        .detail-badge.is-applied::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #f5d450; box-shadow: 0 0 6px #f5d450; }
+        .detail-badge.is-applied { background: var(--btn-teal); border: 1px solid var(--btn-teal); }
+        .detail-badge.is-applied::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #fff; }
         .gallery-nav-btn { background: rgba(7,28,45,.6); border: 1px solid rgba(20,200,190,.4); backdrop-filter: blur(6px); }
         .gallery-nav-btn:hover { background: rgba(7,28,45,.85); }
         .gallery-nav-btn svg { color: #fff; }
@@ -763,8 +646,37 @@
         .info-label { color: rgba(255,255,255,.62); font-weight: 700; letter-spacing: .1em; }
         .info-value { color: #fff; font-family: var(--font-display); font-weight: 800; }
         .info-value.price { color: var(--accent-yellow); }
+        .info-value.sm { font-size: 15px; line-height: 1.25; }
         .info-value small { color: rgba(255,255,255,.6); }
         .applied-note { color: #7DF0E6; }
+
+        /* NEW: room type + who can stay, as two small pills above the title */
+        .pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+        .type-pill {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 5px 12px; border-radius: 999px;
+            font-size: 12px; font-weight: 700;
+            background: var(--btn-teal); color: #fff;
+            border: 1px solid var(--btn-teal);
+        }
+        .type-pill .material-symbols-outlined { font-size: 16px; }
+        .type-pill.alt { background: var(--btn-teal); color: #fff; border-color: var(--btn-teal); }
+
+        /* NEW: "Can I apply?" line */
+        .can-apply {
+            display: flex; align-items: flex-start; gap: 8px;
+            margin-top: 16px; padding: 11px 14px; border-radius: 12px;
+            font-size: 13px; font-weight: 600; line-height: 1.45;
+        }
+        .can-apply .material-symbols-outlined { font-size: 20px; flex-shrink: 0; }
+        .can-apply.wait { background: rgba(255,255,255,.08); color: rgba(255,255,255,.85); border: 1px solid rgba(255,255,255,.2); }
+        .can-apply.ok   { background: rgba(20,200,190,.16); color: #7DF0E6; border: 1px solid rgba(20,200,190,.45); }
+        .can-apply.no   { background: rgba(255,138,128,.14); color: #ffc2bb; border: 1px solid rgba(255,138,128,.5); }
+        .detail-apply-card .can-apply { margin: 0 0 18px; }
+        .detail-apply-card .can-apply.wait { background: var(--primary-pale); color: var(--primary); border-color: rgba(147,192,197,.55); }
+        .detail-apply-card .can-apply.ok   { background: #DDF7F3; color: #005454; border-color: rgba(20,200,190,.4); }
+        .detail-apply-card .can-apply.no   { background: #ffdad6; color: #93000a; border-color: rgba(186,26,26,.35); }
+
         .info-cta {
             display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 20px;
             padding: 13px; border: 0; border-radius: 999px; cursor: pointer;
@@ -776,13 +688,13 @@
         .info-cta .material-symbols-outlined { font-size: 18px; }
 
         /* Content panels */
-        .detail-description, .detail-features, .detail-vr, .detail-map-card, .detail-reviews, .detail-apply-card {
+        .detail-description, .detail-features, .detail-map-card, .detail-reviews, .detail-apply-card {
             border: 1px solid var(--border); border-radius: 22px; box-shadow: 0 6px 24px rgba(7,28,45,.06);
         }
-        .detail-description h2, .detail-features h2, .detail-vr h2, .detail-map-card h2, .detail-reviews h2, .detail-apply-card h2 {
+        .detail-description h2, .detail-features h2, .detail-map-card h2, .detail-reviews h2, .detail-apply-card h2 {
             display: flex; align-items: center; gap: 10px; font-size: 19px; font-weight: 800;
         }
-        .detail-description h2::before, .detail-features h2::before, .detail-vr h2::before,
+        .detail-description h2::before, .detail-features h2::before,
         .detail-map-card h2::before, .detail-reviews h2::before, .detail-apply-card h2::before {
             content: ''; width: 4px; height: 20px; border-radius: 4px;
             background: linear-gradient(var(--teal-glow), #007178); box-shadow: 0 0 8px rgba(20,200,190,.55);
@@ -792,10 +704,6 @@
         .amenity-item-list { flex-direction: row; flex-wrap: wrap; gap: 8px; }
         .amenity-item { padding: 7px 12px; border-radius: 10px; background: var(--primary-pale); border: 1px solid rgba(147,192,197,.55); font-size: 13.5px; font-weight: 600; color: #005454; }
         .map-embed-frame { border-radius: 16px; border: 1px solid var(--border); }
-        .vr-viewer { border-radius: 16px; border: 1px solid rgba(20,200,190,.35); }
-        .vr-badge { background: rgba(7,28,45,.75); border: 1px solid rgba(20,200,190,.5); }
-        .vr-tour-btn { background: var(--navy-gradient); border: 1px solid rgba(20,200,190,.45); }
-        .vr-tour-btn:hover { box-shadow: 0 8px 22px rgba(7,28,45,.3), 0 0 18px rgba(20,200,190,.25); }
 
         /* Reviews */
         .no-reviews-card { background: var(--primary-pale); border: 1.5px dashed #93C0C5; color: var(--primary); border-radius: 16px; }
@@ -806,43 +714,19 @@
         .review-avatar { background: var(--navy-gradient); color: var(--teal-glow); }
         .review-rating-badge { color: #7A5E00; background: #FFF6D6; padding: 4px 10px; border-radius: 999px; }
 
-        /* Buttons + apply form */
-        .apply-btn { background: var(--navy-gradient); border: 1px solid rgba(20,200,190,.45); border-radius: 14px; font-weight: 700; }
-        .apply-btn:hover { background: var(--navy-gradient); box-shadow: 0 8px 22px rgba(7,28,45,.3), 0 0 18px rgba(20,200,190,.25); transform: translateY(-1px); }
+        /* Buttons + apply form.
+           CHANGED: buttons that were navy are now #0F8A8A (--btn-teal). */
+        .apply-btn { background: var(--btn-teal); border: 1px solid var(--btn-teal); border-radius: 14px; font-weight: 700; }
+        .apply-btn:hover { background: var(--btn-teal-dark); border-color: var(--btn-teal-dark); box-shadow: 0 8px 22px rgba(15,138,138,.3); transform: translateY(-1px); }
+        .apply-btn:disabled, .apply-btn:disabled:hover { background: var(--muted); border-color: var(--muted); box-shadow: none; transform: none; }
         .detail-apply-card { border-color: rgba(20,200,190,.35); }
         .form-field input[type="text"], .form-field input[type="email"], .form-field input[type="number"],
-        .form-field input[type="file"], .form-field textarea { background: #fff; border-radius: 10px; }
+        .form-field input[type="file"], .form-field select, .form-field textarea { background: #fff; border-radius: 10px; }
         .form-field input[type="file"] { border-style: dashed; border-color: #93C0C5; background: var(--primary-pale); }
-        .form-field input:focus, .form-field textarea:focus { outline: none; border-color: var(--teal-glow); box-shadow: 0 0 0 3px rgba(20,200,190,.18); }
+        .form-field input:focus, .form-field select:focus, .form-field textarea:focus { outline: none; border-color: var(--teal-glow); box-shadow: 0 0 0 3px rgba(20,200,190,.18); }
         .form-field input:read-only { background: var(--primary-pale); }
-        .funding-option label { border-radius: 10px; }
-        .funding-option input[type="radio"]:checked + label { background: var(--navy-gradient); border-color: var(--teal-glow); box-shadow: 0 0 12px rgba(20,200,190,.3); }
-        .funding-option input[type="radio"]:focus-visible + label { outline: 2px solid var(--teal-glow); outline-offset: 2px; }
         .apply-status-banner.success { background: #DDF7F3; color: #005454; border: 1px solid rgba(20,200,190,.4); }
         .apply-status-banner.info { background: var(--primary-pale); color: var(--primary); border: 1px solid rgba(147,192,197,.55); }
-        .validation-modal-backdrop { background: rgba(7,28,45,.55); }
-        .validation-modal-card { border: 1px solid rgba(20,200,190,.3); }
-        .validation-modal-ok { background: var(--navy-gradient); }
-        .validation-modal-ok:hover { background: var(--navy-gradient); box-shadow: 0 0 18px rgba(20,200,190,.3); }
-
-        /* Application-sent success popup */
-        .apply-success-icon {
-            width: 64px; height: 64px; margin: 0 auto 16px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            background: var(--navy-gradient); color: #14C8BE;
-            box-shadow: 0 10px 26px rgba(7,28,45,.28), 0 0 0 6px rgba(20,200,190,.12);
-        }
-        .apply-success-icon { font-size: 32px; font-weight: 700; line-height: 1; }
-        .apply-success-actions { display: flex; gap: 10px; margin-top: 4px; }
-        .apply-success-actions > * { flex: 1; }
-        .apply-success-primary { text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
-        .apply-success-secondary {
-            padding: 12px 20px; border-radius: var(--radius-sm, 10px); cursor: pointer;
-            font-family: var(--font-body); font-size: 14px; font-weight: 700;
-            background: #fff; color: var(--primary-dark); border: 1.5px solid var(--outline-variant, #E6E8E4);
-            transition: border-color .2s ease, background .2s ease;
-        }
-        .apply-success-secondary:hover { border-color: var(--accent-border, #93C0C5); background: var(--primary-pale, #F0F7F6); }
 
         @keyframes ulee-pulse { 0%,100% { opacity: .6; transform: scale(1); } 50% { opacity: 1; transform: scale(1.12); } }
         @media (prefers-reduced-motion: reduce) { .detail-info-card::after { animation: none; } }
@@ -919,11 +803,28 @@
         </div>
     </div>
 
-    <div class="detail-info-card">
+    <!-- INFO CARD: everything a student needs at a glance -->
+    <div class="detail-info-card"
+         th:with="restriction=${property.occupantRestriction != null and !#strings.isEmpty(property.occupantRestriction) ? property.occupantRestriction : 'Mixed'},
+                  funding=${property.acceptedFunding != null and !#strings.isEmpty(property.acceptedFunding) ? property.acceptedFunding : 'Any'}">
+
+        <!-- Room type + who can stay -->
+        <div class="pill-row">
+            <span class="type-pill" th:if="${property.type != null and !#strings.isEmpty(property.type)}">
+                <span class="material-symbols-outlined" aria-hidden="true">bed</span>
+                <span th:text="${property.type}">Single Room</span>
+            </span>
+            <span class="type-pill alt">
+                <span class="material-symbols-outlined" aria-hidden="true">group</span>
+                <span th:text="${restriction}">Mixed</span>
+            </span>
+        </div>
+
         <div class="detail-title" th:text="${property.title}">Property Title</div>
         <div class="detail-location" style="display:flex;align-items:center;gap:6px">
             <span class="material-symbols-outlined" style="font-size:18px;color:#14C8BE" aria-hidden="true">location_on</span>
-            <span th:text="${property.address} + ', ' + ${property.city}">Location</span>
+            <span th:with="addr=${property.address != null ? property.address : ''}, sub=${property.suburb != null ? property.suburb : ''}, cty=${property.city != null ? property.city : ''}"
+                  th:text="${addr + (!#strings.isEmpty(sub) and !#strings.containsIgnoreCase(addr, sub) ? ', ' + sub : '') + (!#strings.isEmpty(cty) and !#strings.containsIgnoreCase(addr, cty) and !#strings.equalsIgnoreCase(cty, sub) ? ', ' + cty : '')}">Location</span>
         </div>
 
         <div class="info-row-grid">
@@ -933,16 +834,38 @@
             </div>
             <div class="info-item">
                 <span class="info-label">Deposit</span>
-                <span class="info-value">R<span th:text="${property.deposit}">0</span></span>
+                <span class="info-value" th:text="${property.deposit != null ? 'R' + property.deposit : 'None'}">R0</span>
             </div>
             <div class="info-item">
-                <span class="info-label">Capacity</span>
-                <span class="info-value" th:text="${property.capacity}">-</span>
+                <span class="info-label">Available from</span>
+                <span class="info-value sm"
+                      th:text="${property.availableFrom == null or !property.availableFrom.isAfter(#temporals.createToday()) ? 'Now' : #temporals.format(property.availableFrom, 'd MMM yyyy')}">Now</span>
             </div>
             <div class="info-item">
-                <span class="info-label">Type</span>
-                <span class="info-value" th:text="${property.type}">-</span>
+                <span class="info-label">Rooms free</span>
+                <span class="info-value sm"
+                      th:text="${freeRooms != null ? freeRooms + ' of ' + property.capacity : property.capacity}">2 of 4</span>
             </div>
+            <div class="info-item">
+                <span class="info-label">Commute</span>
+                <span class="info-value sm"
+                      th:text="${property.commuteType != null and !#strings.isEmpty(property.commuteType) ? property.commuteType : 'Not stated'}">Walking distance</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Accepted funding</span>
+                <span class="info-value sm" th:text="${funding}">Any</span>
+            </div>
+        </div>
+
+        <!-- Facts the "Can I apply?" check needs (read by the script at the bottom) -->
+        <div id="eligibilityData" hidden
+             th:if="${isLoggedIn and isStudent and not hasApplied}"
+             th:attr="data-rule=${property.occupantRestriction},data-gender=${currentUser.gender}"></div>
+
+        <!-- NEW: "Can I apply?" — the script fills this in and keeps it up to date -->
+        <div class="can-apply wait" th:if="${isLoggedIn and isStudent and not hasApplied}" role="status" aria-live="polite">
+            <span class="material-symbols-outlined ca-icon" aria-hidden="true">help</span>
+            <span><strong>Can I apply?</strong> <span class="ca-msg">Checking…</span></span>
         </div>
 
         <p th:if="${hasApplied}" class="applied-note">
@@ -995,7 +918,7 @@
     <!-- VR / 360° virtual tour removed -->
 
 
-    <!-- 4. REVIEWS — quote-card style, matches what the landlord sees -->
+    <!-- 4. REVIEWS - quote-card style, matches what the landlord sees. Students who qualify can write a review from here. -->
     <div class="detail-reviews">
         <h2>Reviews &amp; Ratings</h2>
 
@@ -1027,7 +950,7 @@
             You've already reviewed this property.
         </p>
         <p th:if="${not canWriteReview and isLoggedIn and isStudent and not alreadyReviewed}" class="no-reviews" style="margin-top:16px;">
-            You can write a review once your application for this property has been accepted.
+            You can only review the place you're currently staying at, once your stay has started.
         </p>
     </div>
 
@@ -1036,6 +959,15 @@
         <h2>Apply for this property</h2>
         <p class="apply-card-subtitle">Your details are sent directly to the landlord along with your application.</p>
 
+        <div class="apply-error-banner" th:if="${param.applyError != null and param.applyError[0] == 'gender-restricted'}">
+            This property only accepts students of a specific gender, so your application could not be sent.
+        </div>
+        <div class="apply-error-banner" th:if="${param.applyError != null and param.applyError[0] == 'senior-restricted'}">
+            This property is for senior students only (year 2 and above), so your application could not be sent.
+        </div>
+        <div class="apply-error-banner" th:if="${param.applyError != null and param.applyError[0] == 'first-year-restricted'}">
+            This property is for first-year students only, so your application could not be sent.
+        </div>
         <div class="apply-error-banner" th:if="${param.applyError != null and param.applyError[0] == 'already-applied'}">
             ⚠ You've already applied to this property — only one application per accommodation is allowed.
         </div>
@@ -1062,6 +994,12 @@
 
         <div class="apply-status-banner success" th:if="${isLoggedIn and isStudent and hasApplied}">
             ✓ Your application has been submitted. You can track its status from My Applications.
+        </div>
+
+        <!-- "Can I apply?" again, right above the form, so the reason is next to the button -->
+        <div class="can-apply wait" th:if="${isLoggedIn and isStudent and not hasApplied}" role="status" aria-live="polite">
+            <span class="material-symbols-outlined ca-icon" aria-hidden="true">help</span>
+            <span><strong>Can I apply?</strong> <span class="ca-msg">Checking…</span></span>
         </div>
 
         <form th:if="${isLoggedIn and isStudent and not hasApplied}"
@@ -1103,64 +1041,32 @@
                     <input type="file" id="documents" name="documents" accept=".zip" required />
                 </div>
 
-                <div class="form-field full-width">
-                    <label>Funding</label>
-                    <div class="funding-options">
-                        <div class="funding-option">
-                            <input type="radio" id="fundingBursary" name="fundingStatus" value="Bursary" checked />
-                            <label for="fundingBursary">Bursary</label>
-                        </div>
-                        <div class="funding-option">
-                            <input type="radio" id="fundingSelf" name="fundingStatus" value="Self-funded" />
-                            <label for="fundingSelf">Self-funded</label>
-                        </div>
-                        <div class="funding-option">
-                            <input type="radio" id="fundingNsfas" name="fundingStatus" value="NSFAS" />
-                            <label for="fundingNsfas">NSFAS</label>
-                        </div>
+                <th:block th:with="restrictedFunding=${property.acceptedFunding != null and !#strings.isEmpty(property.acceptedFunding) and property.acceptedFunding != 'Any'}">
+                    <!-- Landlord accepts ONE funding type: fixed, read-only (the server enforces it too) -->
+                    <div class="form-field full-width" th:if="${restrictedFunding}">
+                        <label for="fundingDisplay">Funding</label>
+                        <input type="text" id="fundingDisplay" th:value="${property.acceptedFunding}" readonly />
+                        <input type="hidden" name="fundingStatus" th:value="${property.acceptedFunding}" />
+                        <p class="field-help">This landlord only accepts <span th:text="${property.acceptedFunding}">Bursary</span> funding, so it is set for you.</p>
                     </div>
-                </div>
+                    <!-- CHANGED: landlord accepts "Any" — the student picks from a dropdown.
+                         Nothing is pre-selected; she has to choose. -->
+                    <div class="form-field full-width" th:unless="${restrictedFunding}">
+                        <label for="fundingSelect">Funding</label>
+                        <select id="fundingSelect" name="fundingStatus" required>
+                            <option value="" selected disabled>Select how you will pay</option>
+                            <option value="Bursary">Bursary</option>
+                            <option value="NSFAS">NSFAS</option>
+                            <option value="Self-Paying">Self-funded</option>
+                        </select>
+                    </div>
+                </th:block>
 
-                <div class="form-field full-width">
-                    <label for="messageToLandlord">Message to Landlord (optional)</label>
-                    <textarea id="messageToLandlord" name="messageToLandlord"
-                              placeholder="Ask a question or tell the landlord something about your application..."></textarea>
-                </div>
-
-                <button type="submit" class="apply-btn apply-submit-btn">Submit My Application</button>
+                <button type="submit" id="applySubmitBtn" class="apply-btn apply-submit-btn">Submit My Application</button>
             </div>
         </form>
     </div>
 
-</div>
-
-<!-- Reusable validation modal: centered card + blurred backdrop.
-     Call showValidationModal("message"[, "title"]) from any script on
-     this page. Markup lives once at the bottom of <body>. -->
-<div id="validationModalBackdrop" class="validation-modal-backdrop">
-    <div class="validation-modal-card">
-        <div class="validation-modal-icon">⚠️</div>
-        <p class="validation-modal-title" id="validationModalTitle">Missing document</p>
-        <p class="validation-modal-body" id="validationModalBody"></p>
-        <button type="button" class="validation-modal-ok" id="validationModalOkBtn">Got it</button>
-    </div>
-</div>
-
-<!-- Application-sent success popup: centered, ULEE navy/teal, blurred backdrop.
-     Opened by JS when the page loads with ?applied=1 (set by applyToProperty). -->
-<div id="applySuccessBackdrop" class="validation-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="applySuccessTitle">
-    <div class="validation-modal-card">
-        <div class="apply-success-icon" aria-hidden="true">&#10003;</div>
-        <p class="validation-modal-title" id="applySuccessTitle">Application sent</p>
-        <p class="validation-modal-body">
-            Your application and documents have been sent to the landlord.
-            You can track its status under My Applications.
-        </p>
-        <div class="apply-success-actions">
-            <button type="button" class="apply-success-secondary" id="applySuccessClose">Stay here</button>
-            <a class="validation-modal-ok apply-success-primary" th:href="@{/my-applications}">My Applications</a>
-        </div>
-    </div>
 </div>
 
 <!-- ULEE AI assistant (floating chat icon).
@@ -1213,49 +1119,98 @@
         });
     })();
 
-    // ── Application-sent success popup: shown when the server redirects back
-    //    with ?applied=1 after a successful application. Centered, ULEE-styled.
-    (function () {
-        var backdrop = document.getElementById('applySuccessBackdrop');
-        if (!backdrop) return;
-        var params = new URLSearchParams(window.location.search);
-        if (params.get('applied') === '1') {
-            backdrop.classList.add('open');
-            // Clean the param so a refresh doesn't re-open the popup.
-            params.delete('applied');
-            var newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '') + window.location.hash;
-            window.history.replaceState({}, '', newUrl);
-        }
-        function closeSuccess() { backdrop.classList.remove('open'); }
-        document.getElementById('applySuccessClose')?.addEventListener('click', closeSuccess);
-        backdrop.addEventListener('click', function (e) { if (e.target === backdrop) closeSuccess(); });
-        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSuccess(); });
-    })();
-
-    // ── Validation modal: reusable across every form on the site ──
+    // ── Popups: every popup on this page is the project's UleeModal ──
+    // showValidationModal keeps its old name so the calls below did not have to change.
     function showValidationModal(message, title) {
-        document.getElementById('validationModalTitle').textContent = title || 'Missing document';
-        document.getElementById('validationModalBody').textContent = message;
-        document.getElementById('validationModalBackdrop').classList.add('open');
-    }
-    function closeValidationModal() {
-        document.getElementById('validationModalBackdrop').classList.remove('open');
-    }
-    (function () {
-        const backdrop = document.getElementById('validationModalBackdrop');
-        const okBtn = document.getElementById('validationModalOkBtn');
-        if (okBtn) okBtn.addEventListener('click', closeValidationModal);
-        if (backdrop) {
-            backdrop.addEventListener('click', function (e) {
-                if (e.target === backdrop) closeValidationModal();
-            });
+        if (window.UleeModal) {
+            return UleeModal.alert({ tone: 'warn', title: title || 'Missing document', message: message, okText: 'Got it' });
         }
-        document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape') closeValidationModal();
+        window.alert(message); // only if ulee-modal.js failed to load
+        return Promise.resolve(true);
+    }
+
+    // ── Application sent: the server redirects back here with ?applied=1 ──
+    (function () {
+        var params = new URLSearchParams(window.location.search);
+        if (params.get('applied') !== '1') return;
+
+        // Clean the param so a refresh doesn't open the popup again.
+        params.delete('applied');
+        var newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '') + window.location.hash;
+        window.history.replaceState({}, '', newUrl);
+
+        if (!window.UleeModal) return;
+        UleeModal.choice({
+            icon: '\u2705',
+            title: 'Application sent',
+            message: 'Your application and documents have been sent to the landlord. You can track its status under My Applications.',
+            buttons: [
+                { label: 'Stay here', value: 'stay', style: 'ghost' },
+                { label: 'My Applications', value: 'apps', style: 'primary' }
+            ]
+        }).then(function (pick) {
+            if (pick === 'apps') window.location.href = '/my-applications';
         });
     })();
 
-    // ── Apply form: swap native "required" tooltips for our modal ──
+    // ── "Can I apply?" ──
+    // Same rules the server enforces in applyToProperty / allowedBy():
+    //   Female only / Male only  -> the student's gender must match
+    //   Seniors only             -> year of study 2 or above
+    //   First years              -> year of study exactly 1
+    // The year comes from the Year of Study box, so the answer updates as she types,
+    // exactly like the server (which uses the year sent with the form).
+    (function () {
+        var data = document.getElementById('eligibilityData');
+        var boxes = document.querySelectorAll('.can-apply');
+        if (!data || boxes.length === 0) return;
+
+        var rule = (data.dataset.rule || '').trim().toLowerCase();
+        var gender = (data.dataset.gender || '').trim();
+        var yearInput = document.getElementById('yearOfStudy');
+        var submitBtn = document.getElementById('applySubmitBtn');
+
+        function evaluate() {
+            var yearText = yearInput ? yearInput.value.trim() : '';
+            var year = yearText === '' ? null : parseInt(yearText, 10);
+
+            if (rule === 'female only' && gender.toLowerCase() !== 'female') {
+                return { state: 'no', icon: 'block', text: gender
+                        ? 'No. This property is for female students only.'
+                        : 'No. This property is for female students only, and your profile has no gender on file.' };
+            }
+            if (rule === 'male only' && gender.toLowerCase() !== 'male') {
+                return { state: 'no', icon: 'block', text: gender
+                        ? 'No. This property is for male students only.'
+                        : 'No. This property is for male students only, and your profile has no gender on file.' };
+            }
+            if (rule.indexOf('senior') === 0) {
+                if (year === null || isNaN(year)) return { state: 'wait', icon: 'help', text: 'This property is for senior students (year 2 and above). Enter your year of study below to check.' };
+                if (year < 2) return { state: 'no', icon: 'block', text: 'No. This property is for senior students only (year 2 and above).' };
+            }
+            if (rule.indexOf('first year') === 0) {
+                if (year === null || isNaN(year)) return { state: 'wait', icon: 'help', text: 'This property is for first-year students. Enter your year of study below to check.' };
+                if (year !== 1) return { state: 'no', icon: 'block', text: 'No. This property is for first-year students only.' };
+            }
+            return { state: 'ok', icon: 'check_circle', text: 'Yes. You meet this property\u2019s requirements.' };
+        }
+
+        function render() {
+            var r = evaluate();
+            boxes.forEach(function (box) {
+                box.classList.remove('ok', 'no', 'wait');
+                box.classList.add(r.state);
+                box.querySelector('.ca-icon').textContent = r.icon;
+                box.querySelector('.ca-msg').textContent = r.text;
+            });
+            if (submitBtn) submitBtn.disabled = (r.state === 'no');
+        }
+
+        if (yearInput) yearInput.addEventListener('input', render);
+        render();
+    })();
+
+    // ── Apply form: our popup instead of the browser's own "required" tooltips ──
     (function () {
         const applyForm = document.getElementById('applyForm');
         if (!applyForm) return;
@@ -1263,6 +1218,7 @@
         applyForm.addEventListener('submit', function (e) {
             const yearField = document.getElementById('yearOfStudy');
             const fileField = document.getElementById('documents');
+            const fundingField = document.getElementById('fundingSelect');
 
             if (fileField && fileField.files.length === 0) {
                 e.preventDefault();
@@ -1302,6 +1258,16 @@
                 showValidationModal(
                     'Please enter your current year of study before submitting.',
                     'Missing year of study'
+                );
+                return;
+            }
+
+            // NEW: the funding dropdown starts empty, so she must choose
+            if (fundingField && fundingField.value === '') {
+                e.preventDefault();
+                showValidationModal(
+                    'Please choose how you will pay (Bursary, NSFAS or Self-funded) before submitting.',
+                    'Choose your funding'
                 );
             }
         });

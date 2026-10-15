@@ -5,7 +5,6 @@ import com.ulee.ulee_backend.dto.ChatResponseDTO;
 import com.ulee.ulee_backend.dto.ListingSummaryDTO;
 import com.ulee.ulee_backend.model.Amenity;
 import com.ulee.ulee_backend.model.Property;
-import com.ulee.ulee_backend.model.PropertyFeature;
 import com.ulee.ulee_backend.model.PropertyImage;
 import com.ulee.ulee_backend.repository.PropertyImageRepository;
 import com.ulee.ulee_backend.repository.PropertyRepository;
@@ -126,18 +125,13 @@ public class SwaiApiController {
         return dto;
     }
 
-    /** Amenities (fixed checklist) + landlord-authored special features, comma-separated. */
+    /** Amenity names, comma-separated. */
     private static String featureNames(Property p) {
         List<String> names = new ArrayList<>();
         try {
             if (p.getAmenities() != null) {
                 for (Amenity a : p.getAmenities()) {
                     if (a != null && a.getName() != null && !a.getName().isBlank()) names.add(a.getName().trim());
-                }
-            }
-            if (p.getFeatures() != null) {
-                for (PropertyFeature f : p.getFeatures()) {
-                    if (f != null && f.getName() != null && !f.getName().isBlank()) names.add(f.getName().trim());
                 }
             }
         } catch (Exception e) {

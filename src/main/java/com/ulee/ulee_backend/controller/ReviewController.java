@@ -2,6 +2,7 @@ package com.ulee.ulee_backend.controller;
 
 import com.ulee.ulee_backend.model.*;
 import com.ulee.ulee_backend.repository.*;
+import com.ulee.ulee_backend.service.StayEligibility;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -47,6 +48,17 @@ public class ReviewController {
         return r == null || (r >= 1 && r <= 5);
     }
 
+    // The one property a student may review: their newest accepted application
+    // whose stay has started. Any other accepted place is read-only for them.
+    private Integer currentStayPropertyId(Integer studentId) {
+        return applicationRepository.findByStudentID(studentId).stream()
+                .filter(a -> "Accepted".equalsIgnoreCase(a.getStatus()) && a.getPropertyID() != null)
+                .filter(a -> propertyRepository.findById(a.getPropertyID()).map(StayEligibility::hasStarted).orElse(false))
+                .max(java.util.Comparator.comparing(com.ulee.ulee_backend.model.Application::getApplicationID))
+                .map(com.ulee.ulee_backend.model.Application::getPropertyID)
+                .orElse(null);
+    }
+
     // A500: show the review form for a specific property
     @GetMapping("/write-review/{propertyId}")
     public String showReviewForm(@PathVariable Integer propertyId, Model model,
@@ -76,12 +88,22 @@ public class ReviewController {
                     "You can only review properties you've been accepted to stay at.");
             return "redirect:/property/" + propertyId;
         }
+        if (!StayEligibility.hasStarted(propertyOpt.get())) {
+            redirectAttributes.addFlashAttribute("actionError",
+                    "You can review this property once your stay has started.");
+            return "redirect:/property/" + propertyId;
+        }
 
         if (reviewRepository.findByStudentIDAndPropertyID(studentId, propertyId).isPresent()) {
             redirectAttributes.addFlashAttribute("actionError", "You've already submitted a review for this property.");
             return "redirect:/property/" + propertyId;
         }
 
+        if (!propertyId.equals(currentStayPropertyId(studentId))) {
+            redirectAttributes.addFlashAttribute("actionError",
+                    "You can only review the place you're currently staying at.");
+            return "redirect:/property/" + propertyId;
+        }
         String imageUrl = propertyImageRepository.findByPropertyID(propertyId).stream()
                 .findFirst().map(PropertyImage::getUrl).orElse(null);
 
@@ -141,11 +163,23 @@ public class ReviewController {
             return "redirect:/property/" + propertyId;
         }
 
+        Optional<Property> stayProperty = propertyRepository.findById(propertyId);
+        if (stayProperty.isEmpty() || !StayEligibility.hasStarted(stayProperty.get())) {
+            redirectAttributes.addFlashAttribute("actionError",
+                    "You can review this property once your stay has started.");
+            return "redirect:/property/" + propertyId;
+        }
+
         if (reviewRepository.findByStudentIDAndPropertyID(studentId, propertyId).isPresent()) {
             redirectAttributes.addFlashAttribute("actionError", "You've already submitted a review for this property.");
             return "redirect:/property/" + propertyId;
         }
 
+        if (!propertyId.equals(currentStayPropertyId(studentId))) {
+            redirectAttributes.addFlashAttribute("actionError",
+                    "You can only review the place you're currently staying at.");
+            return "redirect:/property/" + propertyId;
+        }
         Review review = new Review();
         review.setStudentID(studentId);
         review.setPropertyID(propertyId);

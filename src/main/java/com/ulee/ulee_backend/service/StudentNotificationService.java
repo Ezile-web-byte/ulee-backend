@@ -75,4 +75,12 @@ public class StudentNotificationService {
                 "Your report has been handled by our team.",
                 "/my-dashboard"));
     }
+
+    /** The landlord is closing a property the student lives in; ask them to pick a new room. */
+    public void relocationRequested(Integer studentId, Integer oldPropertyId, String propertyTitle) {
+        repository.save(new StudentNotification(
+                studentId, "move",
+                nameOrDefault(propertyTitle) + " is closing. Please choose another of the landlord's rooms to move into.",
+                "/relocate/" + oldPropertyId));
+    }
 }
