@@ -4,34 +4,39 @@
 
 <!--
   Shared student sidebar + logout confirmation, in the ULEE navy/teal look.
-  Used by the My Stay pages. Place at: templates/fragments/student-sidebar.html
+  Single source of truth for EVERY student page (My Dashboard, My Applications,
+  My Stay, Saved/Favourite Properties). Place at: templates/fragments/student-sidebar.html
 
   Usage (as a direct child of <div class="app-shell">):
-    <div th:replace="~{fragments/student-sidebar :: sidebar('my-stay')}"></div>
+    <div th:replace="~{fragments/student-sidebar :: sidebar('dashboard')}"></div>
 
   `active` is one of: 'dashboard' | 'applications' | 'my-stay' | 'saved' | 'browse'
 
   Badge counts come from the model and are null-safe, so a page that does not
   set them simply shows no badge: totalApplications, acceptedCount, savedCount.
 
-  The fragment root is a th:block so the sidebar AND the logout modal both come
-  through th:replace (anything outside the fragment root would be dropped).
-
-  LOGOUT POPUP: now uses the same ULEE design-system popup as the admin sidebar
-  (white card, pale teal icon circle, solid teal confirm button), with a
-  student-focused message. Its styles live in this fragment (ulee-logout-*),
-  so no changes to the page stylesheet are needed.
+  SELF-CONTAINED: the sidebar styles (ulee-sb rules below), the collapse toggle
+  and the logout popup all live in this fragment, so the sidebar looks and
+  behaves identically on every page regardless of that page's own CSS.
+  Pages must NOT keep their own inline <aside class="sidebar">, logout modal or
+  logout script, and must not load landlord-sidebar-toggle.js themselves
+  (this fragment loads it once).
 -->
 <th:block th:fragment="sidebar(active)">
 
     <aside class="sidebar" id="sidebar" aria-label="Student navigation">
-        <a class="logo" th:href="@{/student-dashboard}" aria-label="ULEE home">
-            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2L3 7v11h14V7L10 2zm0 2.6 5 3.5V16H5V8.1l5-3.5zM8 10h4v6H8z"/></svg>
-            <div>
-                <div class="logo-name">ULEE</div>
-                <div class="logo-tag">Student Living. Simplified.</div>
-            </div>
-        </a>
+        <div class="logo">
+            <a class="logo-mark" th:href="@{/student-dashboard}" aria-label="ULEE home">
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2L3 7v11h14V7L10 2zm0 2.6 5 3.5V16H5V8.1l5-3.5zM8 10h4v6H8z"/></svg>
+                <div class="logo-text">
+                    <div class="logo-name">ULEE</div>
+                    <div class="logo-tag">Student Living. Simplified.</div>
+                </div>
+            </a>
+            <button class="sidebar-toggle" id="sidebar-toggle" type="button" title="Toggle sidebar" aria-label="Toggle sidebar" aria-expanded="true">
+                <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M12 4l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+        </div>
 
         <div class="nav-label">Student portal</div>
         <nav class="nav-list">
@@ -51,7 +56,7 @@
             </a>
             <a class="nav-item" th:classappend="${active == 'saved'} ? ' active'"
                th:attr="aria-current=${active == 'saved' ? 'page' : null}" th:href="@{/saved-properties}">
-                <span class="material-symbols-outlined" aria-hidden="true">favorite</span><span>Saved Properties</span>
+                <span class="material-symbols-outlined" aria-hidden="true">favorite</span><span>Favourite Properties</span>
                 <span class="nav-badge" th:if="${savedCount != null and savedCount > 0}" th:text="${savedCount}">0</span>
             </a>
             <a class="nav-item" th:classappend="${active == 'browse'} ? ' active'"
@@ -70,7 +75,7 @@
         </div>
     </aside>
 
-    <!-- Logout confirmation (same popup as the admin side; POSTs the real /logout form only on confirm) -->
+    <!-- Logout confirmation (POSTs the real /logout form only on confirm) -->
     <div class="ulee-logout-overlay" id="uleeLogoutOverlay" aria-hidden="true">
         <div class="ulee-logout-modal" role="alertdialog" aria-modal="true" aria-labelledby="uleeLogoutTitle">
             <div class="ulee-logout-icon">
@@ -86,6 +91,69 @@
     </div>
 
     <style>
+        /* ── Sidebar: identical on every student page ── */
+        .app-shell { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; transition: grid-template-columns .25s ease; }
+        .sidebar {
+            background: #071C2D; border-right: 1px solid #007178;
+            display: flex; flex-direction: column; height: 100vh; position: sticky; top: 0;
+            overflow-y: auto; padding: 0 20px 24px; box-sizing: border-box;
+        }
+        .sidebar *, .sidebar *::before, .sidebar *::after { box-sizing: border-box; }
+        .sidebar .logo { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 26px 0 28px; text-decoration: none; }
+        .sidebar .logo-mark { display: flex; align-items: center; gap: 10px; text-decoration: none; min-width: 0; }
+        .sidebar .logo-mark svg { width: 30px; height: 30px; fill: #14C8BE; filter: drop-shadow(0 0 6px rgba(20,200,190,.5)); display: block; flex-shrink: 0; }
+        .sidebar .logo-text { min-width: 0; overflow: hidden; white-space: nowrap; }
+        .sidebar .logo-name { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 22px; line-height: 1; color: #14C8BE; }
+        .sidebar .logo-tag { font-size: 10.5px; font-weight: 600; color: #14C8BE; opacity: .85; margin-top: 3px; }
+        .sidebar .sidebar-toggle { flex-shrink: 0; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 10px; background: transparent; color: #B7C3CB; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .15s ease, color .15s ease; }
+        .sidebar .sidebar-toggle:hover { background: rgba(255,255,255,.08); color: #fff; }
+        .sidebar .sidebar-toggle svg { width: 16px; height: 16px; transition: transform .25s ease; }
+        .sidebar .nav-label { font-size: 10.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: rgba(183,195,203,.55); margin: 8px 0 8px 16px; }
+        .sidebar .nav-list { display: flex; flex-direction: column; gap: 4px; }
+        .sidebar .nav-item {
+            display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 10px;
+            font: 600 14px 'Hanken Grotesk', sans-serif; color: #B7C3CB; text-decoration: none;
+            background: none; border: 0; width: 100%; cursor: pointer; text-align: left;
+            transition: background .2s ease, color .2s ease;
+        }
+        .sidebar .nav-item .material-symbols-outlined { font-size: 20px; }
+        .sidebar .nav-item:hover { background: rgba(255,255,255,.06); color: #fff; }
+        .sidebar .nav-item:focus-visible { outline: 2px solid #14C8BE; outline-offset: 2px; }
+        .sidebar .nav-item.active {
+            background: #007178; color: #fff;
+            margin: 0 -20px; width: calc(100% + 40px); padding: 12px 36px; border-radius: 0;
+            box-shadow: inset 3px 0 0 #14C8BE;
+        }
+        .sidebar .nav-badge {
+            margin-left: auto; background: #01A49F; color: #fff; font-size: 11px; font-weight: 700;
+            min-width: 20px; height: 20px; padding: 0 6px; border-radius: 9999px;
+            display: inline-flex; align-items: center; justify-content: center;
+        }
+        .sidebar .sidebar-foot { margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,.08); }
+        .sidebar .nav-item.logout { color: #ff9b91; }
+        .sidebar .nav-item.logout:hover { background: rgba(255,138,128,.08); color: #ffb4ab; }
+
+        @media (min-width: 861px) {
+            .app-shell.sidebar-collapsed { grid-template-columns: 76px 1fr; }
+            .sidebar.collapsed { padding-left: 14px; padding-right: 14px; }
+            .sidebar.collapsed .logo { justify-content: center; }
+            .sidebar.collapsed .logo-mark { display: none; }
+            .sidebar.collapsed .sidebar-toggle svg { transform: rotate(180deg); }
+            .sidebar.collapsed .nav-label { display: none; }
+            .sidebar.collapsed .nav-item { justify-content: center; padding-left: 0; padding-right: 0; gap: 0; }
+            .sidebar.collapsed .nav-item > span:not(.material-symbols-outlined) { display: none; }
+            .sidebar.collapsed .nav-item.active { margin-left: -14px; margin-right: -14px; width: calc(100% + 28px); }
+        }
+        @media (max-width: 860px) {
+            .app-shell { grid-template-columns: 1fr; }
+            .sidebar { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; padding: 0 16px 12px; }
+            .sidebar .logo { padding: 16px 0 8px; width: 100%; }
+            .sidebar .sidebar-toggle { display: none; }
+            .sidebar .nav-label, .sidebar .sidebar-foot { display: none; }
+            .sidebar .nav-list { flex-direction: row; flex-wrap: wrap; }
+            .sidebar .nav-item, .sidebar .nav-item.active { width: auto; margin: 0; padding: 9px 12px; border-radius: 10px; }
+        }
+
         /* ── Logout popup: ULEE design-system colours (matches the admin popup) ── */
         .ulee-logout-overlay {
             display: none;
@@ -182,6 +250,14 @@
 
     <script>
         (function () {
+            // Collapse/expand behaviour: load the shared script once, unless the page already has it.
+            if (!document.querySelector('script[src*="landlord-sidebar-toggle"]')) {
+                var s = document.createElement('script');
+                s.src = '/landlord-sidebar-toggle.js';
+                s.defer = true;
+                document.head.appendChild(s);
+            }
+
             var overlay = document.getElementById('uleeLogoutOverlay');
             var openBtn = document.getElementById('openLogout');
             if (!overlay || !openBtn) return;
