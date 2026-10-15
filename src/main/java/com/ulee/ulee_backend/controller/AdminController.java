@@ -78,6 +78,25 @@ public class AdminController {
     private com.ulee.ulee_backend.service.StudentNotificationService studentNotificationService;
 
     /**
+     * Statuses that count as real listings. Anything else (e.g. Draft, or a
+     * null/unknown status) is hidden from the admin listing views and counts.
+     */
+    private static final List<String> LISTING_STATUSES =
+            List.of("Approved", "Active", "Pending", "Rejected", "Suspended");
+
+    private boolean isRealListing(Property p) {
+        return p.getStatus() != null
+                && LISTING_STATUSES.stream().anyMatch(s -> s.equalsIgnoreCase(p.getStatus()));
+    }
+
+    /** Every property except drafts / unknown statuses. */
+    private List<Property> findRealListings() {
+        return propertyRepository.findAll().stream()
+                .filter(this::isRealListing)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Runs before every request handled by this controller and injects the
      * currently logged-in admin's display name + initials into the model, so
      * every template (sidebar footer, dashboard greeting, etc.) can use
@@ -112,7 +131,8 @@ public class AdminController {
         // everywhere else (Review Properties, Reviews, Reported, Manage
         // Users) via the template's ${totalListings} ?: 0. Centralizing it
         // here makes it consistent on every page that calls this method.
-        model.addAttribute("totalListings", propertyRepository.findAll().size());
+        // Drafts are excluded so the badge matches the Listings page.
+        model.addAttribute("totalListings", findRealListings().size());
     }
 
     private List<NotificationFeedItem> buildNotificationFeed() {
@@ -257,7 +277,9 @@ public class AdminController {
     public String viewAllListings(Model model,
                                   @RequestParam(required = false) String search,
                                   @RequestParam(required = false) String status) {
-        List<Property> allProperties = propertyRepository.findAll();
+        // Drafts (and any other non-listing status) are excluded here, so the table,
+        // the four stat cards and the "Showing X of Y" line all ignore them.
+        List<Property> allProperties = findRealListings();
 
         String searchLower = search != null ? search.trim().toLowerCase() : null;
         List<Property> filtered = allProperties.stream()
@@ -442,7 +464,7 @@ public class AdminController {
         model.addAttribute("suburbOptions", suburbOptions);
         model.addAttribute("typeOptions", typeOptions);
         model.addAttribute("hasActiveFilters", hasActiveFilters);
-        model.addAttribute("totalListings", propertyRepository.findAll().size());
+        model.addAttribute("totalListings", findRealListings().size());
         model.addAttribute("academicYearOptions", academicYearOptions);
         model.addAttribute("selectedAcademicYear", selectedYear != null ? selectedYear : currentYear);
         addSidebarCounts(model);
@@ -1332,7 +1354,8 @@ public class AdminController {
         model.addAttribute("pendingProperties", filteredPendingProperties);
         model.addAttribute("reportedProperties", reportedProperties);
         model.addAttribute("landlordLookup", landlordLookup);
-        model.addAttribute("totalListings", allProperties.size());
+        // Drafts excluded so this matches the Listings page and the sidebar badge
+        model.addAttribute("totalListings", findRealListings().size());
         model.addAttribute("totalReviews", allReviews.size());
         model.addAttribute("totalPending", pendingProperties.size());
         model.addAttribute("totalReported", reportedProperties.size());
@@ -1459,7 +1482,7 @@ public class AdminController {
         model.addAttribute("reviewerInitials", reviewerInitials);
         model.addAttribute("validationIssues", validationIssues);
         model.addAttribute("isValid", validationIssues.isEmpty());
-        model.addAttribute("totalListings", propertyRepository.findAll().size());
+        model.addAttribute("totalListings", findRealListings().size());
         model.addAttribute("backUrl", resolveBackUrl(from));
         model.addAttribute("activeSection", resolveActiveSection(from));
         addSidebarCounts(model);
