@@ -18,8 +18,6 @@ public class ReviewRowView {
     private String initials;
 
     // Landlord reply, carried straight through from the entity.
-    private String landlordResponse;
-    private LocalDateTime responseDate;
 
     // Reported-review flag, carried straight through from the entity.
     private Boolean isReported;
@@ -49,11 +47,7 @@ public class ReviewRowView {
     public String getInitials() { return initials; }
     public void setInitials(String initials) { this.initials = initials; }
 
-    public String getLandlordResponse() { return landlordResponse; }
-    public void setLandlordResponse(String landlordResponse) { this.landlordResponse = landlordResponse; }
 
-    public LocalDateTime getResponseDate() { return responseDate; }
-    public void setResponseDate(LocalDateTime responseDate) { this.responseDate = responseDate; }
 
     public Boolean getIsReported() { return isReported; }
     public void setIsReported(Boolean isReported) { this.isReported = isReported; }

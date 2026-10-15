@@ -10,8 +10,6 @@ public class Review {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer reviewID;
-    private String landlordResponse;
-    private LocalDateTime responseDate;
     private Boolean isReported;
     private String reportReason;
     private Integer studentID;
@@ -73,11 +71,7 @@ public class Review {
 
     public String getResidencyStatus() { return residencyStatus; }
     public void setResidencyStatus(String residencyStatus) { this.residencyStatus = residencyStatus; }
-    public String getLandlordResponse() { return landlordResponse; }
-    public void setLandlordResponse(String landlordResponse) { this.landlordResponse = landlordResponse; }
 
-    public LocalDateTime getResponseDate() { return responseDate; }
-    public void setResponseDate(LocalDateTime responseDate) { this.responseDate = responseDate; }
 
     public Boolean getIsReported() { return isReported; }
     public void setIsReported(Boolean isReported) { this.isReported = isReported; }

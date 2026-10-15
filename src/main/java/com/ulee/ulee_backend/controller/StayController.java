@@ -106,7 +106,7 @@ public class StayController {
                 .collect(Collectors.toList());
 
         // propertyID -> this student's review of it, so My Stay can show the
-        // landlord's reply (review.landlordResponse / review.responseDate).
+        // review details.
         // myReviews is newest first, so putIfAbsent keeps the newest review per property.
         Map<Integer, Review> reviewByProperty = new LinkedHashMap<>();
         for (Review r : myReviews) {

@@ -17,8 +17,6 @@ public class PropertyImage {
     private String caption;
     private Boolean isMain;
     private Integer displayOrder;
-    private Boolean hasWatermark;
-    private Boolean isVR;
 
     public Integer getImageID() { return imageID; }
     public void setImageID(Integer imageID) { this.imageID = imageID; }
@@ -41,9 +39,5 @@ public class PropertyImage {
     public Integer getDisplayOrder() { return displayOrder; }
     public void setDisplayOrder(Integer displayOrder) { this.displayOrder = displayOrder; }
 
-    public Boolean getHasWatermark() { return hasWatermark; }
-    public void setHasWatermark(Boolean hasWatermark) { this.hasWatermark = hasWatermark; }
 
-    public Boolean getIsVR() { return isVR; }
-    public void setIsVR(Boolean isVR) { this.isVR = isVR; }
 }

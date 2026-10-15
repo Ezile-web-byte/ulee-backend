@@ -365,8 +365,6 @@ public class PropertyController {
         view.setRating(review.getRating());
         view.setComment(review.getComment());
         view.setReviewDate(review.getReviewDate());
-        view.setLandlordResponse(review.getLandlordResponse());
-        view.setResponseDate(review.getResponseDate());
         view.setIsReported(review.getIsReported());
         view.setReportReason(review.getReportReason());
 
@@ -1775,8 +1773,6 @@ public class PropertyController {
             // student's situation can differ from one application to the
             // next.
             row.setFundingStatus(app.getFundingStatus());
-            row.setMessageToLandlord(app.getMessageToLandlord());
-            row.setLandlordResponded(app.getLandlordResponded());
             row.setDocuments(applicationDocumentRepository.findByApplicationID(app.getApplicationID()));
 
             row.setPropertyName(property.getTitle());
@@ -2122,7 +2118,6 @@ public class PropertyController {
             @PathVariable Integer propertyId,
             @RequestParam(required = false) Integer yearOfStudy,
             @RequestParam(required = false) String fundingStatus,
-            @RequestParam(required = false) String messageToLandlord,
             @RequestParam(value = "documents", required = false) MultipartFile documents,
             Principal principal) throws IOException {
         // NOTE: kept as required = false (rather than true) deliberately —
@@ -2222,7 +2217,6 @@ public class PropertyController {
         application.setStatus(PENDING_STATUS);
         application.setApplicationDate(java.time.LocalDateTime.now());
         application.setFundingStatus(fundingStatus);
-        application.setMessageToLandlord(messageToLandlord);
         Application savedApplication = applicationRepository.save(application);
 
         // Store the zip. If storing fails, roll back the application row and
