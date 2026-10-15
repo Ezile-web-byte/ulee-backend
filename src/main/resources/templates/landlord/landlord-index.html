@@ -174,6 +174,13 @@
 
     /* NEW — rejected ("Needs Changes") listings */
     .status-badge--rejected { background: #C0392B; color: #fff; }
+    .needs-attention { position: relative; display: inline-block; margin: 6px 0 2px; }
+    .needs-attention-tag { background: #FDECEA; color: #B03A2E; border: 1px solid #F0B4AE; border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .needs-attention-bubble { position: absolute; left: 0; top: calc(100% + 8px); z-index: 30; width: min(280px, 80vw); max-height: 220px; overflow: auto; background: #fff; color: #7a1f16; border: 1px solid #F0B4AE; border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.45; white-space: pre-line; box-shadow: 0 8px 24px rgba(0,0,0,.15); opacity: 0; visibility: hidden; transform: translateY(-4px); transition: opacity .15s, transform .15s, visibility .15s; }
+    .needs-attention-bubble strong { display: block; margin-bottom: 4px; }
+    .needs-attention:hover .needs-attention-bubble, .needs-attention:focus-within .needs-attention-bubble { opacity: 1; visibility: visible; transform: none; }
+    .property-card { position: relative; }
+    .property-card:hover, .property-card:focus-within { z-index: 5; }
     .property-feedback {
       margin: 10px 0 0;
       padding: 10px 12px;
@@ -372,9 +379,12 @@
             <p class="property-commute" th:if="${property.commuteType != null}" th:text="${property.commuteType}">Walking distance</p>
 
             <!-- The admin's comment on a rejected listing -->
-            <div class="property-feedback" th:if="${property.status == 'Rejected'}">
-              <strong>Admin feedback</strong>
-              <p th:text="${!#strings.isEmpty(property.rejectionReason)} ? ${property.rejectionReason} : 'No comment was left. Please review your listing and resubmit.'">Feedback</p>
+            <div class="needs-attention" th:if="${property.status == 'Rejected'}">
+              <button type="button" class="needs-attention-tag" aria-describedby="fb-[[${property.propertyID}]]">&#9888; Needs attention</button>
+              <div class="needs-attention-bubble" role="tooltip" th:id="'fb-' + ${property.propertyID}">
+                <strong>Admin feedback</strong>
+                <span th:text="${!#strings.isEmpty(property.rejectionReason)} ? ${#strings.replace(property.rejectionReason, '**', '')} : 'No comment was left. Please review your listing and resubmit.'">Feedback</span>
+              </div>
             </div>
 
             <div class="amenity-badges" th:if="${property.amenities != null and !property.amenities.isEmpty()}">
