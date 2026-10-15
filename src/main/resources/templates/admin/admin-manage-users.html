@@ -118,6 +118,10 @@
         #uleeConfirmCard.tone-brand #uleeConfirmOk { background: #006A6A; color: #fff; border: 1px solid #006A6A; }
         #uleeConfirmCard.tone-brand #uleeConfirmOk:hover { background: #005555; }
 
+        /* No black focus outline on the popup buttons (the OK button is focused when the popup opens) */
+        #uleeConfirmCard button:focus,
+        #uleeConfirmCard button:focus-visible { outline: none; }
+
         .warn-count { font-weight: 700; }
 
         /* ── Search + filter bar ── */
@@ -184,7 +188,6 @@
 
         <div class="content">
 
-            <div th:if="${actionMessage}" class="lk-flash lk-flash--success" th:text="${actionMessage}">Success</div>
             <div th:if="${actionError}" class="lk-flash lk-flash--error" th:text="${actionError}">Error</div>
 
             <div class="lk-head">
@@ -460,7 +463,9 @@
                                   class="confirm-form" th:attr="data-property=(${user.firstName} != null ? ${user.firstName} : 'User') + ' ' + (${user.lastName} != null ? ${user.lastName} : '#' + ${user.userID})"
                                   data-tone="brand" data-icon="warning" data-title="Warn this landlord?"
                                   data-text="The landlord will receive an official warning. Going over 5 warnings suspends the account automatically."
-                                  data-button="Send warning">
+                                  data-button="Send warning"
+                                  data-success-title="Warning sent"
+                                  data-success-text="The landlord has been warned and notified.">
                                 <button type="submit" class="btn btn-warn">Warn</button>
                             </form>
                             <!-- Deactivate -->
@@ -468,7 +473,9 @@
                                   class="confirm-form" th:attr="data-property=(${user.firstName} != null ? ${user.firstName} : 'User') + ' ' + (${user.lastName} != null ? ${user.lastName} : '#' + ${user.userID})"
                                   data-tone="brand" data-icon="deactivate" data-title="Deactivate this landlord?"
                                   data-text="The landlord will be notified, and their account will be deactivated in 10 minutes. Their properties are then hidden from students until you reactivate. You can cancel during the 10 minutes."
-                                  data-button="Deactivate">
+                                  data-button="Deactivate"
+                                  data-success-title="Deactivation scheduled"
+                                  data-success-text="The landlord has been notified and will be deactivated in 10 minutes.">
                                 <button type="submit" class="btn btn-warn">Deactivate</button>
                             </form>
                             <!-- Cancel a deactivation that has not happened yet -->
@@ -476,7 +483,9 @@
                                   class="confirm-form" th:attr="data-property=(${user.firstName} != null ? ${user.firstName} : 'User') + ' ' + (${user.lastName} != null ? ${user.lastName} : '#' + ${user.userID})"
                                   data-tone="brand" data-icon="reactivate" data-title="Stop this deactivation?"
                                   data-text="The landlord will be told the deactivation is cancelled and their account stays active."
-                                  data-button="Stop deactivation">
+                                  data-button="Stop deactivation"
+                                  data-success-title="Deactivation cancelled"
+                                  data-success-text="The landlord's account stays active.">
                                 <button type="submit" class="btn btn-primary">Cancel deactivation</button>
                             </form>
                             <!-- Reactivate -->
@@ -484,7 +493,9 @@
                                   class="confirm-form" th:attr="data-property=(${user.firstName} != null ? ${user.firstName} : 'User') + ' ' + (${user.lastName} != null ? ${user.lastName} : '#' + ${user.userID})"
                                   data-tone="brand" data-icon="reactivate" data-title="Reactivate this landlord?"
                                   data-text="The landlord will be able to log in again, and the properties hidden by the deactivation will be visible to students again."
-                                  data-button="Reactivate">
+                                  data-button="Reactivate"
+                                  data-success-title="Landlord reactivated"
+                                  data-success-text="The landlord can log in again and their properties are visible.">
                                 <button type="submit" class="btn btn-primary">Reactivate</button>
                             </form>
                             <!-- Delete -->
@@ -492,7 +503,9 @@
                                   class="confirm-form" th:attr="data-property=(${user.firstName} != null ? ${user.firstName} : 'User') + ' ' + (${user.lastName} != null ? ${user.lastName} : '#' + ${user.userID})"
                                   data-tone="danger" data-title="Delete this landlord?"
                                   data-text="This removes the landlord and all of their properties from the platform. This action cannot be undone."
-                                  data-button="Delete landlord">
+                                  data-button="Delete landlord"
+                                  data-success-title="Successfully deleted"
+                                  data-success-text="The landlord and their properties have been removed.">
                                 <button type="submit" class="btn btn-danger">Delete</button>
                             </form>
                         </div>
@@ -610,6 +623,10 @@
         function openConfirm(form) {
             var tone = form.getAttribute('data-tone') || 'danger';
             pendingForm = form;
+            // undo anything the success popup changed on this shared dialog
+            document.getElementById('uleeConfirmCancel').style.display = '';
+            document.getElementById('uleeConfirmOk').style.flex = '';
+            document.getElementById('uleeConfirmOk').style.margin = '';
             card.className = 'ulee-confirm-card tone-' + tone;
             document.getElementById('uleeConfirmIcon').innerHTML = ICONS[form.getAttribute('data-icon') || tone] || ICONS.warning;
             document.getElementById('uleeConfirmTitle').textContent = form.getAttribute('data-title') || 'Are you sure?';
@@ -641,7 +658,18 @@
         document.getElementById('uleeConfirmOk').addEventListener('click', function () {
             var form = pendingForm;
             closeConfirm();
-            if (form) form.submit(); // form.submit() skips the submit event, so no loop
+            if (form) {
+                // Remember what was done so the success popup can appear after the page reloads.
+                try {
+                    sessionStorage.setItem('uleeSuccess', JSON.stringify({
+                        title: form.getAttribute('data-success-title') || 'Done',
+                        text: form.getAttribute('data-success-text') || '',
+                        who: form.getAttribute('data-property') || '',
+                        tone: form.getAttribute('data-tone') || 'danger'
+                    }));
+                } catch (e) {}
+                form.submit(); // form.submit() skips the submit event, so no loop
+            }
         });
         backdrop.addEventListener('click', function (e) { if (e.target === backdrop) closeConfirm(); });
         document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeConfirm(); });
@@ -710,6 +738,52 @@
         });
 
         apply();
+    })();
+</script>
+
+<script>
+    // Success popup: appears after the page reloads from a landlord action
+    // (delete / warn / deactivate / cancel deactivation / reactivate).
+    (function () {
+        var raw = null;
+        try {
+            raw = sessionStorage.getItem('uleeSuccess');
+            sessionStorage.removeItem('uleeSuccess');
+        } catch (e) {}
+        if (!raw) return;
+
+        // If the server reported an error, don't claim success.
+        // (Only the page-level banner counts; the "warning limit" notice inside a landlord row also uses lk-flash--error.)
+        if (document.querySelector('.content > .lk-flash--error')) return;
+
+        var data;
+        try { data = JSON.parse(raw); } catch (e) { return; }
+
+        // Reuse the exact same dialog as the confirmation popup, so the look is identical.
+        // Closing (OK, Escape, click outside) is handled by the confirm dialog's own handlers.
+        var backdrop = document.getElementById('ulee-confirm');
+        var card = document.getElementById('uleeConfirmCard');
+        var okBtn = document.getElementById('uleeConfirmOk');
+        var tone = data.tone || 'danger';
+
+        card.className = 'ulee-confirm-card tone-' + tone;
+        document.getElementById('uleeConfirmIcon').innerHTML =
+            '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/></svg>';
+        document.getElementById('uleeConfirmTitle').textContent = data.title || 'Done';
+        document.getElementById('uleeConfirmText').textContent = data.text || '';
+        var who = document.getElementById('uleeConfirmProperty');
+        who.textContent = data.who || '';
+        who.style.display = data.who ? 'inline-block' : 'none';
+
+        // One button, sized and centred like a single confirm button
+        document.getElementById('uleeConfirmCancel').style.display = 'none';
+        okBtn.textContent = 'OK';
+        okBtn.style.flex = '0 0 calc(50% - 6px)';
+        okBtn.style.margin = '0 auto';
+
+        backdrop.classList.add('open');
+        backdrop.setAttribute('aria-hidden', 'false');
+        okBtn.focus();
     })();
 </script>
 

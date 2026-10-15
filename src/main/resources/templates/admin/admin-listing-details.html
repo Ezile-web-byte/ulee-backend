@@ -206,6 +206,20 @@
         .ld-error { display: none; text-align: left; margin: 6px 0 0; font-size: 12.5px; color: var(--alert); }
         .ld-error.show { display: block; }
         .ld-modal-actions.with-comment { margin-top: 18px; }
+
+        /* Result popup after Approve / Reject */
+        .ld-result { position: fixed; inset: 0; z-index: 1100; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(7,28,45,.55); backdrop-filter: blur(3px); }
+        .ld-result.open { display: flex; }
+        .ld-result-box { width: 100%; max-width: 440px; background: #fff; border-radius: 24px; padding: 36px 32px 30px; text-align: center; box-shadow: 0 24px 60px rgba(7,28,45,.35); animation: ulee-metric-in .25s ease; }
+        .ld-result-icon { width: 84px; height: 84px; border-radius: 50%; margin: 0 auto 18px; display: flex; align-items: center; justify-content: center; background: #dcf5f1; color: #0f8a8a; }
+        .ld-result-icon svg { width: 40px; height: 40px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+        .ld-result h3 { font-family: var(--font-display); font-size: 24px; font-weight: 800; margin: 0 0 8px; color: #0f7f7a; }
+        .ld-result-prop { display: inline-block; margin: 0 0 12px; padding: 4px 12px; border-radius: 999px; background: #f2f5f6; color: #006078; font-size: 13px; font-weight: 600; }
+        .ld-result p { font-size: 14.5px; line-height: 1.6; color: var(--on-surface-variant); margin: 0 0 26px; }
+        .ld-result-btn { width: 100%; padding: 15px 0; border: 0; border-radius: 14px; font-family: var(--font-display); font-size: 16px; font-weight: 700; color: #fff; background: #1e9b97; box-shadow: 0 10px 22px rgba(30,155,151,.30); cursor: pointer; }
+        .ld-result.danger .ld-result-icon { background: #fdeceb; color: var(--alert); }
+        .ld-result.danger h3 { color: var(--alert); }
+        .ld-result.danger .ld-result-btn { background: var(--alert); box-shadow: 0 10px 22px rgba(186,26,26,.28); }
     </style>
 </head>
 <body>
@@ -477,7 +491,7 @@
         <p><strong th:text="${property.title}">Listing</strong> will go live for students to view and apply to, and the landlord will be notified.</p>
         <div class="ld-modal-actions">
             <button type="button" class="ld-btn ghost" onclick="closeModal('approveModal')">Cancel</button>
-            <form th:action="@{/admin/approve-listing/{id}(id=${property.propertyID})}" method="post">
+            <form id="approveForm" th:action="@{/admin/approve-listing/{id}(id=${property.propertyID})}" method="post">
                 <button type="submit" class="ld-btn approve">Yes, approve</button>
             </form>
         </div>
@@ -490,12 +504,8 @@
     <div class="ld-modal-box">
         <div class="ld-modal-icon"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></div>
         <h3 id="rejectTitle">Reject this listing?</h3>
-        <p class="ld-modal-intro"><strong th:text="${property.title}">Listing</strong> will not be published. The landlord will see your comment and can fix and resubmit the same listing.</p>
+        <p class="ld-modal-intro"><strong th:text="${property.title}">Listing</strong> will not be published. The landlord will be notified.</p>
         <form id="rejectForm" th:action="@{/admin/reject-listing/{id}(id=${property.propertyID})}" method="post">
-            <input type="hidden" name="reason" id="rejectReasonField" />
-            <textarea class="ld-textarea" id="rejectReasonBox" maxlength="1000"
-                      placeholder="What should the landlord fix? (e.g. photos are blurry, address is incomplete)"></textarea>
-            <div class="ld-error" id="rejectReasonError">Please write a comment so the landlord knows what to fix.</div>
             <div class="ld-modal-actions with-comment">
                 <button type="button" class="ld-btn ghost" onclick="closeModal('rejectModal')">Cancel</button>
                 <button type="button" class="ld-btn ld-modal-confirm reject-confirm" id="rejectOk">Yes, reject</button>
@@ -524,35 +534,97 @@
         });
     });
 
-    // Reject with a required comment for the landlord
-    function openRejectModal() {
-        var box = document.getElementById('rejectReasonBox');
-        var err = document.getElementById('rejectReasonError');
-        if (box) { box.value = ''; box.classList.remove('invalid'); }
-        if (err) err.classList.remove('show');
-        openModal('rejectModal');
-        if (box) box.focus();
-    }
+    function openRejectModal() { openModal('rejectModal'); }
     (function () {
         var ok = document.getElementById('rejectOk');
         if (!ok) return;
-        var box = document.getElementById('rejectReasonBox');
-        var err = document.getElementById('rejectReasonError');
-        var field = document.getElementById('rejectReasonField');
         var form = document.getElementById('rejectForm');
 
-        box.addEventListener('input', function () { box.classList.remove('invalid'); err.classList.remove('show'); });
-
         ok.addEventListener('click', function () {
-            var text = box.value.trim();
-            if (!text) {
-                box.classList.add('invalid');
-                err.classList.add('show');
-                box.focus();
-                return;
-            }
-            field.value = text;
-            form.submit();
+            submitDecision(form, 'reject', 'rejectModal');
+        });
+    })();
+</script>
+<!-- Result popup: shown after Approve / Reject -->
+<div class="ld-result" id="resultModal" role="alertdialog" aria-modal="true" aria-labelledby="resultTitle"
+     th:attr="data-title=${property.title}">
+    <div class="ld-result-box">
+        <div class="ld-result-icon" id="resultIcon"></div>
+        <h3 id="resultTitle"></h3>
+        <div class="ld-result-prop" id="resultProp"></div>
+        <p id="resultText"></p>
+        <button type="button" class="ld-result-btn" id="resultOk">Got it</button>
+    </div>
+</div>
+
+<script>
+    var CHECK_ICON = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/></svg>';
+    var X_ICON = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg>';
+    var resultFailed = false;
+
+    function showResult(kind, message) {
+        var root = document.getElementById('resultModal');
+        var name = root.getAttribute('data-title') || '';
+        resultFailed = (kind !== 'approve' && kind !== 'reject');
+        root.classList.toggle('danger', kind !== 'approve');
+        document.getElementById('resultIcon').innerHTML = kind === 'approve' ? CHECK_ICON : X_ICON;
+        document.getElementById('resultTitle').textContent =
+            kind === 'approve' ? 'Listing approved' : (kind === 'reject' ? 'Listing rejected' : 'Something went wrong');
+        document.getElementById('resultText').textContent =
+            kind === 'approve' ? "It's now live for students to view and apply to, and the landlord has been notified."
+                : (kind === 'reject' ? 'The landlord has been notified.'
+                    : (message || 'That did not go through. Please try again.'));
+        var p = document.getElementById('resultProp');
+        p.textContent = resultFailed ? '' : name;
+        p.style.display = (!resultFailed && name) ? 'inline-block' : 'none';
+        root.classList.add('open');
+        document.getElementById('resultOk').focus();
+    }
+
+    document.getElementById('resultOk').addEventListener('click', function () {
+        if (resultFailed) { document.getElementById('resultModal').classList.remove('open'); }
+        else { window.location.href = '/admin-index?section=review-properties'; }
+    });
+
+    function submitDecision(form, kind, modalId) {
+        if (form.getAttribute('data-busy')) return;
+        form.setAttribute('data-busy', '1');
+        var btns = document.querySelectorAll('#' + modalId + ' button');
+        btns.forEach(function (b) { b.disabled = true; });
+        function undo() {
+            form.removeAttribute('data-busy');
+            btns.forEach(function (b) { b.disabled = false; });
+            closeModal(modalId);
+        }
+        fetch(form.getAttribute('action'), {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: new URLSearchParams(new FormData(form))
+        })
+            .then(function (res) {
+                if (res.url.indexOf('/login') !== -1) throw new Error('Your session has expired. Please log in again.');
+                if (!res.ok) throw new Error('The server could not complete that action (error ' + res.status + ').');
+                return res.text();
+            })
+            .then(function (html) {
+                var doc = new DOMParser().parseFromString(html, 'text/html');
+                var err = doc.querySelector('[data-flash="error"]');
+                if (err) throw new Error(err.textContent.trim());
+                closeModal(modalId);
+                showResult(kind);
+            })
+            .catch(function (err) {
+                undo();
+                showResult('error', err && err.message);
+            });
+    }
+
+    (function () {
+        var af = document.getElementById('approveForm');
+        if (af) af.addEventListener('submit', function (e) {
+            e.preventDefault();
+            submitDecision(af, 'approve', 'approveModal');
         });
     })();
 </script>

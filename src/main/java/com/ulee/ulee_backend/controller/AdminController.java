@@ -499,10 +499,8 @@ public class AdminController {
         return "redirect:/admin-index?section=review-properties";
     }
 
-    // CHANGED — rejecting now REQUIRES a comment ("reason"). The landlord sees
-    // it on My Properties and on the edit page, and can fix the same listing
-    // and resubmit it (see PropertyController.updateProperty). Without a
-    // reason nothing is changed and the admin is told to write one.
+    // Rejecting no longer needs a comment; if one is sent it is still stored and
+    // included in the landlord's notification.
     @PostMapping("/admin/reject-listing/{id}")
     public String rejectListing(@PathVariable Integer id,
                                 @RequestParam(required = false) String reason,
@@ -513,18 +511,12 @@ public class AdminController {
             return "redirect:/admin-index?section=review-properties";
         }
         Property property = propertyOpt.get();
-
-        // The landlord must always be told what to fix.
-        if (reason == null || reason.isBlank()) {
-            redirectAttributes.addFlashAttribute("actionError",
-                    "Please tell the landlord why \"" + property.getTitle() + "\" is being rejected.");
-            return "redirect:/admin/pending-listings";
-        }
-        String cleanReason = reason.trim();
+        // The comment is optional; the landlord is told the listing was not approved either way.
+        String cleanReason = (reason == null) ? "" : reason.trim();
 
         property.setStatus("Rejected");
         property.setIsAvailable(false);
-        property.setRejectionReason(cleanReason);
+        property.setRejectionReason(cleanReason.isEmpty() ? null : cleanReason);
         propertyRepository.save(property);
 
         // Same reasoning as approveListing() above: notify the landlord so a
@@ -538,8 +530,9 @@ public class AdminController {
             notification.setPropertyID(property.getPropertyID());
             notification.setTitle("Listing Needs Changes: " + property.getTitle());
             notification.setMessage("Dear " + safeName(landlordUser) + ",\n\n\"" + property.getTitle()
-                    + "\" was not approved.\n\nAdmin feedback: " + cleanReason
-                    + "\n\nOpen the listing from My Properties, fix these points and resubmit it.");
+                    + "\" was not approved."
+                    + (cleanReason.isEmpty() ? "" : "\n\nAdmin feedback: " + cleanReason)
+                    + "\n\nOpen the listing from My Properties, make any needed changes and resubmit it.");
             notification.setCreatedAt(LocalDateTime.now());
             notification.setIsRead(false);
             notificationRepository.save(notification);
@@ -1289,10 +1282,12 @@ public class AdminController {
                 .filter(p -> minPrice == null || (p.getRent() != null && p.getRent().compareTo(minPrice) >= 0))
                 .filter(p -> maxPrice == null || (p.getRent() != null && p.getRent().compareTo(maxPrice) <= 0))
                 .filter(p -> roomTypeMatches(p.getType(), type))
+                // Newest submission first; listings with no date sink to the bottom,
+                // and the ID breaks ties when two were submitted at the same moment.
+                .sorted(Comparator
+                        .comparing(Property::getCreatedAt, Comparator.nullsLast(Comparator.<LocalDateTime>reverseOrder()))
+                        .thenComparing(Property::getPropertyID, Comparator.nullsLast(Comparator.<Integer>reverseOrder())))
                 .collect(Collectors.toList());
-
-        // Room Type dropdown: always offer Single / Sharing / Commune, plus any other
-        // type actually stored on a pending listing (so nothing is un-filterable).
         List<String> typeOptions = new ArrayList<>(List.of("Single", "Sharing", "Commune"));
         pendingProperties.stream()
                 .map(Property::getType)

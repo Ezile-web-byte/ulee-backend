@@ -12,8 +12,19 @@ public class ApplicationDocument {
     private Integer documentID;
 
     private Integer applicationID;
+
+    // The merged database ended up with BOTH camelCase (fileName/filePath/
+    // uploadedAt) and snake_case (file_name/file_path/uploaded_at) columns.
+    // The real data — and the NOT NULL constraint on fileName — live on the
+    // camelCase columns, but Hibernate's default naming maps these fields to
+    // the snake_case ones, so every insert left the NOT NULL fileName empty
+    // and failed (the "couldn't save your documents" error). Pin the mapping
+    // to the real columns so applications submit and existing docs still read.
+    @Column(name = "fileName")
     private String fileName;
+    @Column(name = "filePath")
     private String filePath;
+    @Column(name = "uploadedAt")
     private LocalDateTime uploadedAt;
 
     public Integer getDocumentID() { return documentID; }

@@ -702,6 +702,8 @@
         }
         .detail-badge.is-available::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--teal-glow); box-shadow: 0 0 6px var(--teal-glow); }
         .detail-badge.is-unavailable { background: rgba(186,26,26,.88); border-color: transparent; }
+        .detail-badge.is-applied { background: rgba(7,28,45,.75); border: 1px solid rgba(20,200,190,.6); }
+        .detail-badge.is-applied::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #f5d450; box-shadow: 0 0 6px #f5d450; }
         .gallery-nav-btn { background: rgba(7,28,45,.6); border: 1px solid rgba(20,200,190,.4); backdrop-filter: blur(6px); }
         .gallery-nav-btn:hover { background: rgba(7,28,45,.85); }
         .gallery-nav-btn svg { color: #fff; }
@@ -792,6 +794,25 @@
         .validation-modal-ok { background: var(--navy-gradient); }
         .validation-modal-ok:hover { background: var(--navy-gradient); box-shadow: 0 0 18px rgba(20,200,190,.3); }
 
+        /* Application-sent success popup */
+        .apply-success-icon {
+            width: 64px; height: 64px; margin: 0 auto 16px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--navy-gradient); color: #14C8BE;
+            box-shadow: 0 10px 26px rgba(7,28,45,.28), 0 0 0 6px rgba(20,200,190,.12);
+        }
+        .apply-success-icon { font-size: 32px; font-weight: 700; line-height: 1; }
+        .apply-success-actions { display: flex; gap: 10px; margin-top: 4px; }
+        .apply-success-actions > * { flex: 1; }
+        .apply-success-primary { text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+        .apply-success-secondary {
+            padding: 12px 20px; border-radius: var(--radius-sm, 10px); cursor: pointer;
+            font-family: var(--font-body); font-size: 14px; font-weight: 700;
+            background: #fff; color: var(--primary-dark); border: 1.5px solid var(--outline-variant, #E6E8E4);
+            transition: border-color .2s ease, background .2s ease;
+        }
+        .apply-success-secondary:hover { border-color: var(--accent-border, #93C0C5); background: var(--primary-pale, #F0F7F6); }
+
         @keyframes ulee-pulse { 0%,100% { opacity: .6; transform: scale(1); } 50% { opacity: 1; transform: scale(1.12); } }
         @media (prefers-reduced-motion: reduce) { .detail-info-card::after { animation: none; } }
         @media (max-width: 800px) {
@@ -849,8 +870,8 @@
             <img class="detail-img" th:if="${#lists.isEmpty(images)}"
                  src="/images/property-placeholder.svg" th:alt="${property.title} + ' (no photos yet)'" />
             <span class="detail-badge"
-                  th:classappend="${property.isAvailable} ? ' is-available' : ' is-unavailable'"
-                  th:text="${property.isAvailable} ? 'Available' : 'Unavailable'">Available</span>
+                  th:classappend="${hasApplied} ? ' is-applied' : (${property.isAvailable != null and !property.isAvailable} ? ' is-unavailable' : ' is-available')"
+                  th:text="${hasApplied} ? 'Applied' : (${property.isAvailable != null and !property.isAvailable} ? 'Unavailable' : 'Available')">Available</span>
 
             <button type="button" id="galleryPrevBtn" class="gallery-nav-btn prev" th:if="${images != null and images.size() > 1}" aria-label="Previous photo">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
@@ -945,7 +966,10 @@
         </iframe>
     </div>
 
-    <!-- 4. REVIEWS — quote-card style, matches what the landlord sees -->
+    <!-- VR / 360° virtual tour removed -->
+
+
+    <!-- 4. REVIEWS - quote-card style, matches what the landlord sees. Students who qualify can write a review from here. -->
     <div class="detail-reviews">
         <h2>Reviews &amp; Ratings</h2>
 
@@ -1003,6 +1027,12 @@
         </div>
         <div class="apply-error-banner" th:if="${param.applyError != null and param.applyError[0] == 'missing-file'}">
             ⚠ Please attach your supporting documents (.zip) before submitting — this is required.
+        </div>
+        <div class="apply-error-banner" th:if="${param.applyError != null and param.applyError[0] == 'file-too-large'}">
+            ⚠ That file is too large. Please upload your documents as a single .zip under 25MB.
+        </div>
+        <div class="apply-error-banner" th:if="${param.applyError != null and param.applyError[0] == 'upload-failed'}">
+            ⚠ We couldn't save your documents just now. Please try submitting again.
         </div>
 
         <div class="apply-status-banner info" th:if="${not isLoggedIn}">
@@ -1101,6 +1131,23 @@
     </div>
 </div>
 
+<!-- Application-sent success popup: centered, ULEE navy/teal, blurred backdrop.
+     Opened by JS when the page loads with ?applied=1 (set by applyToProperty). -->
+<div id="applySuccessBackdrop" class="validation-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="applySuccessTitle">
+    <div class="validation-modal-card">
+        <div class="apply-success-icon" aria-hidden="true">&#10003;</div>
+        <p class="validation-modal-title" id="applySuccessTitle">Application sent</p>
+        <p class="validation-modal-body">
+            Your application and documents have been sent to the landlord.
+            You can track its status under My Applications.
+        </p>
+        <div class="apply-success-actions">
+            <button type="button" class="apply-success-secondary" id="applySuccessClose">Stay here</button>
+            <a class="validation-modal-ok apply-success-primary" th:href="@{/my-applications}">My Applications</a>
+        </div>
+    </div>
+</div>
+
 <!-- ULEE AI assistant (floating chat icon).
      "propertyFeatures" is now a plain text list of the amenity names, built in
      PropertyController.viewPropertyDetail, so no projection syntax is needed here. -->
@@ -1151,6 +1198,25 @@
         });
     })();
 
+    // ── Application-sent success popup: shown when the server redirects back
+    //    with ?applied=1 after a successful application. Centered, ULEE-styled.
+    (function () {
+        var backdrop = document.getElementById('applySuccessBackdrop');
+        if (!backdrop) return;
+        var params = new URLSearchParams(window.location.search);
+        if (params.get('applied') === '1') {
+            backdrop.classList.add('open');
+            // Clean the param so a refresh doesn't re-open the popup.
+            params.delete('applied');
+            var newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '') + window.location.hash;
+            window.history.replaceState({}, '', newUrl);
+        }
+        function closeSuccess() { backdrop.classList.remove('open'); }
+        document.getElementById('applySuccessClose')?.addEventListener('click', closeSuccess);
+        backdrop.addEventListener('click', function (e) { if (e.target === backdrop) closeSuccess(); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSuccess(); });
+    })();
+
     // ── Validation modal: reusable across every form on the site ──
     function showValidationModal(message, title) {
         document.getElementById('validationModalTitle').textContent = title || 'Missing document';
@@ -1193,12 +1259,24 @@
             }
 
             if (fileField && fileField.files.length > 0) {
-                const fileName = fileField.files[0].name.toLowerCase();
+                const file = fileField.files[0];
+                const fileName = file.name.toLowerCase();
                 if (!fileName.endsWith('.zip')) {
                     e.preventDefault();
                     showValidationModal(
                         'That file isn\'t a .zip. Please combine your documents into a single .zip file and upload that instead.',
                         'Wrong file type'
+                    );
+                    return;
+                }
+                // Instant size check so the student isn't bounced by the server.
+                // Must stay in step with spring.servlet.multipart.max-file-size (25MB).
+                const MAX_BYTES = 25 * 1024 * 1024;
+                if (file.size > MAX_BYTES) {
+                    e.preventDefault();
+                    showValidationModal(
+                        'That file is too large. Please upload your documents as a single .zip under 25MB.',
+                        'File too large'
                     );
                     return;
                 }
