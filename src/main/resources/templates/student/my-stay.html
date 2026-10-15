@@ -84,12 +84,15 @@
             <h3 th:text="${p.title}">Property name</h3>
             <span class="status accepted">Accepted</span>
           </div>
+          <div class="stay-meta">
+            <span><span class="material-symbols-outlined" aria-hidden="true">location_on</span><span th:text="${p.suburb != null ? p.suburb : p.city}">Suburb</span></span>
+          </div>
           <p class="stay-hint"
-             th:text="${reviewedIds.contains(p.propertyID)} ? 'You have reviewed this place. Thank you!' : (${reviewableIds.contains(p.propertyID)} ? 'You have not reviewed this place yet.' : 'Reviews open once your stay starts' + (${p.availableFrom != null} ? ' on ' + ${#temporals.format(p.availableFrom, 'd MMMM yyyy')} : '') + '.')">
+             th:text="${reviewedIds.contains(p.propertyID)} ? 'You have reviewed this place. Thank you!' : 'You have not reviewed this place yet.'">
             You have not reviewed this place yet.
           </p>
           <div class="stay-actions">
-            <a class="btn btn-primary" th:if="${reviewableIds.contains(p.propertyID) and !reviewedIds.contains(p.propertyID)}" th:href="@{/write-review/{id}(id=${p.propertyID})}">
+            <a class="btn btn-primary" th:unless="${reviewedIds.contains(p.propertyID)}" th:href="@{/write-review/{id}(id=${p.propertyID})}">
               <span class="material-symbols-outlined" aria-hidden="true">rate_review</span>Write a review
             </a>
             <a class="btn btn-outline" th:if="${reviewedIds.contains(p.propertyID)}" th:href="@{/property/{id}(id=${p.propertyID})}">
