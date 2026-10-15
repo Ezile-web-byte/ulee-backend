@@ -44,7 +44,7 @@ public class PropertyController {
     private PropertyImageRepository propertyImageRepository;
     @Autowired
     private ApplicationDocumentRepository applicationDocumentRepository;
-        @Autowired
+    @Autowired
     private AmenityRepository amenityRepository;
 
 
@@ -221,7 +221,7 @@ public class PropertyController {
                 .collect(Collectors.toList());
     }
 
-    // ── NEW: helpers for the re-review rules and the Vacant Rooms page ──
+    // ── NEW: helpers for the re-review rules ──
 
     // BigDecimal equality that ignores scale (1500 == 1500.00) and handles null.
     private boolean sameMoney(java.math.BigDecimal a, java.math.BigDecimal b) {
@@ -234,19 +234,6 @@ public class PropertyController {
         return (a == null ? "" : a.trim()).equals(b == null ? "" : b.trim());
     }
 
-    // Accepted applications per property — the "filled" part of capacity.
-    private Map<Integer, Long> acceptedCountByProperty(List<Integer> propertyIds) {
-        if (propertyIds.isEmpty()) return new LinkedHashMap<>();
-        return applicationRepository.findByPropertyIDIn(propertyIds).stream()
-                .filter(a -> a.getPropertyID() != null && "Accepted".equalsIgnoreCase(a.getStatus()))
-                .collect(Collectors.groupingBy(Application::getPropertyID, Collectors.counting()));
-    }
-
-    // Vacant rooms for one property = capacity minus accepted students (never below 0).
-    private long vacancyOf(Property p, Map<Integer, Long> acceptedByProperty) {
-        int capacity = p.getCapacity() != null ? p.getCapacity() : 0;
-        return Math.max(0, capacity - acceptedByProperty.getOrDefault(p.getPropertyID(), 0L));
-    }
 
 
     // ── NEW: helpers for the Applications pages ──
@@ -550,62 +537,6 @@ public class PropertyController {
     // ============================================================
     // C100 support — Landlord Dashboard ("My Properties" inventory page)
     // ============================================================
-    //
-    // CHANGED — three stat cards now: Total Properties, Awaiting Review and
-    // Vacant Rooms. The Avg. Occupancy card is gone.
-    //
-    // Vacant Rooms used to be "total properties minus available properties",
-    // which counts PROPERTIES, not rooms. It is now the real thing: for every
-    // LIVE property, capacity minus accepted students, added up.
-    @GetMapping("/landlord-index")
-    public String viewLandlordDashboard(Model model, Principal principal) {
-        Integer landlordID = getCurrentUser(principal).getUserID();
-
-        // Deactivated (soft-deleted) properties never show anywhere on this
-        // page — dashboard, stat cards, or filter tabs — regardless of what
-        // status they were in before being deactivated.
-        List<Property> myProperties = findActiveOwnedProperties(landlordID);
-
-        List<Integer> propertyIds = myProperties.stream()
-                .map(Property::getPropertyID)
-                .collect(Collectors.toList());
-
-        long totalProperties = myProperties.size();
-
-        // "Awaiting Review" counts PROPERTIES this landlord owns that are
-        // sitting in "Pending" status — submitted, but not yet approved by an
-        // Admin. Deliberately separate from student applications.
-        long awaitingApprovalCount = myProperties.stream()
-                .filter(p -> "Pending".equals(p.getStatus()))
-                .count();
-
-        // Vacant rooms = capacity minus accepted students, LIVE properties only.
-        List<Property> liveProperties = myProperties.stream()
-                .filter(p -> LIVE_STATUS.equals(p.getStatus()))
-                .collect(Collectors.toList());
-        Map<Integer, Long> accepted = acceptedCountByProperty(
-                liveProperties.stream().map(Property::getPropertyID).collect(Collectors.toList()));
-        long vacantRooms = liveProperties.stream().mapToLong(p -> vacancyOf(p, accepted)).sum();
-
-        // Builds a lookup so the property cards can show a cover image
-        // without a separate query per card. If a property has more than
-        // one image, whichever one Hibernate returns first for that ID wins
-        // (see the merge function below) — display order isn't guaranteed
-        // here, just "some" image.
-        Map<Integer, String> imageLookup = propertyImageRepository.findByPropertyIDIn(propertyIds).stream()
-                .collect(Collectors.toMap(
-                        PropertyImage::getPropertyID,
-                        PropertyImage::getUrl,
-                        (existing, replacement) -> existing
-                ));
-
-        model.addAttribute("properties", myProperties);
-        model.addAttribute("imageLookup", imageLookup);
-        model.addAttribute("totalProperties", totalProperties);
-        model.addAttribute("vacantRooms", vacantRooms);
-        model.addAttribute("awaitingApprovalCount", awaitingApprovalCount);
-        return "landlord/landlord-index";
-    }
 
 
     // ============================================================
@@ -2186,7 +2117,7 @@ public class PropertyController {
     // Student-side endpoints
     // ============================================================
 
-      @PostMapping("/apply/{propertyId}")
+    @PostMapping("/apply/{propertyId}")
     public String applyToProperty(
             @PathVariable Integer propertyId,
             @RequestParam(required = false) Integer yearOfStudy,
@@ -2375,11 +2306,82 @@ public class PropertyController {
         // Thymeleaf's TemplateInputException ("template might not exist").
         return "student/my-applications";
     }
+    // Landlord dashboard: the page landlords land on after login.
+    // SecurityConfig redirects ROLE_LANDLORD to /landlord-index.
+    @GetMapping("/landlord-index")
+    public String viewLandlordDashboard(Model model, Principal principal) {
+        Integer landlordID = getCurrentUser(principal).getUserID();
+
+        // Deactivated properties never show on this page.
+        List<Property> myProperties = findActiveOwnedProperties(landlordID);
+
+        List<Integer> propertyIds = myProperties.stream()
+                .map(Property::getPropertyID)
+                .collect(Collectors.toList());
+
+        long totalProperties = myProperties.size();
+
+        // Properties submitted but not yet approved by an Admin.
+        long awaitingApprovalCount = myProperties.stream()
+                .filter(p -> "Pending".equals(p.getStatus()))
+                .count();
+
+        // Cover image per property, so cards don't need a query each.
+        Map<Integer, String> imageLookup = new LinkedHashMap<>();
+        if (!propertyIds.isEmpty()) {
+            imageLookup = propertyImageRepository.findByPropertyIDIn(propertyIds).stream()
+                    .collect(Collectors.toMap(
+                            PropertyImage::getPropertyID,
+                            PropertyImage::getUrl,
+                            (existing, replacement) -> existing
+                    ));
+        }
+
+        model.addAttribute("properties", myProperties);
+        model.addAttribute("imageLookup", imageLookup);
+        model.addAttribute("totalProperties", totalProperties);
+        model.addAttribute("awaitingApprovalCount", awaitingApprovalCount);
+        return "landlord/landlord-index";
+    }
 
     // A202 — Cancel Application
+    // A student can withdraw an application only while it is still Pending,
+    // and only their own. Removes its documents (rows and files), deletes the
+    // application so it disappears from the landlord, then notifies the landlord.
     @PostMapping("/cancel-application/{applicationId}")
-    public String cancelApplication(@PathVariable Integer applicationId) {
-        applicationRepository.deleteById(applicationId);
+    public String cancelApplication(@PathVariable Integer applicationId, Principal principal) {
+        User student = getCurrentUser(principal);
+        Application application = applicationRepository.findById(applicationId).orElse(null);
+
+        if (application == null
+                || !student.getUserID().equals(application.getStudentID())
+                || !"Pending".equalsIgnoreCase(application.getStatus())) {
+            return "redirect:/my-applications";
+        }
+
+        // 1. Documents first (the foreign key blocks deleting the application otherwise)
+        List<ApplicationDocument> docs = applicationDocumentRepository.findByApplicationID(applicationId);
+        applicationDocumentRepository.deleteAll(docs);
+
+        // 2. The application itself
+        applicationRepository.delete(application);
+
+        // 3. Files on disk, only after the database delete worked, and only
+        //    if no other document row still uses the same file
+        for (ApplicationDocument doc : docs) {
+            try {
+                String path = doc.getFilePath();
+                if (path != null && applicationDocumentRepository.countByFilePath(path) == 0) {
+                    java.nio.file.Files.deleteIfExists(java.nio.file.Paths.get(path));
+                }
+            } catch (Exception ignored) {
+                // a leftover file is harmless; it must not undo the cancel
+            }
+        }
+
+        // 4. Tell the landlord (never throws)
+        landlordNotificationService.notifyApplicationWithdrawn(application);
+
         return "redirect:/my-applications";
     }
 
@@ -2843,7 +2845,5 @@ public class PropertyController {
         }
         return "redirect:/landlord-index?added=true";
     }
-   
+
 }
-
-

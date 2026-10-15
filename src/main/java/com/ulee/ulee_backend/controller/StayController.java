@@ -137,10 +137,16 @@ public class StayController {
         List<Property> stays = acceptedIds.stream()
                 .map(propertyLookup::get).filter(Objects::nonNull).collect(Collectors.toList());
         Set<Integer> reviewedIds = myReviews.stream().map(Review::getPropertyID).collect(Collectors.toSet());
+
+        // The student chooses where to stay: every accepted place whose stay has started is
+        // open for a review until they review/report one. After that the others are locked
+        // (lockedIds), and the one they reviewed switches to "View property".
         Set<Integer> reviewableIds = stays.stream()
                 .filter(StayEligibility::hasStarted)
                 .map(Property::getPropertyID)
-                .collect(Collectors.toSet());
+                .filter(id -> !reviewedIds.contains(id))
+                .filter(id -> !lockedIds.contains(id))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
         model.addAttribute("reviewableIds", reviewableIds);
 
         model.addAttribute("stays", stays);

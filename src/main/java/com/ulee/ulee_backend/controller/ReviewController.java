@@ -99,11 +99,6 @@ public class ReviewController {
             return "redirect:/property/" + propertyId;
         }
 
-        if (!propertyId.equals(currentStayPropertyId(studentId))) {
-            redirectAttributes.addFlashAttribute("actionError",
-                    "You can only review the place you're currently staying at.");
-            return "redirect:/property/" + propertyId;
-        }
         String imageUrl = propertyImageRepository.findByPropertyID(propertyId).stream()
                 .findFirst().map(PropertyImage::getUrl).orElse(null);
 
@@ -175,11 +170,6 @@ public class ReviewController {
             return "redirect:/property/" + propertyId;
         }
 
-        if (!propertyId.equals(currentStayPropertyId(studentId))) {
-            redirectAttributes.addFlashAttribute("actionError",
-                    "You can only review the place you're currently staying at.");
-            return "redirect:/property/" + propertyId;
-        }
         Review review = new Review();
         review.setStudentID(studentId);
         review.setPropertyID(propertyId);

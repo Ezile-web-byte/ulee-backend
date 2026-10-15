@@ -97,4 +97,35 @@ public class LandlordNotificationService {
             // intentionally swallowed, see javadoc
         }
     }
+
+    /**
+     * Tells the landlord a student withdrew a pending application.
+     * Call it with the Application object (it only needs the IDs, so it is
+     * fine to call after the application row has been deleted).
+     * Never throws: a notification problem must not stop the cancel.
+     */
+    public void notifyApplicationWithdrawn(Application application) {
+        try {
+            if (application == null || application.getPropertyID() == null) return;
+            Property property = propertyRepository.findById(application.getPropertyID()).orElse(null);
+            if (property == null) return;
+
+            String studentName = null;
+            if (application.getStudentID() != null) {
+                User student = userRepository.findById(application.getStudentID()).orElse(null);
+                if (student != null) {
+                    String first = student.getFirstName() != null ? student.getFirstName() : "";
+                    String last = student.getLastName() != null ? student.getLastName() : "";
+                    studentName = (first + " " + last).trim();
+                }
+            }
+            String name = (studentName == null || studentName.isBlank()) ? "A student" : studentName;
+            String message = name + " has withdrawn their application for \"" + property.getTitle() + "\".\n\n"
+                    + "The application has been removed from your applications list.";
+            save(property.getLandlordID(), property.getPropertyID(),
+                    "Application Withdrawn: " + property.getTitle(), message);
+        } catch (Exception ignored) {
+            // intentionally swallowed, see javadoc
+        }
+    }
 }
