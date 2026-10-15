@@ -2378,7 +2378,26 @@ public class PropertyController {
 
     // A202 — Cancel Application
     @PostMapping("/cancel-application/{applicationId}")
-    public String cancelApplication(@PathVariable Integer applicationId) {
+        @PostMapping("/applications/cancel/{applicationId}")
+    public String cancelApplication(@PathVariable Integer applicationId, Principal principal) {
+        Integer studentID = getCurrentUser(principal).getUserID();
+
+        Application application = applicationRepository.findById(applicationId).orElse(null);
+        if (application == null || !application.getStudentID().equals(studentID)) {
+            return "redirect:/my-applications";
+        }
+        
+        List<ApplicationDocument> documents = applicationDocumentRepository.findByApplicationID(applicationId);
+        for (ApplicationDocument document : documents) {
+            if (document.getFilePath() != null) {
+                try {
+                    Files.deleteIfExists(Paths.get(document.getFilePath()));
+                } catch (IOException e) {
+                    // Suppress deletion errors so DB rows can still be cleared safely
+                }
+            }
+        }
+        applicationDocumentRepository.deleteAll(documents);
         applicationRepository.deleteById(applicationId);
         return "redirect:/my-applications";
     }
