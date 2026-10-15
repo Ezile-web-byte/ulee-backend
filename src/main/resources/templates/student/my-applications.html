@@ -85,7 +85,7 @@
         .crumbs a { color: inherit; text-decoration: none; }
         .crumbs a:hover { color: var(--primary-dark); }
         .crumbs strong { color: var(--primary-dark); }
-        .topbar-right { display: flex; align-items: center; gap: 12px; }
+        .topbar-right { display: flex; align-items: center; gap: 12px;  margin-left: auto; }
         .chip-btn { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: var(--radius-full); background: #fff; border: 1px solid var(--outline-variant); font-size: 13.5px; font-weight: 700; color: var(--primary-dark); text-decoration: none; transition: border-color .2s, box-shadow .2s; }
         .chip-btn:hover { background: var(--primary-dark); border-color: var(--primary-dark); color: #fff; box-shadow: 0 4px 14px rgba(0,106,106,.2); }
         .chip-btn .material-symbols-outlined { font-size: 18px; }
@@ -241,51 +241,10 @@
 <body>
 <div class="app-shell">
 
-    <!-- Dark sidebar — same as my-dashboard.html -->
-    <aside class="sidebar" id="sidebar" aria-label="Student navigation">
-        <div class="logo">
-            <a class="logo-mark" th:href="@{/student-dashboard}" aria-label="ULEE home">
-                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2L3 7v11h14V7L10 2zm0 2.6 5 3.5V16H5V8.1l5-3.5zM8 10h4v6H8z"/></svg>
-                <div class="logo-text">
-                    <div class="logo-name">ULEE</div>
-                    <div class="logo-tag">Student Living. Simplified.</div>
-                </div>
-            </a>
-            <button class="sidebar-toggle" id="sidebar-toggle" type="button" title="Toggle sidebar" aria-label="Toggle sidebar" aria-expanded="true">
-                <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M12 4l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
-        </div>
-
-        <div class="nav-label">Student portal</div>
-        <nav class="nav-list">
-            <a class="nav-item" th:href="@{/my-dashboard}">
-                <span class="material-symbols-outlined" aria-hidden="true">space_dashboard</span><span>My Dashboard</span>
-            </a>
-            <a class="nav-item active" th:href="@{/my-applications}" aria-current="page">
-                <span class="material-symbols-outlined" aria-hidden="true">description</span><span>My Applications</span>
-                <span class="nav-badge" th:if="${totalApplications > 0}" th:text="${totalApplications}">0</span>
-            </a>
-            <a class="nav-item" th:href="@{/saved-properties}">
-                <span class="material-symbols-outlined" aria-hidden="true">favorite</span><span>Favourite Properties</span>
-                <span class="nav-badge" th:if="${savedCount > 0}" th:text="${savedCount}">0</span>
-            </a>
-            <a class="nav-item" th:href="@{/student-dashboard}">
-                <span class="material-symbols-outlined" aria-hidden="true">travel_explore</span><span>Browse Properties</span>
-            </a>
-        </nav>
-
-        <div class="sidebar-foot">
-            <form id="logoutForm" th:action="@{/logout}" method="post">
-                <button type="button" class="nav-item logout" id="openLogout">
-                    <span class="material-symbols-outlined" aria-hidden="true">logout</span><span>Log out</span>
-                </button>
-            </form>
-        </div>
-    </aside>
+    <div th:replace="~{fragments/student-sidebar :: sidebar('applications')}"></div>
 
     <main class="main">
         <div class="topbar">
-            <div class="crumbs"><a th:href="@{/my-dashboard}">Student portal</a> / <strong>My Applications</strong></div>
             <div class="topbar-right">
                 <a class="chip-btn" th:href="@{/student-dashboard}">
                     <span class="material-symbols-outlined" aria-hidden="true">search</span>Find a room
@@ -456,18 +415,6 @@
     </div>
 </div>
 
-<!-- Logout confirmation -->
-<div class="modal" id="logoutModal" role="dialog" aria-modal="true" aria-labelledby="logoutTitle">
-    <div class="modal-card">
-        <div class="modal-icon"><span class="material-symbols-outlined" aria-hidden="true">logout</span></div>
-        <h2 id="logoutTitle">Log out of ULEE?</h2>
-        <p>You will need to log in again to see your dashboard, applications and saved rooms.</p>
-        <div class="modal-row">
-            <button type="button" class="btn-cancel" data-close>Cancel</button>
-            <button type="button" class="btn-danger" id="confirmLogout">Log out</button>
-        </div>
-    </div>
-</div>
 
 <div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null, null, null, null)}"></div>
 
@@ -531,13 +478,6 @@
             if (pendingForm.requestSubmit) pendingForm.requestSubmit(); else pendingForm.submit();
         });
 
-        // Logout
-        var logoutModal = document.getElementById('logoutModal');
-        var openLogout = document.getElementById('openLogout');
-        openLogout.addEventListener('click', function () { open(logoutModal, openLogout); });
-        document.getElementById('confirmLogout').addEventListener('click', function () {
-            document.getElementById('logoutForm').submit();
-        });
     })();
 </script>
 </body>

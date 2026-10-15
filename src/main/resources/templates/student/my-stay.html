@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
   <link rel="stylesheet" th:href="@{/student-portal.css}">
   <script th:src="@{/student-portal.js}" defer></script>
+  <script th:src="@{/landlord-sidebar-toggle.js}" defer></script>
 </head>
 <body>
 <div class="app-shell">
@@ -17,7 +18,6 @@
 
   <main class="main">
     <div class="topbar">
-      <div class="crumbs"><a th:href="@{/my-dashboard}">Student portal</a> / <strong>My Stay</strong></div>
       <div class="topbar-right">
         <a class="chip-btn" th:href="@{/student-dashboard}">
           <span class="material-symbols-outlined" aria-hidden="true">search</span>Find a room

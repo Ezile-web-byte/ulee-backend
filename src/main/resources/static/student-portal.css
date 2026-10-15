@@ -73,7 +73,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; }
 .crumbs a { color: var(--outline); text-decoration: none; }
 .crumbs a:hover { color: var(--primary-dark); }
 .crumbs strong { color: var(--primary-dark); }
-.topbar-right { display: flex; align-items: center; gap: 12px; }
+.topbar-right { display: flex; align-items: center; gap: 12px;  margin-left: auto; }
 .chip-btn {
     display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: var(--radius-full);
     background: #fff; border: 1px solid var(--outline-variant); font-size: 13.5px; font-weight: 700;
@@ -340,3 +340,23 @@ textarea:focus, select:focus { outline: none; border-color: var(--sidebar-logo-t
     .stay-img { min-height: 150px; }
     .crumbs { display: none; }
 }
+/* ---- Shared student sidebar: logo + collapse toggle (matches my-applications / my-dashboard) ---- */
+.logo { justify-content: space-between; gap: 8px; }
+.logo-mark { display: flex; align-items: center; gap: 10px; text-decoration: none; min-width: 0; }
+.logo-mark svg { flex-shrink: 0; }
+.logo-text { min-width: 0; overflow: hidden; white-space: nowrap; }
+.sidebar-toggle { flex-shrink: 0; width: 28px; height: 28px; padding: 0; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--sidebar-text); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .15s ease, color .15s ease; }
+.sidebar-toggle:hover { background: rgba(255,255,255,.08); color: #fff; }
+.sidebar-toggle svg { width: 16px; height: 16px; fill: none; filter: none; transition: transform .25s ease; }
+@media (min-width: 861px) {
+    .app-shell.sidebar-collapsed { grid-template-columns: 76px 1fr; }
+    .sidebar.collapsed { padding-left: 14px; padding-right: 14px; }
+    .sidebar.collapsed .logo { justify-content: center; }
+    .sidebar.collapsed .logo-mark { display: none; }
+    .sidebar.collapsed .sidebar-toggle svg { transform: rotate(180deg); }
+    .sidebar.collapsed .nav-label { display: none; }
+    .sidebar.collapsed .nav-item { justify-content: center; padding-left: 0; padding-right: 0; gap: 0; }
+    .sidebar.collapsed .nav-item > span:not(.material-symbols-outlined) { display: none; }
+    .sidebar.collapsed .nav-item.active { margin-left: -14px; margin-right: -14px; width: calc(100% + 28px); }
+}
+@media (max-width: 860px) { .sidebar-toggle { display: none; } }

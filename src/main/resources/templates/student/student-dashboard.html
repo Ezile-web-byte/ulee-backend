@@ -451,8 +451,6 @@
         <div class="hidden md:flex items-center gap-lg">
             <a class="nav-link active font-label-bold text-label-bold" href="/student-dashboard">Properties</a>
             <a class="nav-link font-label-bold text-label-bold" href="#life-at-ulee">Life at ULEE</a>
-            <a class="nav-link font-label-bold text-label-bold" href="#">About Us</a>
-            <a class="nav-link font-label-bold text-label-bold" href="#">Contact</a>
         </div>
         <div class="flex items-center gap-md">
             <button type="button" id="openLoginBtn" th:unless="${isLoggedIn}" class="hidden md:block text-sidebar-text font-label-bold hover:text-white transition-colors">Login</button>
@@ -1458,6 +1456,39 @@
     }
     modalOverlays.forEach(o => new MutationObserver(syncAiWidget).observe(o, { attributes: true, attributeFilter: ['class'] }));
     syncAiWidget();
+</script>
+<script>
+/* navSpy: moves the nav underline between Properties and Life at ULEE */
+(function () {
+    var links = document.querySelectorAll('.nav-link');
+    var props = null, life = null;
+    links.forEach(function (a) {
+        var h = a.getAttribute('href');
+        if (h === '/student-dashboard') props = a;
+        if (h === '#life-at-ulee') life = a;
+    });
+    var section = document.getElementById('life-at-ulee');
+    if (!props || !life || !section) return;
+
+    function setActive(el) {
+        links.forEach(function (a) { a.classList.toggle('active', a === el); });
+    }
+    function update() {
+        var y = window.scrollY + 140;
+        var top = section.offsetTop;
+        var bottom = top + section.offsetHeight;
+        setActive(y >= top && y < bottom ? life : props);
+    }
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('load', update);
+    life.addEventListener('click', function () { setActive(life); });
+    props.addEventListener('click', function (e) {
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setActive(props);
+    });
+    update();
+})();
 </script>
 </body>
 </html>

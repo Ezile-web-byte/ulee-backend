@@ -37,3 +37,7 @@ src/main/resources/application.properties
 src/main/resources/application.properties
 
 src/main/resources/application.properties
+
+app.log
+*.bak*
+src/main/resources/static/uploads/

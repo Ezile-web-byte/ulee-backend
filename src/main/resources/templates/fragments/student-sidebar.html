@@ -25,15 +25,18 @@
 <th:block th:fragment="sidebar(active)">
 
     <aside class="sidebar" id="sidebar" aria-label="Student navigation">
-        <a class="logo" th:href="@{/student-dashboard}" aria-label="ULEE home">
-            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2L3 7v11h14V7L10 2zm0 2.6 5 3.5V16H5V8.1l5-3.5zM8 10h4v6H8z"/></svg>
-            <div>
-                <div class="logo-name">ULEE</div>
-                <div class="logo-tag">Student Living. Simplified.</div>
-            </div>
-        </a>
-
-        <div class="nav-label">Student portal</div>
+        <div class="logo">
+            <a class="logo-mark" th:href="@{/student-dashboard}" aria-label="ULEE home">
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2L3 7v11h14V7L10 2zm0 2.6 5 3.5V16H5V8.1l5-3.5zM8 10h4v6H8z"/></svg>
+                <div class="logo-text">
+                    <div class="logo-name">ULEE</div>
+                    <div class="logo-tag">Student Living. Simplified.</div>
+                </div>
+            </a>
+            <button class="sidebar-toggle" id="sidebar-toggle" type="button" title="Toggle sidebar" aria-label="Toggle sidebar" aria-expanded="true">
+                <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M12 4l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+        </div><div class="nav-label">Student portal</div>
         <nav class="nav-list">
             <a class="nav-item" th:classappend="${active == 'dashboard'} ? ' active'"
                th:attr="aria-current=${active == 'dashboard' ? 'page' : null}" th:href="@{/my-dashboard}">
@@ -51,7 +54,7 @@
             </a>
             <a class="nav-item" th:classappend="${active == 'saved'} ? ' active'"
                th:attr="aria-current=${active == 'saved' ? 'page' : null}" th:href="@{/saved-properties}">
-                <span class="material-symbols-outlined" aria-hidden="true">favorite</span><span>Saved Properties</span>
+                <span class="material-symbols-outlined" aria-hidden="true">favorite</span><span>Favourite Properties</span>
                 <span class="nav-badge" th:if="${savedCount != null and savedCount > 0}" th:text="${savedCount}">0</span>
             </a>
             <a class="nav-item" th:classappend="${active == 'browse'} ? ' active'"
