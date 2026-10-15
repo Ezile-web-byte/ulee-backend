@@ -532,6 +532,15 @@ public class PropertyController {
                     .map(SavedProperty::getPropertyID)
                     .collect(Collectors.toSet());
             model.addAttribute("savedPropertyIds", savedPropertyIds);
+
+            // Which properties this student has applied to, and the status of each
+            Map<Integer, String> appliedStatusByProperty = new LinkedHashMap<>();
+            for (Application a : applicationRepository.findByStudentID(studentID)) {
+                if (a.getPropertyID() != null) {
+                    appliedStatusByProperty.put(a.getPropertyID(), a.getStatus() == null ? "Pending" : a.getStatus());
+                }
+            }
+            model.addAttribute("appliedStatusByProperty", appliedStatusByProperty);
         }
 
         return "student/student-dashboard";
@@ -974,15 +983,149 @@ public class PropertyController {
         Integer landlordID = getCurrentUser(principal).getUserID();
         Property property = getOwnedProperty(id, landlordID); // ownership check
 
-        // Safety guard: don't delete a listing that already has accepted
-        // students living in it. Remove this block if you don't want it.
         List<Application> applications = applicationRepository.findByPropertyIDIn(List.of(id));
-        boolean hasAccepted = applications.stream()
-                .anyMatch(a -> "Accepted".equalsIgnoreCase(a.getStatus()));
-        if (hasAccepted) {
-            return "redirect:/edit-property/" + id + "?error=has-accepted-students";
+        // Accepted students: close the property and ask them to move instead of blocking.
+        List<Application> acceptedHere = applications.stream()
+                .filter(a -> "Accepted".equalsIgnoreCase(a.getStatus())).collect(Collectors.toList());
+        List<String> openedTitles = new java.util.ArrayList<>();
+        if (!acceptedHere.isEmpty()) {
+            if (!"Closing".equalsIgnoreCase(property.getStatus())) {
+                int needed = acceptedHere.size();
+                java.time.LocalDate today = java.time.LocalDate.now();
+                List<Property> others = propertyRepository.findByLandlordID(landlordID).stream()
+                        .filter(p -> !p.getPropertyID().equals(id) && isLiveProperty(p))
+                        .collect(Collectors.toList());
+                int available = others.stream()
+                        .filter(p -> Boolean.TRUE.equals(p.getIsAvailable()))
+                        .mapToInt(this::freeSpaces).sum();
+                // Not enough open rooms: open the landlord's not-yet-open properties, nearest date first.
+                List<Property> toOpen = new java.util.ArrayList<>();
+                if (available < needed) {
+                    List<Property> notOpen = others.stream()
+                            .filter(p -> !Boolean.TRUE.equals(p.getIsAvailable()))
+                            .filter(p -> freeSpaces(p) > 0)
+                            .sorted(java.util.Comparator.comparing(Property::getAvailableFrom,
+                                    java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder())))
+                            .collect(Collectors.toList());
+                    for (Property p : notOpen) {
+                        if (available >= needed) break;
+                        toOpen.add(p);
+                        available += freeSpaces(p);
+                    }
+                }
+                if (available < needed) {
+                    return "redirect:/edit-property/" + id + "?error=has-accepted-students";
+                }
+                if (!toOpen.isEmpty()) {
+                    return "redirect:/delete-property/" + id + "/choose-rooms";
+                }
+                for (Property p : toOpen) {
+                    p.setIsAvailable(true);
+                    p.setAvailableFrom(today);
+                    openedTitles.add(p.getTitle());
+                    propertyRepository.save(p);
+                }
+                property.setStatus("Closing");
+                property.setIsAvailable(false);
+                propertyRepository.save(property);
+                for (Application a : acceptedHere) {
+                    try { studentNotificationService.relocationRequested(a.getStudentID(), id, property.getTitle()); }
+                    catch (Exception ignored) { }
+                }
+            }
+            String openedParam = openedTitles.isEmpty() ? "" : "&opened=" + java.net.URLEncoder.encode(String.join("|", openedTitles), java.nio.charset.StandardCharsets.UTF_8);
+            return "redirect:/landlord-index?toast=closing" + openedParam;
         }
 
+        purgeProperty(id, property, applications);
+        return "redirect:/landlord-index?toast=deleted";
+    }
+
+    // Step 2 of deleting a property that has accepted students: the landlord picks which
+    // of their other properties to open early. Nothing is opened automatically.
+    @GetMapping("/delete-property/{id}/choose-rooms")
+    public String chooseRoomsPage(@PathVariable Integer id, Principal principal, org.springframework.ui.Model model) {
+        Integer landlordID = getCurrentUser(principal).getUserID();
+        Property property = getOwnedProperty(id, landlordID);
+        List<Application> accepted = applicationRepository.findByPropertyIDIn(List.of(id)).stream()
+                .filter(a -> "Accepted".equalsIgnoreCase(a.getStatus())).collect(Collectors.toList());
+        if (accepted.isEmpty() || "Closing".equalsIgnoreCase(property.getStatus())) {
+            return "redirect:/edit-property/" + id;
+        }
+        List<Property> others = propertyRepository.findByLandlordID(landlordID).stream()
+                .filter(p -> !p.getPropertyID().equals(id) && isLiveProperty(p))
+                .collect(Collectors.toList());
+        int alreadyOpen = others.stream().filter(p -> Boolean.TRUE.equals(p.getIsAvailable()))
+                .mapToInt(this::freeSpaces).sum();
+        List<Property> candidates = others.stream()
+                .filter(p -> !Boolean.TRUE.equals(p.getIsAvailable()))
+                .filter(p -> freeSpaces(p) > 0)
+                .sorted(java.util.Comparator.comparing(Property::getAvailableFrom,
+                        java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder())))
+                .collect(Collectors.toList());
+        List<java.util.Map<String, Object>> rows = new java.util.ArrayList<>();
+        for (Property p : candidates) {
+            java.util.Map<String, Object> r = new java.util.LinkedHashMap<>();
+            r.put("id", p.getPropertyID());
+            r.put("title", p.getTitle());
+            r.put("free", freeSpaces(p));
+            r.put("from", p.getAvailableFrom() != null ? p.getAvailableFrom().toString() : "not set");
+            rows.add(r);
+        }
+        model.addAttribute("property", property);
+        model.addAttribute("needed", accepted.size());
+        model.addAttribute("alreadyOpen", alreadyOpen);
+        model.addAttribute("rows", rows);
+        return "landlord/choose-rooms";
+    }
+
+    @PostMapping("/delete-property/{id}/open-rooms")
+    @org.springframework.transaction.annotation.Transactional
+    public String openChosenRooms(@PathVariable Integer id,
+                                  @RequestParam(required = false) List<Integer> openIds,
+                                  Principal principal) {
+        Integer landlordID = getCurrentUser(principal).getUserID();
+        Property property = getOwnedProperty(id, landlordID);
+        List<Application> acceptedHere = applicationRepository.findByPropertyIDIn(List.of(id)).stream()
+                .filter(a -> "Accepted".equalsIgnoreCase(a.getStatus())).collect(Collectors.toList());
+        if (acceptedHere.isEmpty() || "Closing".equalsIgnoreCase(property.getStatus())) {
+            return "redirect:/edit-property/" + id;
+        }
+        List<Property> others = propertyRepository.findByLandlordID(landlordID).stream()
+                .filter(p -> !p.getPropertyID().equals(id) && isLiveProperty(p))
+                .collect(Collectors.toList());
+        int available = others.stream().filter(p -> Boolean.TRUE.equals(p.getIsAvailable()))
+                .mapToInt(this::freeSpaces).sum();
+        List<Property> chosen = others.stream()
+                .filter(p -> !Boolean.TRUE.equals(p.getIsAvailable()))
+                .filter(p -> freeSpaces(p) > 0)
+                .filter(p -> openIds != null && openIds.contains(p.getPropertyID()))
+                .collect(Collectors.toList());
+        for (Property p : chosen) available += freeSpaces(p);
+        if (available < acceptedHere.size()) {
+            return "redirect:/delete-property/" + id + "/choose-rooms?error=not-enough";
+        }
+        java.time.LocalDate today = java.time.LocalDate.now();
+        List<String> openedTitles = new java.util.ArrayList<>();
+        for (Property p : chosen) {
+            p.setIsAvailable(true);
+            p.setAvailableFrom(today);
+            propertyRepository.save(p);
+            openedTitles.add(p.getTitle());
+        }
+        property.setStatus("Closing");
+        property.setIsAvailable(false);
+        propertyRepository.save(property);
+        for (Application a : acceptedHere) {
+            try { studentNotificationService.relocationRequested(a.getStudentID(), id, property.getTitle()); }
+            catch (Exception ignored) { }
+        }
+        String openedParam = openedTitles.isEmpty() ? "" : "&opened=" + java.net.URLEncoder.encode(String.join("|", openedTitles), java.nio.charset.StandardCharsets.UTF_8);
+        return "redirect:/landlord-index?toast=closing" + openedParam;
+    }
+
+    // Removes the property and everything that points at it (used by delete and by the last student's move).
+    private void purgeProperty(Integer id, Property property, List<Application> applications) {
         // 1. Application documents (rows + files on disk), then the applications
         for (Application app : applications) {
             List<ApplicationDocument> docs = applicationDocumentRepository.findByApplicationID(app.getApplicationID());
@@ -1008,10 +1151,126 @@ public class PropertyController {
 
         // 4. The property itself (its amenity links go with it)
         propertyRepository.delete(property);
-
-        return "redirect:/landlord-index?toast=deleted";
     }
 
+    // ---------- Relocation of accepted students before a property is deleted ----------
+    private boolean isLiveProperty(Property p) {
+        return "Active".equalsIgnoreCase(p.getStatus()) || "Approved".equalsIgnoreCase(p.getStatus());
+    }
+
+    private int freeSpaces(Property p) {
+        int cap = p.getCapacity() == null ? 0 : p.getCapacity();
+        long taken = applicationRepository.findByPropertyIDIn(List.of(p.getPropertyID())).stream()
+                .filter(a -> "Accepted".equalsIgnoreCase(a.getStatus())).count();
+        return Math.max(0, cap - (int) taken);
+    }
+
+    private Application acceptedApplication(Integer studentID, Integer propertyID) {
+        return applicationRepository.findByStudentIDAndPropertyID(studentID, propertyID).stream()
+                .filter(a -> "Accepted".equalsIgnoreCase(a.getStatus())).findFirst().orElse(null);
+    }
+
+    private boolean allowedBy(Property p, String gender, Integer year) {
+        String r = p.getOccupantRestriction() == null ? "" : p.getOccupantRestriction().trim().toLowerCase();
+        String g = gender == null ? "" : gender.trim();
+        if (r.equals("female only") && !g.equalsIgnoreCase("Female")) return false;
+        if (r.equals("male only") && !g.equalsIgnoreCase("Male")) return false;
+        if (r.startsWith("senior") && (year == null || year < 2)) return false;
+        if (r.startsWith("first year") && (year == null || year != 1)) return false;
+        return true;
+    }
+
+    private boolean fundingOk(Property p, String funding) {
+        String req = p.getAcceptedFunding();
+        if (req == null || req.isBlank() || "Any".equalsIgnoreCase(req)) return true;
+        return funding != null && req.equalsIgnoreCase(funding);
+    }
+
+    private List<Property> relocationOptions(User me, Property old, Application mine) {
+        Integer year = studentRepository.findById(me.getUserID()).map(Student::getYearOfStudy).orElse(null);
+        return propertyRepository.findByLandlordID(old.getLandlordID()).stream()
+                .filter(p -> !p.getPropertyID().equals(old.getPropertyID()))
+                .filter(p -> isLiveProperty(p) && Boolean.TRUE.equals(p.getIsAvailable()))
+                .filter(p -> freeSpaces(p) > 0)
+                .filter(p -> !applicationRepository.existsByStudentIDAndPropertyID(me.getUserID(), p.getPropertyID()))
+                .collect(Collectors.toList());
+    }
+
+    @GetMapping("/relocate/{propertyId}/options")
+    @org.springframework.web.bind.annotation.ResponseBody
+    public java.util.Map<String, Object> relocateOptions(@PathVariable Integer propertyId, Principal principal) {
+        java.util.Map<String, Object> result = new java.util.LinkedHashMap<>();
+        User me = getCurrentUser(principal);
+        Application mine = acceptedApplication(me.getUserID(), propertyId);
+        Property old = propertyRepository.findById(propertyId).orElse(null);
+        if (mine == null || old == null) {
+            result.put("moved", true);
+            result.put("options", new java.util.ArrayList<>());
+            return result;
+        }
+        java.util.List<java.util.Map<String, Object>> opts = new java.util.ArrayList<>();
+        for (Property p : relocationOptions(me, old, mine)) {
+            java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("id", p.getPropertyID());
+            m.put("title", p.getTitle());
+            m.put("suburb", p.getSuburb());
+            m.put("rent", p.getRent());
+            m.put("type", p.getType());
+            opts.add(m);
+        }
+        result.put("moved", false);
+        result.put("options", opts);
+        return result;
+    }
+    @GetMapping("/relocate/{propertyId}")
+    public String relocatePage(@PathVariable Integer propertyId, Principal principal, org.springframework.ui.Model model) {
+        User me = getCurrentUser(principal);
+        Application mine = acceptedApplication(me.getUserID(), propertyId);
+        Property old = propertyRepository.findById(propertyId).orElse(null);
+        if (mine == null || old == null) return "redirect:/my-applications";
+        model.addAttribute("oldProperty", old);
+        model.addAttribute("options", relocationOptions(me, old, mine));
+        return "student/relocate";
+    }
+
+    @PostMapping("/relocate/{oldId}/to/{newId}")
+    @org.springframework.transaction.annotation.Transactional
+    public String relocate(@PathVariable Integer oldId, @PathVariable Integer newId, Principal principal) {
+        User me = getCurrentUser(principal);
+        Application mine = acceptedApplication(me.getUserID(), oldId);
+        Property old = propertyRepository.findById(oldId).orElse(null);
+        if (mine == null || old == null) return "redirect:/my-applications";
+        boolean allowed = relocationOptions(me, old, mine).stream().anyMatch(p -> p.getPropertyID().equals(newId));
+        if (!allowed) return "redirect:/relocate/" + oldId;
+        mine.setPropertyID(newId);
+        // Emergency move: the new place counts as a current stay, so reviews open straight away.
+        propertyRepository.findById(newId).ifPresent(np -> {
+            if (np.getAvailableFrom() == null || np.getAvailableFrom().isAfter(java.time.LocalDate.now())) {
+                np.setAvailableFrom(java.time.LocalDate.now());
+                propertyRepository.save(np);
+            }
+        });
+        applicationRepository.save(mine);
+        // She has chosen where she stays, so her other Pending applications are removed.
+        List<Application> otherPending = applicationRepository.findAll().stream()
+                .filter(a -> java.util.Objects.equals(a.getStudentID(), me.getUserID()))
+                .filter(a -> !java.util.Objects.equals(a.getApplicationID(), mine.getApplicationID()))
+                .filter(a -> "Pending".equalsIgnoreCase(a.getStatus()))
+                .collect(Collectors.toList());
+        for (Application a : otherPending) {
+            List<ApplicationDocument> docs = applicationDocumentRepository.findByApplicationID(a.getApplicationID());
+            for (ApplicationDocument d : docs) { deleteFileQuietly(d.getFilePath()); }
+            applicationDocumentRepository.deleteAll(docs);
+        }
+        applicationRepository.deleteAll(otherPending);
+
+        List<Application> left = applicationRepository.findByPropertyIDIn(List.of(oldId));
+        boolean anyAccepted = left.stream().anyMatch(a -> "Accepted".equalsIgnoreCase(a.getStatus()));
+        if (!anyAccepted && "Closing".equalsIgnoreCase(old.getStatus())) {
+            purgeProperty(oldId, old, left);
+        }
+        return "redirect:/my-applications";
+    }
     // Best-effort file cleanup: a missing file must never block the delete.
     private void deleteFileQuietly(String path) {
         if (path == null || path.isBlank()) return;
@@ -1108,6 +1367,7 @@ public class PropertyController {
         model.addAttribute("canWriteReview", canWriteReview);
         model.addAttribute("currentUser", currentUser);
         model.addAttribute("studentProfile", studentProfile);
+        model.addAttribute("freeRooms", freeSpaces(property)); // capacity minus accepted students
         return "student/property-detail";
     }
 

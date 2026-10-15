@@ -32,7 +32,7 @@
     .bell-btn .material-symbols-outlined { font-size: 21px; }
     .notif-dot { position: absolute; top: 8px; right: 9px; width: 9px; height: 9px; border-radius: 50%; background: var(--alert, #ba1a1a); border: 2px solid #fff; }
     .notif-dropdown {
-      position: absolute; top: calc(100% + 10px); right: 0; width: 360px; max-height: 420px; overflow-y: auto; z-index: 60;
+      position: absolute; top: calc(100% + 10px); right: 0; width: min(520px, calc(100vw - 24px)); max-height: 75vh; overflow-y: auto; z-index: 60;
       background: #fff; border: 1px solid var(--outline-variant, #E6E8E4); border-radius: 16px; box-shadow: 0 12px 32px rgba(7,28,45,.16);
     }
     .notif-head { position: sticky; top: 0; z-index: 1; background: #fff; display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--outline-variant, #E6E8E4); font-size: 14px; }
@@ -54,6 +54,14 @@
     .notif-toggle .material-symbols-outlined { font-size: 20px; transition: transform .15s ease; }
     .notif-row:not(.collapsed) .notif-toggle .material-symbols-outlined { transform: rotate(180deg); }
     .notif-empty { padding: 28px 16px; text-align: center; color: var(--outline, #6f787d); font-size: 13px; }
+    .notif-options { display: block; margin-top: 8px; }
+    .notif-opt { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; margin-top: 6px; border: 1px solid var(--outline-variant, #E6E8E4); border-radius: 12px; background: #fff; }
+    .notif-opt-info { min-width: 0; }
+    .notif-opt-info strong { display: block; font-size: 13px; color: var(--on-surface, #191c1d); }
+    .notif-opt-info small { display: block; font-size: 12px; color: var(--outline, #6f787d); }
+    .notif-move-btn { flex-shrink: 0; border: 0; border-radius: 999px; padding: 8px 14px; background: var(--primary-dark, #006A6A); color: #fff; font: 700 12.5px var(--font-body, sans-serif); cursor: pointer; }
+    .notif-move-btn:disabled { opacity: .6; cursor: default; }
+    .notif-row[data-type="move"] .notif-toggle { display: none; }
     @media (max-width: 520px) { .notif-dropdown { position: fixed; top: 70px; left: 12px; right: 12px; width: auto; } }
   </style>
 
@@ -98,13 +106,15 @@
         favourite: { icon: 'favorite',      bg: '#FDEAF1', color: '#c2185b', heading: 'Added to favourites' },
         review:    { icon: 'rate_review',   bg: '#FFF6D6', color: '#7A5E00', heading: 'Review submitted' },
         report:    { icon: 'flag',          bg: '#EEF4FF', color: '#3b6fd4', heading: 'Report submitted' },
-        handled:   { icon: 'task_alt',      bg: '#DDF7F3', color: '#006A6A', heading: 'Report handled' }
+        handled:   { icon: 'task_alt',      bg: '#DDF7F3', color: '#006A6A', heading: 'Report handled' },
+        move:      { icon: 'swap_horiz', bg: '#FFF6D6', color: '#7A5E00', heading: 'Please choose a new room' }
       };
 
       function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
       function post(url) { return fetch(url, { method: 'POST' }); }
 
       function isExpanded(n) {
+        if (n.type === 'move') return true;
         if (expandedIds.hasOwnProperty(n.id)) return expandedIds[n.id];
         return items.length <= COLLAPSE_THRESHOLD;
       }
@@ -119,6 +129,43 @@
         return items.filter(function (n) { return !n.isRead; }).length;
       }
 
+      function loadMoveOptions() {
+        Array.prototype.forEach.call(list.querySelectorAll('.notif-options'), function (box) {
+          var oldId = box.getAttribute('data-old');
+          if (!oldId) return;
+          fetch('/relocate/' + oldId + '/options')
+            .then(function (r) { return r.ok ? r.json() : { moved: false, options: [] }; })
+            .then(function (data) {
+              var opts = data.options || [];
+              if (data.moved) {
+                box.innerHTML = '<span class="notif-msg">You have already chosen a new room.</span>';
+                return;
+              }
+              if (!opts.length) {
+                box.innerHTML = '<span class="notif-msg">No other property of this landlord currently matches your details and has a free room. Please contact your landlord.</span>';
+                return;
+              }
+              box.innerHTML = opts.map(function (o) {
+                var info = [o.suburb, o.rent != null ? 'R' + o.rent + ' / month' : '', o.type].filter(Boolean).join(' \u00b7 ');
+                return '<span class="notif-opt"><span class="notif-opt-info"><strong>' + esc(o.title) + '</strong><small>' + esc(info) + '</small></span>' +
+                       '<button type="button" class="notif-move-btn" data-new="' + esc(o.id) + '">Move here</button></span>';
+              }).join('');
+              Array.prototype.forEach.call(box.querySelectorAll('.notif-move-btn'), function (b) {
+                b.addEventListener('click', function (e) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  b.disabled = true;
+                  b.textContent = 'Moving...';
+                  fetch('/relocate/' + oldId + '/to/' + b.getAttribute('data-new'), { method: 'POST' })
+                    .then(function () { window.location.reload(); })
+                    .catch(function () { b.disabled = false; b.textContent = 'Move here'; });
+                });
+              });
+            })
+            .catch(function () {});
+        });
+      }
+
       function render(data) {
         items = data.notifications || [];
         dot.style.display = data.unreadCount > 0 ? 'block' : 'none';
@@ -127,12 +174,13 @@
         list.innerHTML = items.map(function (n) {
           var t = TYPES[n.type] || { icon: 'notifications', bg: '#F0F7F6', color: '#006A6A', heading: 'Notification' };
           var expanded = isExpanded(n);
-          return '<a class="notif-row' + (n.isRead ? '' : ' unread') + (expanded ? '' : ' collapsed') + '" data-id="' + esc(n.id) + '" href="' + esc(n.link || '#') + '">' +
+          return '<a class="notif-row' + (n.isRead ? '' : ' unread') + (expanded ? '' : ' collapsed') + '" data-id="' + esc(n.id) + '" data-type="' + esc(n.type) + '" href="' + esc(n.type === 'move' ? '#' : (n.link || '#')) + '">' +
                   '<span class="notif-ico" style="background:' + t.bg + ';color:' + t.color + '"><span class="material-symbols-outlined" aria-hidden="true">' + t.icon + '</span></span>' +
                   '<span class="notif-body">' +
                   '<span class="notif-heading">' + esc(t.heading) + '</span>' +
                   '<span class="notif-msg">' + esc(n.message) + '</span>' +
                   '<span class="notif-time">' + esc(n.timeDisplay) + '</span>' +
+                  (n.type === 'move' ? '<span class="notif-options" data-old="' + esc(String(n.link || '').replace(/\D/g, '')) + '"></span>' : '') +
                   '</span>' +
                   (n.isRead ? '' : '<span class="notif-unread-dot"></span>') +
                   '<button type="button" class="notif-toggle" data-toggle="' + esc(n.id) + '" aria-label="' + (expanded ? 'Minimize' : 'Maximize') + ' message">' +
@@ -141,9 +189,12 @@
                   '</a>';
         }).join('');
 
+        loadMoveOptions();
+
         Array.prototype.forEach.call(list.querySelectorAll('.notif-row'), function (row) {
           // Clicking the message itself opens its link and marks it read (as before).
-          row.addEventListener('click', function () {
+          row.addEventListener('click', function (e) {
+            if (row.getAttribute('data-type') === 'move') e.preventDefault();
             post('/student/notifications/' + row.getAttribute('data-id') + '/read').then(load);
           });
         });

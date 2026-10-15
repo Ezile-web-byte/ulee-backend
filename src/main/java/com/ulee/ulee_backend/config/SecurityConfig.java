@@ -74,7 +74,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/landlord-index",
                                 "/listProperty",  // <-- BOTH MATCHED NOW
-                                "/edit-property/**", "/update-property/**", "/delete-property-image/**",
+                                "/edit-property/**", "/update-property/**", "/delete-property-image/**", "/delete-property/**",
                                 "/add-property-feature/**", "/delete-property-feature/**", "/submit-property/**",
                                 "/toggle-property-status/**", "/manage-applications", "/applications-overview", "/my-property-reviews"
                         ).hasRole("LANDLORD")
