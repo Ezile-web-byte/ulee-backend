@@ -395,15 +395,6 @@
                 <a class="btn-manage" th:href="@{/edit-property/{id}(id=${property.propertyID})}"
                    th:text="${property.status == 'Rejected'} ? 'Fix & resubmit' : 'Manage'">Manage</a>
 
-                <form th:action="@{/delete-property/{id}(id=${property.propertyID})}" method="post">
-                  <button type="submit"
-                          class="btn-delete"
-                          data-confirm
-                          data-confirm-title="Delete this property?"
-                          data-confirm-ok="Delete"
-                          data-confirm-tone="danger"
-                          th:attr="data-confirm-message=${'“' + property.title + '” and its photos will be permanently deleted. This cannot be undone.'}">Delete</button>
-                </form>
               </div>
             </div>
           </div>
