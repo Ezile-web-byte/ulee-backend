@@ -1,174 +1,292 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Stay – ULEE</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" th:href="@{/student-portal.css}">
-  <script th:src="@{/student-portal.js}" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Stay – ULEE</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" th:href="@{/student-portal.css}">
+    <script th:src="@{/student-portal.js}" defer></script>
+    <style>
+        /* Locked stay: the student has already reviewed/reported another property */
+        .stay-card.is-locked .stay-img { filter: grayscale(.85); opacity: .6; }
+        .stay-card.is-locked h3 { color: #6f787d; }
+        .stay-locked-note {
+            display: flex; align-items: flex-start; gap: 8px;
+        }
+        .stay-locked-note .material-symbols-outlined { font-size: 18px; color: #6f787d; flex-shrink: 0; }
+        .btn-disabled,
+        .btn-disabled:hover {
+            background: #eceeed !important;
+            color: #8a9296 !important;
+            border: 1px solid #dfe3e1 !important;
+            box-shadow: none !important;
+            cursor: not-allowed;
+            opacity: .85;
+            transform: none;
+        }
+
+        /* "Submitted successfully" popup (same look as the Log out popup) */
+        .done-backdrop {
+            position: fixed; inset: 0; z-index: 1000;
+            display: flex; align-items: center; justify-content: center;
+            padding: 20px;
+            background: rgba(7, 28, 45, .35);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            opacity: 0; pointer-events: none;
+            transition: opacity .18s ease;
+        }
+        .done-backdrop.open { opacity: 1; pointer-events: auto; }
+        .done-card {
+            width: 100%; max-width: 440px;
+            padding: 34px 32px 28px;
+            background: #fff;
+            border-radius: 24px;
+            text-align: center;
+            box-shadow: 0 24px 60px rgba(7, 28, 45, .25);
+            transform: scale(.95) translateY(8px);
+            transition: transform .18s ease;
+        }
+        .done-backdrop.open .done-card { transform: none; }
+        .done-icon {
+            width: 76px; height: 76px; margin: 0 auto 18px;
+            border-radius: 50%;
+            background: #E3F5F3; color: #006A6A;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .done-icon .material-symbols-outlined { font-size: 36px; }
+        .done-title {
+            margin: 0 0 8px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 22px; font-weight: 800; color: #0f1f2b;
+        }
+        .done-text {
+            margin: 0 0 26px;
+            font-size: 15px; line-height: 1.55; color: #5b6670;
+        }
+        .done-btn {
+            width: 100%; padding: 14px;
+            border: 0; border-radius: 14px; cursor: pointer;
+            background: #006A6A; color: #fff;
+            font: 700 15px 'Hanken Grotesk', sans-serif;
+            transition: background .2s ease, box-shadow .2s ease;
+        }
+        .done-btn:hover { background: #005454; }
+        /* No outline / ring around the button, even when it is focused or clicked */
+        .done-btn,
+        .done-btn:focus,
+        .done-btn:focus-visible,
+        .done-btn:active {
+            outline: none;
+            box-shadow: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+    </style>
 </head>
 <body>
 <div class="app-shell">
 
-  <div th:replace="~{fragments/student-sidebar :: sidebar('my-stay')}"></div>
+    <div th:replace="~{fragments/student-sidebar :: sidebar('my-stay')}"></div>
 
-  <main class="main">
-    <div class="topbar">
-      <div class="crumbs"><a th:href="@{/my-dashboard}">Student portal</a> / <strong>My Stay</strong></div>
-      <div class="topbar-right">
-        <a class="chip-btn" th:href="@{/student-dashboard}">
-          <span class="material-symbols-outlined" aria-hidden="true">search</span>Find a room
-        </a>
-        <!-- Notification bell (fragments/student-notifications.html) -->
-        <div th:replace="~{fragments/student-notifications :: bell}"></div>
-        <span class="avatar" th:text="${userInitials != null ? userInitials : 'ST'}" aria-hidden="true">ST</span>
-      </div>
-    </div>
-
-    <header class="page-head">
-      <p class="eyebrow"><span class="live-dot" aria-hidden="true"></span>My stay</p>
-      <h1>Reviews &amp; issues</h1>
-      <p class="lead">Review the places that accepted you and report problems to the landlord. Only accommodation where your application was accepted shows up here.</p>
-    </header>
-
-    <div class="notice" th:if="${actionMessage != null}" role="status">
-      <span class="material-symbols-outlined" aria-hidden="true">check_circle</span><span th:text="${actionMessage}">Saved.</span>
-    </div>
-    <div class="notice error" th:if="${actionError != null}" role="alert">
-      <span class="material-symbols-outlined" aria-hidden="true">error</span><span th:text="${actionError}">Something went wrong.</span>
-    </div>
-
-    <!-- Metrics -->
-    <section class="metrics" aria-label="My stay summary">
-      <div class="ulee-metric-card">
-        <div class="ulee-metric-label"><span class="material-symbols-outlined" aria-hidden="true">home_work</span>Accepted places</div>
-        <div class="ulee-metric-value" th:text="${#lists.size(stays)}">0</div>
-        <div class="ulee-metric-sub">Places you can review</div>
-        <svg class="ulee-metric-wave" viewBox="0 0 400 22" preserveAspectRatio="none" aria-hidden="true"><path class="w-back" d="M0 10 Q50 0 100 10 T200 10 T300 10 T400 10 V22 H0Z"/><path class="w-front" d="M0 14 Q50 6 100 14 T200 14 T300 14 T400 14 V22 H0Z"/></svg>
-      </div>
-      <div class="ulee-metric-card">
-        <div class="ulee-metric-label"><span class="material-symbols-outlined" aria-hidden="true">rate_review</span>My reviews</div>
-        <div class="ulee-metric-value" th:text="${#lists.size(myReviews)}">0</div>
-        <div class="ulee-metric-sub">Reviews you have written</div>
-        <svg class="ulee-metric-wave" viewBox="0 0 400 22" preserveAspectRatio="none" aria-hidden="true"><path class="w-back" d="M0 10 Q50 0 100 10 T200 10 T300 10 T400 10 V22 H0Z"/><path class="w-front" d="M0 14 Q50 6 100 14 T200 14 T300 14 T400 14 V22 H0Z"/></svg>
-      </div>
-      <div class="ulee-metric-card">
-        <div class="ulee-metric-label"><span class="material-symbols-outlined" aria-hidden="true">flag</span>My reports</div>
-        <div class="ulee-metric-value" th:text="${#lists.size(myReports)}">0</div>
-        <div class="ulee-metric-sub">Issues you have reported</div>
-        <svg class="ulee-metric-wave" viewBox="0 0 400 22" preserveAspectRatio="none" aria-hidden="true"><path class="w-back" d="M0 10 Q50 0 100 10 T200 10 T300 10 T400 10 V22 H0Z"/><path class="w-front" d="M0 14 Q50 6 100 14 T200 14 T300 14 T400 14 V22 H0Z"/></svg>
-      </div>
-    </section>
-
-    <!-- Accepted stays -->
-    <div class="section-head">
-      <h2>Where you were accepted</h2>
-      <span class="count-pill" th:text="${#lists.size(stays)}">0</span>
-    </div>
-
-    <div class="empty" th:if="${#lists.isEmpty(stays)}">
-      <span class="material-symbols-outlined" aria-hidden="true">home_work</span>
-      <p>You have no accepted applications yet. Once a landlord accepts you, the place appears here.</p>
-      <a th:href="@{/my-applications}">View my applications</a>
-    </div>
-
-    <div class="stay-list" th:unless="${#lists.isEmpty(stays)}">
-      <article class="stay-card" th:each="p : ${stays}">
-        <img class="stay-img" th:if="${imageLookup[p.propertyID] != null}" th:src="${imageLookup[p.propertyID]}" alt="">
-        <div class="stay-img" th:unless="${imageLookup[p.propertyID] != null}" aria-hidden="true"></div>
-        <div class="stay-body">
-          <div class="stay-title-row">
-            <h3 th:text="${p.title}">Property name</h3>
-            <span class="status accepted">Accepted</span>
-          </div>
-          <p class="stay-hint"
-             th:text="${reviewedIds.contains(p.propertyID)} ? 'You have reviewed this place. Thank you!' : (${reviewableIds.contains(p.propertyID)} ? 'You have not reviewed this place yet.' : 'Reviews open once your stay starts' + (${p.availableFrom != null} ? ' on ' + ${#temporals.format(p.availableFrom, 'd MMMM yyyy')} : '') + '.')">
-            You have not reviewed this place yet.
-          </p>
-          <div class="stay-actions">
-            <a class="btn btn-primary" th:if="${reviewableIds.contains(p.propertyID) and !reviewedIds.contains(p.propertyID)}" th:href="@{/write-review/{id}(id=${p.propertyID})}">
-              <span class="material-symbols-outlined" aria-hidden="true">rate_review</span>Write a review
-            </a>
-            <a class="btn btn-outline" th:if="${reviewedIds.contains(p.propertyID)}" th:href="@{/property/{id}(id=${p.propertyID})}">
-              <span class="material-symbols-outlined" aria-hidden="true">visibility</span>View listing
-            </a>
-            <a class="btn btn-report" th:href="@{/report-issue/{id}(id=${p.propertyID})}">
-              <span class="material-symbols-outlined" aria-hidden="true">flag</span>Report an issue
-            </a>
-          </div>
+    <main class="main">
+        <div class="topbar">
+            <div class="crumbs"><a th:href="@{/my-dashboard}">Student portal</a> / <strong>My Stay</strong></div>
+            <div class="topbar-right">
+                <a class="chip-btn" th:href="@{/student-dashboard}">
+                    <span class="material-symbols-outlined" aria-hidden="true">search</span>Find a room
+                </a>
+                <!-- Notification bell (fragments/student-notifications.html) -->
+                <div th:replace="~{fragments/student-notifications :: bell}"></div>
+                <span class="avatar" th:text="${userInitials != null ? userInitials : 'ST'}" aria-hidden="true">ST</span>
+            </div>
         </div>
-      </article>
-    </div>
 
-    <!-- My reviews + my reports -->
-    <div class="grid-2">
-      <section class="panel" aria-labelledby="revTitle">
-        <div class="panel-head">
-          <h2 class="panel-title" id="revTitle"><span class="material-symbols-outlined" aria-hidden="true">rate_review</span>My reviews</h2>
-          <span class="panel-count" th:text="${#lists.size(myReviews)} + ' total'">0 total</span>
+        <header class="page-head">
+            <p class="eyebrow"><span class="live-dot" aria-hidden="true"></span>My stay</p>
+            <h1>Reviews &amp; issues</h1>
+            <p class="lead">Report problems to the landlord for the places that accepted you. Only accommodation where your application was accepted shows up here.</p>
+        </header>
+
+        <!-- (The green success banner that used to be here was replaced by the
+             "Submitted successfully" popup at the bottom of this page.) -->
+        <div class="notice error" th:if="${actionError != null}" role="alert">
+            <span class="material-symbols-outlined" aria-hidden="true">error</span><span th:text="${actionError}">Something went wrong.</span>
         </div>
-        <div class="empty" th:if="${#lists.isEmpty(myReviews)}">
-          <span class="material-symbols-outlined" aria-hidden="true">star</span>
-          <p>No reviews yet. Your honest review helps other students choose.</p>
+
+        <!-- Metrics -->
+        <section class="metrics" aria-label="My stay summary">
+            <div class="ulee-metric-card">
+                <div class="ulee-metric-label"><span class="material-symbols-outlined" aria-hidden="true">home_work</span>Accepted places</div>
+                <div class="ulee-metric-value" th:text="${#lists.size(stays)}">0</div>
+                <div class="ulee-metric-sub">Places you were accepted at</div>
+                <svg class="ulee-metric-wave" viewBox="0 0 400 22" preserveAspectRatio="none" aria-hidden="true"><path class="w-back" d="M0 10 Q50 0 100 10 T200 10 T300 10 T400 10 V22 H0Z"/><path class="w-front" d="M0 14 Q50 6 100 14 T200 14 T300 14 T400 14 V22 H0Z"/></svg>
+            </div>
+            <div class="ulee-metric-card">
+                <div class="ulee-metric-label"><span class="material-symbols-outlined" aria-hidden="true">rate_review</span>My reviews</div>
+                <div class="ulee-metric-value" th:text="${#lists.size(myReviews)}">0</div>
+                <div class="ulee-metric-sub">Reviews you have written</div>
+                <svg class="ulee-metric-wave" viewBox="0 0 400 22" preserveAspectRatio="none" aria-hidden="true"><path class="w-back" d="M0 10 Q50 0 100 10 T200 10 T300 10 T400 10 V22 H0Z"/><path class="w-front" d="M0 14 Q50 6 100 14 T200 14 T300 14 T400 14 V22 H0Z"/></svg>
+            </div>
+            <div class="ulee-metric-card">
+                <div class="ulee-metric-label"><span class="material-symbols-outlined" aria-hidden="true">flag</span>My reports</div>
+                <div class="ulee-metric-value" th:text="${#lists.size(myReports)}">0</div>
+                <div class="ulee-metric-sub">Issues you have reported</div>
+                <svg class="ulee-metric-wave" viewBox="0 0 400 22" preserveAspectRatio="none" aria-hidden="true"><path class="w-back" d="M0 10 Q50 0 100 10 T200 10 T300 10 T400 10 V22 H0Z"/><path class="w-front" d="M0 14 Q50 6 100 14 T200 14 T300 14 T400 14 V22 H0Z"/></svg>
+            </div>
+        </section>
+
+        <!-- Accepted stays -->
+        <div class="section-head">
+            <h2>Where you were accepted</h2>
+            <span class="count-pill" th:text="${#lists.size(stays)}">0</span>
         </div>
-        <ul class="item-list" th:unless="${#lists.isEmpty(myReviews)}">
-          <li class="item" th:each="rv : ${myReviews}">
-            <div class="item-head">
-              <span class="item-title" th:text="${propertyLookup[rv.propertyID] != null ? propertyLookup[rv.propertyID].title : 'Property'}">Property</span>
-              <span class="stars-static" th:attr="aria-label=${rv.rating} + ' out of 5 stars'">
+
+        <div class="empty" th:if="${#lists.isEmpty(stays)}">
+            <span class="material-symbols-outlined" aria-hidden="true">home_work</span>
+            <p>You have no accepted applications yet. Once a landlord accepts you, the place appears here.</p>
+            <a th:href="@{/my-applications}">View my applications</a>
+        </div>
+
+        <div class="stay-list" th:unless="${#lists.isEmpty(stays)}">
+            <!-- isLocked: the student already reviewed/reported ANOTHER property,
+                 so we assume they live there and lock this one. -->
+            <article class="stay-card" th:each="p : ${stays}"
+                     th:with="isLocked=${lockedIds != null and lockedIds.contains(p.propertyID)}"
+                     th:classappend="${isLocked} ? 'is-locked' : ''">
+                <img class="stay-img" th:if="${imageLookup[p.propertyID] != null}" th:src="${imageLookup[p.propertyID]}" alt="">
+                <div class="stay-img" th:unless="${imageLookup[p.propertyID] != null}" aria-hidden="true"></div>
+                <div class="stay-body">
+                    <div class="stay-title-row">
+                        <h3 th:text="${p.title}">Property name</h3>
+                        <span class="status accepted">Accepted</span>
+                        <span class="status accepted" th:if="${stayingIds != null and stayingIds.contains(p.propertyID)}">Your stay</span>
+                    </div>
+                    <div class="stay-meta">
+                        <span><span class="material-symbols-outlined" aria-hidden="true">location_on</span><span th:text="${p.suburb != null ? p.suburb : p.city}">Suburb</span></span>
+                    </div>
+
+                    <!-- Hint (not locked): only shown when the student has already left a review -->
+                    <p class="stay-hint" th:if="${!isLocked and reviewedIds.contains(p.propertyID)}">
+                        You have reviewed this place. Thank you!
+                    </p>
+
+                    <!-- Locked hint -->
+                    <p class="stay-hint stay-locked-note" th:if="${isLocked}">
+                        <span class="material-symbols-outlined" aria-hidden="true">lock</span>
+                        <span>Locked. You have already reviewed or reported another property, so we assume you live there.</span>
+                    </p>
+
+                    <!-- Actions: open ("Write a review" removed) -->
+                    <div class="stay-actions" th:unless="${isLocked}">
+                        <a class="btn btn-outline" th:href="@{/property/{id}(id=${p.propertyID})}">
+                            <span class="material-symbols-outlined" aria-hidden="true">visibility</span>View listing
+                        </a>
+                        <a class="btn btn-report" th:href="@{/report-issue/{id}(id=${p.propertyID})}">
+                            <span class="material-symbols-outlined" aria-hidden="true">flag</span>Report an issue
+                        </a>
+                    </div>
+
+                    <!-- Actions: locked (disabled button, no link) -->
+                    <div class="stay-actions" th:if="${isLocked}">
+                        <button type="button" class="btn btn-disabled" disabled aria-disabled="true">
+                            <span class="material-symbols-outlined" aria-hidden="true">lock</span>Report an issue
+                        </button>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <!-- My reviews + my reports -->
+        <div class="grid-2">
+            <section class="panel" aria-labelledby="revTitle">
+                <div class="panel-head">
+                    <h2 class="panel-title" id="revTitle"><span class="material-symbols-outlined" aria-hidden="true">rate_review</span>My reviews</h2>
+                    <span class="panel-count" th:text="${#lists.size(myReviews)} + ' total'">0 total</span>
+                </div>
+                <div class="empty" th:if="${#lists.isEmpty(myReviews)}">
+                    <span class="material-symbols-outlined" aria-hidden="true">star</span>
+                    <p>No reviews yet.</p>
+                </div>
+                <ul class="item-list" th:unless="${#lists.isEmpty(myReviews)}">
+                    <li class="item" th:each="rv : ${myReviews}">
+                        <div class="item-head">
+                            <span class="item-title" th:text="${propertyLookup[rv.propertyID] != null ? propertyLookup[rv.propertyID].title : 'Property'}">Property</span>
+                            <span class="stars-static" th:attr="aria-label=${rv.rating} + ' out of 5 stars'">
                                 <span class="material-symbols-outlined" th:each="i : ${#numbers.sequence(1,5)}" th:classappend="${i <= rv.rating} ? 'on'" aria-hidden="true">star</span>
                             </span>
-            </div>
-            <div class="item-meta" th:if="${rv.reviewDate != null}">
-              <span th:text="${#temporals.format(rv.reviewDate, 'd MMM yyyy')}">1 Jan 2026</span>
-            </div>
-            <p class="item-text" th:text="${rv.comment}">Review text</p>
-          </li>
-        </ul>
-      </section>
+                        </div>
+                        <div class="item-meta" th:if="${rv.reviewDate != null}">
+                            <span th:text="${#temporals.format(rv.reviewDate, 'd MMM yyyy')}">1 Jan 2026</span>
+                        </div>
+                        <p class="item-text" th:text="${rv.comment}">Review text</p>
+                    </li>
+                </ul>
+            </section>
 
-      <section class="panel" aria-labelledby="repTitle">
-        <div class="panel-head">
-          <h2 class="panel-title" id="repTitle"><span class="material-symbols-outlined warn" aria-hidden="true">flag</span>My reports</h2>
-          <span class="panel-count" th:text="${#lists.size(myReports)} + ' total'">0 total</span>
+            <section class="panel" aria-labelledby="repTitle">
+                <div class="panel-head">
+                    <h2 class="panel-title" id="repTitle"><span class="material-symbols-outlined warn" aria-hidden="true">flag</span>My reports</h2>
+                    <span class="panel-count" th:text="${#lists.size(myReports)} + ' total'">0 total</span>
+                </div>
+                <div class="empty" th:if="${#lists.isEmpty(myReports)}">
+                    <span class="material-symbols-outlined" aria-hidden="true">build</span>
+                    <p>No issues reported. If something is wrong at your accommodation, tell the landlord here.</p>
+                </div>
+                <ul class="item-list" th:unless="${#lists.isEmpty(myReports)}">
+                    <li class="item" th:each="rp : ${myReports}">
+                        <div class="item-head">
+                            <span class="item-title" th:text="${propertyLookup[rp.propertyID] != null ? propertyLookup[rp.propertyID].title : 'Property'}">Property</span>
+                            <span class="tag warn" th:text="${rp.reason}">Category</span>
+                        </div>
+                        <div class="item-meta" th:if="${rp.reportedAt != null}">
+                            <span th:text="${#temporals.format(rp.reportedAt, 'd MMM yyyy')}">1 Jan 2026</span>
+                        </div>
+                        <p class="item-text" th:text="${rp.description}">Issue description</p>
+                    </li>
+                </ul>
+            </section>
         </div>
-        <div class="empty" th:if="${#lists.isEmpty(myReports)}">
-          <span class="material-symbols-outlined" aria-hidden="true">build</span>
-          <p>No issues reported. If something is wrong at your accommodation, tell the landlord here.</p>
-        </div>
-        <ul class="item-list" th:unless="${#lists.isEmpty(myReports)}">
-          <li class="item" th:each="rp : ${myReports}">
-            <div class="item-head">
-              <span class="item-title" th:text="${propertyLookup[rp.propertyID] != null ? propertyLookup[rp.propertyID].title : 'Property'}">Property</span>
-              <span class="tag warn" th:text="${rp.reason}">Category</span>
-            </div>
-            <div class="item-meta" th:if="${rp.reportedAt != null}">
-              <span th:text="${#temporals.format(rp.reportedAt, 'd MMM yyyy')}">1 Jan 2026</span>
-            </div>
-            <p class="item-text" th:text="${rp.description}">Issue description</p>
-          </li>
-        </ul>
-      </section>
-    </div>
 
-    <div class="actions">
-      <div class="action">
-        <span class="action-icon"><span class="material-symbols-outlined" aria-hidden="true">verified</span></span>
-        <div><strong>Be honest and specific</strong><small>Mention what you liked or didn't, so future students know what to expect.</small></div>
-      </div>
-      <div class="action">
-        <span class="action-icon"><span class="material-symbols-outlined" aria-hidden="true">photo_camera</span></span>
-        <div><strong>Describe the problem</strong><small>Say where it is and when it started, so the landlord can act on it.</small></div>
-      </div>
-      <div class="action">
-        <span class="action-icon"><span class="material-symbols-outlined" aria-hidden="true">shield</span></span>
-        <div><strong>Keep it respectful</strong><small>Stick to facts about the accommodation, not personal remarks.</small></div>
-      </div>
-    </div>
-  </main>
+        <div class="actions">
+            <div class="action">
+                <span class="action-icon"><span class="material-symbols-outlined" aria-hidden="true">photo_camera</span></span>
+                <div><strong>Describe the problem</strong><small>Say where it is and when it started, so the landlord can act on it.</small></div>
+            </div>
+            <div class="action">
+                <span class="action-icon"><span class="material-symbols-outlined" aria-hidden="true">shield</span></span>
+                <div><strong>Keep it respectful</strong><small>Stick to facts about the accommodation, not personal remarks.</small></div>
+            </div>
+        </div>
+    </main>
 </div>
+
+<!-- "Submitted successfully" popup. Opens by itself right after a review or a
+     report is submitted (the server sends the message as actionMessage), and
+     closes with "Got it", a click outside the card, or the Escape key. -->
+<div id="doneBackdrop" class="done-backdrop open" th:if="${actionMessage != null}"
+     role="dialog" aria-modal="true" aria-labelledby="doneTitle">
+    <div class="done-card">
+        <div class="done-icon"><span class="material-symbols-outlined" aria-hidden="true">check_circle</span></div>
+        <h2 class="done-title" id="doneTitle">Submitted successfully</h2>
+        <p class="done-text" th:text="${actionMessage}">Your report has been sent. Thank you for letting us know.</p>
+        <button type="button" class="done-btn" id="doneBtn">Got it</button>
+    </div>
+</div>
+
+<script>
+    (function () {
+        var backdrop = document.getElementById('doneBackdrop');
+        if (!backdrop) return;
+        var btn = document.getElementById('doneBtn');
+        function closeDone() { backdrop.classList.remove('open'); }
+        btn.addEventListener('click', closeDone);
+        backdrop.addEventListener('click', function (e) { if (e.target === backdrop) closeDone(); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDone(); });
+        btn.focus();
+    })();
+</script>
 </body>
 </html>

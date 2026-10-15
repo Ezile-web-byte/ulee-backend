@@ -35,7 +35,13 @@ public class SecurityConfig {
     @Autowired
     private AdminLoginActivityRepository adminLoginActivityRepository;
 
+    /**
+     * Plain-text password comparison (course requirement: no hashing).
+     * The password typed at login is compared directly with the value
+     * stored in the users.password column.
+     */
     @Bean
+    @SuppressWarnings("deprecation")
     public PasswordEncoder passwordEncoder() {
         return NoOpPasswordEncoder.getInstance();
     }

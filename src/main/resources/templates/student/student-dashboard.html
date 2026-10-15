@@ -527,7 +527,7 @@
             <a class="nav-link active font-label-bold text-label-bold" href="/student-dashboard">Properties</a>
             <a class="nav-link font-label-bold text-label-bold" href="#life-at-ulee">Life at ULEE</a>
             <a class="nav-link font-label-bold text-label-bold" href="#">About Us</a>
-            <a class="nav-link font-label-bold text-label-bold" href="#">Contact</a>
+
         </div>
         <div class="flex items-center gap-md">
             <button type="button" id="openLoginBtn" th:unless="${isLoggedIn}" class="hidden md:block text-sidebar-text font-label-bold hover:text-white transition-colors">Login</button>
@@ -931,7 +931,7 @@
                 <span class="material-symbols-outlined text-primary text-display-lg opacity-20">format_quote</span>
                 <p class="font-body-lg text-on-surface mb-lg">"Campus Key is a great accommodation—clean, comfortable, and convenient. I really enjoyed my stay and would definitely recommend it!"</p>
                 <div class="flex items-center gap-md border-t border-outline-variant pt-md">
-                    <div class="w-12 h-12 rounded-full bg-surface-variant"></div>
+                    <div class="w-12 h-12 rounded-full bg-teal-deep text-white flex items-center justify-center font-bold text-sm uppercase">LV</div>
                     <div><p class="font-bold text-on-surface">Lou Viljoen</p><p class="text-sm text-on-surface-variant">Student</p></div>
                 </div>
             </div>
@@ -939,7 +939,7 @@
                 <span class="material-symbols-outlined text-teal-deep text-display-lg opacity-20">format_quote</span>
                 <p class="font-body-lg text-on-surface mb-lg">"Living at Campus Key has been a game-changer for my studies. The backup power means I never miss a deadline during load shedding."</p>
                 <div class="flex items-center gap-md border-t border-outline-variant pt-md">
-                    <div class="w-12 h-12 rounded-full bg-surface-variant"></div>
+                    <div class="w-12 h-12 rounded-full bg-teal-deep text-white flex items-center justify-center font-bold text-sm uppercase">SN</div>
                     <div><p class="font-bold text-on-surface">Sipho Nkosi</p><p class="text-sm text-on-surface-variant">Resident, 3rd Year Eng</p></div>
                 </div>
             </div>
@@ -947,7 +947,9 @@
     </div>
 </section>
 
-<!-- Life at ULEE (Photo Stacks) -->
+<!-- Life at ULEE (Photo Stacks)
+     CHANGED: the three photos now come from /images/life-at-ulee/ (weekend-vibes,
+     late-night-study, social-events). Labels, layout and rotation are unchanged. -->
 <section class="py-xl bg-white overflow-hidden" id="life-at-ulee">
     <div class="max-w-7xl mx-auto px-margin-desktop">
         <div class="text-center mb-xl">
@@ -957,15 +959,15 @@
         <div class="relative h-[400px] md:h-[600px] flex items-center justify-center">
             <div class="absolute w-[300px] h-[300px] md:w-[600px] md:h-[600px] bg-teal-bright/15 rounded-full blur-[100px]"></div>
             <div class="absolute transform -rotate-6 translate-x-[-120px] translate-y-[-40px] md:translate-x-[-250px] w-48 md:w-80 h-64 md:h-96 rounded-2xl overflow-hidden shadow-xl border-4 border-white z-10 group hover:z-40 transition-all duration-300">
-                <div class="w-full h-full bg-cover bg-center" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAA2nnRcXYDJ123tgUT2Gd3PDUgeWXZ32brLnI2y6TvnXNGwEuv8FUV4-dk8C_qyoXp_FFPTZVM8ACGmP4h-jYJ07vF28kH6-ffrNoAY04guqPUToqDMOkAaE-crjseZAk6kX8AP-FAV-pp2swh7Z7blVZV4lnlOwVm2p-473suzHmq25_iPIH-2PcRHOJnPMMbMaVkUvUdY6A50Ui0AD8K0FQRMI1xsAN3kXCZezHuO6Bgo8pAj105')"></div>
+                <div class="w-full h-full bg-cover bg-center" style="background-image: url('/images/life-at-ulee/weekend-vibes.png')"></div>
                 <div class="absolute bottom-0 inset-x-0 bg-navy/70 p-sm backdrop-blur-sm"><p class="text-white text-xs font-bold uppercase tracking-widest">Weekend Vibes</p></div>
             </div>
             <div class="absolute transform rotate-3 translate-x-[40px] translate-y-[-80px] md:translate-x-[100px] w-48 md:w-80 h-64 md:h-96 rounded-2xl overflow-hidden shadow-xl border-4 border-white z-20 group hover:z-40 transition-all duration-300">
-                <div class="w-full h-full bg-cover bg-center" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCXaz3uimQmsAMquboMW_37AzJcLgZxdxOmmP28Sp5BgrKL89GLfntGeMnQa_1n2SJFV1SOSOocWVWMmnKNi8wJU5uZadUM_JuFTGB2EQiOM6GL9UVoNADE3dqcYpxqyPlig2HU8s-1Tyg14R66RNyxR-Yv1F8lxTOE8ejtvfomLZmOlCbWphDJeHQdKhAWd6TjfLsZk5okAhKBrF6vglhJNADNIktlbWq7fC_TDtojKA7OjjigM8e6')"></div>
+                <div class="w-full h-full bg-cover bg-center" style="background-image: url('/images/life-at-ulee/late-night-study.png')"></div>
                 <div class="absolute bottom-0 inset-x-0 bg-navy/70 p-sm backdrop-blur-sm"><p class="text-white text-xs font-bold uppercase tracking-widest">Late-night Study</p></div>
             </div>
             <div class="absolute transform -rotate-2 translate-x-[150px] translate-y-[60px] md:translate-x-[350px] w-40 md:w-64 h-56 md:h-80 rounded-2xl overflow-hidden shadow-xl border-4 border-white z-30 group hover:z-40 transition-all duration-300">
-                <div class="w-full h-full bg-cover bg-center" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBHWwXhH-xGuYn_6tDQLSDEM_CNKC2riuNKlSEogLXakaNb9cmghRSbZECIHw32Zke31l9wugtTVy6GALlnUZVBkCSHvoYgg0UeGR7tr4SkWNxv3KDF8GTLe6LnTnJMO5doxwEcsNNPR5UPPiVwQ4MMybKx7oeCbh_b8LWEScmasRshNKHDwa7Th5s0fpmKyisJahmuFyrIQGHCJLuqbwDsDfvvJfXa0JC4w-TtWzWUB9GwXPep_dJH')"></div>
+                <div class="w-full h-full bg-cover bg-center" style="background-image: url('/images/life-at-ulee/social-events.png')"></div>
                 <div class="absolute bottom-0 inset-x-0 bg-navy/70 p-sm backdrop-blur-sm"><p class="text-white text-xs font-bold uppercase tracking-widest">Social Events</p></div>
             </div>
         </div>
@@ -990,46 +992,12 @@
 </section>
 
 <!-- Footer -->
-<footer class="bg-navy footer-top w-full pt-xl pb-lg">
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-gutter px-margin-desktop max-w-7xl mx-auto">
-        <div class="space-y-md">
-            <a href="/student-dashboard" class="logo-link" aria-label="ULEE home">
-                <span class="logo-icon">
-                    <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2L3 7v11h14V7L10 2zm0 2.6 5 3.5V16H5V8.1l5-3.5zM8 10h4v6H8z"/></svg>
-                </span>
-                <span>
-                    <div class="logo-name">ULEE</div>
-                    <div class="logo-tag">Student Living. Simplified.</div>
-                </span>
-            </a>
-            <p class="text-sidebar-text font-body-md">Premium student living solutions in Gqeberha. Safety, community, and academic success.</p>
-        </div>
-        <div class="space-y-sm">
-            <p class="font-label-bold text-white uppercase tracking-widest text-xs">Resources</p>
-            <ul class="space-y-xs">
-                <li><a class="text-sidebar-text hover:text-white u-transition" href="#">Privacy Policy</a></li>
-                <li><a class="text-sidebar-text hover:text-white u-transition" href="#">Terms of Service</a></li>
-                <li><a class="text-sidebar-text hover:text-white u-transition" href="#">FAQs</a></li>
-            </ul>
-        </div>
-        <div class="space-y-sm">
-            <p class="font-label-bold text-white uppercase tracking-widest text-xs">Quick Links</p>
-            <ul class="space-y-xs">
-                <li><a class="text-sidebar-text hover:text-white u-transition" href="/student-dashboard">All Residences</a></li>
-                <li><a class="text-sidebar-text hover:text-white u-transition" href="/my-applications">My Applications</a></li>
-                <li><a class="text-sidebar-text hover:text-white u-transition" href="/saved-properties">Favourite Properties</a></li>
-            </ul>
-        </div>
-        <div class="space-y-md">
-            <p class="font-label-bold text-white uppercase tracking-widest text-xs">Contact Support</p>
-            <a class="text-teal-bright font-bold block hover:underline" href="mailto:hello@ulee.co.za">hello@ulee.co.za</a>
-            <p class="text-sidebar-text text-sm">041 500 1234</p>
-        </div>
-    </div>
-    <div class="mt-xl border-t border-teal-deep/50 pt-lg max-w-7xl mx-auto px-margin-desktop text-center">
+<footer class="bg-navy footer-top w-full pt-lg pb-lg">
+    <div class="max-w-7xl mx-auto px-margin-desktop text-center">
         <p class="text-sidebar-text/70 text-xs">© 2026 ULEE Student Living. Built for the modern Gqeberha student.</p>
     </div>
 </footer>
+
 
 <!-- NEW — "Log in" toast: shown when a visitor who isn't logged in tries to open a
      property, use View all, or save a room. The button opens the login modal. -->
@@ -1716,7 +1684,14 @@
             btn.disabled = false;
         });
     });
-
+    // ── Nav: the teal underline follows the link that was clicked ──
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            navLinks.forEach(l => l.classList.remove('active'));
+            link.classList.add('active');
+        });
+    });
     // Initial render: apply the 3-per-suburb rule, then restore the saved position (if any)
     applyFilters();
     restoreDashboardState();

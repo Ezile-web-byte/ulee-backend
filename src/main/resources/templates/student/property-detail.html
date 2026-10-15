@@ -558,6 +558,7 @@
             margin-bottom: 20px;
         }
 
+
         /* ── RESPONSIVE ── */
         @media (max-width: 800px) {
             .detail-wrap { grid-template-columns: 1fr; padding: 0 1.25rem 3rem; }
@@ -727,6 +728,8 @@
         .form-field input:read-only { background: var(--primary-pale); }
         .apply-status-banner.success { background: #DDF7F3; color: #005454; border: 1px solid rgba(20,200,190,.4); }
         .apply-status-banner.info { background: var(--primary-pale); color: var(--primary); border: 1px solid rgba(147,192,197,.55); }
+
+       
 
         @keyframes ulee-pulse { 0%,100% { opacity: .6; transform: scale(1); } 50% { opacity: 1; transform: scale(1.12); } }
         @media (prefers-reduced-motion: reduce) { .detail-info-card::after { animation: none; } }
@@ -918,7 +921,7 @@
     <!-- VR / 360° virtual tour removed -->
 
 
-    <!-- 4. REVIEWS - quote-card style, matches what the landlord sees. Students who qualify can write a review from here. -->
+
     <div class="detail-reviews">
         <h2>Reviews &amp; Ratings</h2>
 
@@ -931,6 +934,9 @@
                  th:classappend="${iter.index % 2 == 1} ? ' alt' : ''">
                 <div class="review-quote-mark">&#8220;</div>
                 <p class="review-quote-text" th:text="${review.comment}">Comment</p>
+
+               
+
                 <div class="review-quote-footer">
                     <div class="review-avatar" th:text="${review.initials}">??</div>
                     <div>
@@ -942,16 +948,10 @@
             </div>
         </div>
 
-        <a th:if="${canWriteReview}" th:href="@{/property/{id}/write-review(id=${property.propertyID})}" class="apply-btn" style="display:block; text-decoration:none; margin-top: 20px;">
-            Write a Review
-        </a>
+       
 
-        <p th:if="${not canWriteReview and isLoggedIn and isStudent and alreadyReviewed}" class="no-reviews" style="margin-top:16px;">
-            You've already reviewed this property.
-        </p>
-        <p th:if="${not canWriteReview and isLoggedIn and isStudent and not alreadyReviewed}" class="no-reviews" style="margin-top:16px;">
-            You can only review the place you're currently staying at, once your stay has started.
-        </p>
+        
+       
     </div>
 
     <!-- 5. APPLY CARD -->

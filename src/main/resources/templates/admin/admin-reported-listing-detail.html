@@ -1,539 +1,577 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title th:text="'ULEE — ' + ${property.title}">ULEE — Property Report</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/admin-style.css">
-  <script src="/admin-script.js" defer></script>
-  <script src="/landlord-sidebar-toggle.js" defer></script>
-  <style>
-    :root {
-      --primary-dark: #006A6A; --primary: #096C6C; --primary-tint: #F4FBFA; --surface-tint: #F0F7F6;
-      --outline-variant: #E6E8E4; --accent-border: #93C0C5;
-      --on-surface: #191c1d; --on-surface-variant: #3f484d; --outline: #6f787d; --alert: #ba1a1a;
-      --font-display: 'Plus Jakarta Sans', sans-serif; --font-body: 'Hanken Grotesk', sans-serif;
-      --radius-sm: 10px; --radius-md: 14px; --radius-lg: 20px;
-      --sidebar-bg: #071C2D; --sidebar-logo-teal: #14C8BE; --sidebar-active-bg: #007178;
-    }
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title th:text="'ULEE — ' + ${property.title}">ULEE — Property Report</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/admin-style.css">
+    <script src="/admin-script.js" defer></script>
+    <script src="/landlord-sidebar-toggle.js" defer></script>
+    <style>
+        :root {
+            --primary-dark: #006A6A; --primary: #096C6C; --primary-tint: #F4FBFA; --surface-tint: #F0F7F6;
+            --outline-variant: #E6E8E4; --accent-border: #93C0C5;
+            --on-surface: #191c1d; --on-surface-variant: #3f484d; --outline: #6f787d; --alert: #ba1a1a;
+            --font-display: 'Plus Jakarta Sans', sans-serif; --font-body: 'Hanken Grotesk', sans-serif;
+            --radius-sm: 10px; --radius-md: 14px; --radius-lg: 20px;
+            --sidebar-bg: #071C2D; --sidebar-logo-teal: #14C8BE; --sidebar-active-bg: #007178;
+        }
 
-    /* Top bar: initials circle is display-only (same as admin-index) */
-    .topbar-right { display: flex; align-items: center; gap: 14px; margin-left: auto; }
-    .avatar { cursor: default; pointer-events: none; user-select: none; }
-    header.topbar .topbar-title { font-family: var(--font-display); font-weight: 800; letter-spacing: -0.01em; color: var(--on-surface); }
+        /* Top bar: initials circle is display-only (same as admin-index) */
+        .topbar-right { display: flex; align-items: center; gap: 14px; margin-left: auto; }
+        .avatar { cursor: default; pointer-events: none; user-select: none; }
+        header.topbar .topbar-title { font-family: var(--font-display); font-weight: 800; letter-spacing: -0.01em; color: var(--on-surface); }
 
-    .rp { font-family: var(--font-body); color: var(--on-surface); }
-    .rp h1, .rp h2, .rp h3, .rp .rp-title, .rp .rp-card-title { font-family: var(--font-display); }
+        .rp { font-family: var(--font-body); color: var(--on-surface); }
+        .rp h1, .rp h2, .rp h3, .rp .rp-title, .rp .rp-card-title { font-family: var(--font-display); }
 
-    .rp-back { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 14px; font-size: 13.5px; font-weight: 600; color: var(--primary-dark); text-decoration: none; }
-    .rp-back:hover { text-decoration: underline; }
-    .rp-back svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
-    .rp-tagline { font-size: 14px; color: var(--on-surface-variant); margin: 0 0 20px; }
+        .rp-back { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 14px; font-size: 13.5px; font-weight: 600; color: var(--primary-dark); text-decoration: none; }
+        .rp-back:hover { text-decoration: underline; }
+        .rp-back svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
+        .rp-tagline { font-size: 14px; color: var(--on-surface-variant); margin: 0 0 20px; }
 
-    .rp-flash { border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 16px; font-size: 13.5px; font-weight: 600; }
-    .rp-flash.ok  { background: var(--primary-tint); border: 1px solid var(--accent-border); color: var(--primary-dark); }
-    .rp-flash.err { background: #fdecec; border: 1px solid #f1b3b3; color: var(--alert); }
+        .rp-flash { border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 16px; font-size: 13.5px; font-weight: 600; }
+        .rp-flash.ok  { background: var(--primary-tint); border: 1px solid var(--accent-border); color: var(--primary-dark); }
+        .rp-flash.err { background: #fdecec; border: 1px solid #f1b3b3; color: var(--alert); }
 
-    .rp-hero { display: flex; background: #fff; border: 1px solid var(--outline-variant); border-radius: var(--radius-md); overflow: hidden; margin-bottom: 22px; flex-wrap: wrap; }
-    .rp-hero-img { width: 250px; min-height: 220px; object-fit: cover; flex-shrink: 0; display: block; }
-    .rp-hero-noimg { width: 250px; min-height: 220px; background: var(--surface-tint); flex-shrink: 0; }
-    .rp-hero-body { flex: 1; min-width: 260px; padding: 20px 24px; display: flex; flex-direction: column; }
-    .rp-hero-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-    .rp-eyebrow { font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--outline); }
-    .rp-title { font-size: 28px; font-weight: 800; margin: 8px 0 8px; color: var(--sidebar-bg); }
-    .rp-address { display: flex; align-items: center; gap: 6px; font-size: 13.5px; color: var(--on-surface-variant); margin: 0 0 10px; }
-    .rp-address svg { width: 15px; height: 15px; stroke: var(--primary-dark); fill: none; stroke-width: 2; flex-shrink: 0; }
-    .rp-meta { display: flex; align-items: center; gap: 14px; font-size: 12.5px; color: var(--outline); margin-bottom: 14px; flex-wrap: wrap; }
-    .rp-meta span { display: inline-flex; align-items: center; gap: 6px; }
-    .rp-meta svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+        .rp-hero { display: flex; background: #fff; border: 1px solid var(--outline-variant); border-radius: var(--radius-md); overflow: hidden; margin-bottom: 22px; flex-wrap: wrap; }
+        .rp-hero-img { width: 250px; min-height: 220px; object-fit: cover; flex-shrink: 0; display: block; }
+        .rp-hero-noimg { width: 250px; min-height: 220px; background: var(--surface-tint); flex-shrink: 0; }
+        .rp-hero-body { flex: 1; min-width: 260px; padding: 20px 24px; display: flex; flex-direction: column; }
+        .rp-hero-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+        .rp-eyebrow { font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--outline); }
+        .rp-title { font-size: 28px; font-weight: 800; margin: 8px 0 8px; color: var(--sidebar-bg); }
+        .rp-address { display: flex; align-items: center; gap: 6px; font-size: 13.5px; color: var(--on-surface-variant); margin: 0 0 10px; }
+        .rp-address svg { width: 15px; height: 15px; stroke: var(--primary-dark); fill: none; stroke-width: 2; flex-shrink: 0; }
+        .rp-meta { display: flex; align-items: center; gap: 14px; font-size: 12.5px; color: var(--outline); margin-bottom: 14px; flex-wrap: wrap; }
+        .rp-meta span { display: inline-flex; align-items: center; gap: 6px; }
+        .rp-meta svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.8; }
 
-    .rp-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 9999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
-    .rp-pill i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; display: inline-block; }
-    .rp-pill.live      { background: var(--primary-tint); color: var(--primary-dark); border: 1px solid var(--accent-border); }
-    .rp-pill.pending   { background: #fff8e1; color: #8a5a00; border: 1px solid #e5a300; }
-    .rp-pill.rejected  { background: #fdecec; color: var(--alert); border: 1px solid #f1b3b3; }
-    .rp-pill.suspended { background: #eef1f3; color: #3f484d; border: 1px solid #c4cbd0; }
-    .rp-accredited { display: inline-flex; align-items: center; gap: 6px; background: var(--primary-tint); color: var(--primary-dark);
-      border: 1px solid var(--accent-border); border-radius: 9999px; padding: 4px 10px; font-size: 11px; font-weight: 700; margin-left: 8px; }
-    .rp-accredited i { width: 6px; height: 6px; border-radius: 50%; background: var(--primary-dark); display: inline-block; }
+        .rp-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 9999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+        .rp-pill i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; display: inline-block; }
+        .rp-pill.live      { background: var(--primary-tint); color: var(--primary-dark); border: 1px solid var(--accent-border); }
+        .rp-pill.pending   { background: #fff8e1; color: #8a5a00; border: 1px solid #e5a300; }
+        .rp-pill.rejected  { background: #fdecec; color: var(--alert); border: 1px solid #f1b3b3; }
+        .rp-pill.suspended { background: #eef1f3; color: #3f484d; border: 1px solid #c4cbd0; }
+        .rp-accredited { display: inline-flex; align-items: center; gap: 6px; background: var(--primary-tint); color: var(--primary-dark);
+            border: 1px solid var(--accent-border); border-radius: 9999px; padding: 4px 10px; font-size: 11px; font-weight: 700; margin-left: 8px; }
+        .rp-accredited i { width: 6px; height: 6px; border-radius: 50%; background: var(--primary-dark); display: inline-block; }
 
-    .rp-landlord { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--outline-variant); display: flex; align-items: center; gap: 12px; }
-    .rp-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--primary-tint); color: var(--primary-dark);
-      border: 1px solid var(--accent-border); display: flex; align-items: center; justify-content: center;
-      font-family: var(--font-display); font-weight: 800; font-size: 13px; flex-shrink: 0; }
-    .rp-landlord-label { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--outline); }
-    .rp-landlord-name { font-family: var(--font-display); font-weight: 700; font-size: 14.5px; }
-    .rp-contacts { margin-left: auto; display: flex; gap: 8px; }
-    .rp-contact-wrap { position: relative; }
-    .contact-icon-btn { width: 36px; height: 36px; border: 1px solid var(--outline-variant); border-radius: var(--radius-sm); background: #fff;
-      display: flex; align-items: center; justify-content: center; color: var(--on-surface); text-decoration: none; transition: background .15s, border-color .15s; }
-    .contact-icon-btn:hover { background: var(--primary-tint); border-color: var(--accent-border); }
-    .contact-icon-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; }
-    .ulee-contact-tip { display: none; position: absolute; bottom: calc(100% + 8px); right: 0; background: var(--sidebar-bg); color: #fff;
-      font-size: 12.5px; font-weight: 600; padding: 8px 12px; border-radius: 8px; white-space: nowrap; z-index: 50; box-shadow: 0 8px 24px rgba(7, 28, 45, .3); }
-    .ulee-contact-tip a { color: var(--sidebar-logo-teal); text-decoration: none; }
+        .rp-landlord { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--outline-variant); display: flex; align-items: center; gap: 12px; }
+        .rp-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--primary-tint); color: var(--primary-dark);
+            border: 1px solid var(--accent-border); display: flex; align-items: center; justify-content: center;
+            font-family: var(--font-display); font-weight: 800; font-size: 13px; flex-shrink: 0; }
+        .rp-landlord-label { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--outline); }
+        .rp-landlord-name { font-family: var(--font-display); font-weight: 700; font-size: 14.5px; }
+        .rp-contacts { margin-left: auto; display: flex; gap: 8px; }
+        .rp-contact-wrap { position: relative; }
+        .contact-icon-btn { width: 36px; height: 36px; border: 1px solid var(--outline-variant); border-radius: var(--radius-sm); background: #fff;
+            display: flex; align-items: center; justify-content: center; color: var(--on-surface); text-decoration: none; transition: background .15s, border-color .15s; }
+        .contact-icon-btn:hover { background: var(--primary-tint); border-color: var(--accent-border); }
+        .contact-icon-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; }
+        .ulee-contact-tip { display: none; position: absolute; bottom: calc(100% + 8px); right: 0; background: var(--sidebar-bg); color: #fff;
+            font-size: 12.5px; font-weight: 600; padding: 8px 12px; border-radius: 8px; white-space: nowrap; z-index: 50; box-shadow: 0 8px 24px rgba(7, 28, 45, .3); }
+        .ulee-contact-tip a { color: var(--sidebar-logo-teal); text-decoration: none; }
 
-    .rp-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 22px; align-items: start; }
-    @media (max-width: 1050px) { .rp-grid { grid-template-columns: 1fr; } }
-    .rp-card { background: #fff; border: 1px solid var(--outline-variant); border-radius: var(--radius-md); overflow: hidden; margin-bottom: 18px; }
-    .rp-card-head { display: flex; justify-content: space-between; align-items: center; padding: 16px 22px; border-bottom: 1px solid var(--outline-variant); }
-    .rp-card-title { font-size: 15px; font-weight: 700; margin: 0; color: var(--sidebar-bg); display: flex; align-items: center; gap: 8px; }
-    .rp-card-sub { font-size: 12px; color: var(--outline); display: inline-flex; align-items: center; gap: 6px; }
-    .rp-card-body { padding: 18px 22px; }
-    .rp-card-foot { padding: 12px 22px; border-top: 1px solid var(--outline-variant); font-size: 12px; color: var(--outline); display: flex; align-items: center; gap: 8px; }
-    .rp-card-foot svg { width: 14px; height: 14px; stroke: var(--primary-dark); fill: none; stroke-width: 2; }
+        .rp-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 22px; align-items: start; }
+        @media (max-width: 1050px) { .rp-grid { grid-template-columns: 1fr; } }
+        .rp-card { background: #fff; border: 1px solid var(--outline-variant); border-radius: var(--radius-md); overflow: hidden; margin-bottom: 18px; }
+        .rp-card-head { display: flex; justify-content: space-between; align-items: center; padding: 16px 22px; border-bottom: 1px solid var(--outline-variant); }
+        .rp-card-title { font-size: 15px; font-weight: 700; margin: 0; color: var(--sidebar-bg); display: flex; align-items: center; gap: 8px; }
+        .rp-card-sub { font-size: 12px; color: var(--outline); display: inline-flex; align-items: center; gap: 6px; }
+        .rp-card-body { padding: 18px 22px; }
+        .rp-card-foot { padding: 12px 22px; border-top: 1px solid var(--outline-variant); font-size: 12px; color: var(--outline); display: flex; align-items: center; gap: 8px; }
+        .rp-card-foot svg { width: 14px; height: 14px; stroke: var(--primary-dark); fill: none; stroke-width: 2; }
 
-    .rp-empty { text-align: center; padding: 40px 20px 32px; }
-    .rp-empty-ring { width: 82px; height: 82px; border-radius: 50%; border: 1px solid var(--outline-variant); margin: 0 auto 18px; display: flex; align-items: center; justify-content: center; }
-    .rp-empty-icon { width: 62px; height: 62px; border-radius: 50%; background: var(--primary-tint); border: 1px solid var(--accent-border); display: flex; align-items: center; justify-content: center; }
-    .rp-empty-icon svg { width: 28px; height: 28px; stroke: var(--primary-dark); fill: none; stroke-width: 1.8; }
-    .rp-empty h3 { font-size: 19px; font-weight: 800; margin: 0 0 8px; color: var(--sidebar-bg); }
-    .rp-empty p { font-size: 13.5px; line-height: 1.6; color: var(--on-surface-variant); margin: 0 0 16px; }
-    .rp-ok-pill { display: inline-flex; align-items: center; gap: 6px; background: var(--primary-tint); color: var(--primary-dark);
-      border: 1px solid var(--accent-border); border-radius: 9999px; padding: 6px 14px; font-size: 12.5px; font-weight: 700; }
-    .rp-ok-pill svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.4; }
+        .rp-empty { text-align: center; padding: 40px 20px 32px; }
+        .rp-empty-ring { width: 82px; height: 82px; border-radius: 50%; border: 1px solid var(--outline-variant); margin: 0 auto 18px; display: flex; align-items: center; justify-content: center; }
+        .rp-empty-icon { width: 62px; height: 62px; border-radius: 50%; background: var(--primary-tint); border: 1px solid var(--accent-border); display: flex; align-items: center; justify-content: center; }
+        .rp-empty-icon svg { width: 28px; height: 28px; stroke: var(--primary-dark); fill: none; stroke-width: 1.8; }
+        .rp-empty h3 { font-size: 19px; font-weight: 800; margin: 0 0 8px; color: var(--sidebar-bg); }
+        .rp-empty p { font-size: 13.5px; line-height: 1.6; color: var(--on-surface-variant); margin: 0 0 16px; }
+        .rp-ok-pill { display: inline-flex; align-items: center; gap: 6px; background: var(--primary-tint); color: var(--primary-dark);
+            border: 1px solid var(--accent-border); border-radius: 9999px; padding: 6px 14px; font-size: 12.5px; font-weight: 700; }
+        .rp-ok-pill svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.4; }
 
-    .rp-handled { display: flex; align-items: flex-start; gap: 12px; background: var(--primary-tint); border: 1px solid var(--accent-border);
-      border-radius: var(--radius-md); padding: 16px 18px; margin-bottom: 18px; }
-    .rp-handled svg { width: 22px; height: 22px; stroke: var(--primary-dark); fill: none; stroke-width: 1.9; flex-shrink: 0; }
-    .rp-handled strong { display: block; font-family: var(--font-display); font-size: 14.5px; color: var(--primary-dark); margin-bottom: 2px; }
-    .rp-handled p { margin: 0; font-size: 13px; line-height: 1.55; color: var(--on-surface-variant); }
+        .rp-handled { display: flex; align-items: flex-start; gap: 12px; background: var(--primary-tint); border: 1px solid var(--accent-border);
+            border-radius: var(--radius-md); padding: 16px 18px; margin-bottom: 18px; }
+        .rp-handled svg { width: 22px; height: 22px; stroke: var(--primary-dark); fill: none; stroke-width: 1.9; flex-shrink: 0; }
+        .rp-handled strong { display: block; font-family: var(--font-display); font-size: 14.5px; color: var(--primary-dark); margin-bottom: 2px; }
+        .rp-handled p { margin: 0; font-size: 13px; line-height: 1.55; color: var(--on-surface-variant); }
 
-    .rp-report { padding: 16px 0; border-top: 1px solid var(--outline-variant); }
-    .rp-report:first-child { border-top: none; padding-top: 4px; }
-    .rp-report-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
-    .rp-reason { display: inline-flex; align-items: center; gap: 6px; background: #fff8e1; color: #8a5a00; border: 1px solid #e5a300;
-      border-radius: 9999px; padding: 4px 11px; font-size: 12px; font-weight: 700; }
-    .rp-report-date { font-size: 12px; color: var(--outline); }
-    .rp-report-desc { font-size: 14px; line-height: 1.6; color: var(--on-surface-variant); margin: 0 0 8px; }
-    .rp-report-by { font-size: 12.5px; color: var(--outline); }
-    .rp-report-by strong { color: var(--on-surface); font-weight: 600; }
+        .rp-report { padding: 16px 0; border-top: 1px solid var(--outline-variant); }
+        .rp-report:first-child { border-top: none; padding-top: 4px; }
+        .rp-report-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+        .rp-reason { display: inline-flex; align-items: center; gap: 6px; background: #fff8e1; color: #8a5a00; border: 1px solid #e5a300;
+            border-radius: 9999px; padding: 4px 11px; font-size: 12px; font-weight: 700; }
+        .rp-report-date { font-size: 12px; color: var(--outline); margin-left: auto; }
+        .rp-report-desc { font-size: 14px; line-height: 1.6; color: var(--on-surface-variant); margin: 0 0 8px; }
+        .rp-report-by { font-size: 12.5px; color: var(--outline); }
+        .rp-report-by strong { color: var(--on-surface); font-weight: 600; }
 
-    .rp-action-note { font-size: 12.5px; line-height: 1.55; color: var(--on-surface-variant); margin: 0 0 14px; }
-    .rp-btn { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 14px;
-      border-radius: var(--radius-sm); font-family: var(--font-display); font-size: 13.5px; font-weight: 700; cursor: pointer;
-      border: 1.5px solid transparent; transition: background .2s, transform .1s; }
-    .rp-btn:active { transform: translateY(1px); }
-    .rp-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2.2; }
-    .rp-btn.warn    { background: var(--primary-dark); color: #fff; }
-    .rp-btn.warn:hover { background: var(--sidebar-active-bg); }
-    .rp-btn.suspend { background: #fff; color: #8a5a00; border-color: #e5a300; }
-    .rp-btn.suspend:hover { background: #fff8e1; }
-    .rp-btn.remove  { background: #fff; color: var(--alert); border-color: #f1b3b3; }
-    .rp-btn.remove:hover { background: #fdecec; }
-    .rp-btn.restore { background: var(--primary-dark); color: #fff; }
-    .rp-btn.restore:hover { background: var(--sidebar-active-bg); }
-    .rp-action-form { margin: 0 0 10px; }
-    .rp-action-form:last-child { margin-bottom: 0; }
-    .rp-action-help { font-size: 11.5px; color: var(--outline); margin: 5px 2px 0; line-height: 1.45; }
-    .rp-divider { height: 1px; background: var(--outline-variant); margin: 14px 0; }
+        .rp-action-note { font-size: 12.5px; line-height: 1.55; color: var(--on-surface-variant); margin: 0 0 14px; }
+        .rp-btn { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 14px;
+            border-radius: var(--radius-sm); font-family: var(--font-display); font-size: 13.5px; font-weight: 700; cursor: pointer;
+            border: 1.5px solid transparent; transition: background .2s, transform .1s; }
+        .rp-btn:active { transform: translateY(1px); }
+        .rp-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2.2; }
+        .rp-btn.warn    { background: var(--primary-dark); color: #fff; }
+        .rp-btn.warn:hover { background: var(--sidebar-active-bg); }
+        .rp-btn.suspend { background: #fff; color: #8a5a00; border-color: #e5a300; }
+        .rp-btn.suspend:hover { background: #fff8e1; }
+        .rp-btn.remove  { background: #fff; color: var(--alert); border-color: #f1b3b3; }
+        .rp-btn.remove:hover { background: #fdecec; }
+        .rp-btn.restore { background: var(--primary-dark); color: #fff; }
+        .rp-btn.restore:hover { background: var(--sidebar-active-bg); }
+        .rp-action-form { margin: 0 0 10px; }
+        .rp-action-form:last-child { margin-bottom: 0; }
+        .rp-action-help { font-size: 11.5px; color: var(--outline); margin: 5px 2px 0; line-height: 1.45; }
+        .rp-divider { height: 1px; background: var(--outline-variant); margin: 14px 0; }
 
-    .rp-info { background: #fff8e1; border: 1px solid #f0d58a; border-radius: var(--radius-md); padding: 16px 18px; margin-bottom: 18px; }
-    .rp-info-title { display: flex; align-items: center; gap: 8px; font-family: var(--font-display); font-weight: 700; font-size: 14.5px; color: #8a5a00; margin-bottom: 8px; }
-    .rp-info-title svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; }
-    .rp-info p { margin: 0; font-size: 13px; line-height: 1.6; color: #6b5a2a; }
-    .rp-health-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--outline-variant); font-size: 13px; }
-    .rp-health-row span:first-child { color: var(--outline); }
-    .rp-health-row strong { font-family: var(--font-display); font-size: 15px; }
-    .rp-bar { height: 6px; background: var(--outline-variant); border-radius: 9999px; margin-top: 14px; overflow: hidden; }
-    .rp-bar div { height: 100%; background: #e5a300; border-radius: 9999px; }
-    .rp-health-note { margin-top: 12px; font-size: 12px; color: var(--outline); }
+        .rp-info { background: #fff8e1; border: 1px solid #f0d58a; border-radius: var(--radius-md); padding: 16px 18px; margin-bottom: 18px; }
+        .rp-info-title { display: flex; align-items: center; gap: 8px; font-family: var(--font-display); font-weight: 700; font-size: 14.5px; color: #8a5a00; margin-bottom: 8px; }
+        .rp-info-title svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+        .rp-info p { margin: 0; font-size: 13px; line-height: 1.6; color: #6b5a2a; }
+        .rp-health-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--outline-variant); font-size: 13px; }
+        .rp-health-row span:first-child { color: var(--outline); }
+        .rp-health-row strong { font-family: var(--font-display); font-size: 15px; }
+        .rp-bar { height: 6px; background: var(--outline-variant); border-radius: 9999px; margin-top: 14px; overflow: hidden; }
+        .rp-bar div { height: 100%; background: #e5a300; border-radius: 9999px; }
+        .rp-health-note { margin-top: 12px; font-size: 12px; color: var(--outline); }
 
-    .rp-pager { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--outline-variant); }
-    .rp-page { width: 34px; height: 34px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center;
-      font-size: 13px; font-weight: 600; text-decoration: none; border: 1px solid var(--outline-variant); color: var(--on-surface-variant); background: #fff; }
-    .rp-page.current { background: var(--primary-dark); border-color: var(--primary-dark); color: #fff; font-weight: 700; }
-    .rp-page.off { color: #c4cbd0; background: transparent; }
-    .rp-page svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; }
+        .rp-pager { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--outline-variant); }
+        .rp-page { width: 34px; height: 34px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 600; text-decoration: none; border: 1px solid var(--outline-variant); color: var(--on-surface-variant); background: #fff; }
+        .rp-page.current { background: var(--primary-dark); border-color: var(--primary-dark); color: #fff; font-weight: 700; }
+        .rp-page.off { color: #c4cbd0; background: transparent; }
+        .rp-page svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; }
 
-    .ulee-confirm-backdrop { position: fixed; inset: 0; z-index: 1000; display: none; align-items: center; justify-content: center;
-      background: rgba(7, 28, 45, .55); backdrop-filter: blur(3px); padding: 20px; }
-    .ulee-confirm-backdrop.open { display: flex; animation: uleeFade .18s ease-out; }
-    .ulee-confirm-card { width: 100%; max-width: 420px; background: #fff; border-radius: var(--radius-lg); padding: 28px 26px 22px; text-align: center;
-      border-top: 5px solid var(--sidebar-logo-teal); box-shadow: 0 24px 60px rgba(7, 28, 45, .35); animation: uleePop .22s cubic-bezier(.2, .9, .3, 1.2); }
-    .ulee-confirm-icon { width: 58px; height: 58px; border-radius: 50%; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; }
-    .ulee-confirm-icon svg { width: 27px; height: 27px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
-    .ulee-confirm-card h3 { margin: 0 0 6px; font-family: var(--font-display); font-size: 19px; font-weight: 800; color: var(--sidebar-bg); }
-    .ulee-confirm-prop { display: inline-block; margin: 2px 0 10px; padding: 4px 12px; border-radius: 9999px; background: var(--surface-tint); color: var(--primary-dark); font-size: 12.5px; font-weight: 700; }
-    .ulee-confirm-card p { margin: 0 0 22px; font-size: 13.5px; line-height: 1.6; color: var(--on-surface-variant); }
-    .ulee-confirm-actions { display: flex; gap: 10px; }
-    .ulee-confirm-actions button { flex: 1; padding: 12px 0; border-radius: var(--radius-sm); font-family: var(--font-display); font-size: 14px; font-weight: 700; cursor: pointer; }
-    .ulee-confirm-actions button:active { transform: scale(.97); }
-    #uleeConfirmCancel { background: #fff; border: 1px solid var(--outline-variant); color: var(--on-surface-variant); }
-    .ulee-confirm-card.tone-info .ulee-confirm-icon { background: var(--primary-tint); color: var(--primary-dark); }
-    .ulee-confirm-card.tone-info #uleeConfirmOk { background: var(--primary-dark); border: 1px solid var(--primary-dark); color: #fff; }
-    .ulee-confirm-card.tone-warning { border-top-color: #e5a300; }
-    .ulee-confirm-card.tone-warning .ulee-confirm-icon { background: #fff8e1; color: #8a5a00; }
-    .ulee-confirm-card.tone-warning #uleeConfirmOk { background: #e5a300; border: 1px solid #e5a300; color: #fff; }
-    .ulee-confirm-card.tone-danger { border-top-color: var(--alert); }
-    .ulee-confirm-card.tone-danger .ulee-confirm-icon { background: #fdecec; color: var(--alert); }
-    .ulee-confirm-card.tone-danger #uleeConfirmOk { background: var(--alert); border: 1px solid var(--alert); color: #fff; }
-    @keyframes uleeFade { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes uleePop { from { opacity: 0; transform: translateY(12px) scale(.94); } to { opacity: 1; transform: none; } }
-  </style>
+        .ulee-confirm-backdrop { position: fixed; inset: 0; z-index: 1000; display: none; align-items: center; justify-content: center;
+            background: rgba(7, 28, 45, .55); backdrop-filter: blur(3px); padding: 20px; }
+        .ulee-confirm-backdrop.open { display: flex; animation: uleeFade .18s ease-out; }
+        .ulee-confirm-card { width: 100%; max-width: 420px; background: #fff; border-radius: var(--radius-lg); padding: 28px 26px 22px; text-align: center;
+            border-top: 5px solid var(--sidebar-logo-teal); box-shadow: 0 24px 60px rgba(7, 28, 45, .35); animation: uleePop .22s cubic-bezier(.2, .9, .3, 1.2); }
+        .ulee-confirm-icon { width: 58px; height: 58px; border-radius: 50%; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; }
+        .ulee-confirm-icon svg { width: 27px; height: 27px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+        .ulee-confirm-card h3 { margin: 0 0 6px; font-family: var(--font-display); font-size: 19px; font-weight: 800; color: var(--sidebar-bg); }
+        .ulee-confirm-prop { display: inline-block; margin: 2px 0 10px; padding: 4px 12px; border-radius: 9999px; background: var(--surface-tint); color: var(--primary-dark); font-size: 12.5px; font-weight: 700; }
+        .ulee-confirm-card p { margin: 0 0 22px; font-size: 13.5px; line-height: 1.6; color: var(--on-surface-variant); }
+        .ulee-confirm-actions { display: flex; gap: 10px; }
+        .ulee-confirm-actions button { flex: 1; padding: 12px 0; border-radius: var(--radius-sm); font-family: var(--font-display); font-size: 14px; font-weight: 700; cursor: pointer; }
+        .ulee-confirm-actions button:active { transform: scale(.97); }
+        #uleeConfirmCancel { background: #fff; border: 1px solid var(--outline-variant); color: var(--on-surface-variant); }
+        .ulee-confirm-card.tone-info .ulee-confirm-icon { background: var(--primary-tint); color: var(--primary-dark); }
+        .ulee-confirm-card.tone-info #uleeConfirmOk { background: var(--primary-dark); border: 1px solid var(--primary-dark); color: #fff; }
+        /* Suspend popup: same look as the official warning popup, only the top lining is yellow */
+        .ulee-confirm-card.tone-warning { border-top-color: #e5a300; }
+        .ulee-confirm-card.tone-warning .ulee-confirm-icon { background: var(--primary-tint); color: var(--primary-dark); }
+        .ulee-confirm-card.tone-warning #uleeConfirmOk { background: var(--primary-dark); border: 1px solid var(--primary-dark); color: #fff; }
+        .ulee-confirm-card.tone-danger { border-top-color: var(--alert); }
+        .ulee-confirm-card.tone-danger .ulee-confirm-icon { background: #fdecec; color: var(--alert); }
+        .ulee-confirm-card.tone-danger #uleeConfirmOk { background: var(--alert); border: 1px solid var(--alert); color: #fff; }
+        /* Message popups (Done / Warning sent / etc.) have no top lining */
+        .ulee-confirm-card.tone-notice { border-top: 0; }
+        /* No black focus ring around the popup buttons */
+        .ulee-confirm-actions button:focus,
+        .ulee-confirm-actions button:focus-visible { outline: none; box-shadow: none; }
+        @keyframes uleeFade { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes uleePop { from { opacity: 0; transform: translateY(12px) scale(.94); } to { opacity: 1; transform: none; } }
+    </style>
 </head>
 <body>
 <div class="shell">
 
-  <div th:replace="~{fragments/admin-sidebar :: sidebar(${activeSection})}"></div>
+    <div th:replace="~{fragments/admin-sidebar :: sidebar(${activeSection})}"></div>
 
-  <div class="main">
-    <header class="topbar">
-      <div class="topbar-title">Property Report</div>
-      <div class="topbar-right">
-        <div th:replace="~{fragments/notification-bell :: bell}"></div>
-        <div class="avatar" id="adminAvatar" th:text="${adminInitials} ?: 'UG'">UG</div>
-      </div>
-    </header>
-
-    <div class="content">
-      <div class="section active rp">
-
-        <a th:href="@{${backUrl}}" class="rp-back">
-          <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-          <span th:text="${backLabel} ?: 'Back to reported properties'">Back to reported properties</span>
-        </a>
-        <p class="rp-tagline">Review concerns. Protect students. Keep living standards high.</p>
-
-        <div class="rp-flash ok" th:if="${actionMessage}" th:text="${actionMessage}">Success</div>
-        <div class="rp-flash err" th:if="${actionError}" th:text="${actionError}">Error</div>
-
-        <!-- ============ PROPERTY HEADER ============ -->
-        <div class="rp-hero">
-          <img class="rp-hero-img" th:if="${property.mainImageUrl != null}" th:src="${property.mainImageUrl}" alt="Property photo" />
-          <div class="rp-hero-noimg" th:if="${property.mainImageUrl == null}"></div>
-
-          <div class="rp-hero-body">
-            <div class="rp-hero-top">
-              <div class="rp-eyebrow">Student accommodation</div>
-              <div>
-                <span th:if="${property.status == 'Approved' or property.status == 'Active'}" class="rp-pill live"><i></i>Active listing</span>
-                <span th:if="${property.status == 'Pending' or property.status == null}" class="rp-pill pending"><i></i>Pending review</span>
-                <span th:if="${property.status == 'Rejected'}" class="rp-pill rejected"><i></i>Rejected</span>
-                <span th:if="${property.status == 'Suspended'}" class="rp-pill suspended"><i></i>Suspended</span>
-              </div>
+    <div class="main">
+        <header class="topbar">
+            <div class="topbar-title">Property Report</div>
+            <div class="topbar-right">
+                <div th:replace="~{fragments/notification-bell :: bell}"></div>
+                <div class="avatar" id="adminAvatar" th:text="${adminInitials} ?: 'UG'">UG</div>
             </div>
+        </header>
 
-            <h2 class="rp-title">
-              <span th:text="${property.title}">Property Name</span>
-              <span class="rp-accredited" th:if="${landlordVerified}"><i></i>NSFAS Accredited</span>
-            </h2>
+        <div class="content">
+            <div class="section active rp">
 
-            <p class="rp-address">
-              <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              <span th:text="${addressLine}">Address</span>
-            </p>
+                <a th:href="@{${backUrl}}" class="rp-back">
+                    <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                    <span th:text="${backLabel} ?: 'Back to reported properties'">Back to reported properties</span>
+                </a>
+                <p class="rp-tagline">Review concerns. Protect students. Keep living standards high.</p>
 
-            <div class="rp-meta" th:if="${property.capacity != null}">
+                <!-- Messages show as a popup (script at the bottom), not a banner -->
+                <div id="rpNoticeOk" hidden th:if="${actionMessage}" th:attr="data-message=${actionMessage}"></div>
+                <div id="rpNoticeErr" hidden th:if="${actionError}" th:attr="data-message=${actionError}"></div>
+
+                <!-- ============ PROPERTY HEADER ============ -->
+                <div class="rp-hero">
+                    <img class="rp-hero-img" th:if="${property.mainImageUrl != null}" th:src="${property.mainImageUrl}" alt="Property photo" />
+                    <div class="rp-hero-noimg" th:if="${property.mainImageUrl == null}"></div>
+
+                    <div class="rp-hero-body">
+                        <div class="rp-hero-top">
+                            <div class="rp-eyebrow">Student accommodation</div>
+                            <div>
+                                <span th:if="${property.status == 'Approved' or property.status == 'Active'}" class="rp-pill live"><i></i>Active listing</span>
+                                <span th:if="${property.status == 'Pending' or property.status == null}" class="rp-pill pending"><i></i>Pending review</span>
+                                <span th:if="${property.status == 'Rejected'}" class="rp-pill rejected"><i></i>Rejected</span>
+                                <span th:if="${property.status == 'Suspended'}" class="rp-pill suspended"><i></i>Suspended</span>
+                            </div>
+                        </div>
+
+                        <h2 class="rp-title">
+                            <span th:text="${property.title}">Property Name</span>
+                            <span class="rp-accredited" th:if="${landlordVerified}"><i></i>NSFAS Accredited</span>
+                        </h2>
+
+                        <p class="rp-address">
+                            <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                            <span th:text="${addressLine}">Address</span>
+                        </p>
+
+                        <div class="rp-meta" th:if="${property.capacity != null}">
               <span>
                 <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 <span th:text="'Up to ' + ${property.capacity} + ' students'">Up to 20 students</span>
               </span>
-            </div>
+                        </div>
 
-            <div class="rp-landlord">
-              <div class="rp-avatar"
-                   th:text="${landlord != null and landlord.firstName != null and landlord.lastName != null} ? ${#strings.toUpperCase(#strings.substring(landlord.firstName,0,1) + #strings.substring(landlord.lastName,0,1))} : '?'">EH</div>
-              <div>
-                <div class="rp-landlord-label">Landlord</div>
-                <div class="rp-landlord-name"
-                     th:text="${landlord != null} ? (${landlord.firstName} + ' ' + ${landlord.lastName}) : ('Landlord #' + ${property.landlordID})">Landlord Name</div>
-              </div>
+                        <div class="rp-landlord">
+                            <div class="rp-avatar"
+                                 th:text="${landlord != null and landlord.firstName != null and landlord.lastName != null} ? ${#strings.toUpperCase(#strings.substring(landlord.firstName,0,1) + #strings.substring(landlord.lastName,0,1))} : '?'">EH</div>
+                            <div>
+                                <div class="rp-landlord-label">Landlord</div>
+                                <div class="rp-landlord-name"
+                                     th:text="${landlord != null} ? (${landlord.firstName} + ' ' + ${landlord.lastName}) : ('Landlord #' + ${property.landlordID})">Landlord Name</div>
+                            </div>
 
-              <div class="rp-contacts" th:if="${landlord != null}">
-                <div class="rp-contact-wrap">
-                  <a href="#" class="contact-icon-btn" onclick="toggleContactTip(event, 'emailTip')" title="Email">
-                    <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
-                  </a>
-                  <div id="emailTip" class="ulee-contact-tip">
-                    <a th:if="${landlord.email != null}" th:href="'mailto:' + ${landlord.email}" th:text="${landlord.email}">email@example.com</a>
-                    <span th:if="${landlord.email == null}">No email on file</span>
-                  </div>
+                            <div class="rp-contacts" th:if="${landlord != null}">
+                                <div class="rp-contact-wrap">
+                                    <a href="#" class="contact-icon-btn" onclick="toggleContactTip(event, 'emailTip')" title="Email">
+                                        <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+                                    </a>
+                                    <div id="emailTip" class="ulee-contact-tip">
+                                        <a th:if="${landlord.email != null}" th:href="'mailto:' + ${landlord.email}" th:text="${landlord.email}">email@example.com</a>
+                                        <span th:if="${landlord.email == null}">No email on file</span>
+                                    </div>
+                                </div>
+                                <div class="rp-contact-wrap" th:if="${landlord.phone != null}">
+                                    <a href="#" class="contact-icon-btn" onclick="toggleContactTip(event, 'phoneTip')" title="Phone">
+                                        <svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>
+                                    </a>
+                                    <div id="phoneTip" class="ulee-contact-tip">
+                                        <a th:href="'tel:' + ${landlord.phone}" th:text="${landlord.phone}">000 000 0000</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="rp-contact-wrap" th:if="${landlord.phone != null}">
-                  <a href="#" class="contact-icon-btn" onclick="toggleContactTip(event, 'phoneTip')" title="Phone">
-                    <svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>
-                  </a>
-                  <div id="phoneTip" class="ulee-contact-tip">
-                    <a th:href="'tel:' + ${landlord.phone}" th:text="${landlord.phone}">000 000 0000</a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <!-- ============ MAIN GRID ============ -->
-        <div class="rp-grid">
+                <!-- ============ MAIN GRID ============ -->
+                <div class="rp-grid">
 
-          <!-- ---------- LEFT: reports ---------- -->
-          <div>
-            <div class="rp-card">
-              <div class="rp-card-head">
-                <h3 class="rp-card-title">Property reports</h3>
-                <span class="rp-card-sub" th:if="${#lists.isEmpty(reportTimeline)}">All time</span>
-                <span class="rp-card-sub" th:unless="${#lists.isEmpty(reportTimeline)}"
-                      th:text="${#lists.size(reportTimeline)} + (${#lists.size(reportTimeline)} == 1 ? ' report' : ' reports')">1 report</span>
-              </div>
+                    <!-- ---------- LEFT: reports ---------- -->
+                    <div>
+                        <div class="rp-card">
+                            <div class="rp-card-head">
+                                <h3 class="rp-card-title">Property reports</h3>
+                                <span class="rp-card-sub" th:if="${#lists.isEmpty(reportTimeline)}">All time</span>
+                                <span class="rp-card-sub" th:unless="${#lists.isEmpty(reportTimeline)}"
+                                      th:text="${#lists.size(reportTimeline)} + (${#lists.size(reportTimeline)} == 1 ? ' report' : ' reports')">1 report</span>
+                            </div>
 
-              <div class="rp-empty" th:if="${#lists.isEmpty(reportTimeline)}">
-                <div class="rp-empty-ring"><div class="rp-empty-icon">
-                  <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
-                </div></div>
-                <h3>No reports. That's a good thing.</h3>
-                <p><span th:text="${property.title}">This property</span> has no complaints on file.<br/>There's nothing to action with the landlord right now.</p>
-                <span class="rp-ok-pill">
+                            <div class="rp-empty" th:if="${#lists.isEmpty(reportTimeline)}">
+                                <div class="rp-empty-ring"><div class="rp-empty-icon">
+                                    <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+                                </div></div>
+                                <h3>No reports. That's a good thing.</h3>
+                                <p><span th:text="${property.title}">This property</span> has no complaints on file.<br/>There's nothing to action with the landlord right now.</p>
+                                <span class="rp-ok-pill">
                   <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>
                   No action required
                 </span>
-              </div>
+                            </div>
 
-              <div class="rp-card-body" th:unless="${#lists.isEmpty(reportTimeline)}">
+                            <div class="rp-card-body" th:unless="${#lists.isEmpty(reportTimeline)}">
 
-                <!-- Handled: suspended -->
-                <div class="rp-handled" th:if="${!isFlagged and property.status == 'Suspended'}">
-                  <svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-                  <div>
-                    <strong>This listing is suspended</strong>
-                    <p>It is hidden from students. Use “Unsuspend listing” on the right to put it back live once the issue is resolved.</p>
-                  </div>
+                                <!-- Handled: suspended -->
+                                <div class="rp-handled" th:if="${!isFlagged and property.status == 'Suspended'}">
+                                    <svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                                    <div>
+                                        <strong>This listing is suspended</strong>
+                                        <p>It is hidden from students. Use “Unsuspend listing” on the right to put it back live once the issue is resolved.</p>
+                                    </div>
+                                </div>
+
+                                <!-- Handled: warned -->
+                                <div class="rp-handled" th:if="${!isFlagged and property.status != 'Suspended'}">
+                                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>
+                                    <div>
+                                        <strong>This report has already been handled</strong>
+                                        <p>An official warning was sent to the landlord. The complaint history below is kept for reference — no further action is needed unless a new report comes in.</p>
+                                    </div>
+                                </div>
+
+                                <div class="rp-report" th:each="report, iter : ${reportTimeline}">
+                                    <div class="rp-report-top">
+                                        <span class="rp-reason" th:if="${report.reason != null and !#strings.isEmpty(report.reason) and !#strings.equalsIgnoreCase(report.reason, 'Reported')}" th:text="${report.reason}">Maintenance failure</span>
+                                        <span class="rp-report-date"
+                                              th:text="${report.reportedAt != null} ? ${#temporals.format(report.reportedAt, 'd MMM yyyy, HH:mm')} : 'Undated'">12 Oct 2026</span>
+                                    </div>
+                                    <p class="rp-report-desc" th:text="${report.description} ?: 'No details provided'">Details</p>
+                                    <div class="rp-report-by">
+                                        <span th:text="${iter.index == 0} ? 'Initial report filed by ' : 'Follow-up report filed by '">Initial report filed by</span>
+                                        <strong th:text="${reporterNames.get(report.studentID)} ?: 'A student'">Student</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="rp-card-foot">
+                                <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                New student reports will appear here.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ---------- RIGHT: actions + info ---------- -->
+                    <aside>
+
+                        <!-- UNHANDLED: the three actions -->
+                        <div class="rp-card" th:if="${isFlagged}">
+                            <div class="rp-card-head"><h3 class="rp-card-title">Take action</h3></div>
+                            <div class="rp-card-body">
+                                <p class="rp-action-note">Start with a warning. Suspend or remove only if the issue is not resolved.</p>
+
+                                <form class="confirm-form rp-action-form"
+                                      th:action="@{/admin/warn-landlord-for-listing/{id}(id=${property.propertyID},from=${from})}" method="post"
+                                      th:attr="data-property=${property.title}"
+                                      data-tone="info" data-title="Send an official warning?"
+                                      data-text="This sends a formal warning to the landlord's notification dashboard. The complainer's identity is never included."
+                                      data-button="Yes, send warning">
+                                    <button type="submit" class="rp-btn warn">
+                                        <svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>Send official warning
+                                    </button>
+                                    <div class="rp-action-help">Notifies the landlord. The reporter stays anonymous.</div>
+                                </form>
+
+                                <div class="rp-divider"></div>
+
+                                <form class="confirm-form rp-action-form"
+                                      th:action="@{/admin/suspend-listing/{id}(id=${property.propertyID})}" method="post"
+                                      th:attr="data-property=${property.title}"
+                                      data-tone="warning" data-title="Suspend this listing?"
+                                      data-text="It will be hidden from students immediately. You can unsuspend it later from the Handled tab."
+                                      data-button="Yes, suspend">
+                                    <button type="submit" class="rp-btn suspend">
+                                        <svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>Suspend listing
+                                    </button>
+                                    <div class="rp-action-help">Hides the listing from students. Can be reversed.</div>
+                                </form>
+
+                                <form class="confirm-form rp-action-form"
+                                      th:action="@{/admin/remove-listing/{id}(id=${property.propertyID})}" method="post"
+                                      th:attr="data-property=${property.title}"
+                                      data-tone="danger" data-title="Remove this listing permanently?"
+                                      data-text="This deletes the listing for good and cannot be undone."
+                                      data-button="Yes, remove it">
+                                    <button type="submit" class="rp-btn remove">
+                                        <svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>Remove listing permanently
+                                    </button>
+                                    <div class="rp-action-help">Deletes the listing permanently. Cannot be undone.</div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- HANDLED + SUSPENDED: unsuspend -->
+                        <div class="rp-card" th:if="${property.status == 'Suspended'}">
+                            <div class="rp-card-head"><h3 class="rp-card-title">Suspended listing</h3></div>
+                            <div class="rp-card-body">
+                                <p class="rp-action-note">This listing is hidden from students. When the landlord has fixed the issue, you can put it back live.</p>
+                                <form class="confirm-form rp-action-form"
+                                      th:action="@{/admin/unsuspend-listing/{id}(id=${property.propertyID},from=${from != null ? from : 'reported'})}" method="post"
+                                      th:attr="data-property=${property.title}"
+                                      data-tone="info" data-title="Unsuspend this listing?"
+                                      data-text="The listing will be visible to students again straight away."
+                                      data-button="Yes, unsuspend">
+                                    <button type="submit" class="rp-btn restore">
+                                        <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Unsuspend listing
+                                    </button>
+                                    <div class="rp-action-help">Makes the listing visible to students again.</div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Suspension info (only while there is something to suspend) -->
+                        <div class="rp-info" th:if="${isFlagged}">
+                            <div class="rp-info-title">
+                                <svg viewBox="0 0 24 24"><path d="M12 3l9.5 16.5h-19L12 3z"/><path d="M12 10v4.5M12 17.5v.01"/></svg>
+                                Listing suspension
+                            </div>
+                            <p>Suspending this property removes its listing from ULEE. It does not close the accommodation or require current residents to move.
+                                <span th:if="${property.capacity != null}" th:text="'Up to ' + ${property.capacity} + ' students may be affected.'"></span></p>
+                        </div>
+
+                        <!-- Property health -->
+                        <div class="rp-card">
+                            <div class="rp-card-head"><h3 class="rp-card-title">Property health</h3></div>
+                            <div class="rp-card-body" style="padding-top:6px">
+                                <div class="rp-health-row">
+                                    <span>Reports in last 30 days</span>
+                                    <strong th:text="${reportsLast30Days}">0</strong>
+                                </div>
+                                <div class="rp-health-row" style="border-bottom:none">
+                                    <span>Average rating</span>
+                                    <strong th:text="${property.rating != null} ? ${property.rating} + ' / 5.0' : 'Not rated yet'">Not rated yet</strong>
+                                </div>
+                                <div class="rp-bar">
+                                    <div th:style="'width:' + (${reportsLast30Days} != null ? (${reportsLast30Days} * 8 > 100 ? 100 : ${reportsLast30Days} * 8) : 0) + '%'"></div>
+                                </div>
+                                <div class="rp-health-note" th:if="${property.rating == null}">No student ratings on file</div>
+                            </div>
+                        </div>
+
+                    </aside>
                 </div>
 
-                <!-- Handled: warned -->
-                <div class="rp-handled" th:if="${!isFlagged and property.status != 'Suspended'}">
-                  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>
-                  <div>
-                    <strong>This report has already been handled</strong>
-                    <p>An official warning was sent to the landlord. The complaint history below is kept for reference — no further action is needed unless a new report comes in.</p>
-                  </div>
+                <!-- ============ PAGINATION ACROSS THE REPORTED QUEUE ============ -->
+                <div class="rp-pager" th:if="${reportedQueue != null and #lists.size(reportedQueue) > 1 and currentQueueIndex >= 0}">
+                    <a th:if="${prevReportedId != null}" class="rp-page" th:href="@{/admin/reported-listing/{id}(id=${prevReportedId},from=${from})}">
+                        <svg viewBox="0 0 20 20"><path d="M12 4l-6 6 6 6"/></svg>
+                    </a>
+                    <span th:if="${prevReportedId == null}" class="rp-page off"><svg viewBox="0 0 20 20"><path d="M12 4l-6 6 6 6"/></svg></span>
+
+                    <a th:each="p, iter : ${reportedQueue}" class="rp-page"
+                       th:classappend="${iter.index == currentQueueIndex} ? 'current' : ''"
+                       th:href="@{/admin/reported-listing/{id}(id=${p.propertyID},from=${from})}"
+                       th:text="${iter.index + 1}">1</a>
+
+                    <a th:if="${nextReportedId != null}" class="rp-page" th:href="@{/admin/reported-listing/{id}(id=${nextReportedId},from=${from})}">
+                        <svg viewBox="0 0 20 20"><path d="M8 4l6 6-6 6"/></svg>
+                    </a>
+                    <span th:if="${nextReportedId == null}" class="rp-page off"><svg viewBox="0 0 20 20"><path d="M8 4l6 6-6 6"/></svg></span>
                 </div>
 
-                <div class="rp-report" th:each="report, iter : ${reportTimeline}">
-                  <div class="rp-report-top">
-                    <span class="rp-reason" th:text="${report.reason} ?: 'Reported issue'">Maintenance failure</span>
-                    <span class="rp-report-date"
-                          th:text="${report.reportedAt != null} ? ${#temporals.format(report.reportedAt, 'd MMM yyyy, HH:mm')} : 'Undated'">12 Oct 2026</span>
-                  </div>
-                  <p class="rp-report-desc" th:text="${report.description} ?: 'No details provided'">Details</p>
-                  <div class="rp-report-by">
-                    <span th:text="${iter.index == 0} ? 'Initial report filed by ' : 'Follow-up report filed by '">Initial report filed by</span>
-                    <strong th:text="${reporterNames.get(report.studentID)} ?: ${report.filedByLabel}">Student</strong>
-                  </div>
-                </div>
-              </div>
-
-              <div class="rp-card-foot">
-                <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                New student reports will appear here.
-              </div>
             </div>
-          </div>
-
-          <!-- ---------- RIGHT: actions + info ---------- -->
-          <aside>
-
-            <!-- UNHANDLED: the three actions -->
-            <div class="rp-card" th:if="${isFlagged}">
-              <div class="rp-card-head"><h3 class="rp-card-title">Take action</h3></div>
-              <div class="rp-card-body">
-                <p class="rp-action-note">Start with a warning. Suspend or remove only if the issue is not resolved.</p>
-
-                <form class="confirm-form rp-action-form"
-                      th:action="@{/admin/warn-landlord-for-listing/{id}(id=${property.propertyID},from=${from})}" method="post"
-                      th:attr="data-property=${property.title}"
-                      data-tone="info" data-title="Send an official warning?"
-                      data-text="This sends a formal warning to the landlord's notification dashboard. The complainer's identity is never included."
-                      data-button="Yes, send warning">
-                  <button type="submit" class="rp-btn warn">
-                    <svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>Send official warning
-                  </button>
-                  <div class="rp-action-help">Notifies the landlord. The reporter stays anonymous.</div>
-                </form>
-
-                <div class="rp-divider"></div>
-
-                <form class="confirm-form rp-action-form"
-                      th:action="@{/admin/suspend-listing/{id}(id=${property.propertyID})}" method="post"
-                      th:attr="data-property=${property.title}"
-                      data-tone="warning" data-title="Suspend this listing?"
-                      data-text="It will be hidden from students immediately. You can unsuspend it later from the Handled tab."
-                      data-button="Yes, suspend">
-                  <button type="submit" class="rp-btn suspend">
-                    <svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>Suspend listing
-                  </button>
-                  <div class="rp-action-help">Hides the listing from students. Can be reversed.</div>
-                </form>
-
-                <form class="confirm-form rp-action-form"
-                      th:action="@{/admin/remove-listing/{id}(id=${property.propertyID})}" method="post"
-                      th:attr="data-property=${property.title}"
-                      data-tone="danger" data-title="Remove this listing permanently?"
-                      data-text="This deletes the listing for good and cannot be undone."
-                      data-button="Yes, remove it">
-                  <button type="submit" class="rp-btn remove">
-                    <svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>Remove listing permanently
-                  </button>
-                  <div class="rp-action-help">Deletes the listing permanently. Cannot be undone.</div>
-                </form>
-              </div>
-            </div>
-
-            <!-- HANDLED + SUSPENDED: unsuspend -->
-            <div class="rp-card" th:if="${property.status == 'Suspended'}">
-              <div class="rp-card-head"><h3 class="rp-card-title">Suspended listing</h3></div>
-              <div class="rp-card-body">
-                <p class="rp-action-note">This listing is hidden from students. When the landlord has fixed the issue, you can put it back live.</p>
-                <form class="confirm-form rp-action-form"
-                      th:action="@{/admin/unsuspend-listing/{id}(id=${property.propertyID},from=${from != null ? from : 'reported'})}" method="post"
-                      th:attr="data-property=${property.title}"
-                      data-tone="info" data-title="Unsuspend this listing?"
-                      data-text="The listing will be visible to students again straight away."
-                      data-button="Yes, unsuspend">
-                  <button type="submit" class="rp-btn restore">
-                    <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Unsuspend listing
-                  </button>
-                  <div class="rp-action-help">Makes the listing visible to students again.</div>
-                </form>
-              </div>
-            </div>
-
-            <!-- Suspension info (only while there is something to suspend) -->
-            <div class="rp-info" th:if="${isFlagged}">
-              <div class="rp-info-title">
-                <svg viewBox="0 0 24 24"><path d="M12 3l9.5 16.5h-19L12 3z"/><path d="M12 10v4.5M12 17.5v.01"/></svg>
-                Listing suspension
-              </div>
-              <p>Suspending this property removes its listing from ULEE. It does not close the accommodation or require current residents to move.
-                <span th:if="${property.capacity != null}" th:text="'Up to ' + ${property.capacity} + ' students may be affected.'"></span></p>
-            </div>
-
-            <!-- Property health -->
-            <div class="rp-card">
-              <div class="rp-card-head"><h3 class="rp-card-title">Property health</h3></div>
-              <div class="rp-card-body" style="padding-top:6px">
-                <div class="rp-health-row">
-                  <span>Reports in last 30 days</span>
-                  <strong th:text="${reportsLast30Days}">0</strong>
-                </div>
-                <div class="rp-health-row" style="border-bottom:none">
-                  <span>Average rating</span>
-                  <strong th:text="${property.rating != null} ? ${property.rating} + ' / 5.0' : 'Not rated yet'">Not rated yet</strong>
-                </div>
-                <div class="rp-bar">
-                  <div th:style="'width:' + (${reportsLast30Days} != null ? (${reportsLast30Days} * 8 > 100 ? 100 : ${reportsLast30Days} * 8) : 0) + '%'"></div>
-                </div>
-                <div class="rp-health-note" th:if="${property.rating == null}">No student ratings on file</div>
-              </div>
-            </div>
-
-          </aside>
         </div>
-
-        <!-- ============ PAGINATION ACROSS THE REPORTED QUEUE ============ -->
-        <div class="rp-pager" th:if="${reportedQueue != null and #lists.size(reportedQueue) > 1 and currentQueueIndex >= 0}">
-          <a th:if="${prevReportedId != null}" class="rp-page" th:href="@{/admin/reported-listing/{id}(id=${prevReportedId},from=${from})}">
-            <svg viewBox="0 0 20 20"><path d="M12 4l-6 6 6 6"/></svg>
-          </a>
-          <span th:if="${prevReportedId == null}" class="rp-page off"><svg viewBox="0 0 20 20"><path d="M12 4l-6 6 6 6"/></svg></span>
-
-          <a th:each="p, iter : ${reportedQueue}" class="rp-page"
-             th:classappend="${iter.index == currentQueueIndex} ? 'current' : ''"
-             th:href="@{/admin/reported-listing/{id}(id=${p.propertyID},from=${from})}"
-             th:text="${iter.index + 1}">1</a>
-
-          <a th:if="${nextReportedId != null}" class="rp-page" th:href="@{/admin/reported-listing/{id}(id=${nextReportedId},from=${from})}">
-            <svg viewBox="0 0 20 20"><path d="M8 4l6 6-6 6"/></svg>
-          </a>
-          <span th:if="${nextReportedId == null}" class="rp-page off"><svg viewBox="0 0 20 20"><path d="M8 4l6 6-6 6"/></svg></span>
-        </div>
-
-      </div>
     </div>
-  </div>
 </div>
 
 <!-- Confirm dialog (Send warning / Suspend / Remove / Unsuspend) -->
 <div id="ulee-confirm" class="ulee-confirm-backdrop" aria-hidden="true">
-  <div id="uleeConfirmCard" class="ulee-confirm-card tone-info" role="dialog" aria-modal="true" aria-labelledby="uleeConfirmTitle">
-    <div id="uleeConfirmIcon" class="ulee-confirm-icon"></div>
-    <h3 id="uleeConfirmTitle">Are you sure?</h3>
-    <div id="uleeConfirmProperty" class="ulee-confirm-prop"></div>
-    <p id="uleeConfirmText"></p>
-    <div class="ulee-confirm-actions">
-      <button type="button" id="uleeConfirmCancel">Cancel</button>
-      <button type="button" id="uleeConfirmOk">Confirm</button>
+    <div id="uleeConfirmCard" class="ulee-confirm-card tone-info" role="dialog" aria-modal="true" aria-labelledby="uleeConfirmTitle">
+        <div id="uleeConfirmIcon" class="ulee-confirm-icon"></div>
+        <h3 id="uleeConfirmTitle">Are you sure?</h3>
+        <div id="uleeConfirmProperty" class="ulee-confirm-prop"></div>
+        <p id="uleeConfirmText"></p>
+        <div class="ulee-confirm-actions">
+            <button type="button" id="uleeConfirmCancel">Cancel</button>
+            <button type="button" id="uleeConfirmOk">Confirm</button>
+        </div>
     </div>
-  </div>
 </div>
 
 <script>
-  (function () {
-    var backdrop = document.getElementById('ulee-confirm');
-    var card = document.getElementById('uleeConfirmCard');
-    var pendingForm = null;
+    (function () {
+        var backdrop = document.getElementById('ulee-confirm');
+        var card = document.getElementById('uleeConfirmCard');
+        var pendingForm = null;
 
-    var ICONS = {
-      warning: '<svg viewBox="0 0 24 24"><path d="M12 3l9.5 16.5h-19L12 3z"/><path d="M12 10v4.5M12 17.5v.01"/></svg>',
-      info: '<svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>',
-      danger: '<svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/></svg>'
-    };
+        var ICONS = {
+            warning: '<svg viewBox="0 0 24 24"><path d="M12 3l9.5 16.5h-19L12 3z"/><path d="M12 10v4.5M12 17.5v.01"/></svg>',
+            info: '<svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>',
+            danger: '<svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/></svg>',
+            check: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>'
+        };
 
-    function openConfirm(form) {
-      var tone = form.getAttribute('data-tone') || 'warning';
-      pendingForm = form;
-      card.className = 'ulee-confirm-card tone-' + tone;
-      document.getElementById('uleeConfirmIcon').innerHTML = ICONS[tone] || ICONS.warning;
-      document.getElementById('uleeConfirmTitle').textContent = form.getAttribute('data-title') || 'Are you sure?';
-      document.getElementById('uleeConfirmText').textContent = form.getAttribute('data-text') || '';
-      document.getElementById('uleeConfirmOk').textContent = form.getAttribute('data-button') || 'Confirm';
-      var prop = form.getAttribute('data-property');
-      var propEl = document.getElementById('uleeConfirmProperty');
-      propEl.textContent = prop || '';
-      propEl.style.display = prop ? 'inline-block' : 'none';
-      backdrop.classList.add('open');
-      backdrop.setAttribute('aria-hidden', 'false');
-      document.getElementById('uleeConfirmCancel').focus();
-    }
+        function openConfirm(form) {
+            var tone = form.getAttribute('data-tone') || 'warning';
+            pendingForm = form;
+            card.className = 'ulee-confirm-card tone-' + tone;
+            document.getElementById('uleeConfirmIcon').innerHTML = ICONS[tone] || ICONS.warning;
+            document.getElementById('uleeConfirmTitle').textContent = form.getAttribute('data-title') || 'Are you sure?';
+            document.getElementById('uleeConfirmText').textContent = form.getAttribute('data-text') || '';
+            document.getElementById('uleeConfirmOk').textContent = form.getAttribute('data-button') || 'Confirm';
+            var prop = form.getAttribute('data-property');
+            var propEl = document.getElementById('uleeConfirmProperty');
+            propEl.textContent = prop || '';
+            propEl.style.display = prop ? 'inline-block' : 'none';
+            document.getElementById('uleeConfirmCancel').style.display = '';
+            backdrop.classList.add('open');
+            backdrop.setAttribute('aria-hidden', 'false');
+            document.getElementById('uleeConfirmCancel').focus();
+        }
 
-    function closeConfirm() {
-      backdrop.classList.remove('open');
-      backdrop.setAttribute('aria-hidden', 'true');
-      pendingForm = null;
-    }
+        function closeConfirm() {
+            backdrop.classList.remove('open');
+            backdrop.setAttribute('aria-hidden', 'true');
+            pendingForm = null;
+        }
 
-    document.querySelectorAll('form.confirm-form').forEach(function (form) {
-      form.addEventListener('submit', function (e) { e.preventDefault(); openConfirm(form); });
-    });
+        document.querySelectorAll('form.confirm-form').forEach(function (form) {
+            form.addEventListener('submit', function (e) { e.preventDefault(); openConfirm(form); });
+        });
 
-    document.getElementById('uleeConfirmCancel').addEventListener('click', closeConfirm);
-    document.getElementById('uleeConfirmOk').addEventListener('click', function () {
-      var form = pendingForm;
-      closeConfirm();
-      if (form) form.submit();
-    });
-    backdrop.addEventListener('click', function (e) { if (e.target === backdrop) closeConfirm(); });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeConfirm(); });
-  })();
+        document.getElementById('uleeConfirmCancel').addEventListener('click', closeConfirm);
+        document.getElementById('uleeConfirmOk').addEventListener('click', function () {
+            var form = pendingForm;
+            closeConfirm();
+            if (form) form.submit();
+        });
+        backdrop.addEventListener('click', function (e) { if (e.target === backdrop) closeConfirm(); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeConfirm(); });
+
+        // Success / error messages from the server show as a popup (same teal look as the warning popup)
+        function openNotice(title, text, name, iconKey) {
+            pendingForm = null;
+            card.className = 'ulee-confirm-card tone-info tone-notice';
+            document.getElementById('uleeConfirmIcon').innerHTML = ICONS[iconKey];
+            document.getElementById('uleeConfirmTitle').textContent = title;
+            document.getElementById('uleeConfirmText').textContent = text;
+            document.getElementById('uleeConfirmOk').textContent = 'OK';
+            var propEl = document.getElementById('uleeConfirmProperty');
+            propEl.textContent = name || '';
+            propEl.style.display = name ? 'inline-block' : 'none';
+            document.getElementById('uleeConfirmCancel').style.display = 'none';
+            backdrop.classList.add('open');
+            backdrop.setAttribute('aria-hidden', 'false');
+            document.getElementById('uleeConfirmOk').focus();
+        }
+        var okEl = document.getElementById('rpNoticeOk');
+        var errEl = document.getElementById('rpNoticeErr');
+        if (okEl) {
+            var msg = okEl.getAttribute('data-message') || '';
+            var q = msg.match(/"([^"]+)"/);
+            var nTitle = 'Done', nText = msg, nName = q ? q[1] : '';
+            if (/^Unsuspended/i.test(msg)) { nTitle = 'Listing is live again'; nText = 'The listing is visible to students again.'; }
+            else if (/warning/i.test(msg)) { nTitle = 'Warning sent'; }
+            openNotice(nTitle, nText, nName, 'check');
+        } else if (errEl) {
+            openNotice('Something went wrong', errEl.getAttribute('data-message') || '', '', 'warning');
+        }
+    })();
 </script>
 
 <script>
-  function toggleContactTip(event, tipId) {
-    event.preventDefault();
-    event.stopPropagation();
-    document.querySelectorAll('.ulee-contact-tip').forEach(function (tip) {
-      if (tip.id !== tipId) tip.style.display = 'none';
+    function toggleContactTip(event, tipId) {
+        event.preventDefault();
+        event.stopPropagation();
+        document.querySelectorAll('.ulee-contact-tip').forEach(function (tip) {
+            if (tip.id !== tipId) tip.style.display = 'none';
+        });
+        var target = document.getElementById(tipId);
+        if (!target) return;
+        target.style.display = (target.style.display === 'block') ? 'none' : 'block';
+    }
+    document.addEventListener('click', function (e) {
+        if (e.target.closest('.ulee-contact-tip') || e.target.closest('.contact-icon-btn')) return;
+        document.querySelectorAll('.ulee-contact-tip').forEach(function (tip) { tip.style.display = 'none'; });
     });
-    var target = document.getElementById(tipId);
-    if (!target) return;
-    target.style.display = (target.style.display === 'block') ? 'none' : 'block';
-  }
-  document.addEventListener('click', function (e) {
-    if (e.target.closest('.ulee-contact-tip') || e.target.closest('.contact-icon-btn')) return;
-    document.querySelectorAll('.ulee-contact-tip').forEach(function (tip) { tip.style.display = 'none'; });
-  });
 </script>
 
 </body>

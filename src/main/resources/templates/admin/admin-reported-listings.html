@@ -145,6 +145,16 @@
         .rl-open svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; }
         .rl-open:hover { text-decoration: underline; }
 
+        /* Unsuspend button (only on suspended cards in the Handled tab) */
+        .rl-unsuspend { margin: 14px 0 0; }
+        .rl-btn-unsuspend { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 14px;
+            border-radius: var(--radius-sm); border: 1.5px solid var(--primary-dark); background: var(--primary-dark); color: #fff;
+            font-family: var(--font-display); font-size: 13.5px; font-weight: 700; cursor: pointer; transition: background .2s, transform .1s; }
+        .rl-btn-unsuspend:hover { background: var(--sidebar-active-bg); border-color: var(--sidebar-active-bg); }
+        .rl-btn-unsuspend:active { transform: translateY(1px); }
+        .rl-btn-unsuspend:focus-visible { outline: 2px solid var(--sidebar-logo-teal); outline-offset: 2px; }
+        .rl-btn-unsuspend svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
         /* Empty state (ULEE dashed card) */
         .ap-empty { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 48px 20px 52px;
             background: linear-gradient(180deg, #fff 0%, #F4FBFA 100%); border: 2px dashed #93C0C5; border-radius: 20px; }
@@ -155,9 +165,34 @@
         .ap-empty-sub { font-family: 'Fredoka', var(--font-display); font-size: 17px; font-weight: 500; color: #6f787d; margin: 0; }
         .rl-nomatch { display: none; margin-top: 18px; text-align: center; font-size: 14px; color: var(--outline); }
 
+        /* Errors still show as a banner; successes now show as the popup below */
         .rl-flash { border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 16px; font-size: 13.5px; font-weight: 600; }
-        .rl-flash.ok  { background: var(--primary-tint); border: 1px solid var(--accent-border); color: var(--primary-dark); }
         .rl-flash.err { background: #fdecec; border: 1px solid #f1b3b3; color: var(--alert); }
+
+        /* ── Popup (same teal look as the "Send official warning" popup) ── */
+        .ulee-confirm-backdrop { position: fixed; inset: 0; z-index: 1000; display: none; align-items: center; justify-content: center;
+            background: rgba(7, 28, 45, .55); backdrop-filter: blur(3px); padding: 20px; }
+        .ulee-confirm-backdrop.open { display: flex; animation: uleeFade .18s ease-out; }
+        .ulee-confirm-card { width: 100%; max-width: 420px; background: #fff; border-radius: var(--radius-lg); padding: 28px 26px 22px; text-align: center;
+            border-top: 5px solid var(--sidebar-logo-teal); box-shadow: 0 24px 60px rgba(7, 28, 45, .35); animation: uleePop .22s cubic-bezier(.2, .9, .3, 1.2); }
+        .ulee-confirm-icon { width: 58px; height: 58px; border-radius: 50%; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;
+            background: var(--primary-tint); color: var(--primary-dark); }
+        .ulee-confirm-icon svg { width: 27px; height: 27px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+        .ulee-confirm-card h3 { margin: 0 0 6px; font-family: var(--font-display); font-size: 19px; font-weight: 800; color: var(--sidebar-bg); }
+        .ulee-confirm-prop { display: inline-block; margin: 2px 0 10px; padding: 4px 12px; border-radius: 9999px; background: var(--surface-tint); color: var(--primary-dark); font-size: 12.5px; font-weight: 700; }
+        .ulee-confirm-card p { margin: 0 0 22px; font-size: 13.5px; line-height: 1.6; color: var(--on-surface-variant); }
+        .ulee-confirm-actions { display: flex; gap: 10px; }
+        .ulee-confirm-actions button { flex: 1; padding: 12px 0; border-radius: var(--radius-sm); font-family: var(--font-display); font-size: 14px; font-weight: 700; cursor: pointer; }
+        .ulee-confirm-actions button:active { transform: scale(.97); }
+        #uleeConfirmCancel { background: #fff; border: 1px solid var(--outline-variant); color: var(--on-surface-variant); }
+        #uleeConfirmOk { background: var(--primary-dark); border: 1px solid var(--primary-dark); color: #fff; }
+        /* Message popups (Done / Listing suspended / etc.) have no top lining */
+        .ulee-confirm-card.tone-notice { border-top: 0; }
+        /* No black focus ring around the popup buttons */
+        .ulee-confirm-actions button:focus,
+        .ulee-confirm-actions button:focus-visible { outline: none; box-shadow: none; }
+        @keyframes uleeFade { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes uleePop { from { opacity: 0; transform: translateY(12px) scale(.94); } to { opacity: 1; transform: none; } }
     </style>
 </head>
 <body>
@@ -177,8 +212,9 @@
         <div class="content">
             <div class="section active rl">
 
-                <div class="rl-flash ok"  th:if="${actionMessage}" th:text="${actionMessage}">Success</div>
-                <div class="rl-flash err" th:if="${actionError}"   th:text="${actionError}">Error</div>
+                <!-- Success message is shown as a popup (see script at the bottom), not a banner -->
+                <div id="rlNotice" hidden th:if="${actionMessage}" th:attr="data-message=${actionMessage}"></div>
+                <div id="rlNoticeErr" hidden th:if="${actionError}" th:attr="data-message=${actionError}"></div>
 
                 <div class="rl-head">
                     <div>
@@ -229,9 +265,9 @@
                                 <div class="rl-noimg" th:if="${item.property.mainImageUrl == null}">
                                     <svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9H4z"/><path d="M10 20v-5h4v5"/></svg>
                                 </div>
-                                <span class="rl-badge">
+                                <span class="rl-badge" th:if="${item.category != null}">
                                     <svg viewBox="0 0 24 24"><path d="M12 3l9.5 16.5h-19L12 3z"/><path d="M12 10v4.5M12 17.5v.01"/></svg>
-                                    <span th:text="${item.reason} ?: 'Reported'">Safety hazard</span>
+                                    <span th:text="${item.category}">Safety hazard</span>
                                 </span>
                             </a>
                             <div class="rl-body">
@@ -293,6 +329,18 @@
                                     <a class="rl-open" th:href="@{/admin/reported-listing/{id}(id=${item.property.propertyID}, from='reported')}">View full report
                                         <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
                                 </div>
+
+                                <!-- Unsuspend: only for suspended listings -->
+                                <form th:if="${item.handledStatus == 'Suspended'}" class="rl-unsuspend confirm-form"
+                                      th:action="@{/admin/unsuspend-listing/{id}(id=${item.property.propertyID}, from='reported')}" method="post"
+                                      th:attr="data-property=${item.property.title}"
+                                      data-title="Unsuspend this listing?"
+                                      data-text="The listing will be visible to students again straight away."
+                                      data-button="Yes, unsuspend">
+                                    <button type="submit" class="rl-btn-unsuspend">
+                                        <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Unsuspend listing
+                                    </button>
+                                </form>
                             </div>
                         </article>
                     </div>
@@ -309,6 +357,20 @@
                 <nav class="rl-pager" id="rlPager" aria-label="Pages"></nav>
 
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Popup used for the "Unsuspend?" question and for success messages -->
+<div id="ulee-confirm" class="ulee-confirm-backdrop" aria-hidden="true">
+    <div class="ulee-confirm-card" role="dialog" aria-modal="true" aria-labelledby="uleeConfirmTitle">
+        <div id="uleeConfirmIcon" class="ulee-confirm-icon"></div>
+        <h3 id="uleeConfirmTitle">Are you sure?</h3>
+        <div id="uleeConfirmProperty" class="ulee-confirm-prop"></div>
+        <p id="uleeConfirmText"></p>
+        <div class="ulee-confirm-actions">
+            <button type="button" id="uleeConfirmCancel">Cancel</button>
+            <button type="button" id="uleeConfirmOk">Confirm</button>
         </div>
     </div>
 </div>
@@ -346,14 +408,15 @@
 
         // One pill per reason (or status) found on this tab, with a count
         function buildFilters() {
-            var cards = activeCards(), counts = {}, order = [];
+            var cards = activeCards(), counts = {}, order = [], plain = 0;
             cards.forEach(function (c) {
-                var r = c.getAttribute('data-reason') || 'Other';
+                var r = c.getAttribute('data-reason') || '';
+                if (!r) { plain++; return; }   // no category chosen: no pill for it
                 if (!counts[r]) { counts[r] = 0; order.push(r); }
                 counts[r]++;
             });
             filtersEl.innerHTML = '';
-            if (order.length < 2) return;           // nothing to filter by
+            if (order.length < 2 && !(order.length === 1 && plain > 0)) return;           // nothing to filter by
             function chip(key, label, n) {
                 var b = document.createElement('button');
                 b.type = 'button';
@@ -418,7 +481,7 @@
 
         search.addEventListener('input', function () { page = 1; applySearch(); });
 
-        // Open on the right tab: #handled or ?tab=handled (e.g. after un-suspending)
+        // Open on the right tab: #handled or ?tab=handled (e.g. after suspending / un-suspending)
         var want = (location.hash || '').replace('#', '') || new URLSearchParams(location.search).get('tab') || 'unhandled';
         show(want);
 
@@ -439,6 +502,89 @@
                 requestAnimationFrame(tick);
             });
         });
+    })();
+</script>
+
+<script>
+    // Popup: asks "Unsuspend this listing?" and also shows success messages (replaces the old banner)
+    (function () {
+        var backdrop = document.getElementById('ulee-confirm');
+        var iconEl = document.getElementById('uleeConfirmIcon');
+        var titleEl = document.getElementById('uleeConfirmTitle');
+        var propEl = document.getElementById('uleeConfirmProperty');
+        var textEl = document.getElementById('uleeConfirmText');
+        var okBtn = document.getElementById('uleeConfirmOk');
+        var cancelBtn = document.getElementById('uleeConfirmCancel');
+        var pendingForm = null;
+
+        var ICON_RESTORE = '<svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>';
+        var ICON_CHECK = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>';
+        var ICON_WARN = '<svg viewBox="0 0 24 24"><path d="M12 3l9.5 16.5h-19L12 3z"/><path d="M12 10v4.5M12 17.5v.01"/></svg>';
+
+        function openDialog(o) {
+            iconEl.innerHTML = o.icon;
+            titleEl.textContent = o.title;
+            textEl.textContent = o.text || '';
+            okBtn.textContent = o.button;
+            propEl.textContent = o.prop || '';
+            propEl.style.display = o.prop ? 'inline-block' : 'none';
+            cancelBtn.style.display = o.showCancel ? '' : 'none';
+            backdrop.querySelector('.ulee-confirm-card').classList.toggle('tone-notice', !o.showCancel);
+            backdrop.classList.add('open');
+            backdrop.setAttribute('aria-hidden', 'false');
+            okBtn.focus();
+        }
+        function closeDialog() {
+            backdrop.classList.remove('open');
+            backdrop.setAttribute('aria-hidden', 'true');
+            pendingForm = null;
+        }
+
+        // "Unsuspend listing" button -> ask first
+        document.querySelectorAll('form.confirm-form').forEach(function (form) {
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                pendingForm = form;
+                openDialog({
+                    icon: ICON_RESTORE,
+                    title: form.getAttribute('data-title') || 'Are you sure?',
+                    text: form.getAttribute('data-text') || '',
+                    button: form.getAttribute('data-button') || 'Confirm',
+                    prop: form.getAttribute('data-property'),
+                    showCancel: true
+                });
+            });
+        });
+
+        okBtn.addEventListener('click', function () {
+            var form = pendingForm;
+            closeDialog();
+            if (form) form.submit();
+        });
+        cancelBtn.addEventListener('click', closeDialog);
+        backdrop.addEventListener('click', function (e) { if (e.target === backdrop) closeDialog(); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDialog(); });
+
+        // Success message from the server (after suspend / unsuspend) -> popup
+        var errNotice = document.getElementById('rlNoticeErr');
+        if (errNotice) {
+            openDialog({ icon: ICON_WARN, title: 'Something went wrong', text: errNotice.getAttribute('data-message') || '', button: 'OK', prop: '', showCancel: false });
+        }
+        var notice = document.getElementById('rlNotice');
+        if (notice) {
+            var msg = notice.getAttribute('data-message') || '';
+            var m = msg.match(/"([^"]+)"/);
+            var name = m ? m[1] : '';
+            var title = 'Done', text = msg;
+            if (/^Unsuspended/i.test(msg)) {
+                title = 'Listing is live again';
+                text = 'The listing is visible to students again.';
+            } else if (/^Suspended/i.test(msg)) {
+                title = 'Listing suspended';
+                text = 'The listing is now hidden from students. You can unsuspend it any time from the Handled tab.';
+            }
+            openDialog({ icon: ICON_CHECK, title: title, text: text, button: 'OK', prop: name, showCancel: false });
+        }
     })();
 </script>
 

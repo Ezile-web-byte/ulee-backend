@@ -18,6 +18,10 @@ import java.util.stream.Collectors;
  * "My Stay" for students: the hub page, plus reporting an issue.
  * Reports are saved with your existing Report entity, so the admin's
  * "Handle Reported Property" page sees them. (Reviews are in ReviewController.)
+ *
+ * STAY LOCK: once a student has reviewed or reported a property, we assume
+ * they live there, so their OTHER accepted properties are locked (no review,
+ * no report). See stayingPropertyIds() / isLockedOut() below.
  */
 @Controller
 public class StayController {
@@ -30,6 +34,11 @@ public class StayController {
             new String[]{"utilities", "Wi-Fi & utilities", "wifi", "Internet, water or electricity problems"},
             new String[]{"landlord", "Landlord conduct", "gavel", "Unfair charges, no response, privacy"},
             new String[]{"other", "Something else", "help", "Anything not listed here"});
+
+    // Shown whenever a locked property is opened or submitted.
+    private static final String LOCKED_MESSAGE =
+            "You have already reviewed or reported another property, so we assume you live there. "
+                    + "You can only review or report issues at that property.";
 
     @Autowired private ApplicationRepository applicationRepository;
     @Autowired private PropertyRepository propertyRepository;
@@ -55,6 +64,28 @@ public class StayController {
                 .anyMatch(a -> "Accepted".equalsIgnoreCase(a.getStatus()));
     }
 
+    // ── STAY LOCK ──────────────────────────────────────────────────────
+    // The properties this student has already reviewed or reported. Reviewing
+    // or reporting a property means we assume they are staying there.
+    // (If old data has activity on more than one property, all of those stay
+    // open, so nothing the student already did is taken away.)
+    private Set<Integer> stayingPropertyIds(Integer studentId) {
+        Set<Integer> ids = new LinkedHashSet<>();
+        reviewRepository.findByStudentID(studentId).forEach(r -> {
+            if (r.getPropertyID() != null) ids.add(r.getPropertyID());
+        });
+        reportRepository.findByStudentID(studentId).forEach(r -> {
+            if (r.getPropertyID() != null) ids.add(r.getPropertyID());
+        });
+        return ids;
+    }
+
+    // True when the student already has a "home" property and this is not it.
+    private boolean isLockedOut(Integer studentId, Integer propertyId) {
+        Set<Integer> staying = stayingPropertyIds(studentId);
+        return !staying.isEmpty() && !staying.contains(propertyId);
+    }
+
     // ---------- My Stay hub ----------
     @GetMapping("/my-stay")
     public String viewMyStay(Model model, Principal principal) {
@@ -73,6 +104,25 @@ public class StayController {
         List<Report> myReports = reportRepository.findByStudentID(studentId).stream()
                 .sorted(Comparator.comparing(Report::getReportedAt, Comparator.nullsLast(Comparator.reverseOrder())))
                 .collect(Collectors.toList());
+
+        // propertyID -> this student's review of it, so My Stay can show the
+        // landlord's reply (review.landlordResponse / review.responseDate).
+        // myReviews is newest first, so putIfAbsent keeps the newest review per property.
+        Map<Integer, Review> reviewByProperty = new LinkedHashMap<>();
+        for (Review r : myReviews) {
+            if (r.getPropertyID() != null) {
+                reviewByProperty.putIfAbsent(r.getPropertyID(), r);
+            }
+        }
+
+        // STAY LOCK: where the student stays, and which accepted places are locked.
+        Set<Integer> stayingIds = stayingPropertyIds(studentId);
+        Set<Integer> lockedIds = new LinkedHashSet<>();
+        if (!stayingIds.isEmpty()) {
+            for (Integer id : acceptedIds) {
+                if (!stayingIds.contains(id)) lockedIds.add(id);
+            }
+        }
 
         // One lookup of every property mentioned on the page
         Set<Integer> allIds = new LinkedHashSet<>(acceptedIds);
@@ -99,6 +149,9 @@ public class StayController {
         model.addAttribute("propertyLookup", propertyLookup);
         model.addAttribute("imageLookup", imageLookup);
         model.addAttribute("reviewedIds", reviewedIds);
+        model.addAttribute("reviewByProperty", reviewByProperty);
+        model.addAttribute("stayingIds", stayingIds);   // NEW — properties the student stays at
+        model.addAttribute("lockedIds", lockedIds);     // NEW — accepted properties that are locked
 
         // Sidebar / top bar
         model.addAttribute("userInitials", initialsOf(user));
@@ -122,6 +175,11 @@ public class StayController {
         if (!isAccepted(user.getUserID(), propertyId)) {
             redirectAttributes.addFlashAttribute("actionError",
                     "You can only report issues at a property you've been accepted to.");
+            return "redirect:/my-stay";
+        }
+        // STAY LOCK: already reviewed/reported somewhere else
+        if (isLockedOut(user.getUserID(), propertyId)) {
+            redirectAttributes.addFlashAttribute("actionError", LOCKED_MESSAGE);
             return "redirect:/my-stay";
         }
 
@@ -158,6 +216,12 @@ public class StayController {
         if (!isAccepted(studentId, propertyId)) {
             redirectAttributes.addFlashAttribute("actionError",
                     "You can only report issues at a property you've been accepted to.");
+            return "redirect:/my-stay";
+        }
+
+        // STAY LOCK: also enforced here, so a hand-made POST can't get round it
+        if (isLockedOut(studentId, propertyId)) {
+            redirectAttributes.addFlashAttribute("actionError", LOCKED_MESSAGE);
             return "redirect:/my-stay";
         }
 

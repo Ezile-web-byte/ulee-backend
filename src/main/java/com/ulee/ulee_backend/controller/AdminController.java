@@ -710,10 +710,16 @@ public class AdminController {
         public String getSearchText() {
             String t = property != null && property.getTitle() != null ? property.getTitle() : "";
             String sub = property != null && property.getSuburb() != null ? property.getSuburb() : "";
-            return (t + " " + sub + " " + nz(reason) + " " + nz(reporterName) + " "
+            return (t + " " + sub + " " + nz(getCategory()) + " " + nz(reporterName) + " "
                     + nz(description) + " " + nz(handledStatus)).toLowerCase();
         }
-        public String getReasonKey()         { return reason != null && !reason.isBlank() ? reason : "Other"; }
+        public String getReasonKey()         { String c = getCategory(); return c != null ? c : ""; }
+
+        /** The category the student picked, or null when they didn't pick one ("Reported" is only the default placeholder). */
+        public String getCategory() {
+            if (reason == null || reason.isBlank() || "Reported".equalsIgnoreCase(reason.trim())) return null;
+            return reason.trim();
+        }
         public String getHandledKey()        { return handledStatus != null && !handledStatus.isBlank() ? handledStatus : "Warned"; }
         private static String nz(String v)   { return v == null ? "" : v; }
         public String getHandledStatus()     { return handledStatus; }
@@ -1021,7 +1027,8 @@ public class AdminController {
         notifyReportersHandled(reporterIdsFor(id));
 
         redirectAttributes.addFlashAttribute("actionMessage", "Suspended \"" + property.getTitle() + "\"");
-        return "redirect:/admin/reported-listings";
+        // Land on the Handled tab so the suspended listing (and its Unsuspend button) is right there
+        return "redirect:/admin/reported-listings#handled";
     }
 
     // Returns the admin to where they came from (the detail page sends
@@ -1147,21 +1154,27 @@ public class AdminController {
         jdbcTemplate.update("DELETE FROM application_document WHERE applicationID IN (SELECT applicationID FROM application WHERE propertyID = ?)", propertyId);
         applicationRepository.deleteAll(applicationRepository.findByPropertyIDIn(List.of(propertyId)));
         // Remaining tables with an FK to property.propertyID that don't have
-        // a Spring Data repository wired into this controller. NOTE: "report"
-        // (singular) is a separate legacy table from the "reports" (plural)
-        // table ReportRepository maps to — it isn't used anywhere in the app
-        // anymore but its FK constraint still blocks deletion if a stray row
-        // exists.
+        // a Spring Data repository wired into this controller.
         jdbcTemplate.update("DELETE FROM property_amenity WHERE propertyID = ?", propertyId);
         jdbcTemplate.update("DELETE FROM savedproperty WHERE propertyID = ?", propertyId);
-        jdbcTemplate.update("DELETE FROM report WHERE propertyID = ?", propertyId);
-        // Same situation as "report" above: "review" (singular) is a separate
-        // legacy table from "reviews" (plural) that ReviewRepository actually
-        // maps to. It isn't used anywhere in the app anymore but its FK
-        // constraint (review_ibfk_2 on propertyID) still blocks deleting the
-        // property if a stray row exists there.
-        jdbcTemplate.update("DELETE FROM review WHERE propertyID = ?", propertyId);
+        // Notifications about this listing point at the property, so clear them before it goes.
+        deleteFromLegacyTable("DELETE FROM notifications WHERE propertyID = ?", propertyId);
+        deleteFromLegacyTable("DELETE FROM studentnotifications WHERE propertyID = ?", propertyId);
+        // Old tables that no longer exist in this database (the real ones are
+        // "reports" and "reviews", plural, already cleared above) are skipped.
+        deleteFromLegacyTable("DELETE FROM property_feature WHERE propertyID = ?", propertyId);
+        deleteFromLegacyTable("DELETE FROM report WHERE propertyID = ?", propertyId);
+        deleteFromLegacyTable("DELETE FROM review WHERE propertyID = ?", propertyId);
         propertyRepository.deleteById(propertyId);
+    }
+
+    /** Cleans up a table if it exists; if the table or column is gone there is nothing to delete, so skip it. */
+    private void deleteFromLegacyTable(String sql, Object... args) {
+        try {
+            jdbcTemplate.update(sql, args);
+        } catch (org.springframework.jdbc.BadSqlGrammarException ignored) {
+            // table or column doesn't exist in this database
+        }
     }
 
     /**
@@ -2140,13 +2153,12 @@ public class AdminController {
                 jdbcTemplate.update("DELETE FROM reviews WHERE studentID = ?", id);
                 jdbcTemplate.update("DELETE FROM reports WHERE studentID = ?", id);
                 jdbcTemplate.update("DELETE FROM notifications WHERE studentID = ?", id);
-                // Same legacy-table trap as deletePropertyCascade: "review"
-                // is a separate old table from "reviews" (plural) and does
-                // carry a studentID column. "report" (singular) does NOT
-                // have a studentID column — confirmed by testing — so it's
+                // "review" (singular) is an old table that no longer exists in
+                // this database, so it is skipped if it's missing.
+                // "report" (singular) does NOT have a studentID column — it's
                 // only ever cleaned up by propertyID (in deletePropertyCascade),
                 // never here.
-                jdbcTemplate.update("DELETE FROM review WHERE studentID = ?", id);
+                deleteFromLegacyTable("DELETE FROM review WHERE studentID = ?", id);
                 // Clear the documents attached to this student's
                 // applications first (application_document FK).
                 jdbcTemplate.update("DELETE FROM application_document WHERE applicationID IN (SELECT applicationID FROM application WHERE studentID = ?)", id);

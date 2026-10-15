@@ -154,14 +154,6 @@
         .ap-photo { position: relative; display: block; height: 150px; background: var(--u-surface); }
         .ap-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-        /* "Approved" badge on the photo */
-        .ap-badge {
-            position: absolute; top: 12px; left: 12px; padding: 5px 12px; border-radius: 999px;
-            background: var(--u-navy); color: var(--u-teal-bright); border: 1px solid rgba(20, 200, 190, .55);
-            font-family: var(--u-font-display); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
-            box-shadow: 0 2px 8px rgba(7, 28, 45, .35);
-        }
-
         .ap-body { padding: 14px; display: flex; flex-direction: column; flex: 1; }
         .ap-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
         .ap-title { font-weight: 700; font-size: 15px; color: var(--u-on-surface); text-decoration: none; }
@@ -323,8 +315,6 @@
                              from=approved so the detail page's Back button returns here. -->
                         <a class="ap-photo" th:href="@{/admin/listing/{id}(id=${prop.propertyID},from='approved')}">
                             <img th:if="${prop.mainImageUrl} != null" th:src="${prop.mainImageUrl}" th:alt="${prop.title}" alt="" />
-
-                            <span class="ap-badge">Approved</span>
                         </a>
 
                         <div class="ap-body">
