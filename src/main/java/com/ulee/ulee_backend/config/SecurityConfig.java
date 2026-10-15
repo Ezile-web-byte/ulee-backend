@@ -1,13 +1,5 @@
 package com.ulee.ulee_backend.config;
 
-import com.ulee.ulee_backend.model.AdminLoginActivity;
-import com.ulee.ulee_backend.model.AdminSession;
-import com.ulee.ulee_backend.model.User;
-import com.ulee.ulee_backend.repository.AdminLoginActivityRepository;
-import com.ulee.ulee_backend.repository.AdminSessionRepository;
-import com.ulee.ulee_backend.repository.UserRepository;
-import com.ulee.ulee_backend.util.RequestDeviceUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -15,25 +7,11 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
-import org.springframework.security.web.authentication.logout.LogoutHandler;
-import org.springframework.security.web.context.SecurityContextHolderFilter;
-import java.time.LocalDateTime;
-import java.util.Optional;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private AdminSessionRepository adminSessionRepository;
-
-    @Autowired
-    private AdminLoginActivityRepository adminLoginActivityRepository;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -45,29 +23,15 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable()) // TEMP: unblocks login without a CSRF token in the form
                 .authorizeHttpRequests(auth -> auth
-                        // Public: homepage, browsing, registration, ALL static assets.
-                        // "/property/**" (property detail + 360° tour) is deliberately NOT
-                        // here any more: guests can browse the cards on /student-dashboard
-                        // and /search, but must log in to open a property. Spring saves the
-                        // requested URL, and roleBasedSuccessHandler() sends the user back
-                        // to it after login (see resolvePostLoginTarget()).
+                        // Public: homepage, browsing, registration, ALL static assets
                         .requestMatchers(
-                                "/", "/student-dashboard", "/search",
+                                "/", "/student-dashboard", "/property/**", "/search",
                                 "/register", "/login",
-                                // "Speak with AI" widget endpoints (listings for the chips, chat for free text)
-                                "/api/listings", "/api/chat",
                                 "/images/**", "/*.css", "/*.js",
                                 "/*.png", "/*.jpg", "/*.jpeg", "/*.svg", "/*.gif", "/*.webp",
                                 "/login-style.css", "/login-script.js",
                                 "/student-style.css", "/student-script.js",
-                                "/static/**", "/uploads/**",
-                                // The SWAI widget's chat endpoint. The widget mounts on public
-                                // pages (student dashboard, login, property detail) that
-                                // anonymous visitors can already reach, so this must stay
-                                // reachable without authentication too — otherwise the catch-all
-                                // .anyRequest().authenticated() below would 401/403 every chat
-                                // message from a logged-out visitor.
-                                "/api/swai/chat"
+                                "/static/**", "/uploads/**"
                         ).permitAll()
 
                         // Landlord Protected Routes (ADD `/listProperty` HERE)
@@ -84,84 +48,25 @@ public class SecurityConfig {
                 )
                 .formLogin(form -> form
                         .loginProcessingUrl("/login")     // where the login form POSTs to
-                        // FIX: no .loginPage(...) was set, so whenever Spring
-                        // Security needed a visitor to log in (e.g. hitting a
-                        // protected page while logged out) it fell back to
-                        // its own built-in default login page — the plain
-                        // "Please sign in" form you're seeing, which has
-                        // nothing to do with student-dashboard.html. Pointing
-                        // it here instead sends people to the real ULEE page,
-                        // which already knows to show the login banner and
-                        // auto-open the styled login modal when
-                        // loginRequired=true is present.
-                        .loginPage("/student-dashboard?loginRequired=true")
                         .successHandler(roleBasedSuccessHandler())
-                        .failureHandler(loginFailureHandler())
+                        // Send failures back to the real /login page (not "/", which immediately
+                        // redirects to /student-dashboard and drops the query param, silently
+                        // swallowing the error).
+                        .failureUrl("/login?error=true")
                         .permitAll()
                 )
                 .logout(logout -> logout
                         .logoutUrl("/logout")
-                        // Mark the AdminSession row for this HttpSession as
-                        // inactive BEFORE the session itself is invalidated,
-                        // so Settings > Active Sessions stops showing it.
-                        .addLogoutHandler(sessionCleanupLogoutHandler())
-                        // FIX: was "/", so logging out (from any role — admin or
-                        // student) dropped you on the bare root path instead of
-                        // ULEE's own landing/dashboard page. Now every logout,
-                        // regardless of which role logged out, lands on
-                        // /student-dashboard as requested.
-                        .logoutSuccessUrl("/student-dashboard")
+                        .logoutSuccessUrl("/")
                         .permitAll()
-                )
-                // Logs out anyone already signed in whose account has since been
-                // deactivated (e.g. when the 10-minute notice runs out).
-                .addFilterAfter(new DeactivatedAccountFilter(userRepository, adminSessionRepository),
-                        SecurityContextHolderFilter.class)
-                // NEW: an admin or landlord who opens the public landing / login pages
-                // (for example in a second tab) is signed out first, instead of being
-                // treated as a logged-in student. Students are not affected.
-                .addFilterAfter(new RoleLandingLogoutFilter(adminSessionRepository),
-                        SecurityContextHolderFilter.class);
+                );
 
         return http.build();
     }
 
-    /**
-     * Redirects each role to its own dashboard after successful login, and
-     * — new — records the login (Settings > Recent Login Activity) and
-     * opens an AdminSession row for this device (Settings > Active
-     * Sessions), tied to the HttpSession id so it can be found again on
-     * logout/expiry.
-     */
+    // Redirects each role to its own dashboard after successful login
     private AuthenticationSuccessHandler roleBasedSuccessHandler() {
         return (request, response, authentication) -> {
-            Optional<User> userOpt = userRepository.findByEmail(authentication.getName());
-
-            String deviceLabel = RequestDeviceUtils.deviceLabel(request);
-            String ip = RequestDeviceUtils.clientIp(request);
-            LocalDateTime now = LocalDateTime.now();
-
-            AdminLoginActivity activity = new AdminLoginActivity();
-            activity.setUserID(userOpt.map(User::getUserID).orElse(null));
-            activity.setEmailAttempted(authentication.getName());
-            activity.setSuccess(true);
-            activity.setDeviceLabel(deviceLabel);
-            activity.setIpAddress(ip);
-            activity.setTimestamp(now);
-            adminLoginActivityRepository.save(activity);
-
-            if (userOpt.isPresent()) {
-                AdminSession session = new AdminSession();
-                session.setUserID(userOpt.get().getUserID());
-                session.setSessionId(request.getSession().getId());
-                session.setDeviceLabel(deviceLabel);
-                session.setIpAddress(ip);
-                session.setLoginAt(now);
-                session.setLastActiveAt(now);
-                session.setActive(true);
-                adminSessionRepository.save(session);
-            }
-
             String redirectUrl = authentication.getAuthorities().stream()
                     .findFirst()
                     .map(a -> switch (a.getAuthority()) {
@@ -170,120 +75,8 @@ public class SecurityConfig {
                         default -> "/student-dashboard";
                     })
                     .orElse("/student-dashboard");
-
-            // Students who were bounced to login from a protected page (e.g. a
-            // property they clicked) go straight back to it instead of the
-            // landing page. Landlords/admins keep their own dashboards.
-            if ("/student-dashboard".equals(redirectUrl)) {
-                String target = resolvePostLoginTarget(request, response);
-                if (target != null) redirectUrl = target;
-            }
-
-            // The login modal submits via fetch (no page reload) and sends
-            // X-Requested-With: XMLHttpRequest. For those requests reply with
-            // JSON and let the page do the navigation; normal form posts keep
-            // the plain redirect.
-            if (isAjax(request)) {
-                writeJson(response, 200, "{\"redirect\":\"" + redirectUrl + "\"}");
-            } else {
-                response.sendRedirect(redirectUrl);
-            }
-        };
-    }
-
-    /**
-     * Records a failed login attempt (Settings > Recent Login Activity),
-     * then sends the visitor back to the student dashboard with
-     * ?loginError=credentials, which re-opens the login modal showing
-     * "Incorrect username or password." The same message is used whether
-     * the email doesn't exist or the password is wrong, so the response
-     * never reveals which accounts are registered. The attempted email is
-     * logged even if it doesn't match any account — userID is just left
-     * null in that case.
-     */
-    private AuthenticationFailureHandler loginFailureHandler() {
-        return (request, response, exception) -> {
-            String attemptedEmail = request.getParameter("username");
-
-            AdminLoginActivity activity = new AdminLoginActivity();
-            if (attemptedEmail != null) {
-                userRepository.findByEmail(attemptedEmail).ifPresent(u -> activity.setUserID(u.getUserID()));
-            }
-            activity.setEmailAttempted(attemptedEmail);
-            activity.setSuccess(false);
-            activity.setDeviceLabel(RequestDeviceUtils.deviceLabel(request));
-            activity.setIpAddress(RequestDeviceUtils.clientIp(request));
-            activity.setTimestamp(LocalDateTime.now());
-            adminLoginActivityRepository.save(activity);
-
-            // AJAX login (the modal): answer 401 + JSON so the page can show the
-            // error instantly without reloading. Non-AJAX posts still redirect.
-            if (isAjax(request)) {
-                writeJson(response, 401, "{\"error\":\"Incorrect username or password.\"}");
-            } else {
-                response.sendRedirect("/student-dashboard?loginError=credentials");
-            }
-        };
-    }
-
-    // Only these student pages may be restored after login. Keeps the redirect
-    // on-site and avoids replaying odd saved requests (a POST to /favorite/7
-    // would come back as a GET and 405; /error or /favicon.ico are noise).
-    private static final java.util.List<String> RESTORABLE_PREFIXES = java.util.List.of(
-            "/property/", "/my-dashboard", "/my-applications", "/saved-properties");
-
-    /**
-     * Where a student should land after logging in, or null for the default.
-     * Two sources, in order:
-     *  1. The page Spring Security saved when it sent them to login (direct
-     *     links, bookmarks, shared URLs).
-     *  2. A "redirect" form field sent by the landing page's login modal when
-     *     a guest clicked a property card there (no server round trip, so
-     *     nothing was saved in step 1).
-     * Either way the value is reduced to a path and checked against
-     * RESTORABLE_PREFIXES, so it can never point off-site.
-     */
-    private String resolvePostLoginTarget(jakarta.servlet.http.HttpServletRequest request,
-                                          jakarta.servlet.http.HttpServletResponse response) {
-        org.springframework.security.web.savedrequest.HttpSessionRequestCache cache =
-                new org.springframework.security.web.savedrequest.HttpSessionRequestCache();
-        org.springframework.security.web.savedrequest.SavedRequest saved = cache.getRequest(request, response);
-        String candidate = null;
-        if (saved instanceof org.springframework.security.web.savedrequest.DefaultSavedRequest d) {
-            candidate = d.getRequestURI() + (d.getQueryString() != null ? "?" + d.getQueryString() : "");
-        }
-        if (saved != null) cache.removeRequest(request, response);
-        if (!isRestorable(candidate)) candidate = request.getParameter("redirect");
-        return isRestorable(candidate) ? candidate : null;
-    }
-
-    private boolean isRestorable(String path) {
-        if (path == null || !path.startsWith("/") || path.startsWith("//") || path.contains("\\")) return false;
-        return RESTORABLE_PREFIXES.stream().anyMatch(path::startsWith);
-    }
-
-    /** True when the request came from fetch/XHR with X-Requested-With set. */
-    private boolean isAjax(jakarta.servlet.http.HttpServletRequest request) {
-        return "XMLHttpRequest".equals(request.getHeader("X-Requested-With"));
-    }
-
-    private void writeJson(jakarta.servlet.http.HttpServletResponse response, int status, String json)
-            throws java.io.IOException {
-        response.setStatus(status);
-        response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
-        response.getWriter().write(json);
-    }
-
-    /** Marks this HttpSession's AdminSession row inactive on explicit logout. */
-    private LogoutHandler sessionCleanupLogoutHandler() {
-        return (request, response, authentication) -> {
-            if (request.getSession(false) == null) return;
-            String sessionId = request.getSession(false).getId();
-            adminSessionRepository.findBySessionId(sessionId).ifPresent(session -> {
-                session.setActive(false);
-                adminSessionRepository.save(session);
-            });
+            response.sendRedirect(redirectUrl);
         };
     }
 }
+

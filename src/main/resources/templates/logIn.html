@@ -1,146 +1,119 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ULEE – Sign In</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/login-style.css">
-    <script src="/login-script.js" defer></script>
-    <link rel="stylesheet" href="/speak-with-ai.css">
-    <script src="/speak-with-ai-logic.js" defer></script>
-    <script src="/speak-with-ai.js" defer></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ULEE – Sign In</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/login-style.css">
+  <script src="/login-script.js" defer></script>
+  <link rel="stylesheet" href="/speak-with-ai.css">
+  <script src="/speak-with-ai-logic.js" defer></script>
+  <script src="/speak-with-ai.js" defer></script>
 </head>
 <body>
+  <div class="page-overlay"></div>
+  <div class="page-content">
+    <div class="sa-card">
+      <p class="sa-logo">ULEE</p>
+      <p class="sa-tagline">The Future Of Student Living.</p>
 
-<div class="auth-shell">
+      <div id="toast" class="sa-toast"></div>
 
-    <!-- ───── Navy hero ───── -->
-    <aside class="auth-hero">
-        <a href="/student-dashboard" class="auth-brand">
-            <svg viewBox="0 0 20 20"><path d="M10 2L3 7v11h14V7L10 2zm0 2.6 5 3.5V16H5V8.1l5-3.5zM8 10h4v6H8z"/></svg>
-            <span>
-        <div class="auth-brand-name">ULEE</div>
-        <div class="auth-brand-tag">Student Living. Simplified.</div>
-      </span>
-        </a>
+      <p th:if="${param.error != null}"
+         style="text-align:center; color:#dc2626; font-weight:500; padding:8px 0; font-size:14px;">
+        Incorrect email or password. Please try again.
+      </p>
 
-        <div class="auth-hero-copy">
-            <h1>Welcome back to student living in Gqeberha.</h1>
-            <p>Log in to check your applications, saved rooms and messages.</p>
-            <ul class="auth-hero-points">
-                <li>
-                    <svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>
-                    Track every application in one place
-                </li>
-                <li>
-                    <svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>
-                    Rooms from landlords near your campus
-                </li>
-            </ul>
+      <!-- Log In Panel -->
+      <div id="panel-login" class="sa-panel active">
+        <div class="sa-field">
+          <label class="sa-label">Email</label>
+          <input class="sa-input" type="email" placeholder="e.g. s227676637@mandela.ac.za" id="login-email" />
         </div>
-
-        <svg class="auth-stars" viewBox="0 0 200 90" aria-hidden="true">
-            <g fill="#9FF0E8">
-                <circle class="star" cx="150" cy="20" r="1.6" style="--d:0s"/>
-                <circle class="star" cx="180" cy="44" r="1.3" style="--d:1.2s"/>
-                <circle class="star" cx="120" cy="52" r="1.2" style="--d:.5s"/>
-                <circle class="star" cx="95"  cy="18" r="1.1" style="--d:2s"/>
-                <circle class="star" cx="170" cy="72" r="1.2" style="--d:.8s"/>
-            </g>
-        </svg>
-        <svg class="auth-wave" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true">
-            <path class="w-back"  d="M0 18 q75 -16 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
-            <path class="w-front" d="M0 26 q75 -14 150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 t150 0 V40 H0 Z"/>
-        </svg>
-    </aside>
-
-    <!-- ───── Form ───── -->
-    <main class="auth-main">
-        <div class="auth-main-inner">
-            <p class="sa-logo">ULEE</p>
-            <p class="sa-tagline">Student Living. Simplified.</p>
-
-            <div class="sa-card">
-                <div id="toast" class="sa-toast"></div>
-
-                <!-- Log In Panel -->
-                <div id="panel-login" class="sa-panel active">
-                    <h2 class="sa-title">Log in to ULEE</h2>
-                    <p class="sa-sub">Use your student number or email.</p>
-
-                    <div class="sa-field">
-                        <label class="sa-label" for="login-user">Username</label>
-                        <input class="sa-input" type="text" placeholder="e.g. s227676637" id="login-user" />
-                    </div>
-                    <div class="sa-field">
-                        <label class="sa-label" for="login-pass">Password</label>
-                        <div class="sa-password-wrap">
-                            <input class="sa-input sa-password-input" type="password" placeholder="Enter your password" id="login-pass" />
-                        </div>
-                    </div>
-                    <a class="sa-forgot" onclick="showForgot()">Forgot password?</a>
-                    <button class="sa-btn-primary" onclick="handleLogin()">Log in</button>
-                    <div class="sa-divider"><hr><span>or</span><hr></div>
-                    <button class="sa-btn-secondary" onclick="switchPanel('register')">Create a new account</button>
-                    <p class="sa-note">
-                        Are you a landlord or admin?
-                        <a href="landlord.html#register">Sign up</a>
-                        or
-                        <a href="landlord.html#login">Log in</a>.
-                    </p>
-                </div>
-
-                <!-- Register Panel -->
-                <div id="panel-register" class="sa-panel">
-                    <h2 class="sa-title">Create your account</h2>
-                    <p class="sa-sub">Students sign up with their university email.</p>
-
-                    <div class="sa-row">
-                        <div class="sa-field">
-                            <label class="sa-label" for="reg-fname">First name</label>
-                            <input class="sa-input" type="text" placeholder="Jane" id="reg-fname" />
-                        </div>
-                        <div class="sa-field">
-                            <label class="sa-label" for="reg-lname">Last name</label>
-                            <input class="sa-input" type="text" placeholder="Smith" id="reg-lname" />
-                        </div>
-                    </div>
-                    <div class="sa-field">
-                        <label class="sa-label" for="reg-user">Email address</label>
-                        <input class="sa-input" type="text" placeholder="e.g. s227676637@mandela.ac.za" id="reg-user" />
-                    </div>
-                    <div class="sa-field">
-                        <label class="sa-label" for="reg-pass">Password</label>
-                        <div class="sa-password-wrap">
-                            <input class="sa-input sa-password-input" type="password" placeholder="At least 8 characters" id="reg-pass" />
-                        </div>
-                    </div>
-                    <button class="sa-btn-primary" onclick="handleRegister()">Create account</button>
-                    <div class="sa-divider"><hr><span>or</span><hr></div>
-                    <button class="sa-btn-secondary" onclick="switchPanel('login')">Already have an account? Log in</button>
-                </div>
-
-                <!-- Forgot Password Panel -->
-                <div id="panel-forgot" class="sa-panel">
-                    <h2 class="sa-title">Reset your password</h2>
-                    <p class="sa-sub">Enter your username or email and we'll send you a reset link.</p>
-
-                    <div class="sa-field">
-                        <label class="sa-label" for="forgot-val">Username or email</label>
-                        <input class="sa-input" type="text" placeholder="Your username or email" id="forgot-val" />
-                    </div>
-                    <button class="sa-btn-primary" onclick="handleForgot()">Send reset link</button>
-                    <div class="sa-divider"><hr><span></span><hr></div>
-                    <button class="sa-btn-secondary" onclick="switchPanel('login')">← Back to log in</button>
-                </div>
-            </div>
+        <div class="sa-field">
+          <label class="sa-label">Password</label>
+          <div class="sa-password-wrap">
+            <input class="sa-input sa-password-input" type="password" placeholder="Enter your password" id="login-pass" />
+            <button
+              class="sa-password-toggle"
+              type="button"
+              aria-label="Show password"
+              aria-pressed="false"
+              aria-controls="login-pass"
+              onclick="togglePassword('login-pass', this)"
+            >
+              <span class="sa-eye-open" aria-hidden="true">👁</span>
+              <span class="sa-eye-closed" aria-hidden="true">🙈</span>
+            </button>
+          </div>
         </div>
-    </main>
-</div>
+        <a class="sa-forgot" onclick="showForgot()">Forgot password?</a>
+        <button class="sa-btn-primary" onclick="handleLogin()">Log in</button>
+        <div class="sa-divider"><hr><span>or</span><hr></div>
+        <button class="sa-btn-secondary" onclick="switchPanel('register')">Create a new account</button>
+        <p style="margin-top: 0.75rem; text-align: center; font-size: 12px; color: #444; line-height: 1.5;">
+          Are you a Landlord? Use the same email and password
+          <a href="#" onclick="switchPanel('login'); return false;" style="color: var(--yellow-hover); text-decoration: underline; text-underline-offset: 2px;">Log in</a>
+          here, or
+          <a th:href="@{/register(role='landlord')}" style="color: var(--yellow-hover); text-decoration: underline; text-underline-offset: 2px;">sign up</a>
+          as a Landlord.
+        </p>
+      </div>
 
-<div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null)}"></div>
+      <!-- Register Panel -->
+      <div id="panel-register" class="sa-panel">
+        <div class="sa-row">
+          <div class="sa-field">
+            <label class="sa-label">First name</label>
+            <input class="sa-input" type="text" placeholder="Jane" id="reg-fname" />
+          </div>
+          <div class="sa-field">
+            <label class="sa-label">Last name</label>
+            <input class="sa-input" type="text" placeholder="Smith" id="reg-lname" />
+          </div>
+        </div>
+        <div class="sa-field">
+          <label class="sa-label"> Landlord<br> Email Address</label>
+          <input class="sa-input" type="text" placeholder="e.g john@gmail.com" id="reg-user" />
+        </div>
+        <div class="sa-field">
+          <label class="sa-label">Password</label>
+          <div class="sa-password-wrap">
+            <input class="sa-input sa-password-input" type="password" placeholder="At least 8 characters" id="reg-pass" />
+            <button
+              class="sa-password-toggle"
+              type="button"
+              aria-label="Show password"
+              aria-pressed="false"
+              aria-controls="reg-pass"
+              onclick="togglePassword('reg-pass', this)"
+            >
+              <span class="sa-eye-open" aria-hidden="true">👁</span>
+              <span class="sa-eye-closed" aria-hidden="true">🙈</span>
+            </button>
+          </div>
+        </div>
+        <button class="sa-btn-primary" onclick="handleRegister()">Create account</button>
+        <div class="sa-divider"><hr><span>or</span><hr></div>
+        <button class="sa-btn-secondary" onclick="switchPanel('login')">Already have an account? Log in</button>
+      </div>
+
+      <!-- Forgot Password Panel -->
+      <div id="panel-forgot" class="sa-panel">
+        <p style="font-size: 14px; color: #777; margin-bottom: 1.25rem; line-height: 1.6;">
+          Enter your email and we'll send you a reset link.
+        </p>
+        <div class="sa-field">
+          <label class="sa-label">Email</label>
+          <input class="sa-input" type="email" placeholder="e.g. s227676637@mandela.ac.za" id="forgot-email" />
+        </div>
+        <button class="sa-btn-primary" onclick="handleForgot()">Send reset link</button>
+        <div class="sa-divider"><hr><span></span><hr></div>
+        <button class="sa-btn-secondary" onclick="switchPanel('login')">← Back to log in</button>
+      </div>
+    </div>
+  </div>
+  <div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null, null, null, null)}"></div>
 </body>
 </html>

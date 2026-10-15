@@ -1019,7 +1019,7 @@
             </div>
         </div>
 
-        <a th:if="${canWriteReview}" th:href="@{/property/{id}/write-review(id=${property.propertyID})}" class="apply-btn" style="display:block; text-decoration:none; margin-top: 20px;">
+        <a th:if="${canWriteReview}" th:href="@{/write-review/{id}(id=${property.propertyID})}" class="apply-btn" style="display:block; text-decoration:none; margin-top: 20px;">
             Write a Review
         </a>
 
