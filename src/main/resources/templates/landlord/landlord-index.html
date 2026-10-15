@@ -10,12 +10,12 @@
   <link rel="stylesheet" href="/landlord-style.css">
 
   <style>
-    /* â”€â”€ Page intro: larger, teal â”€â”€ */
+    /* ── Page intro: larger, teal ── */
     .page-title { font-size: 28px; color: var(--primary-dark); }
     .page-subtitle { font-size: 16.5px; }
     .page-head .btn { font-size: 15px; padding: 13px 22px; }
 
-    /* â”€â”€ Stat cards: three cards spread evenly across the row â”€â”€ */
+    /* ── Stat cards: three cards spread evenly across the row ── */
     .metrics-bar {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -131,11 +131,11 @@
     @keyframes sc-blink { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
     @keyframes sc-wave { to { transform: translateX(-50%); } }
 
-    /* â”€â”€ Toolbar: a little larger â”€â”€ */
+    /* ── Toolbar: a little larger ── */
     .chip { font-size: 14.5px; padding: 9px 18px; }
     .sort-select, .sort-select select { font-size: 14px; }
 
-    /* â”€â”€ Property cards â”€â”€ */
+    /* ── Property cards ── */
     .property-card { animation: pc-in 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
     .property-card:nth-child(3n+2) { animation-delay: 0.07s; }
     .property-card:nth-child(3n+3) { animation-delay: 0.14s; }
@@ -205,7 +205,7 @@
     }
     .property-media-placeholder svg { width: 38px; height: 38px; }
 
-    /* â”€â”€ Cute empty states â”€â”€ */
+    /* ── Cute empty states ── */
     .empty-properties {
       display: flex;
       flex-direction: column;
@@ -268,6 +268,43 @@
   }
 </style>
 <link rel="stylesheet" th:href="@{/ulee-select.css}">
+<script>
+(function () {
+  var p = new URLSearchParams(window.location.search);
+  if (p.get('toast') !== 'closing') return;
+  var opened = (p.get('opened') || '').split('|').filter(Boolean);
+  window.history.replaceState({}, document.title, window.location.pathname);
+  document.addEventListener('DOMContentLoaded', function () {
+    var back = document.createElement('div');
+    back.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:2000;display:flex;align-items:center;justify-content:center;background:rgba(10,30,38,.45);padding:20px';
+    var card = document.createElement('div');
+    card.style.cssText = 'max-width:440px;width:100%;background:#fff;border-radius:18px;padding:26px;box-shadow:0 24px 60px rgba(0,0,0,.25)';
+    var h = document.createElement('h3');
+    h.style.cssText = 'margin:0 0 8px;font-size:19px;color:#12262d';
+    h.textContent = 'Property is closing';
+    var m = document.createElement('p');
+    m.style.cssText = 'margin:0 0 14px;font-size:14px;line-height:1.6;color:#5b6b71';
+    m.textContent = 'The accepted students have been asked to choose a new room. The property is hidden from students and will be deleted automatically once the last accepted student has moved.';
+    card.appendChild(h);
+    card.appendChild(m);
+    if (opened.length) {
+      var o = document.createElement('p');
+      o.style.cssText = 'margin:0 0 14px;font-size:14px;line-height:1.6;color:#5b6b71';
+      o.textContent = 'To make room, these properties were opened early and their available-from date was set to today: ' + opened.join(', ') + '.';
+      card.appendChild(o);
+    }
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = 'Got it';
+    b.style.cssText = 'width:100%;padding:12px 0;border-radius:10px;border:1px solid #006A6A;background:#006A6A;color:#fff;font-weight:600;font-size:14px;cursor:pointer';
+    b.onclick = function () { back.remove(); };
+    card.appendChild(b);
+    back.appendChild(card);
+    back.addEventListener('click', function (e) { if (e.target === back) back.remove(); });
+    document.body.appendChild(back);
+  });
+})();
+</script>
 </head>
 <body>
 
@@ -338,8 +375,8 @@
           <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M6 8h12M8 12h8M10 16h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
           <select id="sortSelect" aria-label="Sort properties">
             <option value="date-added">Sort by: Date Added</option>
-            <option value="name-asc">Sort by: Name (Aâ€“Z)</option>
-            <option value="rent-desc">Sort by: Rent (Highâ€“Low)</option>
+            <option value="name-asc">Sort by: Name (A–Z)</option>
+            <option value="rent-desc">Sort by: Rent (High–Low)</option>
           </select>
         </label>
       </section>
@@ -465,19 +502,19 @@
 
     if (params.get('added') === 'true' || toast === 'submitted') {
       popup = {
-        icon: 'ðŸŽ‰',
+        icon: '✓',
         title: 'Submitted for approval',
         message: 'Your property was submitted and is now pending admin approval.'
       };
     } else if (params.get('updated') === 'true' || toast === 'updated') {
       popup = {
-        icon: 'âœ…',
+        icon: '✅',
         title: 'Changes saved',
         message: 'Your property has been updated.'
       };
     } else if (params.get('draftSaved') === 'true' || toast === 'draft-saved') {
       popup = {
-        icon: 'ðŸ“',
+        icon: '📝',
         title: 'Draft saved',
         message: params.get('incomplete') === 'true'
                 ? 'Some required details were missing, so this was saved as a draft instead of being submitted. You can finish it any time from My Properties.'
@@ -485,25 +522,25 @@
       };
     } else if (toast === 'resubmitted') {
       popup = {
-        icon: 'ðŸ“¨',
+        icon: '📨',
         title: 'Resubmitted for review',
         message: 'Your updated property is back with the admin. You will be notified of their decision.'
       };
     } else if (toast === 'review-needed') {
       popup = {
-        icon: 'â³',
+        icon: '⏳',
         title: 'Sent back for review',
         message: 'You changed the rent, address, capacity or photos, so this listing is hidden from students until an admin approves it again.'
       };
     } else if (toast === 'deactivated') {
       popup = {
-        icon: 'âœ…',
+        icon: '✅',
         title: 'Property deactivated',
         message: 'It will no longer show to students.'
       };
     } else if (toast === 'reactivated') {
       popup = {
-        icon: 'âœ…',
+        icon: '✅',
         title: 'Property reactivated',
         message: 'It is visible to students again.'
       };
