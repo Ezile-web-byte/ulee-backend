@@ -656,11 +656,11 @@
         <!-- Filters/Tabs (data-type values match the real DB `type` values) -->
         <div class="flex items-stretch gap-sm max-w-full">
             <div class="flex items-center gap-base bg-white border border-outline-variant p-xs rounded-full overflow-x-auto hide-scrollbar min-w-0" id="typeTabs">
-            <button type="button" class="filter-tab active px-md py-sm rounded-full font-label-bold whitespace-nowrap u-transition" data-type="all">All Rooms</button>
-            <button type="button" class="filter-tab px-md py-sm rounded-full font-label-bold whitespace-nowrap u-transition" data-type="Single Room">Single Rooms</button>
-            <button type="button" class="filter-tab px-md py-sm rounded-full font-label-bold whitespace-nowrap u-transition" data-type="Commune">Commune</button>
-            <button type="button" class="filter-tab px-md py-sm rounded-full font-label-bold whitespace-nowrap u-transition" data-type="Sharing">Sharing</button>
-        </div>
+                <button type="button" class="filter-tab active px-md py-sm rounded-full font-label-bold whitespace-nowrap u-transition" data-type="all">All Rooms</button>
+                <button type="button" class="filter-tab px-md py-sm rounded-full font-label-bold whitespace-nowrap u-transition" data-type="Single Room">Single Rooms</button>
+                <button type="button" class="filter-tab px-md py-sm rounded-full font-label-bold whitespace-nowrap u-transition" data-type="Commune">Commune</button>
+                <button type="button" class="filter-tab px-md py-sm rounded-full font-label-bold whitespace-nowrap u-transition" data-type="Sharing">Sharing</button>
+            </div>
             <div class="relative flex" id="filterWrap">
                 <button type="button" id="filterBtn" aria-haspopup="true" aria-expanded="false"
                         class="flex items-center gap-xs px-md py-sm rounded-full font-label-bold whitespace-nowrap bg-white border border-outline-variant u-transition">
@@ -871,9 +871,8 @@
         No rooms match right now — check back soon or try a different search.
     </p>
 
-    <!-- Shown by JS when a location/type combination matches zero cards -->
     <p id="noFilterMatches" class="hidden text-center text-on-surface-variant py-xl">
-        No rooms match that location and room type yet — try a different combination.
+        No accommodation matches your search. Try a different name or clear your filters.
     </p>
 </section>
 
@@ -928,7 +927,7 @@
         </div>
         <div class="lg:col-span-2 flex gap-gutter overflow-x-auto hide-scrollbar pb-lg snap-x">
             <div class="min-w-[320px] md:min-w-[400px] bg-white p-lg rounded-[32px] snap-center u-shadow-card border-l-8 border-primary">
-                <span class="material-symbols-outlined text-primary text-display-lg opacity-20">format_quote</span>
+
                 <p class="font-body-lg text-on-surface mb-lg">"Campus Key is a great accommodation—clean, comfortable, and convenient. I really enjoyed my stay and would definitely recommend it!"</p>
                 <div class="flex items-center gap-md border-t border-outline-variant pt-md">
                     <div class="w-12 h-12 rounded-full bg-teal-deep text-white flex items-center justify-center font-bold text-sm uppercase">LV</div>
@@ -936,7 +935,7 @@
                 </div>
             </div>
             <div class="min-w-[320px] md:min-w-[400px] bg-white p-lg rounded-[32px] snap-center u-shadow-card border-l-8 border-teal-bright">
-                <span class="material-symbols-outlined text-teal-deep text-display-lg opacity-20">format_quote</span>
+
                 <p class="font-body-lg text-on-surface mb-lg">"Living at Campus Key has been a game-changer for my studies. The backup power means I never miss a deadline during load shedding."</p>
                 <div class="flex items-center gap-md border-t border-outline-variant pt-md">
                     <div class="w-12 h-12 rounded-full bg-teal-deep text-white flex items-center justify-center font-bold text-sm uppercase">SN</div>
@@ -1127,7 +1126,6 @@
 
 <!-- Wrapper lets the script hide the AI widget while a modal (login / forgot / logout) is open -->
 <div id="aiWidgetWrap">
-    <div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null, null, null, null)}"></div>
 </div>
 <script>
     // ── Login modal ──
@@ -1724,5 +1722,7 @@
     modalOverlays.forEach(o => new MutationObserver(syncAiWidget).observe(o, { attributes: true, attributeFilter: ['class'] }));
     syncAiWidget();
 </script>
+<div th:replace="~{fragments/speak-with-ai :: speakWithAiWidget(null, null, null, null, null)}"></div>
+
 </body>
 </html>
