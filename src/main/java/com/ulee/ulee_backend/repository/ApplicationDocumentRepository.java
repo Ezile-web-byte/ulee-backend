@@ -9,5 +9,8 @@ public interface ApplicationDocumentRepository extends JpaRepository<Application
 
     List<ApplicationDocument> findByApplicationID(Integer applicationID);
 
+    // Used when a student cancels an application: the physical file is only
+    // deleted from disk if no other document row still points at it.
+    long countByFilePath(String filePath);
 
 }

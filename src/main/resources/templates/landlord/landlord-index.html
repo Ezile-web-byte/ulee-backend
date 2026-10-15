@@ -242,6 +242,11 @@
       align-items: center;
       gap: 14px;
     }
+  
+    .search-box { display:flex; align-items:center; gap:8px; flex:1 1 200px; max-width:280px; padding:8px 14px; border:1.5px solid var(--accent-border,#cfe7e4); border-radius:999px; background:#fff; color:var(--primary,#0f8a8a); }
+    .search-box:focus-within { border-color:var(--primary,#0f8a8a); box-shadow:0 0 0 3px rgba(20,200,190,.2); }
+    .search-box input { flex:1; min-width:0; border:0; outline:0; background:transparent; font-family:inherit; font-size:14.5px; color:#12262d; }
+    .property-card.search-hidden { display:none !important; }
   </style>
 <style id="stat-card-enlarge">
   :has(> .stat-card) {
@@ -369,6 +374,10 @@
           <button class="chip" data-filter="pending" role="tab" aria-selected="false">Pending Approval</button>
           <button class="chip" data-filter="rejected" role="tab" aria-selected="false">Needs Changes</button>
           <button class="chip" data-filter="draft" role="tab" aria-selected="false">Drafts</button>
+        </div>
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <input type="search" id="propertySearch" placeholder="Search properties..." aria-label="Search properties" autocomplete="off">
         </div>
 
         <label class="sort-select">
@@ -639,5 +648,28 @@
 <script src="/landlord-sidebar-toggle.js" defer></script>
 
 <script th:src="@{/ulee-select.js}"></script>
+<script>
+(function () {
+  var input = document.getElementById('propertySearch');
+  var grid = document.getElementById('propertyGrid');
+  if (!input || !grid) return;
+  var msg = document.createElement('div');
+  msg.className = 'filter-empty-state';
+  msg.style.display = 'none';
+  msg.textContent = 'No properties match your search.';
+  grid.parentNode.insertBefore(msg, grid.nextSibling);
+  input.addEventListener('input', function () {
+    var q = input.value.trim().toLowerCase();
+    var cards = grid.querySelectorAll('.property-card');
+    var shown = 0;
+    cards.forEach(function (c) {
+      var ok = !q || c.textContent.toLowerCase().indexOf(q) !== -1;
+      c.classList.toggle('search-hidden', !ok);
+      if (ok) shown++;
+    });
+    msg.style.display = (q && cards.length && shown === 0) ? '' : 'none';
+  });
+})();
+</script>
 </body>
 </html>

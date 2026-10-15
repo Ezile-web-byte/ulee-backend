@@ -25,6 +25,19 @@
         }
         .back-link:hover { text-decoration: underline; }
         .back-link svg { width: 14px; height: 14px; }
+    
+        .pl-intro { position: relative; }
+        .pl-search { position: absolute; top: 0; right: 0; display: flex; align-items: center; gap: 8px; width: 280px; max-width: 100%; padding: 9px 14px; border: 1.5px solid #cfe7e4; border-radius: 999px; background: #fff; color: #0f8a8a; }
+        .pl-search:focus-within { border-color: #0f8a8a; box-shadow: 0 0 0 3px rgba(20,200,190,.2); }
+        .pl-search input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font-family: inherit; font-size: 14.5px; color: #12262d; }
+        .pl-row.search-hidden { display: none !important; }
+        .pl-no-match { display: none; padding: 22px; text-align: center; color: #5b6b6b; }
+        @media (max-width: 700px) { .pl-search { position: static; width: 100%; margin-top: 12px; } }
+    
+        .pl-intro { display: grid !important; grid-template-columns: 1fr auto; align-items: start; column-gap: 16px; }
+        .pl-intro > .pl-title, .pl-intro > .pl-sub { grid-column: 1; }
+        .pl-intro > .pl-search { position: static !important; grid-column: 2; grid-row: 1 / span 2; margin: 0; }
+        @media (max-width: 700px) { .pl-intro { grid-template-columns: 1fr; } .pl-intro > .pl-search { grid-column: 1; grid-row: auto; margin-top: 12px; } }
     </style>
 </head>
 <body>
@@ -49,6 +62,10 @@
             </a>
 
             <section class="pl-intro">
+            <div class="pl-search">
+                <svg viewBox="0 0 24 24" fill="none" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                <input type="search" id="reviewSearch" placeholder="Search properties..." aria-label="Search properties" autocomplete="off">
+            </div>
                 <h2 class="pl-title">All Properties</h2>
                 <p class="pl-sub">
                     <span th:text="${totalPropertiesCount}">3</span> live properties ·
@@ -92,5 +109,28 @@
 
 <script src="/landlord-sidebar-toggle.js" defer></script>
 
+<script>
+(function () {
+  var input = document.getElementById('reviewSearch');
+  var card = document.querySelector('.pl-card');
+  if (!input || !card) return;
+  var msg = document.createElement('div');
+  msg.className = 'pl-no-match';
+  msg.textContent = 'No properties match your search.';
+  card.appendChild(msg);
+  input.addEventListener('input', function () {
+    var q = input.value.trim().toLowerCase();
+    var rows = card.querySelectorAll('.pl-row');
+    var shown = 0;
+    rows.forEach(function (row) {
+      var n = row.querySelector('.pl-name');
+      var ok = !q || (n && n.textContent.toLowerCase().indexOf(q) !== -1);
+      row.classList.toggle('search-hidden', !ok);
+      if (ok) shown++;
+    });
+    msg.style.display = (q && rows.length && shown === 0) ? 'block' : 'none';
+  });
+})();
+</script>
 </body>
 </html>
