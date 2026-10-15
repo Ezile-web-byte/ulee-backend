@@ -2377,8 +2377,7 @@ public class PropertyController {
     }
 
     // A202 — Cancel Application
-    @PostMapping("/cancel-application/{applicationId}")
-        @PostMapping("/applications/cancel/{applicationId}")
+    @PostMapping("/applications/cancel/{applicationId}")
     public String cancelApplication(@PathVariable Integer applicationId, Principal principal) {
         Integer studentID = getCurrentUser(principal).getUserID();
 
